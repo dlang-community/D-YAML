@@ -2,13 +2,13 @@
 Getting started 
 ===============
 
-Welcome to D:YAML! D:YAML is a `YAML <http://en.wikipedia.org/wiki/YAML>`_ parser 
-library for the `D programming language <http://d-p-l.org>`_. This tutorial will 
-explain how to set D:YAML up and use it in your projects. 
+Welcome to D:YAML! D:YAML is a `YAML <http://en.wikipedia.org/wiki/YAML>`_ 
+parser library for the 
+`D programming language <http://d-programming-language.org>`_. This tutorial 
+will explain how to set D:YAML up and use it in your projects. 
 
-This is meant to be the **simplest possible** introduction to D:YAML. Some of the
-information present might already be known to you. Only basic usage is covered. 
-More advanced usage is described in other tutorials.
+This is meant to be the **simplest possible** introduction to D:YAML. Some of 
+this information might already be known to you. Only basic usage is covered. 
 
 
 ----------
