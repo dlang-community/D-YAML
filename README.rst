@@ -16,8 +16,8 @@ library). It is written in D2 and there are no plans for D1 or Tango support.
 At the moment, D:YAML can only read, not write YAML files. This will change in
 the following releases. D:YAML is designed to be as easy to use as possible while
 supporting the full feature set of YAML. To start using it in your project,
-you can see the `Getting Started <./doc/html/tutorials/getting_started.html>`_ 
-tutorial.
+you can see the Getting Started tutorial found in the package in
+``/doc/html/tutorials/getting_started.html``.
 
 D:YAML is still a work in progress. Its API is still not stable and there might 
 be compatibility breaking changes. For instance, currently some D:YAML API 
@@ -71,8 +71,8 @@ Directory        Contents
 Installing and tutorial
 -----------------------
 
-See the `Getting started <./doc/html/tutorials/getting_started.html>`_ tutorial 
-and other tutorials that can be found in the ``doc/html/tutorials/`` directory.
+See the Getting Started tutorial and other tutorials that can be found in the
+``doc/html/tutorials/`` directory in the package.
 
 
 -------
