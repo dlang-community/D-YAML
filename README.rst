@@ -16,9 +16,10 @@ library). It is written in D2 and there are no plans for D1 or Tango support.
 At the moment, D:YAML can only read, not write YAML files. This will change in
 the following releases. D:YAML is designed to be as easy to use as possible while
 supporting the full feature set of YAML. To start using it in your project,
-you can see the Getting Started tutorial found in the package in
-``/doc/html/tutorials/getting_started.html``.
-
+see the 
+`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
+tutorial.
+ 
 D:YAML is still a work in progress. Its API is still not stable and there might 
 be compatibility breaking changes. For instance, currently some D:YAML API 
 functions depend on the ``std.stream`` module in Phobos. This module is expected 
@@ -71,8 +72,11 @@ Directory        Contents
 Installing and tutorial
 -----------------------
 
-See the Getting Started tutorial and other tutorials that can be found in the
-``doc/html/tutorials/`` directory in the package.
+See the 
+`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
+tutorial and other tutorials that can be found at the 
+`GitHub wiki <https://github.com/kiith-sa/D-YAML/wiki>`_
+and in the ``doc/html/tutorials/`` directory in the package.
 
 
 -------
