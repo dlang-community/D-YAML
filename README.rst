@@ -7,8 +7,9 @@ Introduction
 ------------
 
 D:YAML is an open source YAML parser library for the D programming language.
-It is (`almost <./doc/html/articles/spec_differences.html>`_) compliant to the
-YAML 1.1 specification. Much of D:YAML code is based on 
+It is 
+(`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_) 
+compliant to the YAML 1.1 specification. Much of D:YAML code is based on 
 `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. D:YAML has no 
 external dependencies, all it needs is a D compiler and Phobos (standard 
 library). It is written in D2 and there are no plans for D1 or Tango support.
