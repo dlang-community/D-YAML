@@ -183,7 +183,7 @@ void main(string[] args)
 
     void build_tar_gz()
     {
-        if(system("tar cf dyaml.tar * && gzip -9v dyaml.tar ") != 0)
+        if(system("git archive HEAD | gzip -9v  > dyaml.tar.gz") != 0)
         {
             writeln("Error creating a tar.gz package.");
         }
@@ -191,9 +191,17 @@ void main(string[] args)
 
     void build_tar_xz()
     {
-        if(system("tar cf dyaml.tar * && xz -9ev dyaml.tar ") != 0)
+        if(system("git archive HEAD | xz -9ev > dyaml.tar.xz ") != 0)
         {
             writeln("Error creating a tar.xz package.");
+        }
+    }
+
+    void build_zip()
+    {
+        if(system("git archive -odyaml.zip -9 HEAD") != 0)
+        {
+            writeln("Error creating a zip package");
         }
     }
 
@@ -209,6 +217,7 @@ void main(string[] args)
                 case "unittest": build_unittest(); break;
                 case "tar.gz":   build_tar_gz();   break;
                 case "tar.xz":   build_tar_xz();   break;
+                case "zip":      build_zip();      break;
                 case "all":      build("debug", "release", "unittest"); break;
                 default:
                     writeln("unknown build target: ", target);
@@ -244,10 +253,9 @@ void help()
         "                    Optimizations, inlining enabled.\n"
         "                    Target binary name: 'pong-release'\n"
         "    all             All of the above.\n"
-        "    tar.gz          Unix/Linux only: Create a tar.gz package\n"
-        "                    (this just archives the directory at the moment)\n"
-        "    tar.xz          Unix/Linux only: Create a tar.xz package\n"
-        "                    (this just archives the directory at the moment)\n"
+        "    tar.gz          Needs git, gzip: Create a tar.gz package.\n"
+        "    tar.xz          Needs git, xz: Create a tar.xz package.\n"
+        "    zip             Needs zip: Create a zip package.\n"
         "\n"
         "Available options:\n"
         " -h --help          Show this help information.\n"

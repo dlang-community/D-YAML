@@ -35,8 +35,9 @@ Download the version of DMD for your operating system and install it.
 Download and compile D:YAML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The newest version of D:YAML can be found `here <TODO>`_. Download a source 
-archive, extract it, and move to the extracted directory.
+The newest version of D:YAML can be found
+`here <https://github.com/Kiith-Sa/D-YAML>`_. Download a source archive, extract
+it, and move to the extracted directory.
 
 D:YAML uses a modified version of the `CDC <http://dsource.org/projects/cdc/>`_ 
 script for compilation. To compile D:YAML, you first need to build CDC.
