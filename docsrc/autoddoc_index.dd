@@ -1,0 +1,19 @@
+Ddoc
+
+$(P
+This is the complete API documentation for D:YAML. It describes all classes, 
+methods and global functions provided by the library. This is not the best place
+to start learning how to use D:YAML. Rather, it should serve as a reference when
+you need detailed information about every bit of D:YAML functionality. You can 
+find more introductory material in D:YAML $(LINK2 ../index.html, tutorials).
+)
+
+$(P
+In this API documentation, each D:YAML module is documented separately. However,
+to use D:YAML, you don't need to import these modules. All you need to do is 
+import the $(I yaml) module, which will import all needed modules.
+)
+
+Macros:
+    TITLE=$(PROJECT_NAME) $(PROJECT_VERSION) API documentation
+

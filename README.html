@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
+<title>D:YAML 0.1</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 6253 2010-03-02 00:24:53Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="d-yaml-0-1">
+<h1 class="title">D:YAML 0.1</h1>
+
+<div class="section" id="introduction">
+<h1>Introduction</h1>
+<p>D:YAML is an open source YAML parser library for the D programming language.
+It is (<a class="reference external" href="./doc/html/articles/spec_differences.html">almost</a>) compliant to the
+YAML 1.1 specification. Much of D:YAML code is based on
+<a class="reference external" href="http://www.pyyaml.org">PyYAML</a> created by Kirill Simonov. D:YAML has no
+external dependencies, all it needs is a D compiler and Phobos (standard
+library). It is written in D2 and there are no plans for D1 or Tango support.</p>
+<p>At the moment, D:YAML can only read, not write YAML files. This will change in
+the following releases. D:YAML is designed to be as easy to use as possible while
+supporting the full feature set of YAML. To start using it in your project,
+you can see the <a class="reference external" href="./doc/html/tutorials/getting_started.html">Getting Started</a>
+tutorial.</p>
+<p>D:YAML is still a work in progress. Its API is still not stable and there might
+be compatibility breaking changes. For instance, currently some D:YAML API
+functions depend on the <tt class="docutils literal">std.stream</tt> module in Phobos. This module is expected
+to be rewritten in future and D:YAML will change accordingly.</p>
+</div>
+<div class="section" id="features">
+<h1>Features</h1>
+<ul class="simple">
+<li>Easy to use, high-level API and detailed debugging messages.</li>
+<li>Detailed API documentation and tutorials.</li>
+<li>No external dependencies.</li>
+<li>Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
+are parsed correctly.</li>
+<li>Read from YAML files as well as from memory or user defined streams.</li>
+<li>UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian
+(plain ASCII also works as it is a subset of UTF-8).</li>
+<li>Support for both block (Python-like, based on indentation) and flow
+(JSON-like, based on bracing) constructs.</li>
+<li>Support for YAML anchors and aliases.</li>
+<li>Support for default values in mappings.</li>
+<li>Support for custom tags (data types), and implicit tag resolution for custom
+tags.</li>
+<li>All tags (data types) described at <a class="reference external" href="http://yaml.org/type/">http://yaml.org/type/</a> are supported, with
+the exception of <tt class="docutils literal">tag:yaml.org,2002:yaml</tt>, which is used to represent YAML
+code in YAML.</li>
+<li>Cannot write YAML at the moment. This will change in the future.</li>
+<li>There is no support for recursive data structures (supported by some YAML
+parsers). There are no plans to implement this at the moment.</li>
+</ul>
+</div>
+<div class="section" id="directory-structure">
+<h1>Directory structure</h1>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Directory</th>
+<th class="head">Contents</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal">./</tt></td>
+<td>This README file, utility scripts, D:YAML sources outside any packages.</td>
+</tr>
+<tr><td><tt class="docutils literal">./doc</tt></td>
+<td>Documentation.</td>
+</tr>
+<tr><td><tt class="docutils literal">./docsrc</tt></td>
+<td>Documentation sources.</td>
+</tr>
+<tr><td><tt class="docutils literal">./dyaml</tt></td>
+<td>D:YAML source code.</td>
+</tr>
+<tr><td><tt class="docutils literal">./examples/</tt></td>
+<td>Example D:YAML code.</td>
+</tr>
+<tr><td><tt class="docutils literal">./test</tt></td>
+<td>Unittest code and inputs.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="installing-and-tutorial">
+<h1>Installing and tutorial</h1>
+<p>See the <a class="reference external" href="./doc/html/tutorials/getting_started.html">Getting started</a> tutorial
+and other tutorials that can be found in the <tt class="docutils literal">doc/html/tutorials/</tt> directory.</p>
+</div>
+<div class="section" id="license">
+<h1>License</h1>
+<p>D:YAML is released under the terms of the
+<a class="reference external" href="http://www.boost.org/LICENSE_1_0.txt">Boost Software License 1.0</a>.
+This license allows you to use the source code in your own projects, open source
+or proprietary, and to modify it to suit your needs. However, in source
+distributions, you have to preserve the license headers in the source code and
+the accompanying license file.</p>
+<p>Full text of the license can be found in file <tt class="docutils literal">LICENSE_1_0.txt</tt> and is also
+displayed here:</p>
+<pre class="literal-block">
+Boost Software License - Version 1.0 - August 17th, 2003
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the &quot;Software&quot;) to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre>
+</div>
+<div class="section" id="credits">
+<h1>Credits</h1>
+<p>D:YAML was created by Ferdinand Majerech aka Kiith-Sa kiithsacmp[AT]gmail.com .</p>
+<p>Parts of code based on <a class="reference external" href="http://www.pyyaml.org">PyYAML</a> created by Kirill Simonov.</p>
+<p>D:YAML uses a modified version of the
+<a class="reference external" href="http://www.dsource.org/projects/cdc">CDC build script</a>.</p>
+<p>D:YAML was created using Vim and DMD on Debian and Ubuntu Linux as a YAML parsing
+library for the <a class="reference external" href="http://www.d-programming-language.org">D programming language</a>.</p>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2011-08-15 00:44 UTC.
+
+</div>
+</body>
+</html>

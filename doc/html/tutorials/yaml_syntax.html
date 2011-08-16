@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>YAML syntax &mdash; D:YAML v0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="D:YAML v0.1 documentation" href="../index.html" />
+    <link rel="next" title="Differences between D:YAML and the YAML specification" href="../articles/spec_differences.html" />
+    <link rel="prev" title="Custom YAML data types" href="custom_types.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../articles/spec_differences.html" title="Differences between D:YAML and the YAML specification"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="custom_types.html" title="Custom YAML data types"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">D:YAML v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="yaml-syntax">
+<h1>YAML syntax<a class="headerlink" href="#yaml-syntax" title="Permalink to this headline">¶</a></h1>
+<p>This is an introduction to the most common YAML constructs. For more detailed
+information, see <a class="reference external" href="http://pyyaml.org/wiki/PyYAMLDocumentation">PyYAML documentation</a>,
+which this article is based on,
+<a class="reference external" href="http://yaml.org/spec/1.1/#id857168">Chapter 2 of the YAML specification</a>
+or the <a class="reference external" href="http://en.wikipedia.org/wiki/YAML">Wikipedia page</a>.</p>
+<p>YAML is a data serialization format designed to be as human readable as
+possible. YAML is a recursive acronym for &#8220;YAML Ain&#8217;t Markup Language&#8221;.</p>
+<p>YAML is similar to JSON, and in fact, JSON is a subset of YAML 1.2; but YAML has
+some more advanced features and is easier to read. However, YAML is also more
+difficult to parse (and probably somewhat slower). Data is stored in mappings
+(associative arrays), sequences (lists) and scalars (single values). Data
+structure hierarchy either depends on indentation (block context, similar to
+Python code), or nesting of brackets and braces (flow context, similar to JSON).
+YAML comments begin with <tt class="docutils literal"><span class="pre">#</span></tt> and continue until the end of line.</p>
+<div class="section" id="documents">
+<h2>Documents<a class="headerlink" href="#documents" title="Permalink to this headline">¶</a></h2>
+<p>A YAML stream consists of one or more documents starting with <tt class="docutils literal"><span class="pre">---</span></tt> and
+optionally ending with <tt class="docutils literal"><span class="pre">...</span></tt> . If there is only one document, <tt class="docutils literal"><span class="pre">---</span></tt> can be
+left out.</p>
+<p>Single document with no explicit start or end:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+</pre></div>
+</div>
+<p>Same document with explicit start and end:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="nn">---</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+<span class="nn">...</span>
+</pre></div>
+</div>
+<p>A stream containing multiple documents:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="nn">---</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+<span class="nn">---</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Linux</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">BSD</span>
+<span class="nn">---</span>
+<span class="l-Scalar-Plain">answer</span> <span class="p-Indicator">:</span> <span class="l-Scalar-Plain">42</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sequences">
+<h2>Sequences<a class="headerlink" href="#sequences" title="Permalink to this headline">¶</a></h2>
+<p>Sequences are arrays of nodes of any type, similar e.g. to Python lists.
+In block context, each item begins with hyphen+space &#8220;- &#8220;. In flow context,
+sequences have syntax similar to D arrays.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Block context</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Flow context</span>
+<span class="p-Indicator">[</span><span class="nv">Red</span><span class="p-Indicator">,</span> <span class="nv">Green</span><span class="p-Indicator">,</span> <span class="nv">Blue</span><span class="p-Indicator">]</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested</span>
+<span class="p-Indicator">-</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+<span class="p-Indicator">-</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Linux</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">BSD</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested flow</span>
+<span class="p-Indicator">[[</span><span class="nv">Red</span><span class="p-Indicator">,</span> <span class="nv">Green</span><span class="p-Indicator">,</span> <span class="nv">Blue</span><span class="p-Indicator">],</span> <span class="p-Indicator">[</span><span class="nv">Linux</span><span class="p-Indicator">,</span> <span class="nv">BSD</span><span class="p-Indicator">]]</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested in a mapping</span>
+<span class="l-Scalar-Plain">Colors</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Red</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Green</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Blue</span>
+<span class="l-Scalar-Plain">Operating systems</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Linux</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">BSD</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mappings">
+<h2>Mappings<a class="headerlink" href="#mappings" title="Permalink to this headline">¶</a></h2>
+<p>Mappings are associative arrays where each key and value can be of any type,
+similar e.g. to Python dictionaries. In block context, keys and values are
+separated by colon+space &#8220;: &#8220;. In flow context, mappings have syntax similar
+to D associative arrays, but with braces instead of brackets:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Block context</span>
+<span class="l-Scalar-Plain">CPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Athlon</span>
+<span class="l-Scalar-Plain">GPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Radeon</span>
+<span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Linux</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Flow context</span>
+<span class="p-Indicator">{</span><span class="nv">CPU</span><span class="p-Indicator">:</span> <span class="nv">Athlon</span><span class="p-Indicator">,</span> <span class="nv">GPU</span><span class="p-Indicator">:</span> <span class="nv">Radeon</span><span class="p-Indicator">,</span> <span class="nv">OS</span><span class="p-Indicator">:</span> <span class="nv">Linux</span><span class="p-Indicator">}</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested</span>
+<span class="l-Scalar-Plain">PC</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">CPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Athlon</span>
+  <span class="l-Scalar-Plain">GPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Radeon</span>
+  <span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debian</span>
+<span class="l-Scalar-Plain">Phone</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">CPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Cortex</span>
+  <span class="l-Scalar-Plain">GPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">PowerVR</span>
+  <span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Android</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested flow</span>
+<span class="p-Indicator">{</span><span class="nv">PC</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span><span class="nv">CPU</span><span class="p-Indicator">:</span> <span class="nv">Athlon</span><span class="p-Indicator">,</span> <span class="nv">GPU</span><span class="p-Indicator">:</span> <span class="nv">Radeon</span><span class="p-Indicator">,</span> <span class="nv">OS</span><span class="p-Indicator">:</span> <span class="nv">Debian</span><span class="p-Indicator">},</span>
+ <span class="nv">Phone</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span><span class="nv">CPU</span><span class="p-Indicator">:</span> <span class="nv">Cortex</span><span class="p-Indicator">,</span> <span class="nv">GPU</span><span class="p-Indicator">:</span> <span class="nv">PowerVR</span><span class="p-Indicator">,</span> <span class="nv">OS</span><span class="p-Indicator">:</span> <span class="nv">Android</span><span class="p-Indicator">}}</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested in a sequence</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">CPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Athlon</span>
+  <span class="l-Scalar-Plain">GPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Radeon</span>
+  <span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debian</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">CPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Cortex</span>
+  <span class="l-Scalar-Plain">GPU</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">PowerVR</span>
+  <span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Android</span>
+</pre></div>
+</div>
+<p>Complex keys start with question mark+space &#8220;? &#8220;.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1">#Nested in a sequence</span>
+<span class="p-Indicator">?</span> <span class="p-Indicator">[</span><span class="nv">CPU</span><span class="p-Indicator">,</span> <span class="nv">GPU</span><span class="p-Indicator">]:</span> <span class="p-Indicator">[</span><span class="nv">Athlon</span><span class="p-Indicator">,</span> <span class="nv">Radeon</span><span class="p-Indicator">]</span>
+<span class="l-Scalar-Plain">OS</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debian</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="scalars">
+<h2>Scalars<a class="headerlink" href="#scalars" title="Permalink to this headline">¶</a></h2>
+<p>Scalars are simple values such as integers, strings, timestamps and so on.
+There are multiple scalar styles.</p>
+<p>Plain scalars use no quotes, start with the first non-space and end with the
+last non-space character:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Plain scalar</span>
+</pre></div>
+</div>
+<p>Single quoted scalars start and end with single quotes. A single quote is
+represented by a pair of single quotes &#8216;&#8217;.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar</span><span class="p-Indicator">:</span> <span class="s">&#39;Single</span><span class="nv"> </span><span class="s">quoted</span><span class="nv"> </span><span class="s">scalar</span><span class="nv"> </span><span class="s">ending</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">some</span><span class="nv"> </span><span class="s">spaces</span><span class="nv">    </span><span class="s">&#39;</span>
+</pre></div>
+</div>
+<p>Double quoted scalars support C-style escape sequences.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar</span><span class="p-Indicator">:</span> <span class="s">&quot;Double</span><span class="nv"> </span><span class="s">quoted</span><span class="nv"> </span><span class="s">scalar</span><span class="nv"> </span><span class="s">\n</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">some</span><span class="nv"> </span><span class="s">\\</span><span class="nv"> </span><span class="s">escape</span><span class="nv"> </span><span class="s">sequences&quot;</span>
+</pre></div>
+</div>
+<p>Block scalars are convenient for multi-line values. They start either with
+<tt class="docutils literal"><span class="pre">|</span></tt> or with <tt class="docutils literal"><span class="pre">&gt;</span></tt>. With <tt class="docutils literal"><span class="pre">|</span></tt>, the newlines in the scalar are preserved.
+With <tt class="docutils literal"><span class="pre">&gt;</span></tt>, the newlines between two non-empty lines are removed.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+  <span class="no">Newlines are preserved</span>
+  <span class="no">First line</span>
+  <span class="no">Second line</span>
+</pre></div>
+</div>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar</span><span class="p-Indicator">:</span> <span class="p-Indicator">&gt;</span>
+  <span class="no">Newlines are folded</span>
+  <span class="no">This is still the first paragraph</span>
+
+  <span class="no">This is the second</span>
+  <span class="no">paragraph</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="anchors-and-aliases">
+<h2>Anchors and aliases<a class="headerlink" href="#anchors-and-aliases" title="Permalink to this headline">¶</a></h2>
+<p>Anchors and aliases can reduce size of YAML code by allowing you to define a
+value once, assign an anchor to it and use alias referring to that anchor
+anywhere else you need that value. It is possible to use this to create
+recursive data structures and some parsers support this; however, D:YAML does
+not (this might change in the future, but it is unlikely).</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">Person</span><span class="p-Indicator">:</span> <span class="nl">&amp;AD</span>
+  <span class="l-Scalar-Plain">gender</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">male</span>
+  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Arthur Dent</span>
+<span class="l-Scalar-Plain">Clone</span><span class="p-Indicator">:</span> <span class="nv">*AD</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tags">
+<h2>Tags<a class="headerlink" href="#tags" title="Permalink to this headline">¶</a></h2>
+<p>Tags are identifiers that specify data types of YAML nodes. Most default YAML
+tags are resolved implicitly, so there is no need to specify them. D:YAML also
+supports implicit resolution for custom, user specified tags.</p>
+<p>Explicitly specified tags:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">answer</span><span class="p-Indicator">:</span> <span class="kt">!!int</span> <span class="s">&quot;42&quot;</span>
+<span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span>   <span class="kt">!!str</span> <span class="s">&quot;Arthur</span><span class="nv"> </span><span class="s">Dent&quot;</span>
+</pre></div>
+</div>
+<p>Implicit tags:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">answer</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">42</span>        <span class="c1">#int</span>
+<span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Arthur Dent</span> <span class="c1">#string</span>
+</pre></div>
+</div>
+<p>This table shows D types stored in <em>yaml.Node</em> default YAML tags are converted to.
+Some of these might change in the future (especially !!map and !!set).</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="58%" />
+<col width="42%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">YAML tag</th>
+<th class="head">D type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>!!null</td>
+<td>yaml.YAMLNull</td>
+</tr>
+<tr><td>!!bool</td>
+<td>bool</td>
+</tr>
+<tr><td>!!int</td>
+<td>long</td>
+</tr>
+<tr><td>!!float</td>
+<td>real</td>
+</tr>
+<tr><td>!!binary</td>
+<td>ubyte[]</td>
+</tr>
+<tr><td>!!timestamp</td>
+<td>datetime.SysTime</td>
+</tr>
+<tr><td>!!map, !!omap, !!pairs</td>
+<td>Node.Pair[]</td>
+</tr>
+<tr><td>!!seq, !!set</td>
+<td>Node[]</td>
+</tr>
+<tr><td>!!str</td>
+<td>string</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/logo210.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">YAML syntax</a><ul>
+<li><a class="reference internal" href="#documents">Documents</a></li>
+<li><a class="reference internal" href="#sequences">Sequences</a></li>
+<li><a class="reference internal" href="#mappings">Mappings</a></li>
+<li><a class="reference internal" href="#scalars">Scalars</a></li>
+<li><a class="reference internal" href="#anchors-and-aliases">Anchors and aliases</a></li>
+<li><a class="reference internal" href="#tags">Tags</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../articles/spec_differences.html" title="Differences between D:YAML and the YAML specification"
+             >next</a></li>
+        <li class="right" >
+          <a href="custom_types.html" title="Custom YAML data types"
+             >previous</a> |</li>
+        <li><a href="../index.html">D:YAML v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
+      Last updated on Aug 16, 2011.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+scalar-red: !color FF0000
+scalar-orange: !color FFFF00
+mapping-red: !color-mapping {r: 255, g: 0, b: 0}
+mapping-orange:
+   !color-mapping
+   r: 255
+   g: 255
+   b: 0

@@ -1,0 +1,842 @@
+
+//          Copyright Ferdinand Majerech 2011.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+/**
+ * YAML parser.
+ * Code based on PyYAML: http://www.pyyaml.org
+ */
+module dyaml.parser;
+
+
+import std.array;
+import std.conv;
+import std.exception;
+
+import dyaml.event;
+import dyaml.scanner;
+import dyaml.token;
+import dyaml.exception;
+
+
+package:
+/**
+ * The following YAML grammar is LL(1) and is parsed by a recursive descent
+ * parser.
+ * 
+ * stream            ::= STREAM-START implicit_document? explicit_document* STREAM-END
+ * implicit_document ::= block_node DOCUMENT-END*
+ * explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
+ * block_node_or_indentless_sequence ::=
+ *                       ALIAS
+ *                       | properties (block_content | indentless_block_sequence)?
+ *                       | block_content
+ *                       | indentless_block_sequence
+ * block_node        ::= ALIAS
+ *                       | properties block_content?
+ *                       | block_content
+ * flow_node         ::= ALIAS
+ *                       | properties flow_content?
+ *                       | flow_content
+ * properties        ::= TAG ANCHOR? | ANCHOR TAG?
+ * block_content     ::= block_collection | flow_collection | SCALAR
+ * flow_content      ::= flow_collection | SCALAR
+ * block_collection  ::= block_sequence | block_mapping
+ * flow_collection   ::= flow_sequence | flow_mapping
+ * block_sequence    ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
+ * indentless_sequence   ::= (BLOCK-ENTRY block_node?)+
+ * block_mapping     ::= BLOCK-MAPPING_START
+ *                       ((KEY block_node_or_indentless_sequence?)?
+ *                       (VALUE block_node_or_indentless_sequence?)?)*
+ *                       BLOCK-END
+ * flow_sequence     ::= FLOW-SEQUENCE-START
+ *                       (flow_sequence_entry FLOW-ENTRY)*
+ *                       flow_sequence_entry?
+ *                       FLOW-SEQUENCE-END
+ * flow_sequence_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+ * flow_mapping      ::= FLOW-MAPPING-START
+ *                       (flow_mapping_entry FLOW-ENTRY)*
+ *                       flow_mapping_entry?
+ *                       FLOW-MAPPING-END
+ * flow_mapping_entry    ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+ * 
+ * FIRST sets:
+ * 
+ * stream: { STREAM-START }
+ * explicit_document: { DIRECTIVE DOCUMENT-START }
+ * implicit_document: FIRST(block_node)
+ * block_node: { ALIAS TAG ANCHOR SCALAR BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START }
+ * flow_node: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START }
+ * block_content: { BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START SCALAR }
+ * flow_content: { FLOW-SEQUENCE-START FLOW-MAPPING-START SCALAR }
+ * block_collection: { BLOCK-SEQUENCE-START BLOCK-MAPPING-START }
+ * flow_collection: { FLOW-SEQUENCE-START FLOW-MAPPING-START }
+ * block_sequence: { BLOCK-SEQUENCE-START }
+ * block_mapping: { BLOCK-MAPPING-START }
+ * block_node_or_indentless_sequence: { ALIAS ANCHOR TAG SCALAR BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START BLOCK-ENTRY }
+ * indentless_sequence: { ENTRY }
+ * flow_collection: { FLOW-SEQUENCE-START FLOW-MAPPING-START }
+ * flow_sequence: { FLOW-SEQUENCE-START }
+ * flow_mapping: { FLOW-MAPPING-START }
+ * flow_sequence_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
+ * flow_mapping_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
+ */            
+
+
+/**
+ * Marked exception thrown at parser errors.
+ *
+ * See_Also: MarkedYAMLException
+ */
+class ParserException : MarkedYAMLException
+{
+    this(string context, Mark contextMark, string problem, Mark problemMark)
+    {
+        super(context, contextMark, problem, problemMark);
+    }
+
+    this(string problem, Mark problemMark){super(problem, problemMark);}
+}
+
+///Generates events from tokens provided by a Scanner.
+final class Parser 
+{
+    invariant()
+    {
+        assert(currentEvent_.length <= 1);
+    }
+
+    private:
+        ///Default tag handle shortcuts and replacements.
+        static string[string] defaultTags_;
+        static this()
+        {
+            defaultTags_ = ["!" : "!", "!!" : "tag:yaml.org,2002:"];
+        }
+
+        ///Scanner providing YAML tokens.
+        Scanner scanner_;
+
+        ///Holds zero or one event.
+        Event[] currentEvent_;
+
+        ///YAML version string.
+        string YAMLVersion_ = null;
+        ///Tag handle shortcuts and replacements.
+        string[string] tagHandles_;
+
+        ///Stack of states.
+        Event delegate()[] states_;
+        ///Stack of marks used to keep track of extents of e.g. YAML collections.
+        Mark[] marks_;
+        ///Current state.
+        Event delegate() state_;
+
+    public:
+        ///Construct a Parser using specified Scanner.
+        this(Scanner scanner)
+        {
+            state_ = &parseStreamStart;
+            scanner_ = scanner;
+        }
+
+        ///Destroy the parser.
+        ~this()
+        {
+            clear(currentEvent_);
+            currentEvent_ = null;
+            clear(tagHandles_);
+            tagHandles_ = null;
+            clear(states_);
+            states_ = null;
+            clear(marks_);
+            marks_ = null;
+        }
+
+        /**
+         * Check if the next event is one of specified types.
+         *
+         * If no types are specified, checks if any events are left.
+         *
+         * Params:  ids = Event IDs to check for.
+         *
+         * Returns: true if the next event is one of specified types,
+         *          or if there are any events left if no types specified.
+         *          false otherwise.
+         */
+        bool checkEvent(EventID[] ids...)
+        {
+            //Check if the next event is one of specified types.
+            if(currentEvent_.empty && state_ !is null)
+            {
+                currentEvent_ ~= state_();
+            }
+
+            if(!currentEvent_.empty)
+            {
+                if(ids.length == 0){return true;}
+                else
+                {
+                    const nextId = currentEvent_.front.id;
+                    foreach(id; ids)
+                    {
+                        if(nextId == id){return true;}
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Return the next event, but keep it in the queue. 
+         *
+         * Must not be called if there are no events left.
+         */
+        Event peekEvent()
+        {
+            if(currentEvent_.empty && state_ !is null)
+            {
+                currentEvent_ ~= state_();
+            }
+            if(!currentEvent_.empty){return currentEvent_[0];}
+            assert(false, "No event left to peek");
+        }
+
+        /**
+         * Return the next event, removing it from the queue.
+         *
+         * Must not be called if there are no events left.
+         */
+        Event getEvent()
+        {
+            //Get the next event and proceed further.
+            if(currentEvent_.empty && state_ !is null)
+            {
+                currentEvent_ ~= state_();
+            }
+
+            if(!currentEvent_.empty)
+            {
+                Event result = currentEvent_[0];
+                currentEvent_.length = 0;
+                return result;
+            }
+            assert(false, "No event left to get");
+        }
+
+    private:
+        ///Pop and return the newest state in states_.
+        Event delegate() popState()
+        {
+            enforce(states_.length > 0, 
+                    new YAMLException("Parser: Need to pop a state but there are no states left"));
+            const result = states_.back();
+            states_.popBack;
+            return result;
+        }
+
+        ///Pop and return the newest mark in marks_.
+        Mark popMark()
+        {
+            enforce(marks_.length > 0, 
+                    new YAMLException("Parser: Need to pop a mark but there are no marks left"));
+            const result = marks_.back();
+            marks_.popBack;
+            return result;
+        }
+
+        /**
+         * stream    ::= STREAM-START implicit_document? explicit_document* STREAM-END
+         * implicit_document ::= block_node DOCUMENT-END*
+         * explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
+         */
+
+        ///Parse stream start.
+        Event parseStreamStart()
+        {
+            Token token = scanner_.getToken();
+            state_ = &parseImplicitDocumentStart;
+            return streamStartEvent(token.startMark, token.endMark);
+        }
+
+        ///Parse implicit document start, unless explicit is detected: if so, parse explicit.
+        Event parseImplicitDocumentStart()
+        {
+            //Parse an implicit document.
+            if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
+                                    TokenID.StreamEnd))
+            {
+                tagHandles_ = defaultTags_;
+                Token token = scanner_.peekToken();
+
+                states_ ~= &parseDocumentEnd;
+                state_ = &parseBlockNode;
+
+                return documentStartEvent(token.startMark, token.endMark, false, null);
+            }
+            return parseDocumentStart();
+        }
+
+        ///Parse explicit document start.
+        Event parseDocumentStart()
+        {
+            //Parse any extra document end indicators.
+            while(scanner_.checkToken(TokenID.DocumentEnd)){scanner_.getToken();}
+
+            //Parse an explicit document.
+            if(!scanner_.checkToken(TokenID.StreamEnd))
+            {
+                const startMark = scanner_.peekToken().startMark;
+
+                processDirectives();
+                enforce(scanner_.checkToken(TokenID.DocumentStart),
+                        new ParserException("Expected document start but found " ~
+                                            to!string(scanner_.peekToken().id), 
+                                            scanner_.peekToken().startMark));
+
+                const endMark = scanner_.getToken().endMark;
+                states_ ~= &parseDocumentEnd;
+                state_ = &parseDocumentContent;
+                return documentStartEvent(startMark, endMark, true, YAMLVersion_);
+            }
+            else
+            {
+                //Parse the end of the stream.
+                Token token = scanner_.getToken();
+                assert(states_.length == 0);
+                assert(marks_.length == 0);
+                state_ = null;
+                return streamEndEvent(token.startMark, token.endMark);
+            }
+        }
+
+        ///Parse document end (explicit or implicit).
+        Event parseDocumentEnd()
+        {
+            Mark startMark = scanner_.peekToken().startMark;
+            const bool explicit = scanner_.checkToken(TokenID.DocumentEnd);
+            Mark endMark = explicit ? scanner_.getToken().endMark : startMark;
+
+            state_ = &parseDocumentStart;
+
+            return documentEndEvent(startMark, endMark, explicit);
+        }
+
+        ///Parse document content.
+        Event parseDocumentContent()
+        {
+            if(scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
+                                   TokenID.DocumentEnd, TokenID.StreamEnd))
+            {
+                state_ = popState();
+                return processEmptyScalar(scanner_.peekToken().startMark);
+            }
+            return parseBlockNode();
+        }
+
+        ///Process directives at the beginning of a document.
+        void processDirectives()
+        {
+            //Destroy version and tag handles from previous document.
+            YAMLVersion_ = null;
+            string[string] empty;
+            tagHandles_ = empty;
+
+            //Process directives.
+            while(scanner_.checkToken(TokenID.Directive))
+            {
+                Token token = scanner_.getToken();
+                //Name and value are separated by '\0'.
+                const parts = token.value.split("\0");
+                const name = parts[0];
+                if(name == "YAML")
+                {
+                    enforce(YAMLVersion_ is null, 
+                            new ParserException("Found duplicate YAML directive", 
+                                                token.startMark));
+                    const minor = parts[1].split(".")[0];
+                    enforce(to!int(minor) == 1, 
+                            new ParserException("Found incompatible YAML document (version "
+                                                "1.* is required)", token.startMark));
+                    YAMLVersion_ = parts[1];
+                }
+                else if(name == "TAG")
+                {
+                    assert(parts.length == 3, "Tag directive stored incorrectly in a token");
+                    const handle = parts[1];
+
+                    foreach(h, replacement; tagHandles_)
+                    {
+                        enforce(h != handle, new ParserException("Duplicate tag handle: " ~ 
+                                                                 handle, token.startMark));
+                    }
+                    tagHandles_[handle] = parts[2];
+                }
+            }
+
+            //Add any default tag handles that haven't been overridden.
+            foreach(key, value; defaultTags_)
+            {
+                if((key in tagHandles_) is null){tagHandles_[key] = value;}
+            }
+        }
+
+        /**
+         * block_node_or_indentless_sequence ::= ALIAS
+         *               | properties (block_content | indentless_block_sequence)?
+         *               | block_content
+         *               | indentless_block_sequence
+         * block_node    ::= ALIAS
+         *                   | properties block_content?
+         *                   | block_content
+         * flow_node     ::= ALIAS
+         *                   | properties flow_content?
+         *                   | flow_content
+         * properties    ::= TAG ANCHOR? | ANCHOR TAG?
+         * block_content     ::= block_collection | flow_collection | SCALAR
+         * flow_content      ::= flow_collection | SCALAR
+         * block_collection  ::= block_sequence | block_mapping
+         * flow_collection   ::= flow_sequence | flow_mapping
+         */
+
+        ///Parse a node.
+        Event parseNode(bool block, bool indentlessSequence = false)
+        {
+            if(scanner_.checkToken(TokenID.Alias))
+            {
+                Token token = scanner_.getToken();
+                state_ = popState();
+                return aliasEvent(token.startMark, token.endMark, token.value);
+            }
+
+            string anchor = null;
+            string tag = null;
+            Mark startMark, endMark, tagMark;
+            bool invalidMarks = true;
+
+            //Get anchor/tag if detected. Return false otherwise.
+            bool get(TokenID id, bool start, ref string target)
+            {
+                if(!scanner_.checkToken(id)){return false;}
+                invalidMarks = false;
+                Token token = scanner_.getToken();
+                if(start){startMark = token.startMark;}
+                if(id == TokenID.Tag){tagMark = token.startMark;}
+                endMark = token.endMark; 
+                target  = token.value;
+                return true;
+            }
+
+            //Anchor and/or tag can be in any order.
+            if(get(TokenID.Anchor, true, anchor)){get(TokenID.Tag, false, tag);}
+            else if(get(TokenID.Tag, true, tag)) {get(TokenID.Anchor, false, anchor);}
+
+            if(tag !is null){tag = processTag(tag, startMark, tagMark);}
+
+            if(invalidMarks)
+            {
+                startMark = endMark = scanner_.peekToken().startMark;
+            }
+
+            bool implicit = (tag is null || tag == "!");
+
+            if(indentlessSequence && scanner_.checkToken(TokenID.BlockEntry))
+            {
+                state_ = &parseIndentlessSequenceEntry;
+                return sequenceStartEvent(startMark, scanner_.peekToken().endMark,
+                                          anchor, tag, implicit);
+            }
+
+            if(scanner_.checkToken(TokenID.Scalar))
+            {
+                Token token = scanner_.getToken();
+
+                //PyYAML uses a Tuple!(bool, bool) here, but the second bool
+                //is never used after that - so we don't use it.
+                implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
+                state_ = popState();
+                return scalarEvent(startMark, token.endMark, anchor, tag, 
+                                   implicit, token.value, token.style);
+            }
+
+            if(scanner_.checkToken(TokenID.FlowSequenceStart))
+            {
+                endMark = scanner_.peekToken().endMark;
+                state_ = &parseFlowSequenceEntry!true;
+                return sequenceStartEvent(startMark, endMark, anchor, tag, implicit);
+            }
+
+            if(scanner_.checkToken(TokenID.FlowMappingStart))
+            {
+                endMark = scanner_.peekToken().endMark;
+                state_ = &parseFlowMappingKey!true;
+                return mappingStartEvent(startMark, endMark, anchor, tag, implicit);
+            }
+
+            if(block && scanner_.checkToken(TokenID.BlockSequenceStart))
+            {
+                endMark = scanner_.peekToken().endMark;
+                state_ = &parseBlockSequenceEntry!true;
+                return sequenceStartEvent(startMark, endMark, anchor, tag, implicit);
+            }
+
+            if(block && scanner_.checkToken(TokenID.BlockMappingStart))
+            {
+                endMark = scanner_.peekToken().endMark;
+                state_ = &parseBlockMappingKey!true;
+                return mappingStartEvent(startMark, endMark, anchor, tag, implicit);
+            }
+
+            if(anchor != null || tag !is null)
+            {
+                state_ = popState();
+
+                //PyYAML uses a tuple(implicit, false) for the second last arg here, 
+                //but the second bool is never used after that - so we don't use it.
+
+                //Empty scalars are allowed even if a tag or an anchor is specified.
+                return scalarEvent(startMark, endMark, anchor, tag, implicit , "");
+            }
+
+            Token token = scanner_.peekToken();
+            throw new ParserException("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
+                                      startMark, "expected the node content, but found: " 
+                                      ~ to!string(token.id), token.startMark);
+        }
+
+        /**
+         * Process a tag string retrieved from a tag token.
+         *
+         * Params:  tag       = Tag before processing.
+         *          startMark = Position of the node the tag belongs to.
+         *          tagMark   = Position of the tag.
+         */ 
+        string processTag(in string tag, in Mark startMark, in Mark tagMark)
+        {
+            //Tag handle and suffix are separated by '\0'.
+            const parts = tag.split("\0");
+            assert(parts.length == 2, "Tag data stored incorrectly in a token");
+            const handle = parts[0];
+            const suffix = parts[1];
+
+            if(handle.length > 0)
+            {
+                //handle must be in tagHandles_
+                enforce((handle in tagHandles_) !is null,
+                        new ParserException("While parsing a node", startMark,
+                                            "found undefined tag handle: " ~ handle, tagMark));
+                return tagHandles_[handle] ~ suffix;
+            }
+            return suffix;
+        }
+
+        ///Wrappers to parse nodes.
+        Event parseBlockNode(){return parseNode(true);}
+        Event parseFlowNode(){return parseNode(false);}
+        Event parseBlockNodeOrIndentlessSequence(){return parseNode(true, true);}
+
+        ///block_sequence ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
+
+        ///Parse an entry of a block sequence. If first is true, this is the first entry.
+        Event parseBlockSequenceEntry(bool first)()
+        {
+            static if(first){marks_ ~= scanner_.getToken().startMark;}
+
+            if(scanner_.checkToken(TokenID.BlockEntry))
+            {
+                Token token = scanner_.getToken();
+                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.BlockEnd))
+                {
+                    states_~= &parseBlockSequenceEntry!false;
+                    return parseBlockNode();
+                }
+
+                state_ = &parseBlockSequenceEntry!false;
+                return processEmptyScalar(token.endMark);
+            }
+
+            if(!scanner_.checkToken(TokenID.BlockEnd))
+            {
+                Token token = scanner_.peekToken();
+                throw new ParserException("While parsing a block collection", marks_[$ - 1],
+                                          "expected block end, but found " 
+                                          ~ to!string(token.id), token.startMark);
+            }
+
+            state_ = popState();
+            popMark();
+            Token token = scanner_.getToken();
+            return sequenceEndEvent(token.startMark, token.endMark);
+        }
+
+        ///indentless_sequence ::= (BLOCK-ENTRY block_node?)+
+
+        ///Parse an entry of an indentless sequence.
+        Event parseIndentlessSequenceEntry()
+        {
+            if(scanner_.checkToken(TokenID.BlockEntry))
+            {
+                Token token = scanner_.getToken();
+
+                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key, 
+                                        TokenID.Value, TokenID.BlockEnd))
+                {                  
+                    states_ ~= &parseIndentlessSequenceEntry;
+                    return parseBlockNode();
+                }
+
+                state_ = &parseIndentlessSequenceEntry;
+                return processEmptyScalar(token.endMark);
+            }
+
+            state_ = popState();
+            Token token = scanner_.peekToken();
+            return sequenceEndEvent(token.startMark, token.endMark);
+        }
+
+        /**
+         * block_mapping     ::= BLOCK-MAPPING_START
+         *                       ((KEY block_node_or_indentless_sequence?)?
+         *                       (VALUE block_node_or_indentless_sequence?)?)*
+         *                       BLOCK-END
+         */
+
+        ///Parse a key in a block mapping. If first is true, this is the first key.
+        Event parseBlockMappingKey(bool first)()
+        {
+            static if(first){marks_ ~= scanner_.getToken().startMark;}
+
+            if(scanner_.checkToken(TokenID.Key))
+            {
+                Token token = scanner_.getToken();
+
+                if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
+                {
+                    states_ ~= &parseBlockMappingValue;
+                    return parseBlockNodeOrIndentlessSequence();
+                }
+
+                state_ = &parseBlockMappingValue;
+                return processEmptyScalar(token.endMark);
+            }
+
+            if(!scanner_.checkToken(TokenID.BlockEnd))
+            {
+                Token token = scanner_.peekToken();
+                throw new ParserException("While parsing a block mapping", marks_[$ - 1],
+                                          "expected block end, but found: " 
+                                          ~ to!string(token.id), token.startMark);
+            }
+
+            state_ = popState();
+            popMark();
+            Token token = scanner_.getToken();
+            return mappingEndEvent(token.startMark, token.endMark);
+        }
+
+        ///Parse a value in a block mapping.
+        Event parseBlockMappingValue()
+        {
+            if(scanner_.checkToken(TokenID.Value))
+            {
+                Token token = scanner_.getToken();
+
+                if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
+                {
+                    states_ ~= &parseBlockMappingKey!false;
+                    return parseBlockNodeOrIndentlessSequence();
+                }
+
+                state_ = &parseBlockMappingKey!false;
+                return processEmptyScalar(token.endMark);
+            }
+
+            state_= &parseBlockMappingKey!false;
+            return processEmptyScalar(scanner_.peekToken().startMark);
+        }
+
+        /**
+         * flow_sequence     ::= FLOW-SEQUENCE-START
+         *                       (flow_sequence_entry FLOW-ENTRY)*
+         *                       flow_sequence_entry?
+         *                       FLOW-SEQUENCE-END
+         * flow_sequence_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+         * 
+         * Note that while production rules for both flow_sequence_entry and
+         * flow_mapping_entry are equal, their interpretations are different.
+         * For `flow_sequence_entry`, the part `KEY flow_node? (VALUE flow_node?)?`
+         * generate an inline mapping (set syntax).
+         */
+
+        ///Parse an entry in a flow sequence. If first is true, this is the first entry.
+        Event parseFlowSequenceEntry(bool first)()
+        {
+            static if(first){marks_ ~= scanner_.getToken().startMark;}
+
+            if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
+            {
+                static if(!first)
+                {
+                    if(scanner_.checkToken(TokenID.FlowEntry))
+                    {
+                        scanner_.getToken();
+                    }
+                    else
+                    {
+                        Token token = scanner_.peekToken;
+                        throw new ParserException("While parsing a flow sequence", 
+                                                  marks_[$ - 1],
+                                                  "expected ',' or ']', but got: " ~
+                                                  to!string(token.id), token.startMark);
+                    }
+                }
+
+                if(scanner_.checkToken(TokenID.Key))
+                {
+                    Token token = scanner_.peekToken();
+                    state_ = &parseFlowSequenceEntryMappingKey;
+                    return mappingStartEvent(token.startMark, token.endMark, null, null, true);
+                }
+                else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
+                {
+                    states_ ~= &parseFlowSequenceEntry!false;
+                    return parseFlowNode();
+                }
+            }
+
+            Token token = scanner_.getToken();
+            state_ = popState();
+            popMark();
+            return sequenceEndEvent(token.startMark, token.endMark);
+        }
+
+        ///Parse a key in flow context.
+        Event parseFlowKey(in Event delegate() nextState)
+        {
+            Token token = scanner_.getToken();
+
+            if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry, 
+                                    TokenID.FlowSequenceEnd))
+            {
+                states_ ~= nextState;
+                return parseFlowNode();
+            }
+
+            state_ = nextState;
+            return processEmptyScalar(token.endMark);
+        }
+
+        ///Parse a mapping key in an entry in a flow sequence.
+        Event parseFlowSequenceEntryMappingKey()
+        {
+            return parseFlowKey(&parseFlowSequenceEntryMappingValue);
+        }
+
+        ///Parse a mapping value in a flow context.
+        Event parseFlowValue(TokenID checkId, in Event delegate() nextState)
+        {
+            if(scanner_.checkToken(TokenID.Value))
+            {
+                Token token = scanner_.getToken();
+                if(!scanner_.checkToken(TokenID.FlowEntry, checkId))
+                {
+                    states_ ~= nextState;
+                    return parseFlowNode();
+                }
+                
+                state_ = nextState;
+                return processEmptyScalar(token.endMark);
+            }
+
+            state_ = nextState;
+            return processEmptyScalar(scanner_.peekToken().startMark);
+        }
+
+        ///Parse a mapping value in an entry in a flow sequence.
+        Event parseFlowSequenceEntryMappingValue()
+        {
+            return parseFlowValue(TokenID.FlowSequenceEnd,
+                                  &parseFlowSequenceEntryMappingEnd);
+        }
+
+        ///Parse end of a mapping in a flow sequence entry.
+        Event parseFlowSequenceEntryMappingEnd()
+        {
+            state_ = &parseFlowSequenceEntry!false;
+            Token token = scanner_.peekToken();
+            return mappingEndEvent(token.startMark, token.startMark);
+        }
+
+        /**
+         * flow_mapping  ::= FLOW-MAPPING-START
+         *                   (flow_mapping_entry FLOW-ENTRY)*
+         *                   flow_mapping_entry?
+         *                   FLOW-MAPPING-END
+         * flow_mapping_entry    ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+         */
+
+        ///Parse a key in a flow mapping.
+        Event parseFlowMappingKey(bool first)()
+        {
+            static if(first){marks_ ~= scanner_.getToken().startMark;}
+
+            if(!scanner_.checkToken(TokenID.FlowMappingEnd))
+            {
+                static if(!first)
+                {
+                    if(scanner_.checkToken(TokenID.FlowEntry))
+                    {
+                        scanner_.getToken();
+                    }
+                    else
+                    {
+                        Token token = scanner_.peekToken;
+                        throw new ParserException("While parsing a flow mapping", 
+                                                  marks_[$ - 1],
+                                                  "expected ',' or '}', but got: " ~
+                                                  to!string(token.id), token.startMark);
+                    }
+                }
+
+                if(scanner_.checkToken(TokenID.Key))
+                {
+                    return parseFlowKey(&parseFlowMappingValue);
+                }
+
+                if(!scanner_.checkToken(TokenID.FlowMappingEnd))
+                {
+                    states_ ~= &parseFlowMappingEmptyValue;
+                    return parseFlowNode();
+                }
+            }
+
+            Token token = scanner_.getToken();
+            state_ = popState();
+            popMark();
+            return mappingEndEvent(token.startMark, token.endMark);
+        }
+
+        ///Parse a value in a flow mapping.
+        Event parseFlowMappingValue()
+        {
+            return parseFlowValue(TokenID.FlowMappingEnd, &parseFlowMappingKey!false);
+        }
+
+        ///Parse an empty value in a flow mapping.
+        Event parseFlowMappingEmptyValue()
+        {
+            state_ = &parseFlowMappingKey!false;
+            return processEmptyScalar(scanner_.peekToken().startMark);
+        }
+
+        ///Return an empty scalar.
+        Event processEmptyScalar(in Mark mark)
+        {
+            //PyYAML uses a Tuple!(true, false) for the second last arg here,
+            //but the second bool is never used after that - so we don't use it.
+            return scalarEvent(mark, mark, null, null, true, "");
+        }
+}

@@ -1,0 +1,220 @@
+body
+{
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: black;
+    background-color: #1f252b;
+    font-size: 100%;
+    font-family: Verdana, "Deja Vu", "Bitstream Vera Sans", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6
+{
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-weight: normal;
+    color: #633;
+    line-height: normal;
+    text-align: left;
+}
+
+h1
+{
+    margin-top: 0;
+    font-size: 2.5em;
+}
+
+h2{font-size: 1.7em;}
+
+h3{font-size: 1.35em;}
+
+h4
+{
+    font-size: 1.15em;
+    font-style: italic;
+    margin-bottom: 0;
+}
+
+pre
+{
+    background: #eef;
+    padding: 1ex;
+    margin: 1em 0 1em 3em;
+    font-family: monospace;
+    font-size: 1.2em;
+    line-height: normal;
+    border: 1px solid #ccc;
+    width: auto;
+}
+
+dd
+{
+    padding: 1ex;
+    margin-left: 3em;
+    margin-bottom: 1em;
+}
+
+td{text-align: justify;}
+
+hr{margin: 2em 0;}
+
+a{color: #006;}
+
+a:visited{color: #606;}
+
+/* These are different kinds of <pre> sections */
+.console /* command line console */
+{
+    background-color: #f7f7f7;
+    color: #181818;
+}
+
+.moddeffile /* module definition file */
+{
+    background-color: #efeffe;
+    color: #010199;
+}
+
+.d_code /* D code */
+{
+    background-color: #fcfcfc;
+    color: #000066;
+}
+
+.d_code2 /* D code */
+{
+    background-color: #fcfcfc;
+    color: #000066;
+}
+
+td .d_code2
+{
+    min-width: 20em;
+    margin: 1em 0em;
+}
+
+.d_inlinecode
+{
+    font-family: monospace;
+    font-weight: bold;
+}
+
+/* Elements of D source code text */
+.d_comment{color: green;}
+.d_string {color: red;}
+.d_keyword{color: blue;}
+.d_psymbol{text-decoration: underline;}
+.d_param  {font-style: italic;}
+
+/* Focal symbol that is being documented */
+.ddoc_psymbol{color: #336600;}
+
+div#top{max-width: 85em;}
+
+div#header{padding: 0.2em 1em 0.2em 1em;}
+div.pbr
+{
+    margin: 4px 0px 8px 10px}
+
+img#logo{vertical-align: bottom;}
+
+#main-heading
+{
+    margin-left: 1em;
+    color: white;
+    font-size: 1.4em;
+    font-family: Arial, Verdana, sans-serif;
+    font-variant: small-caps;
+    text-decoration: none;
+}
+
+div#navigation
+{
+    font-size: 0.875em;
+    float: left;
+    width: 12.0em;
+    padding: 0 1.5em;
+}
+
+div.navblock
+{
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+div#navigation .navblock h2
+{
+    font-family: Verdana, "Deja Vu", "Bitstream Vera Sans", sans-serif;
+    font-size: 1.35em;
+    color: #ccc;
+    margin: 0;
+}
+
+div#navigation .navblock ul
+{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+div#navigation .navblock li
+{
+    margin: 0 0 0 0.8em;
+    padding: 0;
+}
+
+#navigation .navblock a
+{
+    display: block;
+    color: #ddd;
+    text-decoration: none;
+    padding: 0.1em 0;
+    border-bottom: 1px dashed #444;
+}
+
+#navigation .navblock a:hover{color: white;}
+
+#navigation .navblock a.active
+{
+    color: white;
+    border-color: white;
+}
+
+div#content
+{
+    min-height: 440px;
+    margin-left: 15em;
+    margin-right: 1.6em;
+    padding: 1.6em;
+    padding-top: 1.3em;
+    border: 0.6em solid #cccccc;
+    background-color: #f6f6f6;
+    font-size: 0.875em;
+    line-height: 1.4em;
+}
+
+div#content li{padding-bottom: .7ex;}
+
+div#copyright
+{
+    padding: 1em 2em;
+    background-color: #303333;
+    color: #ccc;
+    font-size: 0.75em;
+    text-align: center;
+}
+
+div#copyright a{color: #ccc;}
+
+.d_inlinecode
+{
+    font-family: Consolas, "Bitstream Vera Sans Mono", "Andale Mono", "DejaVu Sans Mono", "Lucida Console", monospace;
+}
+
+.d_decl
+{
+    font-weight: bold;
+    background-color: #E4E9EF;
+    border-bottom: solid 2px #336600;
+    padding: 2px 0px 2px 2px;
+}
