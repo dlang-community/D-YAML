@@ -23,6 +23,7 @@ import std.utf;
 
 import dyaml.node;
 import dyaml.exception;
+import dyaml.tag;
 
 
 /**
@@ -34,18 +35,19 @@ final class Resolver
 {
     private:
         ///Default tag to use for scalars.
-        static string defaultScalarTag_   = "tag:yaml.org,2002:str";
+        Tag defaultScalarTag_;
         ///Default tag to use for sequences.
-        static string defaultSequenceTag_ = "tag:yaml.org,2002:seq";
+        Tag defaultSequenceTag_;
         ///Default tag to use for mappings.
-        static string defaultMappingTag_  = "tag:yaml.org,2002:map";
+        Tag defaultMappingTag_;
+
         /**
          * Arrays of scalar resolver tuples indexed by starting character of a scalar.
          *
          * Each tuple stores regular expression the scalar must match,
          * and tag to assign to it if it matches.
          */
-        Tuple!(string, Regex!char)[][dchar] yamlImplicitResolvers_;
+        Tuple!(Tag, Regex!char)[][dchar] yamlImplicitResolvers_;
 
     public:
         /**
@@ -58,6 +60,9 @@ final class Resolver
          */
         this(in bool defaultImplicitResolvers = true)
         {
+            defaultScalarTag_   = Tag("tag:yaml.org,2002:str");
+            defaultSequenceTag_ = Tag("tag:yaml.org,2002:seq");
+            defaultMappingTag_  = Tag("tag:yaml.org,2002:map");
             if(defaultImplicitResolvers){addImplicitResolvers();}
         }
 
@@ -91,7 +96,7 @@ final class Resolver
                 {
                     yamlImplicitResolvers_[c] = [];
                 }
-                yamlImplicitResolvers_[c] ~= tuple(tag, regexp);
+                yamlImplicitResolvers_[c] ~= tuple(Tag(tag), regexp);
             }
         }
 
@@ -109,9 +114,9 @@ final class Resolver
          *
          * Returns: Resolved tag.
          */
-        string resolve(NodeID kind, string tag, string value, in bool implicit)
+        Tag resolve(NodeID kind, Tag tag, string value, in bool implicit)
         {
-            if(tag !is null && tag != "!"){return tag;}
+            if(!tag.isNull() && tag.toString() != "!"){return tag;}
 
             if(kind == NodeID.Scalar)
             {
@@ -126,9 +131,11 @@ final class Resolver
 
                     foreach(resolver; resolvers)
                     {
-                        tag = resolver[0];
-                        auto regexp = resolver[1];
-                        if(!(match(value, regexp).empty)){return tag;}
+                        //If regexp matches, return tag.
+                        if(!(match(value, resolver[1]).empty))
+                        {
+                            return resolver[0];
+                        }
                     }
                 }
                 return defaultScalarTag_;
@@ -145,9 +152,11 @@ final class Resolver
 
             bool tagMatch(string tag, string[] values)
             {
+                Tag expected = Tag(tag);
                 foreach(value; values)
                 {
-                    if(tag != resolver.resolve(NodeID.Scalar, null, value, true))
+                    Tag resolved = resolver.resolve(NodeID.Scalar, Tag(), value, true);
+                    if(expected != resolved)
                     {
                         return false;
                     }

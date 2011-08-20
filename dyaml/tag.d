@@ -15,7 +15,7 @@ struct Tag
 {
     private:
         ///Index of the tag in tags_.
-        uint index_;
+        uint index_ = uint.max;
 
         /**
          * All known tags are in this array.
@@ -29,6 +29,12 @@ struct Tag
         ///Construct a tag from a string representation.
         this(string tag)
         {
+            if(tag is null || tag == "")
+            {
+                index_ = uint.max;
+                return;
+            }
+
             foreach(uint index, knownTag; tags_)
             {
                 if(tag == knownTag)
@@ -43,6 +49,8 @@ struct Tag
 
         ///Get string representation of the tag.
         string toString() const
+        in{assert(!isNull());}
+        body
         {
             return tags_[index_];
         }
@@ -52,4 +60,7 @@ struct Tag
         {
             return tag.index_ == index_;
         }
+
+        ///Is this tag null (invalid)?
+        bool isNull() const {return index_ == uint.max;}
 }

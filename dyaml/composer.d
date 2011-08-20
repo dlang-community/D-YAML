@@ -17,10 +17,10 @@ import std.typecons;
 
 import dyaml.constructor;
 import dyaml.event;
+import dyaml.exception;
 import dyaml.node;
 import dyaml.parser;
 import dyaml.resolver;
-import dyaml.exception;
 
 
 package:
@@ -204,7 +204,7 @@ final class Composer
                                           event.implicit);
 
             Node node = constructor_.node(event.startMark, event.endMark, tag, 
-                                                event.value);
+                                          event.value);
 
             return node;
         }
@@ -291,8 +291,8 @@ final class Composer
         Node composeMappingNode()
         {
             Event startEvent = parser_.getEvent();
-            string tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null, 
-                                           startEvent.implicit);
+            const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null, 
+                                          startEvent.implicit);
 
             Node.Pair[] children;
             Tuple!(Node, Mark)[] toMerge;

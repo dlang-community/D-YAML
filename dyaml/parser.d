@@ -16,9 +16,10 @@ import std.conv;
 import std.exception;
 
 import dyaml.event;
+import dyaml.exception;
 import dyaml.scanner;
 import dyaml.token;
-import dyaml.exception;
+import dyaml.tag;
 
 
 package:
@@ -447,7 +448,7 @@ final class Parser
             {
                 state_ = &parseIndentlessSequenceEntry;
                 return sequenceStartEvent(startMark, scanner_.peekToken().endMark,
-                                          anchor, tag, implicit);
+                                          anchor, Tag(tag), implicit);
             }
 
             if(scanner_.checkToken(TokenID.Scalar))
@@ -458,7 +459,7 @@ final class Parser
                 //is never used after that - so we don't use it.
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 state_ = popState();
-                return scalarEvent(startMark, token.endMark, anchor, tag, 
+                return scalarEvent(startMark, token.endMark, anchor, Tag(tag), 
                                    implicit, token.value, token.style);
             }
 
@@ -466,28 +467,28 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowSequenceEntry!true;
-                return sequenceStartEvent(startMark, endMark, anchor, tag, implicit);
+                return sequenceStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
             }
 
             if(scanner_.checkToken(TokenID.FlowMappingStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowMappingKey!true;
-                return mappingStartEvent(startMark, endMark, anchor, tag, implicit);
+                return mappingStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
             }
 
             if(block && scanner_.checkToken(TokenID.BlockSequenceStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockSequenceEntry!true;
-                return sequenceStartEvent(startMark, endMark, anchor, tag, implicit);
+                return sequenceStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
             }
 
             if(block && scanner_.checkToken(TokenID.BlockMappingStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockMappingKey!true;
-                return mappingStartEvent(startMark, endMark, anchor, tag, implicit);
+                return mappingStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
             }
 
             if(anchor != null || tag !is null)
@@ -498,7 +499,7 @@ final class Parser
                 //but the second bool is never used after that - so we don't use it.
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
-                return scalarEvent(startMark, endMark, anchor, tag, implicit , "");
+                return scalarEvent(startMark, endMark, anchor, Tag(tag), implicit , "");
             }
 
             Token token = scanner_.peekToken();
@@ -698,7 +699,7 @@ final class Parser
                 {
                     Token token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
-                    return mappingStartEvent(token.startMark, token.endMark, null, null, true);
+                    return mappingStartEvent(token.startMark, token.endMark, null, Tag(), true);
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
                 {
@@ -837,6 +838,6 @@ final class Parser
         {
             //PyYAML uses a Tuple!(true, false) for the second last arg here,
             //but the second bool is never used after that - so we don't use it.
-            return scalarEvent(mark, mark, null, null, true, "");
+            return scalarEvent(mark, mark, null, Tag(), true, "");
         }
 }

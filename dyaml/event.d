@@ -14,9 +14,10 @@ import std.array;
 import std.conv;
 import std.typecons;
 
-import dyaml.reader;
-import dyaml.token;
 import dyaml.exception;
+import dyaml.reader;
+import dyaml.tag;
+import dyaml.token;
 
 
 package:
@@ -39,7 +40,7 @@ enum EventID : ubyte
 /**
  * YAML event produced by parser.
  *
- * 64 bytes on 64-bit.
+ * 48 bytes on 64bit.
  */
 immutable struct Event
 {
@@ -49,10 +50,10 @@ immutable struct Event
     Mark endMark;
     ///Anchor of the event, if any.
     string anchor;
-    ///Tag of the event, if any.
-    string tag;
     ///Value of the event, if any.
     string value;
+    ///Tag of the event, if any.
+    Tag tag;
     ///Event type.
     EventID id;
     ///Style of scalar event, if this is a scalar event.
@@ -76,7 +77,7 @@ immutable struct Event
  */
 Event event(EventID id)(in Mark start, in Mark end, in string anchor = null) pure
 {
-    return Event(start, end, anchor, null, null, id);
+    return Event(start, end, anchor, null, Tag(), id);
 }
 
 /**
@@ -89,11 +90,11 @@ Event event(EventID id)(in Mark start, in Mark end, in string anchor = null) pur
  *          implicit = Should the tag be implicitly resolved?
  */
 Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in string anchor, 
-                                       in string tag, in bool implicit) pure
+                                       in Tag tag, in bool implicit)
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
-    return Event(start, end, anchor, tag, null, id, ScalarStyle.Invalid, implicit);
+    return Event(start, end, anchor, null, tag, id, ScalarStyle.Invalid, implicit);
 }
 
 ///Aliases for simple events.
@@ -117,7 +118,7 @@ alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
  */
 Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion) pure
 {
-    return Event(start, end, null, null, YAMLVersion, EventID.DocumentStart, 
+    return Event(start, end, null, YAMLVersion, Tag(), EventID.DocumentStart, 
                  ScalarStyle.Invalid, explicit);
 }
 
@@ -130,7 +131,7 @@ Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion
  */
 Event documentEndEvent(Mark start, Mark end, bool explicit)
 {
-    return Event(start, end, null, null, null, EventID.DocumentEnd,
+    return Event(start, end, null, null, Tag(), EventID.DocumentEnd,
                  ScalarStyle.Invalid, explicit);
 }
 
@@ -145,9 +146,9 @@ Event documentEndEvent(Mark start, Mark end, bool explicit)
  *          value    = String value of the scalar.
  *          style    = Scalar style.
  */
-Event scalarEvent(in Mark start, in Mark end, in string anchor, in string tag, 
+Event scalarEvent(in Mark start, in Mark end, in string anchor, in Tag tag, 
                   in bool implicit, in string value, 
-                  in ScalarStyle style = ScalarStyle.Invalid) pure
+                  in ScalarStyle style = ScalarStyle.Invalid) 
 {
-    return Event(start, end, anchor, tag, value, EventID.Scalar, style, implicit);
+    return Event(start, end, anchor, value, tag, EventID.Scalar, style, implicit);
 }

@@ -67,11 +67,11 @@ final class Constructor
 {
     private:
         ///Constructor functions from scalars.
-        Node.Value delegate(Mark, Mark, string)     [string] fromScalar_;
+        Node.Value delegate(Mark, Mark, string)      [Tag] fromScalar_;
         ///Constructor functions from sequences.
-        Node.Value delegate(Mark, Mark, Node[])     [string] fromSequence_;
+        Node.Value delegate(Mark, Mark, Node[])      [Tag] fromSequence_;
         ///Constructor functions from mappings.
-        Node.Value delegate (Mark, Mark, Node.Pair[])[string] fromMapping_;
+        Node.Value delegate (Mark, Mark, Node.Pair[])[Tag] fromMapping_;
 
     public:
         /**
@@ -144,24 +144,26 @@ final class Constructor
                 deleg = (Mark s, Mark e, U p){return Node.userValue(ctor(s,e,p));};
             }
 
-            assert((tag in fromScalar_) is null && 
-                   (tag in fromSequence_) is null &&
-                   (tag in fromMapping_) is null,
+            const Tag t = Tag(tag);
+
+            assert((t in fromScalar_) is null && 
+                   (t in fromSequence_) is null &&
+                   (t in fromMapping_) is null,
                    "Constructor function for tag " ~ tag ~ " is already "
                    "specified. Can't specify another one.");
 
             
             static if(is(U == string))          
             {
-                fromScalar_[tag] = deleg;
+                fromScalar_[t] = deleg;
             }
             else static if(is(U == Node[]))     
             {
-                fromSequence_[tag] = deleg;
+                fromSequence_[t] = deleg;
             }
             else static if(is(U == Node.Pair[]))
             {
-                fromMapping_[tag] = deleg;
+                fromMapping_[t] = deleg;
             }
         }
 
@@ -171,16 +173,17 @@ final class Constructor
          *
          * Params:  start = Start position of the node.
          *          end   = End position of the node.
+         *          tag   = Tag (data type) of the node.
          *          value = String value of the node.
          *
          * Returns: Constructed node.
          */ 
-        Node node(in Mark start, in Mark end, in string tag, string value) const
+        Node node(in Mark start, in Mark end, in Tag tag, string value) const
         {
             enforce((tag in fromScalar_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "scalar for tag " ~ tag, start, end));
-            return Node(fromScalar_[tag](start, end, value), start, Tag(tag));
+                                             "scalar for tag " ~ tag.toString(), start, end));
+            return Node(fromScalar_[tag](start, end, value), start, tag);
         }
 
         /*
@@ -188,16 +191,17 @@ final class Constructor
          *
          * Params:  start = Start position of the node.
          *          end   = End position of the node.
+         *          tag   = Tag (data type) of the node.
          *          value = Sequence to construct node from.
          *
          * Returns: Constructed node.
          */ 
-        Node node(in Mark start, in Mark end, in string tag, Node[] value) const
+        Node node(in Mark start, in Mark end, in Tag tag, Node[] value) const
         {
             enforce((tag in fromSequence_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "sequence for tag " ~ tag, start, end));
-            return Node(fromSequence_[tag](start, end, value), start, Tag(tag));
+                                             "sequence for tag " ~ tag.toString(), start, end));
+            return Node(fromSequence_[tag](start, end, value), start, tag);
         }
 
         /*
@@ -205,16 +209,17 @@ final class Constructor
          *
          * Params:  start = Start position of the node.
          *          end   = End position of the node.
+         *          tag   = Tag (data type) of the node.
          *          value = Mapping to construct node from.
          *
          * Returns: Constructed node.
          */ 
-        Node node(in Mark start, in Mark end, in string tag, Node.Pair[] value) const
+        Node node(in Mark start, in Mark end, in Tag tag, Node.Pair[] value) const
         {
             enforce((tag in fromMapping_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "mapping for tag " ~ tag, start, end));
-            return Node(fromMapping_[tag](start, end, value), start, Tag(tag));
+                                             "mapping for tag " ~ tag.toString(), start, end));
+            return Node(fromMapping_[tag](start, end, value), start, tag);
         }
 }
 
