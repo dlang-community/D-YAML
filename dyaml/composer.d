@@ -265,7 +265,7 @@ final class Composer
                     enforce(node.isType!(Node.Pair[]),
                             new ConstructorException("While constructing a mapping, " ~
                                                      "expected a mapping for merging, but found" 
-                                                     ~ node.value_.type.toString() ~
+                                                     ~ node.typeString() ~
                                                      "NOTE: line/column shows topmost parent "
                                                      "to which the content is being merged",
                                                      startMark, endMark));
@@ -278,7 +278,7 @@ final class Composer
                 throw new ConstructorException("While constructing a mapping, " ~
                                                "expected a mapping or a list of mappings for "
                                                "merging, but found: " 
-                                               ~ root.value_.type.toString() ~
+                                               ~ root.typeString() ~
                                                "NOTE: line/column shows topmost parent "
                                                "to which the content is being merged",
                                                startMark, endMark);

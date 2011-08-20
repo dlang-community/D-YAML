@@ -45,10 +45,21 @@ void testLoader(bool verbose, string dataFilename, string canonicalFilename)
     auto data = loadAll(dataFilename);
     auto canonical = loadAll(canonicalFilename);
 
-    assert(data.length == canonical.length);
+    assert(data.length == canonical.length, "Unequal node count");
     foreach(n; 0 .. data.length)
     {
-        assert(data[n] == canonical[n]);
+        if(data[n] != canonical[n])
+        {
+            if(verbose)
+            {
+                writeln("Normal value:");
+                writeln(data[n].debugString);
+                writeln("\n");
+                writeln("Canonical value:");
+                writeln(canonical[n].debugString);
+            }
+            assert(false);
+        }
     }
 }
 

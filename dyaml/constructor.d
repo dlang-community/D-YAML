@@ -25,6 +25,7 @@ import std.utf;
 
 import dyaml.node;
 import dyaml.exception;
+import dyaml.tag;
 import dyaml.token;
 
 
@@ -179,7 +180,7 @@ final class Constructor
             enforce((tag in fromScalar_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "scalar for tag " ~ tag, start, end));
-            return Node(fromScalar_[tag](start, end, value), start, end);
+            return Node(fromScalar_[tag](start, end, value), start, Tag(tag));
         }
 
         /*
@@ -196,7 +197,7 @@ final class Constructor
             enforce((tag in fromSequence_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "sequence for tag " ~ tag, start, end));
-            return Node(fromSequence_[tag](start, end, value), start, end);
+            return Node(fromSequence_[tag](start, end, value), start, Tag(tag));
         }
 
         /*
@@ -213,7 +214,7 @@ final class Constructor
             enforce((tag in fromMapping_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "mapping for tag " ~ tag, start, end));
-            return Node(fromMapping_[tag](start, end, value), start, end);
+            return Node(fromMapping_[tag](start, end, value), start, Tag(tag));
         }
 }
 

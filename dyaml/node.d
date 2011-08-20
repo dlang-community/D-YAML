@@ -22,6 +22,7 @@ import std.variant;
 
 import dyaml.event;
 import dyaml.exception;
+import dyaml.tag;
 
 
 ///Exception thrown at node related errors.
@@ -33,11 +34,10 @@ class NodeException : YAMLException
          *
          * Params:  msg   = Error message.
          *          start = Start position of the node.
-         *          end   = End position of the node.
          */
-        this(string msg, Mark start, Mark end)
+        this(string msg, Mark start)
         {
-            super(msg ~ "\nstart:" ~ start.toString() ~ "\nend:" ~ end.toString());
+            super(msg ~ "\nNode at:" ~ start.toString());
         }
 }
 
@@ -63,7 +63,7 @@ private abstract class YAMLObject
         @property TypeInfo type() const;
 
         ///Test for equality with another YAMLObject.
-        bool equals(YAMLObject rhs);
+        bool equals(const YAMLObject rhs) const;
 }
 
 //Stores a user defined YAML data type.
@@ -81,12 +81,13 @@ private class YAMLContainer(T) : YAMLObject
         @property override TypeInfo type() const {return typeid(T);}
 
         //Test for equality with another YAMLObject.
-        override bool equals(YAMLObject rhs)
+        override bool equals(const YAMLObject rhs) const 
         {
             if(rhs.type !is typeid(T)){return false;}
             return value_ == (cast(YAMLContainer)rhs).value_;
         }
 }
+
 
 /**
  * YAML node.
@@ -97,7 +98,6 @@ private class YAMLContainer(T) : YAMLObject
  */
 struct Node
 {
-
     public:
         ///Pair of YAML nodes, used in mappings.
         struct Pair
@@ -113,19 +113,19 @@ struct Node
                 return key == rhs.key && value == rhs.value;
             }
         }
+
     package:
         //YAML value type.
         alias Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
                          Node.Pair[], Node[], YAMLObject) Value;
 
+    private:
         //Stored value.
         Value value_;
-
-    private:
         ///Start position of the node.
         Mark startMark_;
-        ///End position of the node.
-        Mark endMark_;
+        ///Tag of the node.
+        Tag tag_;
 
     public:
         ///Is this node valid (initialized)? 
@@ -165,59 +165,7 @@ struct Node
          */
         bool opEquals(T)(ref T rhs)
         {
-            static if(is(T == Node))
-            {
-                if(!isValid){return !rhs.isValid;}
-                if(!rhs.isValid || (value_.type !is rhs.value_.type))
-                {
-                    return false;
-                }
-                if(isSequence)
-                {
-                    auto seq1 = get!(Node[]);
-                    auto seq2 = rhs.get!(Node[]);
-                    if(seq1.length != seq2.length){return false;}
-                    foreach(node; 0 .. seq1.length)
-                    {
-                        if(seq1[node] != seq2[node]){return false;}
-                    }
-                    return true;
-                }
-                if(isMapping)
-                {
-                    auto map1 = get!(Node.Pair[]);
-                    auto map2 = rhs.get!(Node.Pair[]);
-                    if(map1.length != map2.length){return false;}
-                    foreach(pair; 0 .. map1.length)
-                    {
-                        if(!map1[pair].equals(map2[pair])){return false;}
-                    }
-                    return true;
-                }
-                if(isScalar)
-                {
-                    if(isUserType)
-                    {
-                        if(!rhs.isUserType){return false;}
-                        return get!YAMLObject.equals(rhs.get!YAMLObject);
-                    }
-                    if(isFloat)
-                    {
-                        if(!rhs.isFloat){return false;}
-                        real r1 = get!real;
-                        real r2 = rhs.get!real;
-                        if(isNaN(r1)){return isNaN(r2);}
-                        return r1 == r2;
-                    }
-                    else{return value_ == rhs.value_;}
-                }
-                assert(false, "Unknown kind of node");
-            }
-            else
-            {
-                try{return rhs == get!T;}
-                catch(NodeException e){return false;}
-            }
+            return valueEquals(rhs);
         }
 
         /**
@@ -305,7 +253,7 @@ struct Node
                 catch(VariantException e)
                 {
                     throw new NodeException("Unable to convert node value to a string",
-                                            startMark_, endMark_);
+                                            startMark_);
                 }
             }
             else static if(isFloatingPoint!T)
@@ -331,7 +279,7 @@ struct Node
                     {
                         throw new NodeException("Integer value out of range of type " ~
                                                 typeid(T).toString ~ "Value: " ~ 
-                                                to!string(temp), startMark_, endMark_);
+                                                to!string(temp), startMark_);
                     }
                     target = to!T(temp);
                     return;
@@ -340,8 +288,8 @@ struct Node
             else
             {
                 //Can't get the value.
-                throw new NodeException("Node has unexpected type " ~ value_.type.toString ~ 
-                                        ". Expected " ~ typeid(T).toString, startMark_, endMark_);
+                throw new NodeException("Node has unexpected type " ~ typeString ~ 
+                                        ". Expected " ~ typeid(T).toString, startMark_);
             }
         }
 
@@ -359,7 +307,7 @@ struct Node
             if(isSequence)    {return get!(Node[]).length;}
             else if(isMapping){return get!(Pair[]).length;}
             throw new NodeException("Trying to get length of a node that is not a collection",
-                                    startMark_, endMark_);
+                                    startMark_);
         }
 
         /**
@@ -387,13 +335,13 @@ struct Node
                     auto nodes = value_.get!(Node[]);
                     enforce(index >= 0 && index < nodes.length,
                             new NodeException("Index to a sequence out of range: " 
-                                              ~ to!string(index), startMark_, endMark_));
+                                              ~ to!string(index), startMark_));
                     return nodes[index];
                 }
                 else
                 {
                     throw new NodeException("Indexing a sequence with a non-integer type.",
-                                            startMark_, endMark_);
+                                            startMark_);
                 }
             }
             else if(isMapping)
@@ -418,10 +366,10 @@ struct Node
                 }
                 throw new NodeException("Mapping index not found" ~ 
                                         isSomeString!T ? ": " ~ to!string(index) : "",
-                                        startMark_, endMark_);
+                                        startMark_);
             }
             throw new NodeException("Trying to index node that does not support indexing",
-                                    startMark_, endMark_);
+                                    startMark_);
         }
         unittest
         {
@@ -465,7 +413,7 @@ struct Node
         {
             enforce(isSequence, 
                     new NodeException("Trying to iterate over a node that is not a sequence",
-                                      startMark_, endMark_));
+                                      startMark_));
 
             int result = 0;
             foreach(ref node; get!(Node[]))
@@ -522,7 +470,7 @@ struct Node
         {
             enforce(isMapping,
                     new NodeException("Trying to iterate over a node that is not a mapping",
-                                      startMark_, endMark_));
+                                      startMark_));
 
             int result = 0;
             foreach(ref pair; get!(Node.Pair[]))
@@ -605,6 +553,78 @@ struct Node
 
     package:
         /*
+         * Construct a node from raw data.
+         *
+         * Params:  value     = Value of the node.
+         *          startMark = Start position of the node in file.
+         *          tag       = Tag of the node.
+         */
+        this(Value value, in Mark startMark = Mark(), in Tag tag = Tag("DUMMY_TAG"))
+        {
+            value_ = value;
+            startMark_ = startMark;
+            tag_ = tag;
+        }
+
+        ///Equality test without taking tag into account.
+        bool valueEquals(T)(ref T rhs)
+        {
+            static if(is(T == Node))
+            {
+                if(!isValid){return !rhs.isValid;}
+                if(!rhs.isValid || !hasEqualType(rhs))
+                {
+                    return false;
+                }
+                if(isSequence)
+                {
+                    auto seq1 = get!(Node[]);
+                    auto seq2 = rhs.get!(Node[]);
+                    if(seq1.length != seq2.length){return false;}
+                    foreach(node; 0 .. seq1.length)
+                    {
+                        if(seq1[node] != seq2[node]){return false;}
+                    }
+                    return true;
+                }
+                if(isMapping)
+                {
+                    auto map1 = get!(Node.Pair[]);
+                    auto map2 = rhs.get!(Node.Pair[]);
+                    if(map1.length != map2.length){return false;}
+                    foreach(pair; 0 .. map1.length)
+                    {
+                        if(!map1[pair].equals(map2[pair])){return false;}
+                    }
+                    return true;
+                }
+                if(isScalar)
+                {
+                    if(isUserType)
+                    {
+                        if(!rhs.isUserType){return false;}
+                        return get!YAMLObject.equals(rhs.get!YAMLObject);
+                    }
+                    if(isFloat)
+                    {
+                        if(!rhs.isFloat){return false;}
+                        real r1 = get!real;
+                        real r2 = rhs.get!real;
+                        if(isNaN(r1)){return isNaN(r2);}
+                        return r1 == r2;
+                    }
+                    else{return value_ == rhs.value_;}
+                }
+                assert(false, "Unknown kind of node");
+            }
+            else
+            {
+                try{return rhs == get!T;}
+                catch(NodeException e){return false;}
+            }
+        }
+
+        /*
          * Get a string representation of the node tree. Used for debugging.
          *
          * Params:  level = Level of the node in the tree.
@@ -641,7 +661,7 @@ struct Node
             if(isScalar)
             {
                 return indent ~ "scalar(" ~ 
-                       (convertsTo!string ? get!string : value_.type.toString) ~ ")\n";
+                       (convertsTo!string ? get!string : typeString) ~ ")\n";
             }
             assert(false);
         }
@@ -651,6 +671,9 @@ struct Node
         {
             return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
+
+        //Return string representation of the type of the node.
+        @property string typeString() const {return to!string(value_.type);}
 
     private:
         /*
@@ -665,6 +688,12 @@ struct Node
 
         ///Is the value a floating point number of some kind?
         alias isType!real isFloat;
+
+        ///Does given node have the same type as this node?
+        bool hasEqualType(ref Node node)
+        {                 
+            return value_.type is node.value_.type;
+        }
 
         //Determine if the value can be converted to specified type.
         bool convertsTo(T)()

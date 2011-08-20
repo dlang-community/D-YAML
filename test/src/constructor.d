@@ -11,6 +11,7 @@ import std.datetime;
 import std.exception;
 import std.path;
 
+import dyaml.tag;
 import dyaml.testcommon;
 
 
@@ -383,7 +384,7 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy)
     size_t i = 0;
     foreach(node; loader)
     {
-        if(node != expected[base][i])
+        if(!node.valueEquals(expected[base][i]))
         {
             if(verbose)
             {
