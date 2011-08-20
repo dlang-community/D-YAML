@@ -384,7 +384,7 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy)
     size_t i = 0;
     foreach(node; loader)
     {
-        if(!node.valueEquals(expected[base][i]))
+        if(!node.equals!(Node, false)(expected[base][i]))
         {
             if(verbose)
             {

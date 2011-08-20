@@ -102,16 +102,31 @@ struct Node
         ///Pair of YAML nodes, used in mappings.
         struct Pair
         {
-            ///Key node.
-            Node key;
-            ///Value node.
-            Node value;
+            public:
+                ///Key node.
+                Node key;
+                ///Value node.
+                Node value;
 
-            ///Test for equality with another Pair.
-            bool equals(ref Pair rhs)
-            {
-                return key == rhs.key && value == rhs.value;
-            }
+            public:
+                ///Equality test with another Pair.
+                bool equals(ref Pair rhs)
+                {
+                    return equals_!true(rhs);
+                }
+
+            private:
+                /* 
+                 * Equality test with another Pair.
+                 *
+                 * useTag determines whether or not we consider node tags 
+                 * in the test.
+                 */
+                bool equals_(bool useTag)(ref Pair rhs) 
+                {
+                    return key.equals!(Node, useTag)(rhs.key) && 
+                           value.equals!(Node, useTag)(rhs.value);
+                }
         }
 
     package:
@@ -165,7 +180,7 @@ struct Node
          */
         bool opEquals(T)(ref T rhs)
         {
-            return valueEquals(rhs);
+            return equals!(T, true)(rhs);
         }
 
         /**
@@ -566,11 +581,20 @@ struct Node
             tag_ = tag;
         }
 
-        ///Equality test without taking tag into account.
-        bool valueEquals(T)(ref T rhs)
+        /*
+         * Equality test with any value.
+         *
+         * useTag determines whether or not to consider tags in node-node comparisons.
+         */
+        bool equals(T, bool useTag)(ref T rhs)
         {
             static if(is(T == Node))
             {
+                static if(useTag)
+                {
+                    if(tag_ != rhs.tag_){return false;}
+                }
+
                 if(!isValid){return !rhs.isValid;}
                 if(!rhs.isValid || !hasEqualType(rhs))
                 {
@@ -583,7 +607,7 @@ struct Node
                     if(seq1.length != seq2.length){return false;}
                     foreach(node; 0 .. seq1.length)
                     {
-                        if(seq1[node] != seq2[node]){return false;}
+                        if(!seq1[node].equals!(T, useTag)(seq2[node])){return false;}
                     }
                     return true;
                 }
@@ -594,7 +618,7 @@ struct Node
                     if(map1.length != map2.length){return false;}
                     foreach(pair; 0 .. map1.length)
                     {
-                        if(!map1[pair].equals(map2[pair])){return false;}
+                        if(!map1[pair].equals_!useTag(map2[pair])){return false;}
                     }
                     return true;
                 }
