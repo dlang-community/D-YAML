@@ -5,7 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * Node of a YAML document. Used to read YAML data once it's loaded.
+ * Node of a YAML document. Used to read YAML data once it's loaded,
+ * and to prepare data to emit.
  */
 module dyaml.node;
 
@@ -109,6 +110,15 @@ struct Node
                 Node value;
 
             public:
+                ///Construct a Pair from two values. Will be converted to Nodes if needed.
+                this(K, V)(K key, V value)
+                {
+                    static if(is(K == Node)){this.key = key;}
+                    else                    {this.key = Node(key);}
+                    static if(is(V == Node)){this.value = value;}
+                    else                    {this.value = Node(value);}
+                }
+
                 ///Equality test with another Pair.
                 bool equals(ref Pair rhs)
                 {
@@ -160,37 +170,34 @@ struct Node
          *                  what Representer determines. Can be used when a 
          *                  single D data type needs to use multiple YAML tags.
          */
-        this(T)(T value, string tag = null) if (!isArray!T && !isAssociativeArray!T)
+        this(T)(T value, in string tag = null) if (isSomeString!T || 
+                                                  (!isArray!T && !isAssociativeArray!T))
         {
             tag_ = Tag(tag);
 
             //No copyconstruction.
-            static if(is(T == Node))
-            {
-                static assert(false);
-            }
+            static assert(!is(T == Node));
+
             //We can easily convert ints, floats, strings.
-            else static if(isIntegral!T)
-            {
-                value_ = Value(cast(long) value);
-            }
-            else static if(isFloatingPoint!T)
-            {
-                value_ = Value(cast(real) value);
-            }
-            else static if(isSomeString!T)
-            {
-                value_ = Value(to!string(value));
-            }
-            //Directly supported type.
-            else static if(Value.allowed!T)
-            {
-                value_ = Value(value);
-            }
+            static if(isIntegral!T)          {value_ = Value(cast(long) value);}
+            else static if(isFloatingPoint!T){value_ = Value(cast(real) value);}
+            else static if(isSomeString!T)   {value_ = Value(to!string(value));}
+            //Other directly supported type.
+            else static if(Value.allowed!T)  {value_ = Value(value);}
             //User defined type.
-            else
+            else                             {value_ = userValue(value);}
+        }
+        unittest
+        {
+            with(Node(42))
             {
-                value_ = userValue(value);
+                assert(isScalar() && !isSequence && !isMapping && !isUserType);
+                assert(get!int == 42 && get!float == 42.0f && get!string == "42");
+                assert(!isUserType());
+            }
+            with(Node(new class{int a = 5;}))
+            {
+                assert(isUserType());
             }
         }
 
@@ -211,7 +218,7 @@ struct Node
          *                  which both are internally represented as an array_
          *                  of nodes.
          */
-        this(T)(T[] array, string tag = null)
+        this(T)(T[] array, in string tag = null) if (!isSomeString!(T[]))
         {
             tag_ = Tag(tag);
 
@@ -222,11 +229,17 @@ struct Node
             else
             {
                 Node[] nodes;
-                foreach(ref value; array)
-                {
-                    nodes ~= Node(value);
-                }
+                foreach(ref value; array){nodes ~= Node(value);}
                 value_ = Value(nodes);
+            }
+        }
+        unittest
+        {
+            with(Node([1, 2, 3]))
+            {
+                assert(!isScalar() && isSequence && !isMapping && !isUserType);
+                assert(length == 3);
+                assert(opIndex(2).get!int == 3);
             }
         }
 
@@ -246,23 +259,25 @@ struct Node
          *                  (!!omap) and pairs (!!pairs), which are all 
          *                  internally represented as an array_ of node pairs.
          */
-        this(K, V)(V[K] array, string tag = null)
+        this(K, V)(V[K] array, in string tag = null)
         {
             tag_ = Tag(tag);
 
             Node.Pair[] pairs;
-
-            Node.Pair pair;
-            foreach(ref key, ref value; array)
-            {
-                static if(is(K == Node)){pair.key = key;}
-                else{pair.key = Node(key);}
-                static if(is(V == Node)){pair.value = value;}
-                else{pair.value = Node(value);}
-                pairs ~= pair;
-            }
-
+            foreach(ref key, ref value; array){pairs ~= Pair(key, value);}
             value_ = Value(pairs);
+        }
+        unittest
+        {
+            int[string] aa;
+            aa["1"] = 1;
+            aa["2"] = 2;
+            with(Node(aa))
+            {
+                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(length == 2);
+                assert(opIndex("2").get!int == 2);
+            }
         }
 
         /**
@@ -288,7 +303,7 @@ struct Node
          *                   (!!omap) and pairs (!!pairs), which are all 
          *                   internally represented as an array_ of node pairs.
          */
-        this(K, V)(K[] keys, V[] values, string tag = null)
+        this(K, V)(K[] keys, V[] values, in string tag = null)
         in
         {
             assert(keys.length == values.length, 
@@ -300,18 +315,17 @@ struct Node
             tag_ = Tag(tag);
 
             Node.Pair[] pairs;
-
-            Node.Pair pair;
-            foreach(i; 0 .. keys.length)
-            {
-                static if(is(K == Node)){pair.key = keys[i];}
-                else{pair.key = Node(keys[i]);}
-                static if(is(V == Node)){pair.value = values[i];}
-                else{pair.value = Node(values[i]);}
-                pairs ~= pair;
-            }
-
+            foreach(i; 0 .. keys.length){pairs ~= Pair(keys[i], values[i]);}
             value_ = Value(pairs);
+        }
+        unittest
+        {
+            with(Node(["1", "2"], [1, 2]))
+            {
+                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(length == 2);
+                assert(opIndex("2").get!int == 2);
+            }
         }
 
         ///Is this node valid (initialized)? 
@@ -509,47 +523,23 @@ struct Node
          *
          * Returns: Value corresponding to the index.
          *
-         * Throws:  NodeException if the index could not be found.
+         * Throws:  NodeException if the index could not be found,
+         *          non-integral index is used with a sequence or the node is
+         *          not a collection.
          */
-        Node opIndex(T)(in T index)
+        Node opIndex(T)(T index)
         {
             if(isSequence)
             {
-                //Sequence, index must be integral.
-                static if(isIntegral!T)
-                {
-                    auto nodes = value_.get!(Node[]);
-                    enforce(index >= 0 && index < nodes.length,
-                            new NodeException("Index to a sequence out of range: " 
-                                              ~ to!string(index), startMark_));
-                    return nodes[index];
-                }
-                else
-                {
-                    throw new NodeException("Indexing a sequence with a non-integer type.",
-                                            startMark_);
-                }
+                checkSequenceIndex(index);
+                static if(isIntegral!T){return value_.get!(Node[])[index];}
+                assert(false);
             }
             else if(isMapping)
             {
-                //Mapping, look for keys convertible to T with value of index.
-                foreach(ref pair; get!(Pair[]))
-                {
-                    //Handle NaN.
-                    static if(isFloatingPoint!T)
-                    {
-                        if(isFloat && isNaN(index) && isNaN(pair.key.get!real))
-                        {
-                            return pair.value;
-                        }
-                    }
-                    //If we can get the key as type T, get it and compare to
-                    //index, and return value if the key matches.
-                    if(pair.key.convertsTo!T && pair.key.get!T == index)
-                    {
-                        return pair.value;
-                    }
-                }
+                auto idx = findPair(index);
+                if(idx >= 0){return get!(Pair[])[idx].value;}
+
                 throw new NodeException("Mapping index not found" ~ 
                                         isSomeString!T ? ": " ~ to!string(index) : "",
                                         startMark_);
@@ -584,6 +574,77 @@ struct Node
             assert(nmap["11"].get!int == 11);
             assert(nmap["14"].get!int == 14);
             assert(null !is collectException(nmap["42"]));
+        }
+
+        /**
+         * Set element at the specified index of a collection.
+         *
+         * This method can only be called on collection nodes.
+         * 
+         * If the node is a sequence, index must be integral.
+         *
+         * If the node is a mapping, set the value_ corresponding to the first 
+         * key matching index (including conversion, so e.g. "42" matches 42).
+         * 
+         * If the node is a mapping and no key matches index, a new key-value
+         * pair is added to the mapping. With sequences the index must be in 
+         * range. This ensures behavior siilar to D arrays and associative 
+         * arrays.
+         *
+         * Params:  index = Index of the value to set.
+         *
+         * Throws:  NodeException if the node is not a collection, index is out
+         *          of range or if a non-integral index is used on a sequence node.
+         */
+        void opIndexAssign(K, V)(V value, K index)
+        {
+            if(isSequence())
+            {
+                //This ensures K is integral.
+                checkSequenceIndex(index);
+                static if(isIntegral!K)
+                {
+                    auto nodes = value_.get!(Node[]);
+                    static if(is(V == Node)){nodes[index] = value;}
+                    else                    {nodes[index] = Node(value);}
+                    value_ = Value(nodes);
+                    return;
+                }
+                assert(false);
+            }
+            else if(isMapping())
+            {
+                auto idx = findPair(index);
+                if(idx < 0){add(index, value);}
+                else
+                {
+                    auto pairs = get!(Node.Pair[])();
+                    static if(is(V == Node)){pairs[idx].value = value;}
+                    else                    {pairs[idx].value = Node(value);}
+                    value_ = Value(pairs);
+                }
+                return;
+            }
+
+            throw new NodeException("Trying to index a YAML node that is not a collection.", 
+                                    startMark_);
+        }
+        unittest
+        {
+            with(Node([1, 2, 3, 4, 3]))
+            {
+                opIndexAssign(42, 3);
+                assert(length == 5);
+                assert(opIndex(3).get!int == 42);
+            }
+            with(Node(["1", "2", "3"], [4, 5, 6]))
+            {
+                opIndexAssign(42, "3");
+                opIndexAssign(123, 456);
+                assert(length == 4);
+                assert(opIndex("3").get!int == 42);
+                assert(opIndex(456).get!int == 123);
+            }
         }
 
         /**
@@ -737,6 +798,199 @@ struct Node
             }
         }
 
+        /**
+         * Add an element to a sequence node.
+         *
+         * This method can only be called on sequence nodes.
+         *
+         * If value is a node, it is copied to the sequence directly. Otherwise
+         * value is converted to a node and then stored in the sequence.
+         *
+         * When emitting, all values in the sequence will be emitted. If using 
+         * the !!set tag, the user needs to ensure that all elements in the 
+         * sequence are unique, otherwise invalid YAML code will be emitted.
+         *
+         * Params:  value = Value to add to the sequence.
+         */
+        void add(T)(T value)
+        {
+            enforce(isSequence(), 
+                    new NodeException("Trying to add an element to a "
+                                      "non-sequence YAML node", startMark_));
+
+            auto nodes = get!(Node[])();
+            static if(is(T == Node)){nodes ~= value;}
+            else                    {nodes ~= Node(value);}
+            value_ = Value(nodes);
+        }
+        unittest
+        {
+            with(Node([1, 2, 3, 4]))
+            {
+                add(5.0f);
+                assert(opIndex(4).get!float == 5.0f);
+            }
+        }
+
+        /**
+         * Add a key-value pair to a mapping node.
+         *
+         * This method can only be called on mapping nodes.
+         *
+         * If key and/or value is a node, it is copied to the mapping directly. 
+         * Otherwise it is converted to a node and then stored in the mapping.
+         *
+         * It is possible to for the same key to be present more than once in a
+         * mapping. When emitting, all key-value pairs will be emitted. 
+         * This is useful with the !!pairs tag, but will result in invalid YAML
+         * with !!map and !!omap tags.
+         *
+         * Params:  key   = Key to add.
+         *          value = Value to add.
+         */
+        void add(K, V)(K key, V value)
+        {
+            enforce(isMapping(), 
+                    new NodeException("Trying to add a key-value pair to a "
+                                      "non-mapping YAML node", startMark_));
+
+            auto pairs = get!(Node.Pair[])();
+            pairs ~= Pair(key, value);
+            value_ = Value(pairs);
+        }
+        unittest
+        {
+            with(Node([1, 2], [3, 4]))
+            {
+                add(5, "6");
+                assert(opIndex(5).get!string == "6");
+            }
+        }
+
+        /**
+         * Remove first (if any) occurence of a value in a collection.
+         *
+         * This method can only be called on collection nodes.
+         *
+         * If the node is a sequence, the first node matching value (including
+         * conversion, so e.g. "42" matches 42) is removed.
+         * If the node is a mapping, the first key-value pair where value_ 
+         * matches value is removed.
+         * 
+         * Params:  value = Value to remove.
+         *
+         * Throws:  NodeException if the node is not a collection.
+         */
+        void remove(T)(T value)
+        {
+            if(isSequence())
+            {
+                foreach(idx, ref elem; get!(Node[]))
+                {
+                    if(elem.convertsTo!T && elem.get!T == value)
+                    {
+                        removeAt(idx);
+                        return;
+                    }
+                }
+                return;
+            }
+            else if(isMapping())
+            {
+                auto idx = findPair!(T, true)(value);
+                if(idx >= 0)
+                {
+                    auto pairs = get!(Node.Pair[])();
+                    copy(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
+                    pairs.length = pairs.length - 1;
+                    value_ = Value(pairs);
+                }
+                return;
+            }
+            throw new NodeException("Trying to remove an element from a YAML node that "
+                                    "is not a collection.", startMark_);
+        }
+        unittest
+        {
+            with(Node([1, 2, 3, 4, 3]))
+            {
+                remove(3);
+                assert(length == 4);
+                assert(opIndex(2).get!int == 4);
+                assert(opIndex(3).get!int == 3);
+            }
+            with(Node(["1", "2", "3"], [4, 5, 6]))
+            {
+                remove(4);
+                assert(length == 2);
+            }
+        }
+
+        /**
+         * Remove element at the specified index of a collection.
+         *
+         * This method can only be called on collection nodes.
+         * 
+         * If the node is a sequence, index must be integral.
+         *
+         * If the node is a mapping, remove the first key-value pair where 
+         * key matches index (including conversion, so e.g. "42" matches 42).
+         * 
+         * If the node is a mapping and no key matches index, nothing is removed
+         * and no exception is thrown. This ensures behavior siilar to D arrays 
+         * and associative arrays.
+         *
+         * Params:  index = Index to remove at.
+         *
+         * Throws:  NodeException if the node is not a collection, index is out
+         *          of range or if a non-integral index is used on a sequence node.
+         */
+        void removeAt(T)(T index)
+        {
+            if(isSequence())
+            {
+                //This ensures T is integral.
+                checkSequenceIndex(index);
+                static if(isIntegral!T)
+                {
+                    auto nodes = value_.get!(Node[]);
+                    copy(nodes[index + 1 .. $], nodes[index .. $ - 1]);
+                    nodes.length = nodes.length - 1;
+                    value_ = Value(nodes);
+                    return;
+                }
+                assert(false);
+            }
+            else if(isMapping())
+            {
+                auto idx = findPair(index);
+                if(idx >= 0)
+                {
+                    auto pairs = get!(Node.Pair[])();
+                    copy(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
+                    pairs.length = pairs.length - 1;
+                    value_ = Value(pairs);
+                }
+                return;
+            }
+            throw new NodeException("Trying to remove an element from a YAML node that "
+                                    "is not a collection.", startMark_);
+        }
+        unittest
+        {
+            with(Node([1, 2, 3, 4, 3]))
+            {
+                removeAt(3);
+                assert(length == 4);
+                assert(opIndex(3).get!int == 3);
+            }
+            with(Node(["1", "2", "3"], [4, 5, 6]))
+            {
+                removeAt("2");
+                assert(length == 2);
+            }
+        }
+
     package:
         /*
          * Construct a node from raw data.
@@ -883,13 +1137,13 @@ struct Node
          */
         @property bool isType(T)() const {return value_.type is typeid(T);}
 
-        ///Is the value an integer of some kind?
+        //Is the value an integer of some kind?
         alias isType!long isInt;
 
-        ///Is the value a floating point number of some kind?
+        //Is the value a floating point number of some kind?
         alias isType!real isFloat;
 
-        ///Does given node have the same type as this node?
+        //Does given node have the same type as this node?
         bool hasEqualType(ref Node node)
         {                 
             return value_.type is node.value_.type;
@@ -912,6 +1166,53 @@ struct Node
             else static if(isFloatingPoint!T){return isInt() || isFloat();}
             else static if(isIntegral!T)     {return isInt();}
             else                             {return false;}
+        }
+
+        //Get index of pair with key (or value, if value is true) matching index.
+        long findPair(T, bool value = false)(const ref T index)
+        {
+            auto pairs = get!(Node.Pair[])();
+            Node* node;
+            foreach(idx, ref pair; pairs)
+            {
+                static if(value){node = &pair.value;}
+                else{node = &pair.key;}
+
+                static if(is(T == Node))
+                {
+                    if(*node == index){return idx;}
+                }
+                else static if(isFloatingPoint!T)
+                {
+                    //Need to handle NaNs separately.
+                    if((node.get!T == index) ||
+                       (isFloat && isNaN(index) && isNaN(node.get!real)))
+                    {
+                        return idx;
+                    }
+                }
+                else 
+                {  
+                    if(node.get!T == index){return idx;}
+                }
+            }
+            return -1;
+        }
+
+        ///Check if index is integral and in range.
+        void checkSequenceIndex(T)(T index)
+        {
+            static if(!isIntegral!T)
+            {
+                throw new NodeException("Indexing a YAML sequence with a non-integral type.",
+                                        startMark_);
+            }
+            else
+            {
+                enforce(index >= 0 && index < value_.get!(Node[]).length,
+                        new NodeException("Index to a YAML sequence out of range: " 
+                                          ~ to!string(index), startMark_));
+            }
         }
 }
 
