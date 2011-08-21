@@ -54,8 +54,8 @@ static this()
 ///Construct a node with specified value.
 Node node(T)(T value)
 {
-    static if(Node.Value.allowed!T){return Node(Node.Value(value));}
-    else{return Node(Node.userValue(value));}
+    static if(Node.Value.allowed!T){return Node.rawNode(Node.Value(value));}
+    else{return Node.rawNode(Node.userValue(value));}
 }
 
 ///Construct a pair of nodes with specified values.

@@ -183,7 +183,7 @@ final class Constructor
             enforce((tag in fromScalar_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "scalar for tag " ~ tag.toString(), start, end));
-            return Node(fromScalar_[tag](start, end, value), start, tag);
+            return Node.rawNode(fromScalar_[tag](start, end, value), start, tag);
         }
 
         /*
@@ -201,7 +201,7 @@ final class Constructor
             enforce((tag in fromSequence_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "sequence for tag " ~ tag.toString(), start, end));
-            return Node(fromSequence_[tag](start, end, value), start, tag);
+            return Node.rawNode(fromSequence_[tag](start, end, value), start, tag);
         }
 
         /*
@@ -219,7 +219,7 @@ final class Constructor
             enforce((tag in fromMapping_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
                                              "mapping for tag " ~ tag.toString(), start, end));
-            return Node(fromMapping_[tag](start, end, value), start, tag);
+            return Node.rawNode(fromMapping_[tag](start, end, value), start, tag);
         }
 }
 
@@ -565,9 +565,9 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = (i % 2) ? Pair(Node(Node.Value(to!string(i))), Node(Node.Value(i)))
-                                : Pair(Node(Node.Value(i)), Node(Node.Value(to!string(i))));
-            pairs ~= Node(Node.Value([pair]));
+            auto pair = (i % 2) ? Pair(Node.rawNode(Node.Value(to!string(i))), Node.rawNode(Node.Value(i)))
+                                : Pair(Node.rawNode(Node.Value(i)), Node.rawNode(Node.Value(to!string(i))));
+            pairs ~= Node.rawNode(Node.Value([pair]));
         }
         return pairs;
     }
@@ -577,8 +577,8 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = Pair(Node(Node.Value(to!string(i))), Node(Node.Value(i)));
-            pairs ~= Node(Node.Value([pair]));
+            auto pair = Pair(Node.rawNode(Node.Value(to!string(i))), Node.rawNode(Node.Value(i)));
+            pairs ~= Node.rawNode(Node.Value([pair]));
         }
         return pairs;
     }
@@ -630,7 +630,7 @@ unittest
         Node.Pair[] pairs;
         foreach(long i; 0 .. length)
         {
-            pairs ~= Node.Pair(Node(Node.Value(to!string(i))), Node());
+            pairs ~= Node.Pair(Node.rawNode(Node.Value(to!string(i))), Node.rawNode(Node.Value(YAMLNull())));
         }
 
         return pairs;

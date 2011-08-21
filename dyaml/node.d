@@ -143,6 +143,177 @@ struct Node
         Tag tag_;
 
     public:
+        /**
+         * Construct a Node from a value.
+         *
+         * Any type except of Node can be stored in a Node, but default YAML 
+         * types (integers, floats, strings, timestamp, etc.) will be stored
+         * more efficiently. 
+         *
+         * Note that for any non-default types you store 
+         * in a node, you need a Representer to represent them in YAML -
+         * otherwise emitting will fail.
+         *
+         * Params:  value = Value to store in the node.
+         *          tag   = Tag override. If specified, the tag of the node
+         *                  when emitted will be this tag, regardless of
+         *                  what Representer determines. Can be used when a 
+         *                  single D data type needs to use multiple YAML tags.
+         */
+        this(T)(T value, string tag = null) if (!isArray!T && !isAssociativeArray!T)
+        {
+            tag_ = Tag(tag);
+
+            //No copyconstruction.
+            static if(is(T == Node))
+            {
+                static assert(false);
+            }
+            //We can easily convert ints, floats, strings.
+            else static if(isIntegral!T)
+            {
+                value_ = Value(cast(long) value);
+            }
+            else static if(isFloatingPoint!T)
+            {
+                value_ = Value(cast(real) value);
+            }
+            else static if(isSomeString!T)
+            {
+                value_ = Value(to!string(value));
+            }
+            //Directly supported type.
+            else static if(Value.allowed!T)
+            {
+                value_ = Value(value);
+            }
+            //User defined type.
+            else
+            {
+                value_ = userValue(value);
+            }
+        }
+
+        /**
+         * Construct a node from an array_.
+         *
+         * If array is an array_ of nodes or node pairs, it is stored in the 
+         * node directly. Otherwise, every value in the array is converted to a
+         * node, and those nodes are stored.
+         *
+         * Params:  array = Values to store in the node.
+         *          tag   = Tag override. If specified, the tag of the node
+         *                  when emitted will be this tag, regardless of
+         *                  what Representer determines. Can be used when a 
+         *                  single D data type needs to use multiple YAML tags.
+         *                  In particular, this can be used to differentiate
+         *                  between YAML sequences (!!seq) and sets (!!set),
+         *                  which both are internally represented as an array_
+         *                  of nodes.
+         */
+        this(T)(T[] array, string tag = null)
+        {
+            tag_ = Tag(tag);
+
+            static if(is(T == Node) || is(T == Node.Pair))
+            {
+                value_ = Value(array);
+            }
+            else
+            {
+                Node[] nodes;
+                foreach(ref value; array)
+                {
+                    nodes ~= Node(value);
+                }
+                value_ = Value(nodes);
+            }
+        }
+
+        /**
+         * Construct a node from an associative array_.
+         *
+         * If keys and/or values of array are nodes, they are copied to the node
+         * directly. Otherwise they are converted to nodes and then stored.
+         *
+         * Params:  array = Values to store in the node.
+         *          tag   = Tag override. If specified, the tag of the node
+         *                  when emitted will be this tag, regardless of
+         *                  what Representer determines. Can be used when a 
+         *                  single D data type needs to use multiple YAML tags.
+         *                  In particular, this can be used to differentiate
+         *                  between YAML unordered maps, (!!map) ordered maps, 
+         *                  (!!omap) and pairs (!!pairs), which are all 
+         *                  internally represented as an array_ of node pairs.
+         */
+        this(K, V)(V[K] array, string tag = null)
+        {
+            tag_ = Tag(tag);
+
+            Node.Pair[] pairs;
+
+            Node.Pair pair;
+            foreach(ref key, ref value; array)
+            {
+                static if(is(K == Node)){pair.key = key;}
+                else{pair.key = Node(key);}
+                static if(is(V == Node)){pair.value = value;}
+                else{pair.value = Node(value);}
+                pairs ~= pair;
+            }
+
+            value_ = Value(pairs);
+        }
+
+        /**
+         * Construct a node from arrays of keys_ and values_.
+         *
+         * Constructs a mapping node with key-value pairs from
+         * keys and values, keeping their order. Useful when order
+         * is important (ordered maps, pairs).
+         *
+         * keys and values must have equal length.
+         *
+         * If keys_ and/or values_ of are nodes, they are copied to the node
+         * directly. Otherwise they are converted to nodes and then stored.
+         *
+         * Params:  keys   = Keys of the mapping, from first to last pair.
+         *          values = Values of the mapping, from first to last pair.
+         *          tag    = Tag override. If specified, the tag of the node
+         *                   when emitted will be this tag, regardless of
+         *                   what Representer determines. Can be used when a 
+         *                   single D data type needs to use multiple YAML tags.
+         *                   In particular, this can be used to differentiate
+         *                   between YAML unordered maps, (!!map) ordered maps, 
+         *                   (!!omap) and pairs (!!pairs), which are all 
+         *                   internally represented as an array_ of node pairs.
+         */
+        this(K, V)(K[] keys, V[] values, string tag = null)
+        in
+        {
+            assert(keys.length == values.length, 
+                   "Lengths of keys and values arrays to construct "
+                   "a YAML node from don't match");
+        }
+        body
+        {
+            tag_ = Tag(tag);
+
+            Node.Pair[] pairs;
+
+            Node.Pair pair;
+            foreach(i; 0 .. keys.length)
+            {
+                static if(is(K == Node)){pair.key = keys[i];}
+                else{pair.key = Node(keys[i]);}
+                static if(is(V == Node)){pair.value = values[i];}
+                else{pair.value = Node(values[i]);}
+                pairs ~= pair;
+            }
+
+            value_ = Value(pairs);
+        }
+
         ///Is this node valid (initialized)? 
         @property bool isValid()    const {return value_.hasValue;}
                                             
@@ -573,12 +744,17 @@ struct Node
          * Params:  value     = Value of the node.
          *          startMark = Start position of the node in file.
          *          tag       = Tag of the node.
+         *
+         * Returns: Constructed node.
          */
-        this(Value value, in Mark startMark = Mark(), in Tag tag = Tag("DUMMY_TAG"))
+        static Node rawNode(Value value, in Mark startMark = Mark(), in Tag tag = Tag("DUMMY_TAG"))
         {
-            value_ = value;
-            startMark_ = startMark;
-            tag_ = tag;
+            Node node;
+            node.value_ = value;
+            node.startMark_ = startMark;
+            node.tag_ = tag;
+
+            return node;
         }
 
         /*
