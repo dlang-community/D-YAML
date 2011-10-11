@@ -93,9 +93,10 @@ string[][string] findTestFilenames(in string dir)
     {
         if(isFile(name))
         {
-            string base = name.getName();
-            string ext  = name.getExt();
+            string base = name.stripExtension();
+            string ext  = name.extension();
             if(ext is null){ext = "";}
+            if(ext[0] == '.'){ext = ext[1 .. $];}
 
             //If the base name doesn't exist yet, add it; otherwise add new extension.
             names[base] = ((base in names) is null) ? [ext] : names[base] ~ ext;

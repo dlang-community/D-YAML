@@ -11,6 +11,7 @@
 module dyaml.token;
 
 
+import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
 
@@ -53,6 +54,14 @@ enum ScalarStyle : ubyte
     DoubleQuoted  /// Double quoted scalar
 }
 
+///Collection styles.
+enum CollectionStyle : ubyte
+{
+    Invalid = 0, /// Invalid (uninitialized) style 
+    Block,       /// Block style.
+    Flow         /// Flow style.
+}
+
 /**
  * Token produced by scanner.
  *
@@ -70,6 +79,8 @@ immutable struct Token
     TokenID id;
     ///Style of scalar token, if this is a scalar token.
     ScalarStyle style;
+    ///Encoding, if this is a stream start token.
+    Encoding encoding;
 }
 
 /**
@@ -96,8 +107,19 @@ Token simpleToken(TokenID id)(in Mark start, in Mark end) pure
     return Token(null, start, end, id);
 }
 
+/**
+ * Construct a stream start token.
+ *
+ * Params:  start    = Start position of the token.
+ *          end      = End position of the token.
+ *          encoding = Encoding of the stream.
+ */
+Token streamStartToken(in Mark start, in Mark end, in Encoding encoding)
+{
+    return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
+}
+
 ///Aliases for construction of simple token types.
-alias simpleToken!(TokenID.StreamStart)        streamStartToken;
 alias simpleToken!(TokenID.StreamEnd)          streamEndToken;
 alias simpleToken!(TokenID.BlockSequenceStart) blockSequenceStartToken;
 alias simpleToken!(TokenID.BlockMappingStart)  blockMappingStartToken;

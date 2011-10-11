@@ -18,6 +18,7 @@ import std.string;
 import std.system;
 import std.utf;
 
+import dyaml.encoding;
 import dyaml.exception;
 
 
@@ -29,22 +30,10 @@ class ReaderException : YAMLException
     this(string msg){super("Error reading YAML stream: " ~ msg);}
 }
 
-
 ///Reads data from a stream and converts it to UTF-32 (dchar) data.
 final class Reader
 {
     private:
-        ///Unicode encodings.
-        enum UTF 
-        {
-            ///UTF-8.
-            _8,
-            ///UTF-16.
-            _16,
-            ///UTF-32.
-            _32
-        }
-
         ///Input stream.
         EndianStream stream_;
         ///Buffer of currently loaded characters.
@@ -54,7 +43,7 @@ final class Reader
         ///Index of the current character in the stream.
         size_t charIndex_ = 0;
         ///Encoding of the input stream.
-        UTF utf_= UTF._8;
+        Encoding encoding_;
         ///Current line in file.
         uint line_;
         ///Current column in file.
@@ -92,7 +81,7 @@ final class Reader
             //handle files short enough not to have a BOM
             if(stream_.available < 2)
             {
-                utf_ = UTF._8;
+                encoding_ = Encoding.UTF_8;
                 return;
             }
 
@@ -106,10 +95,10 @@ final class Reader
                     rawBuffer8_[1] = cast(char)(bytes / 256);
                     rawUsed_ = 2;
                     goto case 0;
-                case 0:  utf_ = UTF._8; break;
+                case 0:  encoding_ = Encoding.UTF_8; break;
                 case 1, 2: 
                     //readBOM() eats two more bytes in this case so get them back
-                    utf_ = UTF._16; 
+                    encoding_ = Encoding.UTF_16; 
                     rawBuffer16_[0] = stream_.getcw();
                     rawUsed_ = 1;
                     enforce(stream_.available % 2 == 0, 
@@ -118,7 +107,7 @@ final class Reader
                 case 3, 4: 
                     enforce(stream_.available % 4 == 0, 
                             new ReaderException("Number of bytes in an UTF-32 stream not divisible by 4"));
-                    utf_ = UTF._32;
+                    encoding_ = Encoding.UTF_32;
                     break;
                 default: assert(false, "Unknown UTF BOM");
             }
@@ -221,7 +210,7 @@ final class Reader
                 ++bufferOffset_;
                 ++charIndex_;
                 //new line
-                if(['\n', '\x85', '\u2028', '\u2029'].canFind(c) || 
+                if(['\n', '\u0085', '\u2028', '\u2029'].canFind(c) || 
                    (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
@@ -243,6 +232,9 @@ final class Reader
 
         ///Get index of the current character in the stream.
         @property size_t charIndex() const {return charIndex_;}
+
+        ///Get encoding of the input stream.
+        @property Encoding encoding() const {return encoding_;}
 
     private:
         /**
@@ -308,9 +300,9 @@ final class Reader
              */
             dchar getDChar(in size_t available)
             {
-                switch(utf_)
+                switch(encoding_)
                 {
-                    case UTF._8:
+                    case Encoding.UTF_8:
                         //Temp buffer for moving data in rawBuffer8_.
                         char[bufferLength8_] temp;
                         //Shortcut for ASCII.
@@ -341,7 +333,7 @@ final class Reader
                         temp[0 .. rawUsed_] = rawBuffer8_[idx .. len];
                         rawBuffer8_[0 .. rawUsed_] = temp[0 .. rawUsed_];
                         return result;
-                    case UTF._16: 
+                    case Encoding.UTF_16: 
                         //Temp buffer for moving data in rawBuffer8_.
                         wchar[bufferLength16_] temp;
                         //Words to read.
@@ -366,7 +358,7 @@ final class Reader
                         temp[0 .. rawUsed_] = rawBuffer16_[idx .. len];
                         rawBuffer16_[0 .. rawUsed_] = temp[0 .. rawUsed_];
                         return result;
-                    case UTF._32:
+                    case Encoding.UTF_32:
                         dchar result;
                         stream_.read(result);
                         return result;
@@ -407,7 +399,7 @@ final class Reader
          *
          * Returns: True if all the characters are printable, false otherwise.
          */
-        static pure bool printable(const ref dchar[] chars)
+        static bool printable(const ref dchar[] chars)
         {
             foreach(c; chars)
             {
@@ -426,24 +418,24 @@ final class Reader
         @property bool done()
         {   
             return (stream_.available == 0 && 
-                    ((utf_ == UTF._8  && rawUsed_ == 0) ||
-                     (utf_ == UTF._16 && rawUsed_ == 0) ||
-                     utf_ == UTF._32));
+                    ((encoding_ == Encoding.UTF_8  && rawUsed_ == 0) ||
+                     (encoding_ == Encoding.UTF_16 && rawUsed_ == 0) ||
+                     encoding_ == Encoding.UTF_32));
         }
 
     unittest
     {
         writeln("D:YAML reader endian unittest");
-        void endian_test(ubyte[] data, UTF utf_expected, Endian endian_expected)
+        void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
         {
             auto reader = new Reader(new MemoryStream(data));
-            assert(reader.utf_ == utf_expected);
+            assert(reader.encoding_ == encoding_expected);
             assert(reader.stream_.endian == endian_expected);
         }
         ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
         ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
-        endian_test(little_endian_utf_16, UTF._16, Endian.LittleEndian);
-        endian_test(big_endian_utf_16, UTF._16, Endian.BigEndian);
+        endian_test(little_endian_utf_16, Encoding.UTF_16, Endian.littleEndian);
+        endian_test(big_endian_utf_16, Encoding.UTF_16, Endian.bigEndian);
     }
     unittest
     {
@@ -476,7 +468,7 @@ final class Reader
             assert(reader.peek(3) == 'a');
         }
         utf_test!char(to!(char[])(data), BOM.UTF8);
-        utf_test!wchar(to!(wchar[])(data), endian == Endian.BigEndian ? BOM.UTF16BE : BOM.UTF16LE);
-        utf_test(data, endian == Endian.BigEndian ? BOM.UTF32BE : BOM.UTF32LE);
+        utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.UTF16BE : BOM.UTF16LE);
+        utf_test(data, endian == Endian.bigEndian ? BOM.UTF32BE : BOM.UTF32LE);
     }
 }

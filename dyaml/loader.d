@@ -13,16 +13,18 @@ module dyaml.loader;
 import std.exception;
 import std.stream;
 
-import dyaml.event;
-import dyaml.node;
+import dyaml.anchor;
 import dyaml.composer;
 import dyaml.constructor;
-import dyaml.resolver;
+import dyaml.event;
+import dyaml.exception;
+import dyaml.node;
 import dyaml.parser;
 import dyaml.reader;
+import dyaml.resolver;
 import dyaml.scanner;
+import dyaml.tagdirectives;
 import dyaml.token;
-import dyaml.exception;
 
 
 /**
@@ -118,7 +120,6 @@ Node[] loadAll(in string filename)
     foreach(ref node; loader){result ~= node;}
     return result;
 }
-
 
 /**
  * Load all YAML documents from a stream.
@@ -224,6 +225,8 @@ struct Loader
                 constructor_ = constructor;
                 composer_    = new Composer(parser_, resolver_, constructor_);
                 name_ = name;
+                Anchor.addReference();
+                TagDirectives.addReference();
             }
             catch(YAMLException e)
             {
@@ -287,6 +290,8 @@ struct Loader
         ///Destroy the Loader.
         ~this()
         {
+            Anchor.removeReference();
+            TagDirectives.removeReference();
             clear(reader_);
             clear(scanner_);
             clear(parser_);

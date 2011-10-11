@@ -27,8 +27,8 @@ wchar bom16(bool wrong = false) pure
 {
     wchar little  = *(cast(wchar*)ByteOrderMarks[BOM.UTF16LE]);
     wchar big     = *(cast(wchar*)ByteOrderMarks[BOM.UTF16BE]);
-    if(!wrong){return endian == Endian.LittleEndian ? little : big;}
-    return endian == Endian.LittleEndian ? big : little;
+    if(!wrong){return endian == Endian.littleEndian ? little : big;}
+    return endian == Endian.littleEndian ? big : little;
 }
 
 /**
@@ -42,8 +42,8 @@ dchar bom32(bool wrong = false) pure
 {
     dchar little = *(cast(dchar*)ByteOrderMarks[BOM.UTF32LE]);
     dchar big    = *(cast(dchar*)ByteOrderMarks[BOM.UTF32BE]);
-    if(!wrong){return endian == Endian.LittleEndian ? little : big;}
-    return endian == Endian.LittleEndian ? big : little;
+    if(!wrong){return endian == Endian.littleEndian ? little : big;}
+    return endian == Endian.littleEndian ? big : little;
 }
 
 /**

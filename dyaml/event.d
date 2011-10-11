@@ -14,9 +14,12 @@ import std.array;
 import std.conv;
 import std.typecons;
 
+import dyaml.anchor;
+import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
 import dyaml.tag;
+import dyaml.tagdirectives;
 import dyaml.token;
 
 
@@ -42,30 +45,44 @@ enum EventID : ubyte
  *
  * 48 bytes on 64bit.
  */
-immutable struct Event
+struct Event
 {
+    ///Value of the event, if any.
+    string value;
     ///Start position of the event in file/stream.
     Mark startMark;
     ///End position of the event in file/stream.
     Mark endMark;
     ///Anchor of the event, if any.
-    string anchor;
-    ///Value of the event, if any.
-    string value;
+    Anchor anchor;
     ///Tag of the event, if any.
     Tag tag;
     ///Event type.
-    EventID id;
+    EventID id = EventID.Invalid;
     ///Style of scalar event, if this is a scalar event.
-    ScalarStyle style;
+    ScalarStyle scalarStyle;
     ///Should the tag be implicitly resolved? 
     bool implicit;
+    ///TODO figure this out - Unknown, used by PyYAML with Scalar events.
+    bool implicit_2;
     /**
      * Is this document event explicit?
      *
      * Used if this is a DocumentStart or DocumentEnd.
      */
     alias implicit explicitDocument;
+    ///Tag directives, if this is a DocumentStart.
+    TagDirectives tagDirectives;
+    ///Encoding of the stream, if this is a StreamStart.
+    Encoding encoding;
+    ///Collection style, if this is a SequenceStart or MappingStart.
+    CollectionStyle collectionStyle;
+
+    ///Is this a null (uninitialized) event?
+    @property bool isNull() const 
+    {
+        return id == EventID.Invalid;
+    }
 }
 
 /**
@@ -75,9 +92,9 @@ immutable struct Event
  *          end      = End position of the event in the file/stream.
  *          anchor   = Anchor, if this is an alias event.
  */
-Event event(EventID id)(in Mark start, in Mark end, in string anchor = null) pure
+Event event(EventID id)(in Mark start, in Mark end, in Anchor anchor = Anchor()) pure
 {
-    return Event(start, end, anchor, null, Tag(), id);
+    return Event(null, start, end, anchor, Tag(), id);
 }
 
 /**
@@ -89,16 +106,30 @@ Event event(EventID id)(in Mark start, in Mark end, in string anchor = null) pur
  *          tag      = Tag of the sequence, if specified.
  *          implicit = Should the tag be implicitly resolved?
  */
-Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in string anchor, 
-                                       in Tag tag, in bool implicit)
+Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anchor, 
+                                       in Tag tag, in bool implicit, 
+                                       in CollectionStyle style)
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
-    return Event(start, end, anchor, null, tag, id, ScalarStyle.Invalid, implicit);
+    return Event(null, start, end, anchor, tag, id, ScalarStyle.Invalid, implicit,
+                 false, TagDirectives(), Encoding.UTF_8, style);
+}
+
+/**
+ * Construct a stream start event.
+ *
+ * Params:  start    = Start position of the event in the file/stream.
+ *          end      = End position of the event in the file/stream.
+ *          encoding = Encoding of the stream.
+ */
+Event streamStartEvent(in Mark start, in Mark end, Encoding encoding) 
+{
+    return Event(null, start, end, Anchor(), Tag(), EventID.StreamStart, 
+                 ScalarStyle.Invalid, false, false, TagDirectives(), encoding);
 }
 
 ///Aliases for simple events.
-alias event!(EventID.StreamStart) streamStartEvent;
 alias event!(EventID.StreamEnd)   streamEndEvent;
 alias event!(EventID.Alias)       aliasEvent;
 alias event!(EventID.SequenceEnd) sequenceEndEvent;
@@ -111,15 +142,17 @@ alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
 /**
  * Construct a document start event.
  *
- * Params:  start       = Start position of the event in the file/stream.
- *          end         = End position of the event in the file/stream.
- *          explicit    = Is this an explicit document start?
- *          YAMLVersion = YAML version string of the document.
+ * Params:  start         = Start position of the event in the file/stream.
+ *          end           = End position of the event in the file/stream.
+ *          explicit      = Is this an explicit document start?
+ *          YAMLVersion   = YAML version string of the document.
+ *          tagDirectives = Tag directives of the document.
  */
-Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion) pure
+Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion,
+                         TagDirectives tagDirectives)
 {
-    return Event(start, end, null, YAMLVersion, Tag(), EventID.DocumentStart, 
-                 ScalarStyle.Invalid, explicit);
+    return Event(YAMLVersion, start, end, Anchor(), Tag(), EventID.DocumentStart, 
+                 ScalarStyle.Invalid, explicit, false, tagDirectives);
 }
 
 /**
@@ -131,7 +164,7 @@ Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion
  */
 Event documentEndEvent(Mark start, Mark end, bool explicit)
 {
-    return Event(start, end, null, null, Tag(), EventID.DocumentEnd,
+    return Event(null, start, end, Anchor(), Tag(), EventID.DocumentEnd,
                  ScalarStyle.Invalid, explicit);
 }
 
@@ -146,9 +179,10 @@ Event documentEndEvent(Mark start, Mark end, bool explicit)
  *          value    = String value of the scalar.
  *          style    = Scalar style.
  */
-Event scalarEvent(in Mark start, in Mark end, in string anchor, in Tag tag, 
-                  in bool implicit, in string value, 
+Event scalarEvent(in Mark start, in Mark end, in Anchor anchor, in Tag tag, 
+                  in bool[2] implicit, in string value, 
                   in ScalarStyle style = ScalarStyle.Invalid) 
 {
-    return Event(start, end, anchor, value, tag, EventID.Scalar, style, implicit);
+    return Event(value, start, end, anchor, tag, EventID.Scalar, style, implicit[0],
+                 implicit[1]);
 }

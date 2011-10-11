@@ -8,14 +8,13 @@ module dyaml.util;
 
 package:
 
-
 ///Is given character YAML whitespace (space or tab)?
 bool isSpace(in dchar c){return c == ' ' || c == '\t';}
 
 ///Is given character YAML line break?
 bool isBreak(in dchar c)
 {
-    return c == '\n' || c == '\r' || c == '\x85' || c == '\u2028' || c == '\u2029';
+    return c == '\n' || c == '\r' || c == '\u0085' || c == '\u2028' || c == '\u2029';
 }
 
 ///Is c the checked character?

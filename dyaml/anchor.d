@@ -4,27 +4,27 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-///YAML tag.
-module dyaml.tag;
+///YAML anchor.
+module dyaml.anchor;
 
 import dyaml.sharedobject;
 
 
-///YAML tag (data type) struct. Encapsulates a tag to save memory and speed-up comparison.
-struct Tag
+///YAML anchor (reference) struct. Encapsulates an anchor to save memory.
+struct Anchor
 {
     public:
-        mixin SharedObject!(string, Tag);
+        mixin SharedObject!(string, Anchor);
 
-        ///Construct a tag from a string representation.
-        this(string tag)
+        ///Construct an anchor from a string representation.
+        this(string anchor)
         {
-            if(tag is null || tag == "")
+            if(anchor is null || anchor == "")
             {
                 index_ = uint.max;
                 return;
             }
 
-            add(tag);
+            add(anchor);
         }
 }

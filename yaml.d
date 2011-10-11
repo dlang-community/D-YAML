@@ -6,8 +6,12 @@
 
 module yaml;
 
-public import dyaml.loader;
 public import dyaml.constructor;
+public import dyaml.dumper;
+public import dyaml.encoding;
+public import dyaml.exception;
+public import dyaml.linebreak;
+public import dyaml.loader;
+public import dyaml.representer;
 public import dyaml.resolver;
 public import dyaml.node;
-public import dyaml.exception;

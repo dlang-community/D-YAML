@@ -409,7 +409,7 @@ final class Scanner
         ///Add STREAM-START token.
         void fetchStreamStart()
         {
-            tokens_ ~= streamStartToken(reader_.mark, reader_.mark);
+            tokens_ ~= streamStartToken(reader_.mark, reader_.mark, reader_.encoding);
         }
 
         ///Add STREAM-END token.
@@ -1040,7 +1040,6 @@ final class Scanner
             return tagToken(startMark, reader_.mark, to!string(handle ~ '\0' ~ suffix));
         }
 
-
         ///Scan a block scalar token with specified style.
         Token scanBlockScalar(ScalarStyle style)
         {
@@ -1057,7 +1056,7 @@ final class Scanner
             //Determine the indentation level and go to the first non-empty line.
             Mark endMark;
             dchar[] breaks;
-            uint indent = min(1, indent_ + 1);
+            uint indent = max(1, indent_ + 1);
             if(increment == int.min)
             {
                 auto indentation = scanBlockScalarIndentation();
@@ -1076,7 +1075,7 @@ final class Scanner
             dstring lineBreak = "";
 
             //Used to construct the result.
-            auto appender = Appender!string();
+            auto appender = appender!string();
 
             //Scan the inner part of the block scalar.
             while(reader_.column == indent && reader_.peek() != '\0')
@@ -1223,7 +1222,7 @@ final class Scanner
             const startMark = reader_.mark;
             const quote = reader_.get();
 
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
             appender.put(scanFlowScalarNonSpaces(quotes, startMark));
             while(reader_.peek() != quote)
             {
@@ -1252,7 +1251,7 @@ final class Scanner
                  ' ':  '\x20',
                  '\"': '\"',
                  '\\': '\\',
-                 'N':  '\x85',
+                 'N':  '\u0085',
                  '_':  '\xA0',
                  'L':  '\u2028',
                  'P':  '\u2029'];
@@ -1343,7 +1342,7 @@ final class Scanner
                     new ScannerException("While scanning a quoted scalar", startMark, 
                                          "found unexpected end of stream", reader_.mark));
 
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
             if(isBreak(c))
             {
                 const lineBreak = scanLineBreak();
@@ -1360,7 +1359,7 @@ final class Scanner
         ///Scan line breaks in a flow scalar.
         dstring scanFlowScalarBreaks(in Mark startMark)
         {
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
             for(;;)
             {
                 //Instead of checking indentation, we check for document separators.
@@ -1385,7 +1384,7 @@ final class Scanner
         {
             //We keep track of the allowSimpleKey_ flag here.
             //Indentation rules are loosed for the flow context
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
             const startMark = reader_.mark;
             Mark endMark = startMark;
             const indent = indent_ + 1;
@@ -1447,7 +1446,7 @@ final class Scanner
         {
             ///The specification is really confusing about tabs in plain scalars.
             ///We just forbid them completely. Do not use tabs in YAML!
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
 
             uint length = 0;
             while(reader_.peek(length) == ' '){++length;}
@@ -1524,7 +1523,7 @@ final class Scanner
         dstring scanTagURI(string name, in Mark startMark)
         {
             //Note: we do not check if URI is well-formed.
-            auto appender = Appender!dstring();
+            auto appender = appender!dstring();
             uint length = 0;
 
             dchar c = reader_.peek();
@@ -1606,7 +1605,7 @@ final class Scanner
          *   '\r\n'      :   '\n'
          *   '\r'        :   '\n'
          *   '\n'        :   '\n'
-         *   '\x85'      :   '\n'
+         *   '\u0085'      :   '\n'
          *   '\u2028'    :   '\u2028'
          *   '\u2029     :   '\u2029'
          *   no break    :   '\0'
@@ -1615,7 +1614,7 @@ final class Scanner
         {
             const c = reader_.peek();
 
-            dchar[] plainLineBreaks = ['\r', '\n', '\x85'];
+            dchar[] plainLineBreaks = ['\r', '\n', '\u0085'];
             if(plainLineBreaks.canFind(c))
             {
                 if(reader_.prefix(2) == "\r\n"){reader_.forward(2);}

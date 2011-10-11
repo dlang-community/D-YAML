@@ -14,12 +14,15 @@ module dyaml.parser;
 import std.array;
 import std.conv;
 import std.exception;
+import std.typecons;
 
+import dyaml.anchor;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.scanner;
 import dyaml.token;
 import dyaml.tag;
+import dyaml.tagdirectives;
 
 
 package:
@@ -104,29 +107,24 @@ class ParserException : MarkedYAMLException
 ///Generates events from tokens provided by a Scanner.
 final class Parser 
 {
-    invariant()
-    {
-        assert(currentEvent_.length <= 1);
-    }
-
     private:
         ///Default tag handle shortcuts and replacements.
-        static string[string] defaultTags_;
+        static Tuple!(string, string)[] defaultTags_;
         static this()
         {
-            defaultTags_ = ["!" : "!", "!!" : "tag:yaml.org,2002:"];
+            defaultTags_ = [tuple("!", "!"), tuple("!!", "tag:yaml.org,2002:")];
         }
 
         ///Scanner providing YAML tokens.
         Scanner scanner_;
 
-        ///Holds zero or one event.
-        Event[] currentEvent_;
+        ///Event produced by the most recent state.
+        Event currentEvent_;
 
         ///YAML version string.
         string YAMLVersion_ = null;
         ///Tag handle shortcuts and replacements.
-        string[string] tagHandles_;
+        Tuple!(string, string)[] tagHandles_;
 
         ///Stack of states.
         Event delegate()[] states_;
@@ -147,7 +145,6 @@ final class Parser
         ~this()
         {
             clear(currentEvent_);
-            currentEvent_ = null;
             clear(tagHandles_);
             tagHandles_ = null;
             clear(states_);
@@ -170,17 +167,17 @@ final class Parser
         bool checkEvent(EventID[] ids...)
         {
             //Check if the next event is one of specified types.
-            if(currentEvent_.empty && state_ !is null)
+            if(currentEvent_.isNull && state_ !is null)
             {
-                currentEvent_ ~= state_();
+                currentEvent_ = state_();
             }
 
-            if(!currentEvent_.empty)
+            if(!currentEvent_.isNull)
             {
                 if(ids.length == 0){return true;}
                 else
                 {
-                    const nextId = currentEvent_.front.id;
+                    const nextId = currentEvent_.id;
                     foreach(id; ids)
                     {
                         if(nextId == id){return true;}
@@ -198,11 +195,11 @@ final class Parser
          */
         Event peekEvent()
         {
-            if(currentEvent_.empty && state_ !is null)
+            if(currentEvent_.isNull && state_ !is null)
             {
-                currentEvent_ ~= state_();
+                currentEvent_ = state_();
             }
-            if(!currentEvent_.empty){return currentEvent_[0];}
+            if(!currentEvent_.isNull){return currentEvent_;}
             assert(false, "No event left to peek");
         }
 
@@ -214,15 +211,15 @@ final class Parser
         Event getEvent()
         {
             //Get the next event and proceed further.
-            if(currentEvent_.empty && state_ !is null)
+            if(currentEvent_.isNull && state_ !is null)
             {
-                currentEvent_ ~= state_();
+                currentEvent_ = state_();
             }
 
-            if(!currentEvent_.empty)
+            if(!currentEvent_.isNull)
             {
-                Event result = currentEvent_[0];
-                currentEvent_.length = 0;
+                immutable Event result = currentEvent_;
+                clear(currentEvent_);
                 return result;
             }
             assert(false, "No event left to get");
@@ -260,7 +257,7 @@ final class Parser
         {
             Token token = scanner_.getToken();
             state_ = &parseImplicitDocumentStart;
-            return streamStartEvent(token.startMark, token.endMark);
+            return streamStartEvent(token.startMark, token.endMark, token.encoding);
         }
 
         ///Parse implicit document start, unless explicit is detected: if so, parse explicit.
@@ -275,8 +272,8 @@ final class Parser
 
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseBlockNode;
-
-                return documentStartEvent(token.startMark, token.endMark, false, null);
+                
+                return documentStartEvent(token.startMark, token.endMark, false, null, TagDirectives());
             }
             return parseDocumentStart();
         }
@@ -292,7 +289,7 @@ final class Parser
             {
                 const startMark = scanner_.peekToken().startMark;
 
-                processDirectives();
+                auto tagDirectives = processDirectives();
                 enforce(scanner_.checkToken(TokenID.DocumentStart),
                         new ParserException("Expected document start but found " ~
                                             to!string(scanner_.peekToken().id), 
@@ -301,7 +298,7 @@ final class Parser
                 const endMark = scanner_.getToken().endMark;
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseDocumentContent;
-                return documentStartEvent(startMark, endMark, true, YAMLVersion_);
+                return documentStartEvent(startMark, endMark, true, YAMLVersion_, tagDirectives);
             }
             else
             {
@@ -339,19 +336,18 @@ final class Parser
         }
 
         ///Process directives at the beginning of a document.
-        void processDirectives()
+        TagDirectives processDirectives()
         {
             //Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
-            string[string] empty;
-            tagHandles_ = empty;
+            tagHandles_.length = 0;
 
             //Process directives.
             while(scanner_.checkToken(TokenID.Directive))
             {
                 Token token = scanner_.getToken();
                 //Name and value are separated by '\0'.
-                const parts = token.value.split("\0");
+                auto parts = token.value.split("\0");
                 const name = parts[0];
                 if(name == "YAML")
                 {
@@ -367,22 +363,38 @@ final class Parser
                 else if(name == "TAG")
                 {
                     assert(parts.length == 3, "Tag directive stored incorrectly in a token");
-                    const handle = parts[1];
+                    auto handle = parts[1];
 
-                    foreach(h, replacement; tagHandles_)
+                    foreach(ref pair; tagHandles_)
                     {
+                        //handle
+                        auto h = pair[0];
+                        auto replacement = pair[1];
                         enforce(h != handle, new ParserException("Duplicate tag handle: " ~ 
                                                                  handle, token.startMark));
                     }
-                    tagHandles_[handle] = parts[2];
+                    tagHandles_ ~= tuple(handle, parts[2]);
                 }
             }
 
+            TagDirectives value = tagHandles_.length == 0 ? TagDirectives() : TagDirectives(tagHandles_);
+
             //Add any default tag handles that haven't been overridden.
-            foreach(key, value; defaultTags_)
+            foreach(ref defaultPair; defaultTags_)
             {
-                if((key in tagHandles_) is null){tagHandles_[key] = value;}
+                bool found = false;
+                foreach(ref pair; tagHandles_)
+                {
+                    if(defaultPair[0] == pair[0] )
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found){tagHandles_ ~= defaultPair;}
             }
+
+            return value;
         }
 
         /**
@@ -410,7 +422,7 @@ final class Parser
             {
                 Token token = scanner_.getToken();
                 state_ = popState();
-                return aliasEvent(token.startMark, token.endMark, token.value);
+                return aliasEvent(token.startMark, token.endMark, Anchor(token.value));
             }
 
             string anchor = null;
@@ -448,47 +460,51 @@ final class Parser
             {
                 state_ = &parseIndentlessSequenceEntry;
                 return sequenceStartEvent(startMark, scanner_.peekToken().endMark,
-                                          anchor, Tag(tag), implicit);
+                                          Anchor(anchor), Tag(tag), implicit,
+                                          CollectionStyle.Block);
             }
 
             if(scanner_.checkToken(TokenID.Scalar))
             {
                 Token token = scanner_.getToken();
 
-                //PyYAML uses a Tuple!(bool, bool) here, but the second bool
-                //is never used after that - so we don't use it.
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
+                bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
-                return scalarEvent(startMark, token.endMark, anchor, Tag(tag), 
-                                   implicit, token.value, token.style);
+                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag), 
+                                   [implicit, implicit_2], token.value, token.style);
             }
 
             if(scanner_.checkToken(TokenID.FlowSequenceStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowSequenceEntry!true;
-                return sequenceStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                                          implicit, CollectionStyle.Flow);
             }
 
             if(scanner_.checkToken(TokenID.FlowMappingStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowMappingKey!true;
-                return mappingStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                                         implicit, CollectionStyle.Flow);
             }
 
             if(block && scanner_.checkToken(TokenID.BlockSequenceStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockSequenceEntry!true;
-                return sequenceStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                                          implicit, CollectionStyle.Block);
             }
 
             if(block && scanner_.checkToken(TokenID.BlockMappingStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockMappingKey!true;
-                return mappingStartEvent(startMark, endMark, anchor, Tag(tag), implicit);
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                                         implicit, CollectionStyle.Block);
             }
 
             if(anchor != null || tag !is null)
@@ -499,7 +515,8 @@ final class Parser
                 //but the second bool is never used after that - so we don't use it.
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
-                return scalarEvent(startMark, endMark, anchor, Tag(tag), implicit , "");
+                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                                   [implicit, false] , "");
             }
 
             Token token = scanner_.peekToken();
@@ -525,11 +542,21 @@ final class Parser
 
             if(handle.length > 0)
             {
+                string replacement = null;
+                foreach(ref pair; tagHandles_)
+                {
+                    //pair[0] is handle, pair[1] replacement.
+                    if(pair[0] == handle)
+                    {
+                        replacement = pair[1];
+                        break;
+                    }
+                }
                 //handle must be in tagHandles_
-                enforce((handle in tagHandles_) !is null,
+                enforce(replacement !is null,
                         new ParserException("While parsing a node", startMark,
                                             "found undefined tag handle: " ~ handle, tagMark));
-                return tagHandles_[handle] ~ suffix;
+                return replacement ~ suffix;
             }
             return suffix;
         }
@@ -699,7 +726,8 @@ final class Parser
                 {
                     Token token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
-                    return mappingStartEvent(token.startMark, token.endMark, null, Tag(), true);
+                    return mappingStartEvent(token.startMark, token.endMark, 
+                                             Anchor(), Tag(), true, CollectionStyle.Flow);
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
                 {
@@ -838,6 +866,6 @@ final class Parser
         {
             //PyYAML uses a Tuple!(true, false) for the second last arg here,
             //but the second bool is never used after that - so we don't use it.
-            return scalarEvent(mark, mark, null, Tag(), true, "");
+            return scalarEvent(mark, mark, Anchor(), Tag(), [true, false], "");
         }
 }

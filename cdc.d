@@ -291,16 +291,16 @@ static void compile(string[] paths, string[] options = null)
         enforceEx!CompileException(exists(src), 
                   "Source file/folder \"" ~ src ~ "\" does not exist.");
         //Directory of source or lib files 
-        if(isdir(src))
+        if(isDir(src))
         {    
             sources ~= scan(src, ".d");
             ddocs ~= scan(src, ".ddoc");
             libs ~= scan(src, lib_ext);
         } 
         //File
-        else if(isfile(src))
+        else if(isFile(src))
         {
-            string ext = "." ~ src.getExt();
+            string ext = src.extension();
             if(ext == ".d"){sources ~= src;}
             else if(ext == lib_ext){libs ~= src;}
         }
@@ -413,7 +413,7 @@ static void compile(string[] paths, string[] options = null)
         {    
             foreach(src; sources)
             {    
-                if(src.getExt != "d"){continue;}
+                if(src.extension != ".d"){continue;}
 
                 string html = src[0 .. $ - 2] ~ ".html";
                 string dest = replace(replace(html, "/", "."), "\\", ".");
@@ -441,7 +441,7 @@ static void compile(string[] paths, string[] options = null)
         foreach(ext; obj_ext)
         {
             //Delete object files with same name as output file that dmd sometimes leaves. 
-            try{remove(addExt(co.out_file, ext));}
+            try{remove(co.out_file.setExtension(ext));}
             catch(FileException e){continue;}
         }
     }
@@ -597,7 +597,10 @@ struct CompileOptions
 }
 
 ///Thrown at errors in execution of other processes (e.g. compiler commands).
-class CompileException : Exception {this(in string message){super(message);}};
+class CompileException : Exception 
+{
+    this(in string message, in string file, in size_t line){super(message, file, line);}
+};
 
 /**
  * Wrapper around execute to write compile options to a file to get around max arg lenghts on Windows.
@@ -665,7 +668,7 @@ string[] scan(in string directory, string extensions ...)
     string[] result;
     foreach(string name; dirEntries(directory, SpanMode.depth))
     {
-        if(isfile(name) && endsWith(name, extensions)){result ~= name;}
+        if(isFile(name) && endsWith(name, extensions)){result ~= name;}
     }
     return result;
 }

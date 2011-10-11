@@ -116,7 +116,7 @@ final class Resolver
          */
         Tag resolve(NodeID kind, Tag tag, string value, in bool implicit)
         {
-            if(!tag.isNull() && tag.toString() != "!"){return tag;}
+            if(!tag.isNull() && tag.get() != "!"){return tag;}
 
             if(kind == NodeID.Scalar)
             {
@@ -185,6 +185,15 @@ final class Resolver
             assert(tagMatch("tag:yaml.org,2002:value", ["="]));
             assert(tagMatch("tag:yaml.org,2002:yaml", ["!", "&", "*"]));
         }
+
+        ///Return default scalar tag.
+        @property Tag defaultScalarTag()   const {return defaultScalarTag_;}
+
+        ///Return default sequence tag.
+        @property Tag defaultSequenceTag() const {return defaultSequenceTag_;}
+
+        ///Return default mapping tag.
+        @property Tag defaultMappingTag()  const {return defaultMappingTag_;}
 
     private:
         ///Add default implicit resolvers.

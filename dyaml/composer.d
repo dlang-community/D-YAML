@@ -15,6 +15,7 @@ import std.conv;
 import std.exception;
 import std.typecons;
 
+import dyaml.anchor;
 import dyaml.constructor;
 import dyaml.event;
 import dyaml.exception;
@@ -50,7 +51,7 @@ final class Composer
         ///Constructor constructing YAML values.
         Constructor constructor_;
         ///Nodes associated with anchors. Used by YAML aliases.
-        Node[string] anchors_;
+        Node[Anchor] anchors_;
                               
     public:
         /**
@@ -140,7 +141,7 @@ final class Composer
             parser_.getEvent();
 
             //Clear anchors.
-            Node[string] empty;
+            Node[Anchor] empty;
             anchors_ = empty;
             return node;
         }
@@ -150,33 +151,37 @@ final class Composer
         {
             if(parser_.checkEvent(EventID.Alias))
             {
-                Event event = parser_.getEvent();
+                immutable event = parser_.getEvent();
                 const anchor = event.anchor;
                 enforce((anchor in anchors_) !is null,
-                        new ComposerException("Found undefined alias: " ~ anchor,
+                        new ComposerException("Found undefined alias: " ~ anchor.get,
                                               event.startMark));
 
                 //If the node referenced by the anchor is uninitialized,
                 //it's not finished, i.e. we're currently composing it
                 //and trying to use it recursively here.
                 enforce(anchors_[anchor] != Node(),
-                        new ComposerException("Found recursive alias: " ~ anchor,
+                        new ComposerException("Found recursive alias: " ~ anchor.get,
                                               event.startMark));
+
                 return anchors_[anchor];
             }
 
-            Event event = parser_.peekEvent();
+            immutable event = parser_.peekEvent();
             const anchor = event.anchor;
-            if(anchor !is null && (anchor in anchors_) !is null)
+            if(!anchor.isNull() && (anchor in anchors_) !is null)
             {
-                throw new ComposerException("Found duplicate anchor: " ~ anchor, 
+                throw new ComposerException("Found duplicate anchor: " ~ anchor.get, 
                                             event.startMark);
             }
 
             Node result;
             //Associate the anchor, if any, with an uninitialized node.
             //used to detect duplicate and recursive anchors.
-            if(anchor !is null){anchors_[anchor] = Node();}
+            if(!anchor.isNull())
+            {
+                anchors_[anchor] = Node();
+            }
 
             if(parser_.checkEvent(EventID.Scalar))
             {
@@ -192,14 +197,17 @@ final class Composer
             }
             else{assert(false, "This code should never be reached");}
 
-            if(anchor !is null){anchors_[anchor] = result;}
+            if(!anchor.isNull())
+            {
+                anchors_[anchor] = result;
+            }
             return result;
         }
 
         ///Compose a scalar node.
         Node composeScalarNode()
         {
-            Event event = parser_.getEvent();
+            immutable event = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value, 
                                           event.implicit);
 
@@ -212,7 +220,7 @@ final class Composer
         ///Compose a sequence node.
         Node composeSequenceNode()
         {
-            Event startEvent = parser_.getEvent();
+            immutable startEvent = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Sequence, startEvent.tag, null, 
                                           startEvent.implicit);
 
@@ -265,7 +273,7 @@ final class Composer
                     enforce(node.isType!(Node.Pair[]),
                             new ConstructorException("While constructing a mapping, " ~
                                                      "expected a mapping for merging, but found" 
-                                                     ~ node.typeString() ~
+                                                     ~ node.type.toString ~
                                                      "NOTE: line/column shows topmost parent "
                                                      "to which the content is being merged",
                                                      startMark, endMark));
@@ -278,7 +286,7 @@ final class Composer
                 throw new ConstructorException("While constructing a mapping, " ~
                                                "expected a mapping or a list of mappings for "
                                                "merging, but found: " 
-                                               ~ root.typeString() ~
+                                               ~ root.type.toString ~
                                                "NOTE: line/column shows topmost parent "
                                                "to which the content is being merged",
                                                startMark, endMark);
@@ -290,7 +298,7 @@ final class Composer
         ///Compose a mapping node.
         Node composeMappingNode()
         {
-            Event startEvent = parser_.getEvent();
+            immutable startEvent = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null, 
                                           startEvent.implicit);
 

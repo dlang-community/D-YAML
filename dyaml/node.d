@@ -17,6 +17,7 @@ import std.datetime;
 import std.exception;
 import std.math;
 import std.stdio;   
+import std.string;
 import std.traits;
 import std.typecons;
 import std.variant;
@@ -57,36 +58,52 @@ struct YAMLNull{}
 package struct YAMLMerge{}
 
 ///Base class for YAMLContainer - used for user defined YAML types.
-private abstract class YAMLObject
+package abstract class YAMLObject
 {
-    protected:
+    public:
         ///Get type of the stored value.
         @property TypeInfo type() const;
 
+    protected:
         ///Test for equality with another YAMLObject.
         bool equals(const YAMLObject rhs) const;
 }
 
 //Stores a user defined YAML data type.
-private class YAMLContainer(T) : YAMLObject
+package class YAMLContainer(T) : YAMLObject
 {
     private:
         //Stored value.
         T value_;
 
-        //Construct a YAMLContainer holding specified value.
-        this(T value){value_ = value;}
-
-    protected:
+    public:
         //Get type of the stored value.
         @property override TypeInfo type() const {return typeid(T);}
 
+        //Get string representation of the container.
+        override string toString()
+        {
+            static if(!hasMember!(T, "toString"))
+            {
+                return super.toString();
+            }
+            else
+            {
+                return format("YAMLContainer(", value_.toString(), ")");
+            }
+        }
+
+    protected:
         //Test for equality with another YAMLObject.
         override bool equals(const YAMLObject rhs) const 
         {
             if(rhs.type !is typeid(T)){return false;}
             return value_ == (cast(YAMLContainer)rhs).value_;
         }
+
+    private:
+        //Construct a YAMLContainer holding specified value.
+        this(T value){value_ = value;}
 }
 
 
@@ -165,10 +182,12 @@ struct Node
          * otherwise emitting will fail.
          *
          * Params:  value = Value to store in the node.
-         *          tag   = Tag override. If specified, the tag of the node
-         *                  when emitted will be this tag, regardless of
-         *                  what Representer determines. Can be used when a 
-         *                  single D data type needs to use multiple YAML tags.
+         *          tag   = Overrides tag of the node when emitted, regardless 
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type 
+         *                  maps to multiple different YAML data types. Tag must 
+         *                  be in full form, e.g. "tag:yaml.org,2002:omap", not 
+         *                  a shortcut, like "!!omap".            
          */
         this(T)(T value, in string tag = null) if (isSomeString!T || 
                                                   (!isArray!T && !isAssociativeArray!T))
@@ -209,14 +228,23 @@ struct Node
          * node, and those nodes are stored.
          *
          * Params:  array = Values to store in the node.
-         *          tag   = Tag override. If specified, the tag of the node
-         *                  when emitted will be this tag, regardless of
-         *                  what Representer determines. Can be used when a 
-         *                  single D data type needs to use multiple YAML tags.
-         *                  In particular, this can be used to differentiate
-         *                  between YAML sequences (!!seq) and sets (!!set),
-         *                  which both are internally represented as an array_
-         *                  of nodes.
+         *          tag   = Overrides tag of the node when emitted, regardless 
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type 
+         *                  maps to multiple different YAML data types.
+         *                  This is used to differentiate between YAML sequences 
+         *                  (!!seq) and sets (!!set), which both are internally 
+         *                  represented as an array_ of nodes. Tag must be in 
+         *                  full form, e.g. "tag:yaml.org,2002:set", not a 
+         *                  shortcut, like "!!set".
+         *
+         * Examples:
+         * --------------------
+         * //Will be emitted as a sequence (default for arrays)
+         * auto seq = Node([1, 2, 3, 4, 5]);
+         * //Will be emitted as a set (overriden tag)
+         * auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
+         * --------------------
          */
         this(T)(T[] array, in string tag = null) if (!isSomeString!(T[]))
         {
@@ -225,6 +253,11 @@ struct Node
             static if(is(T == Node) || is(T == Node.Pair))
             {
                 value_ = Value(array);
+            }
+            //Need to handle byte buffers separately
+            else static if(is(T == byte) || is(T == ubyte))
+            {
+                value_ = Value(cast(ubyte[]) array);
             }
             else
             {
@@ -241,6 +274,11 @@ struct Node
                 assert(length == 3);
                 assert(opIndex(2).get!int == 3);
             }
+
+            //Will be emitted as a sequence (default for arrays)
+            auto seq = Node([1, 2, 3, 4, 5]);
+            //Will be emitted as a set (overriden tag)
+            auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
         }
 
         /**
@@ -250,21 +288,33 @@ struct Node
          * directly. Otherwise they are converted to nodes and then stored.
          *
          * Params:  array = Values to store in the node.
-         *          tag   = Tag override. If specified, the tag of the node
-         *                  when emitted will be this tag, regardless of
-         *                  what Representer determines. Can be used when a 
-         *                  single D data type needs to use multiple YAML tags.
-         *                  In particular, this can be used to differentiate
-         *                  between YAML unordered maps, (!!map) ordered maps, 
-         *                  (!!omap) and pairs (!!pairs), which are all 
-         *                  internally represented as an array_ of node pairs.
+         *          tag   = Overrides tag of the node when emitted, regardless 
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type 
+         *                  maps to multiple different YAML data types.
+         *                  This is used to differentiate between YAML unordered 
+         *                  mappings (!!map), ordered mappings (!!omap), and 
+         *                  pairs (!!pairs) which are all internally represented
+         *                  as an array_ of node pairs. Tag must be in full 
+         *                  form, e.g. "tag:yaml.org,2002:omap", not a shortcut, 
+         *                  like "!!omap".
+         *
+         * Examples:
+         * --------------------
+         * //Will be emitted as an unordered mapping (default for mappings)
+         * auto map   = Node([1 : "a", 2 : "b"]);
+         * //Will be emitted as an ordered map (overriden tag)
+         * auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
+         * //Will be emitted as pairs (overriden tag)
+         * auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
+         * --------------------
          */
         this(K, V)(V[K] array, in string tag = null)
         {
             tag_ = Tag(tag);
 
             Node.Pair[] pairs;
-            foreach(ref key, ref value; array){pairs ~= Pair(key, value);}
+            foreach(key, ref value; array){pairs ~= Pair(key, value);}
             value_ = Value(pairs);
         }
         unittest
@@ -278,13 +328,20 @@ struct Node
                 assert(length == 2);
                 assert(opIndex("2").get!int == 2);
             }
+
+            //Will be emitted as an unordered mapping (default for mappings)
+            auto map   = Node([1 : "a", 2 : "b"]);
+            //Will be emitted as an ordered map (overriden tag)
+            auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
+            //Will be emitted as pairs (overriden tag)
+            auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
 
         /**
          * Construct a node from arrays of keys_ and values_.
          *
          * Constructs a mapping node with key-value pairs from
-         * keys and values, keeping their order. Useful when order
+         * keys_ and values_, keeping their order. Useful when order
          * is important (ordered maps, pairs).
          *
          * keys and values must have equal length.
@@ -294,16 +351,29 @@ struct Node
          *
          * Params:  keys   = Keys of the mapping, from first to last pair.
          *          values = Values of the mapping, from first to last pair.
-         *          tag    = Tag override. If specified, the tag of the node
-         *                   when emitted will be this tag, regardless of
-         *                   what Representer determines. Can be used when a 
-         *                   single D data type needs to use multiple YAML tags.
-         *                   In particular, this can be used to differentiate
-         *                   between YAML unordered maps, (!!map) ordered maps, 
-         *                   (!!omap) and pairs (!!pairs), which are all 
-         *                   internally represented as an array_ of node pairs.
+         *          tag    = Overrides tag of the node when emitted, regardless 
+         *                   of tag determined by Representer. Representer uses
+         *                   this to determine YAML data type when a D data type 
+         *                   maps to multiple different YAML data types.
+         *                   This is used to differentiate between YAML unordered 
+         *                   mappings (!!map), ordered mappings (!!omap), and 
+         *                   pairs (!!pairs) which are all internally represented
+         *                   as an array_ of node pairs. Tag must be in full 
+         *                   form, e.g. "tag:yaml.org,2002:omap", not a shortcut, 
+         *                   like "!!omap".
+         *
+         * Examples:
+         * --------------------
+         * //Will be emitted as an unordered mapping (default for mappings)
+         * auto map   = Node([1, 2], ["a", "b"]);
+         * //Will be emitted as an ordered map (overriden tag)
+         * auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
+         * //Will be emitted as pairs (overriden tag)
+         * auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
+         * --------------------
          */
-        this(K, V)(K[] keys, V[] values, in string tag = null)
+        this(K, V)(K[] keys, V[] values, in string tag = null) 
+            if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
         {
             assert(keys.length == values.length, 
@@ -326,6 +396,13 @@ struct Node
                 assert(length == 2);
                 assert(opIndex("2").get!int == 2);
             }
+
+            //Will be emitted as an unordered mapping (default for mappings)
+            auto map   = Node([1, 2], ["a", "b"]);
+            //Will be emitted as an ordered map (overriden tag)
+            auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
+            //Will be emitted as pairs (overriden tag)
+            auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
         }
 
         ///Is this node valid (initialized)? 
@@ -442,6 +519,13 @@ struct Node
             //we're getting the default value.
             if(isMapping){return this["="].get!T;}
 
+            void throwUnexpectedType()
+            {
+                //Can't get the value.
+                throw new NodeException("Node has unexpected type " ~ type.toString ~ 
+                                        ". Expected " ~ typeid(T).toString, startMark_);
+            }
+
             static if(isSomeString!T)
             {
                 //Try to convert to string.
@@ -484,12 +568,14 @@ struct Node
                     target = to!T(temp);
                     return;
                 }
+                else
+                {
+                    throwUnexpectedType();
+                }
             }
             else
             {
-                //Can't get the value.
-                throw new NodeException("Node has unexpected type " ~ typeString ~ 
-                                        ". Expected " ~ typeid(T).toString, startMark_);
+                throwUnexpectedType();
             }
         }
 
@@ -553,15 +639,15 @@ struct Node
 
             alias Node.Value Value;
             alias Node.Pair Pair;
-            Node n1 = Node(Value(cast(long)11));
-            Node n2 = Node(Value(cast(long)12));
-            Node n3 = Node(Value(cast(long)13));
-            Node n4 = Node(Value(cast(long)14));
+            Node n1 = Node(cast(long)11);
+            Node n2 = Node(cast(long)12);
+            Node n3 = Node(cast(long)13);
+            Node n4 = Node(cast(long)14);
 
-            Node k1 = Node(Value("11"));
-            Node k2 = Node(Value("12"));
-            Node k3 = Node(Value("13"));
-            Node k4 = Node(Value("14"));
+            Node k1 = Node("11");
+            Node k2 = Node("12");
+            Node k3 = Node("13");
+            Node k4 = Node("14");
 
             Node narray = Node(Value([n1, n2, n3, n4]));
             Node nmap   = Node(Value([Pair(k1, n1),
@@ -631,6 +717,8 @@ struct Node
         }
         unittest
         {
+            writeln("D:YAML Node opIndexAssign unittest");
+
             with(Node([1, 2, 3, 4, 3]))
             {
                 opIndexAssign(42, 3);
@@ -825,6 +913,8 @@ struct Node
         }
         unittest
         {
+            writeln("D:YAML Node add unittest 1");
+
             with(Node([1, 2, 3, 4]))
             {
                 add(5.0f);
@@ -860,6 +950,7 @@ struct Node
         }
         unittest
         {
+            writeln("D:YAML Node add unittest 2");
             with(Node([1, 2], [3, 4]))
             {
                 add(5, "6");
@@ -901,7 +992,7 @@ struct Node
                 if(idx >= 0)
                 {
                     auto pairs = get!(Node.Pair[])();
-                    copy(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
+                    moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
                     pairs.length = pairs.length - 1;
                     value_ = Value(pairs);
                 }
@@ -912,6 +1003,7 @@ struct Node
         }
         unittest
         {
+            writeln("D:YAML Node remove unittest");
             with(Node([1, 2, 3, 4, 3]))
             {
                 remove(3);
@@ -954,7 +1046,7 @@ struct Node
                 static if(isIntegral!T)
                 {
                     auto nodes = value_.get!(Node[]);
-                    copy(nodes[index + 1 .. $], nodes[index .. $ - 1]);
+                    moveAll(nodes[index + 1 .. $], nodes[index .. $ - 1]);
                     nodes.length = nodes.length - 1;
                     value_ = Value(nodes);
                     return;
@@ -967,7 +1059,7 @@ struct Node
                 if(idx >= 0)
                 {
                     auto pairs = get!(Node.Pair[])();
-                    copy(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
+                    moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
                     pairs.length = pairs.length - 1;
                     value_ = Value(pairs);
                 }
@@ -978,6 +1070,7 @@ struct Node
         }
         unittest
         {
+            writeln("D:YAML Node removeAt unittest");
             with(Node([1, 2, 3, 4, 3]))
             {
                 removeAt(3);
@@ -1034,6 +1127,7 @@ struct Node
                 {
                     auto seq1 = get!(Node[]);
                     auto seq2 = rhs.get!(Node[]);
+                    if(seq1 is seq2){return true;}
                     if(seq1.length != seq2.length){return false;}
                     foreach(node; 0 .. seq1.length)
                     {
@@ -1045,6 +1139,7 @@ struct Node
                 {
                     auto map1 = get!(Node.Pair[]);
                     auto map2 = rhs.get!(Node.Pair[]);
+                    if(map1 is map2){return true;}
                     if(map1.length != map2.length){return false;}
                     foreach(pair; 0 .. map1.length)
                     {
@@ -1064,10 +1159,17 @@ struct Node
                         if(!rhs.isFloat){return false;}
                         real r1 = get!real;
                         real r2 = rhs.get!real;
+                        bool equals(real r1, real r2)
+                        {
+                            return r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon;
+                        }
                         if(isNaN(r1)){return isNaN(r2);}
-                        return r1 == r2;
+                        return equals(r1, r2);
                     }
-                    else{return value_ == rhs.value_;}
+                    else
+                    {
+                        return value_ == rhs.value_;
+                    }
                 }
                 assert(false, "Unknown kind of node");
             }
@@ -1115,7 +1217,7 @@ struct Node
             if(isScalar)
             {
                 return indent ~ "scalar(" ~ 
-                       (convertsTo!string ? get!string : typeString) ~ ")\n";
+                       (convertsTo!string ? get!string : type.toString) ~ ")\n";
             }
             assert(false);
         }
@@ -1126,10 +1228,9 @@ struct Node
             return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
-        //Return string representation of the type of the node.
-        @property string typeString() const {return to!string(value_.type);}
+        //Get type of the node value (YAMLObject for user types).
+        @property TypeInfo type() const {return value_.type;}
 
-    private:
         /*
          * Determine if the value stored by the node is of specified type.
          *
@@ -1137,11 +1238,21 @@ struct Node
          */
         @property bool isType(T)() const {return value_.type is typeid(T);}
 
+        //Return tag of the node.
+        @property Tag tag() const {return tag_;}
+
+        //Set tag of the node.
+        @property void tag(Tag tag) {tag_ = tag;}
+
+    private:
         //Is the value an integer of some kind?
         alias isType!long isInt;
 
         //Is the value a floating point number of some kind?
         alias isType!real isFloat;
+
+        //Is the value a string of some kind?
+        alias isType!string isString;
 
         //Does given node have the same type as this node?
         bool hasEqualType(ref Node node)
@@ -1193,13 +1304,20 @@ struct Node
                 }
                 else 
                 {  
-                    if(node.get!T == index){return idx;}
+                    try
+                    {
+                        if(node.get!T == index){return idx;}
+                    }
+                    catch(NodeException e)
+                    {
+                        continue;
+                    }
                 }
             }
             return -1;
         }
 
-        ///Check if index is integral and in range.
+        //Check if index is integral and in range.
         void checkSequenceIndex(T)(T index)
         {
             static if(!isIntegral!T)

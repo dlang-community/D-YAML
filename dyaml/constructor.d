@@ -125,6 +125,8 @@ final class Constructor
          * an array of Nodes (from sequence) or an array of Node.Pair (from mapping).
          * The value returned by this function will be stored in the resulring node.
          *
+         * Only one constructor function can be set for one tag.
+         *
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
@@ -182,7 +184,7 @@ final class Constructor
         {
             enforce((tag in fromScalar_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "scalar for tag " ~ tag.toString(), start, end));
+                                             "scalar for tag " ~ tag.get(), start, end));
             return Node.rawNode(fromScalar_[tag](start, end, value), start, tag);
         }
 
@@ -200,7 +202,7 @@ final class Constructor
         {
             enforce((tag in fromSequence_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "sequence for tag " ~ tag.toString(), start, end));
+                                             "sequence for tag " ~ tag.get(), start, end));
             return Node.rawNode(fromSequence_[tag](start, end, value), start, tag);
         }
 
@@ -218,7 +220,7 @@ final class Constructor
         {
             enforce((tag in fromMapping_) !is null,
                     new ConstructorException("Could not determine a constructor from " 
-                                             "mapping for tag " ~ tag.toString(), start, end));
+                                             "mapping for tag " ~ tag.get(), start, end));
             return Node.rawNode(fromMapping_[tag](start, end, value), start, tag);
         }
 }
@@ -540,16 +542,16 @@ Node.Pair[] constructOrderedMap(Mark start, Mark end, Node[] nodes)
 {
     auto pairs = getPairs("ordered map", start, end, nodes);
 
-    //In future, the map here should be replaced with something with deterministic
+    //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
     //Detect duplicates.
-    Node[Node] map;
+    bool[Node] map;
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
                 new ConstructorException("Found a duplicate entry in an ordered map", 
                                          start, end));
-        map[pair.key] = pair.value;
+        map[pair.key] = true;
     }
     clear(map);
     return pairs;
@@ -609,6 +611,7 @@ Node[] constructSet(Mark start, Mark end, Node.Pair[] pairs)
     //memory allocation if possible.
     //Detect duplicates.
     ubyte[Node] map;
+    scope(exit){clear(map);}
     Node[] nodes;
     foreach(ref pair; pairs)
     {
@@ -618,7 +621,6 @@ Node[] constructSet(Mark start, Mark end, Node.Pair[] pairs)
         nodes ~= pair.key;
     }
 
-    clear(map);
     return nodes;
 }
 unittest
@@ -673,17 +675,16 @@ Node[] constructSequence(Mark start, Mark end, Node[] nodes)
 ///Construct an unordered map (unordered set of key: value _pairs without duplicates) node.
 Node.Pair[] constructMap(Mark start, Mark end, Node.Pair[] pairs)
 {
-    //In future, the map here should be replaced with something with deterministic
+    //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
     //Detect duplicates.
-    Node[Node] map;
+    bool[Node] map;
+    scope(exit){clear(map);}
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
                 new ConstructorException("Found a duplicate entry in a map", start, end));
-        map[pair.key] = pair.value;
+        map[pair.key] = true;
     }
-
-    clear(map);
     return pairs;
 }
