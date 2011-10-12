@@ -57,13 +57,13 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
 
-    Node output = load(new MemoryStream(to!(char[])(data)), unicodeFilename);
+    Node output = Loader(new MemoryStream(to!(char[])(data))).load();
     assert(output.get!string == expected);
 
     foreach(stream; [new MemoryStream(cast(byte[])(bom16() ~ to!(wchar[])(data))),
                      new MemoryStream(cast(byte[])(bom32() ~ to!(dchar[])(data)))])    
     {
-        output = load(stream, unicodeFilename); 
+        output = Loader(stream).load();
         assert(output.get!string == expected);
     }
 }
@@ -82,7 +82,7 @@ void testUnicodeInputErrors(bool verbose, string unicodeFilename)
                      new MemoryStream(cast(byte[])(bom16(true) ~ to!(wchar[])(data))),
                      new MemoryStream(cast(byte[])(bom32(true) ~ to!(dchar[])(data)))])
     {
-        try{load(stream, unicodeFilename);}
+        try{Loader(stream).load();}
         catch(YAMLException e)
         {
             if(verbose){writeln(typeid(e).toString(), "\n", e);}

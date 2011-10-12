@@ -42,8 +42,8 @@ void testParser(bool verbose, string dataFilename, string canonicalFilename)
  */
 void testLoader(bool verbose, string dataFilename, string canonicalFilename)
 {
-    auto data = loadAll(dataFilename);
-    auto canonical = loadAll(canonicalFilename);
+    auto data = Loader(dataFilename).loadAll;
+    auto canonical = Loader(canonicalFilename).loadAll;
 
     assert(data.length == canonical.length, "Unequal node count");
     foreach(n; 0 .. data.length)

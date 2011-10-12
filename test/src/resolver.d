@@ -17,27 +17,31 @@ import dyaml.testcommon;
  * Implicit tag resolution unittest.
  *
  * Params:  verbose        = Print verbose output?
- *          dataFilename   = TODO 
- *          detectFilename = TODO
+ *          dataFilename   = File with unittest data.
+ *          detectFilename = Dummy filename used to specify which data filenames to use.
  */
 void testImplicitResolver(bool verbose, string dataFilename, string detectFilename)
 {
     string correctTag;
     Node node;
 
-    scope(exit)
+    scope(failure)
     {
-        if(verbose)
+        if(true)
         {
             writeln("Correct tag: ", correctTag);
             writeln("Node: ", node.debugString);
-            assert(node.isSequence);
-            assert(node.tag.get == correctTag);
         }
     }
 
-    correctTag = readText(dataFilename).strip();
-    node = yaml.load(dataFilename);
+    correctTag = readText(detectFilename).strip();
+    node = Loader(dataFilename).load();
+    assert(node.isSequence);
+    foreach(ref Node scalar; node)
+    {
+        assert(scalar.isScalar);
+        assert(scalar.tag.get == correctTag);
+    }
 }
 
 

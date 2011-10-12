@@ -40,14 +40,14 @@ import dyaml.tagdirectives;
  * Write to a file:
  * --------------------
  * auto node = Node([1, 2, 3, 4, 5]);
- * Dumper("file.txt").dump(node);
+ * Dumper("file.yaml").dump(node);
  * --------------------
  *
  * Write multiple YAML documents to a file:
  * --------------------
  * auto node1 = Node([1, 2, 3, 4, 5]);
  * auto node2 = Node("This document contains only one string");
- * Dumper("file.txt").dump(node1, node2);
+ * Dumper("file.yaml").dump(node1, node2);
  * --------------------
  *
  * Write to memory:
@@ -65,8 +65,8 @@ import dyaml.tagdirectives;
  * auto resolver = new Resolver();
  *
  * //Add representer functions / resolver expressions here...
- * --------------------
- * auto dumper = Dumper("file.txt");
+ *
+ * auto dumper = Dumper("file.yaml");
  * dumper.representer = representer;
  * dumper.resolver = resolver;
  * dumper.dump(node);
@@ -259,7 +259,7 @@ struct Dumper
          *
          * Example:
          * --------------------
-         * Dumper dumper = Dumper("file.txt");
+         * Dumper dumper = Dumper("file.yaml");
          * //This will emit tags starting with "tag:long.org,2011"
          * //with a "!short!" prefix instead.
          * dumper.tags("short", "tag:long.org,2011:");

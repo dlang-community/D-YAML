@@ -3,7 +3,7 @@ import yaml;
 
 void main()
 {
-    yaml.Node root = yaml.load("input.yaml");
+    yaml.Node root = Loader("input.yaml").load();
     foreach(string word; root["Hello World"])
     {
         writeln(word);

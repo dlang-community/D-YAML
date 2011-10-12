@@ -26,10 +26,8 @@ Download the version of DMD for your operating system and install it.
 .. note:: 
    Other D compilers exist, such as 
    `GDC <http://bitbucket.org/goshawk/gdc/wiki/Home>`_ and 
-   `LDC <http://www.dsource.org/projects/ldc/>`_. 
-   Setting up with either one of them should be similar to DMD,
-   however, at the moment they are not as up to date as DMD.
-
+   `LDC <http://www.dsource.org/projects/ldc/>`_. Setting up with either one of
+   them should be similar to DMD, but they are not yet as stable as DMD.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Download and compile D:YAML
@@ -84,7 +82,7 @@ into the file:
 
    void main()
    {
-       yaml.Node root = yaml.load("input.yaml");
+       Node root = Loader("input.yaml").load();
        foreach(string word; root["Hello World"])
        {
            writeln(word);
@@ -100,22 +98,23 @@ Explanation of the code
 First, we import the *yaml* module. This is the only module you need to import 
 to use D:YAML - it automatically imports all needed modules.
 
-Next we load the file using the *yaml.load()* function - this loads the file as
+Next we load the file using the *Loader.load()* method. *Loader* is the struct 
+used for parsing YAML documents, and *load()* is a method that loads the file as
 **one** YAML document and throws *YAMLException*, D:YAML exception type, if the 
 file could not be parsed or does not contain exactly one document. Note that we 
 don't do any error checking here in order to keep the example as simple as 
 possible.
 
-*yaml.Node* represents a node in a YAML document. It can be a sequence (array), 
+*Node* represents a node in a YAML document. It can be a sequence (array), 
 mapping (associative array) or a scalar (value). Here the root node is a 
 mapping, and we use the index operator to get subnodes with keys "Hello World"
 and "Answer". We iterate over the first, as it is a sequence, and use the 
-*yaml.Node.get()* method on the second to get its value as an integer.
+*Node.get()* method on the second to get its value as an integer.
 
 You can iterate over a mapping or sequence as if it was an associative or normal 
 array. If you try to iterate over a scalar, it will throw a *YAMLException*. 
 
-You can iterate over subnodes using yaml.Node as the iterated type, or specify 
+You can iterate over subnodes using *Node* as the iterated type, or specify 
 the type subnodes are expected to have. D:YAML will automatically convert 
 iterated subnodes to that type if possible. Here we specify the *string* type, 
 so we iterate over the "Hello World" sequence as an array of strings. If it is
@@ -123,8 +122,8 @@ not possible to convert to iterated type, a *YAMLException* is thrown. For
 instance, if we specified *int* here, we would get an error, as "Hello" 
 cannot be converted to an integer.
 
-The *yaml.Node.get()* method is used to get value of a scalar node as specified 
-type. D:YAML will try to return the scalar as specified type, converting if 
+The *Node.get()* method is used to get value of a scalar node, allowing to 
+specify type. D:YAML will try to return the scalar as this type, converting if 
 needed, throwing *YAMLException* if not possible.
 
 
@@ -135,16 +134,15 @@ Compiling
 To compile your project, you must give DMD the directories containing import 
 modules and the library. You also need to tell it to link with D:YAML. The import
 directory should be the D:YAML package directory. You can specify it using the 
-``-I`` option of DMD.  The library directory should point to where you put the
-compiled D:YAML library. On Unix/Linux you can specify it using the ``-L-L`` 
-option, and link with D:YAML using the ``-L-l`` option. On Windows, the import
-directory is used as the library directory. To link with the library on Windows,
-just add the path to it relative to the current directory.
+``-I`` option of DMD. The library directory should be where you put the compiled
+D:YAML library. On Unix/Linux you can specify it using the ``-L-L`` option, and 
+link with D:YAML using the ``-L-l`` option. On Windows, the import directory is
+used as the library directory. To link with the library on Windows, just add the
+path to it relative to the current directory.
 
-For example, if you extracted D:YAML to ``/home/xxx/dyaml`` and compiled it in 
-that directory, your project is in ``/home/xxx/dyaml-project``, and you are 
-currently in that directory, you can compile the project with the following 
-command on Unix/Linux::
+For example, if you extracted and compiled D:YAML in ``/home/xxx/dyaml``, your
+project is in ``/home/xxx/dyaml-project``, and you are currently in that 
+directory, you can compile the project with the following command on Unix/Linux::
 
    dmd -I../dyaml -L-L../dyaml -L-ldyaml main.d
 

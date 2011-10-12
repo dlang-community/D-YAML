@@ -92,9 +92,11 @@ void main()
        resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                     "0123456789abcdefABCDEF");
        
-       auto loader = new Loader("input.yaml", constructor, resolver);
+       auto loader = Loader("input.yaml");
+       loader.constructor = constructor;
+       loader.resolver = resolver;
 
-       auto root = loader.loadSingleDocument();
+       auto root = loader.load();
 
        if(root["scalar-red"].get!Color == red && 
           root["mapping-red"].get!Color == red && 

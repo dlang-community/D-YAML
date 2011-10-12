@@ -61,9 +61,10 @@ void testRepresenterTypes(bool verbose, string codeFilename)
         constructor.addConstructor("!tag1", &constructClass);
         constructor.addConstructor("!tag2", &constructStruct);
 
-        auto resolver = new Resolver;
-        auto loader   = Loader(loadStream, "DUMMY", constructor, resolver);
-        foreach(node; loader){readNodes ~= node;}
+        auto loader        = Loader(loadStream);
+        loader.name        = "TEST";
+        loader.constructor = constructor;
+        readNodes          = loader.loadAll();
 
         assert(expectedNodes.length == readNodes.length);
         foreach(n; 0 .. expectedNodes.length)

@@ -92,8 +92,12 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
         writeln("ORIGINAL:\n", readText(dataFilename));
         writeln("OUTPUT:\n", cast(string)emitStream.data);
     }
-    auto loadStream = new MemoryStream(emitStream.data);
-    auto newEvents = Loader(loadStream, "DUMMY", new Constructor, new Resolver).parse();
+
+    auto loader2        = Loader(new MemoryStream(emitStream.data));
+    loader2.name        = "TEST";
+    loader2.constructor = new Constructor;
+    loader2.resolver    = new Resolver;
+    auto newEvents = loader2.parse();
     assert(compareEvents(events, newEvents));
 }
 
@@ -121,8 +125,11 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
             writeln("OUTPUT (canonical=", canonical, "):\n", 
                     cast(string)emitStream.data);
         }
-        auto loadStream = new MemoryStream(emitStream.data);
-        auto newEvents = Loader(loadStream, "DUMMY", new Constructor, new Resolver).parse();
+        auto loader2        = Loader(new MemoryStream(emitStream.data));
+        loader2.name        = "TEST";
+        loader2.constructor = new Constructor;
+        loader2.resolver    = new Resolver;
+        auto newEvents = loader2.parse();
         assert(compareEvents(events, newEvents));
     }
 }
@@ -179,8 +186,11 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                             to!string(style), ")");
                     writeln(emitStream.data);
                 }
-                auto loadStream = new MemoryStream(emitStream.data);
-                auto newEvents = Loader(loadStream, "DUMMY", new Constructor, new Resolver).parse();
+                auto loader2        = Loader(new MemoryStream(emitStream.data));
+                loader2.name        = "TEST";
+                loader2.constructor = new Constructor;
+                loader2.resolver    = new Resolver;
+                auto newEvents = loader2.parse();
                 assert(compareEvents(events, newEvents));
             }
         }

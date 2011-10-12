@@ -88,9 +88,10 @@ void main()
        constructor.addConstructor("!color", &constructColorScalar);
        constructor.addConstructor("!color-mapping", &constructColorMapping);
 
-       auto loader = new Loader("input.yaml", constructor, new Resolver);
+       auto loader = Loader("input.yaml");
+       loader.constructor = constructor;
 
-       auto root = loader.loadSingleDocument();
+       auto root = loader.load();
 
        if(root["scalar-red"].get!Color == red && 
           root["mapping-red"].get!Color == red && 

@@ -22,7 +22,7 @@ void testLoaderError(bool verbose, string errorFilename)
     scope(exit){file.close();}
 
     Node[] nodes;
-    try{nodes = loadAll(file, errorFilename);}
+    try{nodes = Loader(file).loadAll();}
     catch(YAMLException e)
     {
         if(verbose){writeln(typeid(e).toString(), "\n", e);}
@@ -48,7 +48,7 @@ void testLoaderErrorString(bool verbose, string errorFilename)
 
     try
     {
-        auto nodes = loadAll(new MemoryStream(buffer), errorFilename);
+        auto nodes = Loader(new MemoryStream(buffer)).loadAll();
     }
     catch(YAMLException e)
     {
@@ -66,7 +66,7 @@ void testLoaderErrorString(bool verbose, string errorFilename)
  */
 void testLoaderErrorFilename(bool verbose, string errorFilename)
 {
-    try{auto nodes = loadAll(errorFilename);}
+    try{auto nodes = Loader(errorFilename).loadAll();}
     catch(YAMLException e)
     {
         if(verbose){writeln(typeid(e).toString(), "\n", e);}
@@ -83,7 +83,7 @@ void testLoaderErrorFilename(bool verbose, string errorFilename)
  */
 void testLoaderErrorSingle(bool verbose, string errorFilename)
 {
-    try{auto nodes = load(errorFilename);}
+    try{auto nodes = Loader(errorFilename).load();}
     catch(YAMLException e)
     {
         if(verbose){writeln(typeid(e).toString(), "\n", e);}

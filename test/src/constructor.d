@@ -398,8 +398,9 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy)
     constructor.addConstructor("!tag1", &constructClass);
     constructor.addConstructor("!tag2", &constructStruct);
 
-    auto resolver = new Resolver;
-    auto loader   = Loader(dataFilename, constructor, resolver);
+    auto loader        = Loader(dataFilename);
+    loader.constructor = constructor;
+    loader.resolver    = new Resolver;
 
     Node[] exp = expected[base];
 
