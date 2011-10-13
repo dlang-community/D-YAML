@@ -25,7 +25,6 @@ import std.utf;
 import dyaml.exception;
 import dyaml.reader;
 import dyaml.token;
-import dyaml.util;
 
 
 package:
@@ -691,7 +690,7 @@ final class Scanner
             return reader_.column    == 0     && 
                    reader_.peek()    == '-'   &&
                    reader_.prefix(3) == "---" &&
-                   or!(isBreakOrZero, isSpace)(reader_.peek(3));
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(3)); 
         }
 
         ///Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
@@ -701,13 +700,14 @@ final class Scanner
             return reader_.column    == 0     && 
                    reader_.peek()    == '.'   &&
                    reader_.prefix(3) == "..." &&
-                   or!(isBreakOrZero, isSpace)(reader_.peek(3));
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(3)); 
         }
 
         ///Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry()
         {
-            return reader_.peek() == '-' && or!(isBreakOrZero, isSpace)(reader_.peek(1));
+            return reader_.peek() == '-' && 
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(1)); 
         }
 
         /**
@@ -718,7 +718,8 @@ final class Scanner
         bool checkKey()
         {
             return reader_.peek() == '?' && 
-                   (flowLevel_ > 0 || or!(isBreakOrZero, isSpace)(reader_.peek(1)));
+                   (flowLevel_ > 0 || 
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(1))); 
         }
 
         /**
@@ -729,7 +730,8 @@ final class Scanner
         bool checkValue()
         {
             return reader_.peek() == ':' && 
-                   (flowLevel_ > 0 || or!(isBreakOrZero, isSpace)(reader_.peek(1)));
+                   (flowLevel_ > 0 || 
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(1))); 
         }
 
         /**
@@ -751,8 +753,8 @@ final class Scanner
         bool checkPlain()
         {
             const c = reader_.peek();
-            return !(or!(isBreakOrZero, isSpace)(c) || "-?:,[]{}#&*!|>\'\"%@`".canFind(c)) ||
-                    (!or!(isBreakOrZero, isSpace)(reader_.peek(1)) &&
+            return !("-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029".canFind(c)) ||
+                    (!" \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(1)) &&
                      (c == '-' || (flowLevel_ == 0 && "?:".canFind(c))));
         }
 
@@ -786,7 +788,7 @@ final class Scanner
         dstring scanToNextBreak()
         {
             uint length = 0;
-            while(!isBreakOrZero(reader_.peek(length))){++length;}
+            while(!"\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(length))){++length;}
             return reader_.get(length);
         }
 
@@ -853,7 +855,7 @@ final class Scanner
             //Scan directive name.
             const name = scanAlphaNumeric!"a directive"(startMark);
 
-            enforce(or!(isChar!' ', isBreakOrZero)(reader_.peek()), 
+            enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()), 
                     new ScannerException("While scanning a directive", startMark,
                                          "expected alphanumeric, - or _, but found " 
                                          ~ to!string(reader_.peek()), reader_.mark));
@@ -874,7 +876,7 @@ final class Scanner
             reader_.forward();
 
             result ~= '.' ~ scanYAMLDirectiveNumber(startMark);
-            enforce(or!(isChar!' ', isBreakOrZero)(reader_.peek()), 
+            enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()), 
                     new ScannerException("While scanning a directive", startMark,
                                          "expected a digit or '.', but found: " 
                                          ~ to!string(reader_.peek()), reader_.mark));
@@ -920,7 +922,7 @@ final class Scanner
         dstring scanTagDirectivePrefix(in Mark startMark)
         {
             const value = scanTagURI("directive", startMark);
-            enforce(or!(isChar!' ', isBreakOrZero)(reader_.peek()),
+            enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
                     new ScannerException("While scanning a directive prefix", startMark,
                                          "expected ' ', but found" ~ to!string(reader_.peek()),
                                          reader_.mark));
@@ -933,7 +935,7 @@ final class Scanner
         {
             findNextNonSpace();
             if(reader_.peek() == '#'){scanToNextBreak();}
-            enforce(isBreakOrZero(reader_.peek()),
+            enforce("\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
                     new ScannerException("While scanning a directive", startMark,
                                          "expected comment or a line break, but found" 
                                          ~ to!string(reader_.peek()), reader_.mark));
@@ -962,7 +964,7 @@ final class Scanner
             dstring value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
                                      : scanAlphaNumeric!("an anchor")(startMark); 
 
-            enforce((or!(isSpace, isBreakOrZero)(reader_.peek()) || 
+            enforce((" \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()) || 
                      ("?:,]}%@").canFind(reader_.peek())),
                     new ScannerException("While scanning an " ~ (i == '*') ? "alias" : "anchor", 
                                          startMark, "expected alphanumeric, - or _, but found "~
@@ -997,7 +999,7 @@ final class Scanner
                                              to!string(reader_.peek()), reader_.mark));
                 reader_.forward();
             }
-            else if(or!(isSpace, isBreakOrZero)(c))
+            else if(" \t\0\n\r\u0085\u2028\u2029".canFind(c))
             {
                 suffix = "!";
                 reader_.forward();
@@ -1007,7 +1009,7 @@ final class Scanner
                 uint length = 1;
                 bool useHandle = false;
 
-                while(!or!(isChar!' ', isBreakOrZero)(c))
+                while(!" \0\n\r\u0085\u2028\u2029".canFind(c))
                 {
                     if(c == '!')
                     {
@@ -1028,7 +1030,7 @@ final class Scanner
                 suffix = scanTagURI("tag", startMark);
             }
 
-            enforce(or!(isChar!' ', isBreakOrZero)(reader_.peek()),
+            enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
                     new ScannerException("While scanning a tag", startMark,
                                          "expected ' ' but found" ~ 
                                          to!string(reader_.peek()), reader_.mark));
@@ -1076,7 +1078,7 @@ final class Scanner
             while(reader_.column == indent && reader_.peek() != '\0')
             {
                 appender.put(breaks);
-                const bool leadingNonSpace = !isSpace(reader_.peek());
+                const bool leadingNonSpace = !" \t".canFind(reader_.peek());
                 appender.put(scanToNextBreak());
                 lineBreak = ""d ~ scanLineBreak();
 
@@ -1090,7 +1092,7 @@ final class Scanner
         
                     //This is the folding according to the specification:
                     if(style == ScalarStyle.Folded && lineBreak == "\n" &&
-                       leadingNonSpace && !isSpace(reader_.peek()))
+                       leadingNonSpace && !" \t".canFind(reader_.peek()))
                     {
                         if(breaks.length == 0){appender.put(' ');}
                     }
@@ -1151,7 +1153,7 @@ final class Scanner
             if(getChomping())      {getIncrement();}
             else if(getIncrement()){getChomping();}
 
-            enforce(or!(isBreakOrZero, isChar!' ')(c),
+            enforce(" \0\n\r\u0085\u2028\u2029".canFind(c),
                     new ScannerException("While scanning a block scalar", startMark,
                                          "expected chomping or indentation indicator, "
                                          "but found " ~ to!string(c), reader_.mark));
@@ -1165,7 +1167,7 @@ final class Scanner
             findNextNonSpace();
             if(reader_.peek == '#'){scanToNextBreak();}
 
-            enforce(isBreakOrZero(reader_.peek()),
+            enforce("\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
                     new ScannerException("While scanning a block scalar", startMark,
                                          "expected a comment or a line break, but found "
                                          ~ to!string(reader_.peek()), reader_.mark));
@@ -1179,7 +1181,7 @@ final class Scanner
             uint maxIndent;
             Mark endMark = reader_.mark;
 
-            while(or!(isBreak, isChar!' ')(reader_.peek()))
+            while(" \n\r\u0085\u2028\u2029".canFind(reader_.peek()))
             {
                 if(reader_.peek() != ' ')
                 {
@@ -1203,7 +1205,7 @@ final class Scanner
             for(;;)
             {
                 while(reader_.column < indent && reader_.peek() == ' '){reader_.forward();}
-                if(!isBreak(reader_.peek())){break;}
+                if(!"\n\r\u0085\u2028\u2029".canFind(reader_.peek())){break;}
                 chunks ~= scanLineBreak();
                 endMark = reader_.mark;
             }
@@ -1260,7 +1262,7 @@ final class Scanner
             {
                 dchar c = reader_.peek();
                 uint length = 0;
-                while(!(or!(isBreakOrZero, isSpace)(c) || "\'\"\\".canFind(c)))
+                while(!(" \t\0\n\r\u0085\u2028\u2029".canFind(c) || "\'\"\\".canFind(c)))
                 {
                     ++length;
                     c = reader_.peek(length);
@@ -1308,7 +1310,7 @@ final class Scanner
                         dstring hex = reader_.get(length);
                         result ~= cast(dchar)parse!int(hex, 16);
                     }
-                    else if(isBreak(c))
+                    else if("\n\r\u0085\u2028\u2029".canFind(c))
                     {
                         scanLineBreak();
                         result ~= scanFlowScalarBreaks(startMark);
@@ -1329,7 +1331,7 @@ final class Scanner
         dstring scanFlowScalarSpaces(in Mark startMark)
         {
             uint length = 0;
-            while(isSpace(reader_.peek(length))){++length;}
+            while(" \t".canFind(reader_.peek(length))){++length;}
             const whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
@@ -1338,7 +1340,7 @@ final class Scanner
                                          "found unexpected end of stream", reader_.mark));
 
             auto appender = appender!dstring();
-            if(isBreak(c))
+            if("\n\r\u0085\u2028\u2029".canFind(c))
             {
                 const lineBreak = scanLineBreak();
                 const breaks = scanFlowScalarBreaks(startMark);
@@ -1360,16 +1362,19 @@ final class Scanner
                 //Instead of checking indentation, we check for document separators.
                 const prefix = reader_.prefix(3);
                 if((prefix == "---" || prefix == "...") && 
-                   or!(isBreakOrZero, isSpace)(reader_.peek(3)))
+                   " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(3)))
                 {
                     throw new ScannerException("While scanning a quoted scalar", startMark,
                                                "found unexpected document separator", 
                                                reader_.mark);
                 }
 
-                while(isSpace(reader_.peek())){reader_.forward();}
+                while(" \t".canFind(reader_.peek())){reader_.forward();}
 
-                if(isBreak(reader_.peek())){appender.put(scanLineBreak());}
+                if("\n\r\u0085\u2028\u2029".canFind(reader_.peek()))
+                {
+                    appender.put(scanLineBreak());
+                }
                 else{return appender.data;}
             }
         }
@@ -1398,9 +1403,9 @@ final class Scanner
                 for(;;)
                 {
                     c = reader_.peek(length);
-                    bool done = or!(isBreakOrZero, isSpace)(c) || 
+                    bool done = " \t\0\n\r\u0085\u2028\u2029".canFind(c) || 
                                 (flowLevel_ == 0 && c == ':' && 
-                                or!(isBreakOrZero, isSpace)(reader_.peek(length + 1))) ||
+                                " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(length + 1))) ||
                                 (flowLevel_ > 0 && ",:?[]{}".canFind(c));
                     if(done){break;}
                     ++length;
@@ -1408,7 +1413,7 @@ final class Scanner
 
                 //It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
-                   !or!(isBreakOrZero, isSpace)(reader_.peek(length + 1)) &&
+                   !" \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(length + 1)) &&
                    !",[]{}".canFind(reader_.peek(length + 1)))
                 {
                     reader_.forward(length);
@@ -1448,7 +1453,7 @@ final class Scanner
             dstring whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
-            if(isBreak(c))
+            if("\n\r\u0085\u2028\u2029".canFind(c))
             {
                 const lineBreak = scanLineBreak();
                 allowSimpleKey_ = true;
@@ -1456,13 +1461,13 @@ final class Scanner
                 bool end()
                 {
                     return ["---"d, "..."d].canFind(reader_.prefix(3)) && 
-                           or!(isBreakOrZero, isSpace)(reader_.peek(3));
+                           " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(3));
                 }
 
                 if(end()){return "";}
 
                 dstring breaks;
-                while(or!(isBreak, isChar!' ')(reader_.peek()))
+                while(" \n\r\u0085\u2028\u2029".canFind(reader_.peek()))
                 {
                     if(reader_.peek() == ' '){reader_.forward();}
                     else

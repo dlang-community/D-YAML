@@ -32,7 +32,6 @@ import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.tag;
 import dyaml.token;
-import dyaml.util;
 
 
 package:
@@ -678,9 +677,11 @@ struct Emitter
             uint length = 0;
             const id = event_.id;
             const scalar = id == EventID.Scalar;
-            const collectionStart = [EventID.MappingStart, EventID.SequenceStart].canFind(id);
+            const collectionStart = [EventID.MappingStart, 
+                                     EventID.SequenceStart].canFind(id);
 
-            if((id == EventID.Alias || scalar || collectionStart) && !event_.anchor.isNull())
+            if((id == EventID.Alias || scalar || collectionStart) 
+               && !event_.anchor.isNull())
             {
                 if(preparedAnchor_ is null)
                 {
@@ -1002,7 +1003,7 @@ struct Emitter
 
             //Last character or followed by a whitespace.
             bool followedByWhitespace = scalar.length == 1 || 
-                                        or!(isBreakOrZero, isSpace)(scalar[1]);
+                                        " \t\0\n\r\u0085\u2028\u2029".canFind(scalar[1]);
 
             //The previous character is a space/break (false by default).
             bool previousSpace, previousBreak;
@@ -1074,10 +1075,9 @@ struct Emitter
                 }
 
                 //Prepare for the next character.
-                preceededByWhitespace = isBreakOrZero(c) || isSpace(c);
+                preceededByWhitespace = "\0\n\r\u0085\u2028\u2029 \t".canFind(c);
                 followedByWhitespace = index + 2 >= scalar.length || 
-                                       isBreakOrZero(scalar[index + 2]) ||
-                                       isSpace(scalar[index + 2]);
+                                       "\0\n\r\u0085\u2028\u2029 \t".canFind(scalar[index + 2]);
             }
 
             with(analysis.flags)
