@@ -37,12 +37,15 @@ import dyaml.util;
 
 package:
 
-///Exception thrown at Emitter errors.
+/**
+ * Exception thrown at Emitter errors.
+ *
+ * See_Also:
+ *     YAMLException
+ */
 class EmitterException : YAMLException
 {
-    public:
-        ///Construct an EmitterException with specified message.
-        this(string msg){super(msg);}
+    mixin ExceptionCtors;
 }
 
 //Stores results of analysis of a scalar, determining e.g. what scalar style to use.

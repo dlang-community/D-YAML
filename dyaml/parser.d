@@ -96,12 +96,7 @@ package:
  */
 class ParserException : MarkedYAMLException
 {
-    this(string context, Mark contextMark, string problem, Mark problemMark)
-    {
-        super(context, contextMark, problem, problemMark);
-    }
-
-    this(string problem, Mark problemMark){super(problem, problemMark);}
+    mixin MarkedExceptionCtors;
 }
 
 ///Generates events from tokens provided by a Scanner.

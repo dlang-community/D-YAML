@@ -27,7 +27,10 @@ package:
 ///Exception thrown at Reader errors.
 class ReaderException : YAMLException
 {
-    this(string msg){super("Error reading YAML stream: " ~ msg);}
+    this(string msg, string file = __FILE__, int line = __LINE__)
+    {
+        super("Error reading YAML stream: " ~ msg, file, line);
+    }
 }
 
 ///Reads data from a stream and converts it to UTF-32 (dchar) data.

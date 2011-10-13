@@ -17,8 +17,11 @@ import std.string;
 class YAMLException : Exception
 {
     public:
-        ///Construct a YAMLException with specified message.
-        this(string msg){super(msg);}
+        ///Construct a YAMLException with specified message, and position where it was thrown.
+        this(string msg, string file = __FILE__, int line = __LINE__)
+        {
+            super(msg, file, line);
+        }
 
     package:
         //Set name of the file that was being processed when this exception was thrown.
@@ -59,17 +62,45 @@ package:
 abstract class MarkedYAMLException : YAMLException
 {
     //Construct a MarkedYAMLException with specified context and problem.
-    this(string context, Mark contextMark, string problem, Mark problemMark)
+    this(string context, Mark contextMark, string problem, Mark problemMark,
+         string file = __FILE__, int line = __LINE__)
     {
         string msg = context ~ '\n';
         if(contextMark != problemMark){msg ~= contextMark.toString() ~ '\n';}
         msg ~= problem ~ '\n' ~ problemMark.toString() ~ '\n';
-        super(msg);
+        super(msg, file, line);
     }
 
     //Construct a MarkedYAMLException with specified problem.
-    this(string problem, Mark problemMark)
+    this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
     {
-        super(problem ~ '\n' ~ problemMark.toString());
+        super(problem ~ '\n' ~ problemMark.toString(), file, line);
     }
+}
+
+///Constructors of YAML exceptions are mostly the same, so we use a mixin.
+template ExceptionCtors()
+{
+    public:
+        this(string msg, string file = __FILE__, int line = __LINE__)
+        {
+            super(msg, file, line);
+        }
+}
+
+///Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+template MarkedExceptionCtors()
+{
+    public:
+        this(string context, Mark contextMark, string problem, Mark problemMark,
+             string file = __FILE__, int line = __LINE__)
+        {
+            super(context, contextMark, problem, problemMark, 
+                  file, line);
+        }
+
+        this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
+        {
+            super(problem, problemMark, file, line);
+        }
 }

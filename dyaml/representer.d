@@ -30,9 +30,7 @@ import dyaml.tag;
 ///Exception thrown on Representer errors.
 class RepresenterException : YAMLException
 {
-    public:
-        ///Construct an RepresenterException with specified message.
-        this(string msg){super(msg);}
+    mixin ExceptionCtors;
 }
 
 ///Used to represent YAML nodes various data types into scalar/sequence/mapping nodes ready for output.

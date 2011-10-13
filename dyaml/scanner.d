@@ -61,12 +61,7 @@ package:
  */
 class ScannerException : MarkedYAMLException
 {
-    this(string context, Mark contextMark, string problem, Mark problemMark)
-    {
-        super(context, contextMark, problem, problemMark);
-    }
-
-    this(string problem, Mark problemMark){super(problem, problemMark);}
+    mixin MarkedExceptionCtors;
 }
 
 ///Generates tokens from data provided by a Reader.

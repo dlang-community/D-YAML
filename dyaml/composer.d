@@ -32,12 +32,7 @@ package:
  */
 class ComposerException : MarkedYAMLException
 {
-    this(string context, Mark contextMark, string problem, Mark problemMark)
-    {
-        super(context, contextMark, problem, problemMark);
-    }
-
-    this(string problem, Mark problemMark){super(problem, problemMark);}
+    mixin MarkedExceptionCtors;
 }
 
 ///Composes YAML documents from events provided by a Parser.
