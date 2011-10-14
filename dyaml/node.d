@@ -57,7 +57,7 @@ struct YAMLNull{}
 //Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
-///Base class for YAMLContainer - used for user defined YAML types.
+//Base class for YAMLContainer - used for user defined YAML types.
 package abstract class YAMLObject
 {
     public:
@@ -110,14 +110,14 @@ package class YAMLContainer(T) : YAMLObject
 /**
  * YAML node.
  *
- * This is a pseudo-dynamic type that can store any YAML value, including sequence 
- * or a mapping of nodes. You can get data from a Node directly or iterate over it
- * if it's a sequence or a mapping.
+ * This is a pseudo-dynamic type that can store any YAML value, including a 
+ * sequence or mapping of nodes. You can get data from a Node directly or 
+ * iterate over it if it's a collection.
  */
 struct Node
 {
     public:
-        ///Pair of YAML nodes, used in mappings.
+        ///Key-value pair of YAML nodes, used in mappings.
         struct Pair
         {
             public:
@@ -174,10 +174,11 @@ struct Node
          * Construct a Node from a value.
          *
          * Any type except of Node can be stored in a Node, but default YAML 
-         * types (integers, floats, strings, timestamp, etc.) will be stored
+         * types (integers, floats, strings, timestamps, etc.) will be stored
          * more efficiently. 
          *
-         * Note that for any non-default types you store 
+         *
+         * Note that to emit any non-default types you store 
          * in a node, you need a Representer to represent them in YAML -
          * otherwise emitting will fail.
          *
@@ -186,8 +187,8 @@ struct Node
          *                  of tag determined by Representer. Representer uses
          *                  this to determine YAML data type when a D data type 
          *                  maps to multiple different YAML data types. Tag must 
-         *                  be in full form, e.g. "tag:yaml.org,2002:omap", not 
-         *                  a shortcut, like "!!omap".            
+         *                  be in full form, e.g. "tag:yaml.org,2002:int", not 
+         *                  a shortcut, like "!!int".            
          */
         this(T)(T value, in string tag = null) if (isSomeString!T || 
                                                   (!isArray!T && !isAssociativeArray!T))
@@ -221,11 +222,11 @@ struct Node
         }
 
         /**
-         * Construct a node from an array_.
+         * Construct a node from an _array.
          *
-         * If array is an array_ of nodes or node pairs, it is stored in the 
-         * node directly. Otherwise, every value in the array is converted to a
-         * node, and those nodes are stored.
+         * If _array is an _array of nodes or pairs, it is stored directly. 
+         * Otherwise, every value in the array is converted to a node, and 
+         * those nodes are stored.
          *
          * Params:  array = Values to store in the node.
          *          tag   = Overrides tag of the node when emitted, regardless 
@@ -233,10 +234,10 @@ struct Node
          *                  this to determine YAML data type when a D data type 
          *                  maps to multiple different YAML data types.
          *                  This is used to differentiate between YAML sequences 
-         *                  (!!seq) and sets (!!set), which both are internally 
-         *                  represented as an array_ of nodes. Tag must be in 
-         *                  full form, e.g. "tag:yaml.org,2002:set", not a 
-         *                  shortcut, like "!!set".
+         *                  ("!!seq") and sets ("!!set"), which both are 
+         *                  internally represented as an array_ of nodes. Tag 
+         *                  must be in full form, e.g. "tag:yaml.org,2002:set",
+         *                  not a shortcut, like "!!set".
          *
          * Examples:
          * --------------------
@@ -282,10 +283,10 @@ struct Node
         }
 
         /**
-         * Construct a node from an associative array_.
+         * Construct a node from an associative _array.
          *
-         * If keys and/or values of array are nodes, they are copied to the node
-         * directly. Otherwise they are converted to nodes and then stored.
+         * If keys and/or values of _array are nodes, they stored directly. 
+         * Otherwise they are converted to nodes and then stored.
          *
          * Params:  array = Values to store in the node.
          *          tag   = Overrides tag of the node when emitted, regardless 
@@ -293,11 +294,11 @@ struct Node
          *                  this to determine YAML data type when a D data type 
          *                  maps to multiple different YAML data types.
          *                  This is used to differentiate between YAML unordered 
-         *                  mappings (!!map), ordered mappings (!!omap), and 
-         *                  pairs (!!pairs) which are all internally represented
-         *                  as an array_ of node pairs. Tag must be in full 
-         *                  form, e.g. "tag:yaml.org,2002:omap", not a shortcut, 
-         *                  like "!!omap".
+         *                  mappings ("!!map"), ordered mappings ("!!omap"), and 
+         *                  pairs ("!!pairs") which are all internally 
+         *                  represented as an _array of node pairs. Tag must be 
+         *                  in full form, e.g. "tag:yaml.org,2002:omap", not a
+         *                  shortcut, like "!!omap".
          *
          * Examples:
          * --------------------
@@ -338,16 +339,18 @@ struct Node
         }
 
         /**
-         * Construct a node from arrays of keys_ and values_.
+         * Construct a node from arrays of _keys and _values.
          *
          * Constructs a mapping node with key-value pairs from
-         * keys_ and values_, keeping their order. Useful when order
+         * _keys and _values, keeping their order. Useful when order
          * is important (ordered maps, pairs).
+         *
          *
          * keys and values must have equal length.
          *
-         * If keys_ and/or values_ of are nodes, they are copied to the node
-         * directly. Otherwise they are converted to nodes and then stored.
+         *
+         * If _keys and/or _values are nodes, they are stored directly/
+         * Otherwise they are converted to nodes and then stored.
          *
          * Params:  keys   = Keys of the mapping, from first to last pair.
          *          values = Values of the mapping, from first to last pair.
@@ -356,11 +359,11 @@ struct Node
          *                   this to determine YAML data type when a D data type 
          *                   maps to multiple different YAML data types.
          *                   This is used to differentiate between YAML unordered 
-         *                   mappings (!!map), ordered mappings (!!omap), and 
-         *                   pairs (!!pairs) which are all internally represented
-         *                   as an array_ of node pairs. Tag must be in full 
-         *                   form, e.g. "tag:yaml.org,2002:omap", not a shortcut, 
-         *                   like "!!omap".
+         *                   mappings ("!!map"), ordered mappings ("!!omap"), and 
+         *                   pairs ("!!pairs") which are all internally 
+         *                   represented as an array of node pairs. Tag must be 
+         *                   in full form, e.g. "tag:yaml.org,2002:omap", not a 
+         *                   shortcut, like "!!omap".
          *
          * Examples:
          * --------------------
@@ -411,10 +414,10 @@ struct Node
         ///Is this node a scalar value?
         @property bool isScalar()   const {return !(isMapping || isSequence);}
                                             
-        ///Is this node a sequence of nodes?
+        ///Is this node a sequence?
         @property bool isSequence() const {return isType!(Node[]);}
                                             
-        ///Is this node a mapping of nodes?
+        ///Is this node a mapping?
         @property bool isMapping()  const {return isType!(Pair[]);}
 
         ///Is this node a user defined type?
@@ -423,14 +426,15 @@ struct Node
         /**
          * Equality test.
          *
-         * If T is Node, recursively compare all 
-         * subnodes and might be quite expensive if testing entire documents.
+         * If T is Node, recursively compare all subnodes. 
+         * This might be quite expensive if testing entire documents.
          *
          * If T is not Node, convert the node to T and test equality with that.
          *
          * Examples:
          * --------------------
-         * //node is a Node that contains integer 42
+         * auto node = Node(42);
+         *
          * assert(node == 42);
          * assert(node == "42");
          * assert(node != "43");
@@ -449,7 +453,7 @@ struct Node
          * Get the value of the node as specified type.
          *
          * If the specifed type does not match type in the node,
-         * conversion is attempted if possible.
+         * conversion is attempted.
          *
          * Timestamps are stored as std.datetime.SysTime.
          * Binary values are decoded and stored as ubyte[]. 
@@ -462,14 +466,15 @@ struct Node
          * but is replaced by a mapping later. Even if the node is a mapping, the
          * get method can be used as if it was a scalar if it has a default value. 
          * This way, new YAML files where the node is a mapping can still be read
-         * by old versions of the program, which expects the node to be a scalar.
+         * by old versions of the program, which expect the node to be a scalar.
          * )
          *
          * Examples:
          *
          * Automatic type conversion:
          * --------------------
-         * //node is a node that contains integer 42
+         * auto node = Node(42);
+         *
          * assert(node.get!int == 42);
          * assert(node.get!string == "42");
          * assert(node.get!double == 42.0);
@@ -489,8 +494,8 @@ struct Node
         /**
          * Write the value of the node to target.
          *
-         * If the type of target does not match type of the node,
-         * conversion is attempted, if possible.
+         * If the target type does not match node type,
+         * conversion is attempted.
          *
          * Params:  target = Variable to write to.
          *
@@ -580,7 +585,7 @@ struct Node
         }
 
         /**
-         * If this is a sequence or a mapping, return its length.
+         * If this is a collection, return its _length.
          *
          * Otherwise, throw NodeException.
          *
@@ -597,9 +602,10 @@ struct Node
         }
 
         /**
-         * Get the element with specified index.
+         * Get the element at specified index.
          *
          * If the node is a sequence, index must be integral.
+         *
          *
          * If the node is a mapping, return the value corresponding to the first 
          * key equal to index, even after conversion. I.e; node["12"] will 
@@ -663,17 +669,17 @@ struct Node
         }
 
         /**
-         * Set element at the specified index of a collection.
+         * Set element at specified index in a collection.
          *
          * This method can only be called on collection nodes.
          * 
          * If the node is a sequence, index must be integral.
          *
-         * If the node is a mapping, set the value_ corresponding to the first 
+         * If the node is a mapping, sets the _value corresponding to the first 
          * key matching index (including conversion, so e.g. "42" matches 42).
          * 
          * If the node is a mapping and no key matches index, a new key-value
-         * pair is added to the mapping. With sequences the index must be in 
+         * pair is added to the mapping. In sequences the index must be in 
          * range. This ensures behavior siilar to D arrays and associative 
          * arrays.
          *
@@ -887,18 +893,19 @@ struct Node
         }
 
         /**
-         * Add an element to a sequence node.
+         * Add an element to a sequence.
          *
          * This method can only be called on sequence nodes.
          *
          * If value is a node, it is copied to the sequence directly. Otherwise
          * value is converted to a node and then stored in the sequence.
          *
-         * When emitting, all values in the sequence will be emitted. If using 
-         * the !!set tag, the user needs to ensure that all elements in the 
-         * sequence are unique, otherwise invalid YAML code will be emitted.
+         * $(P When emitting, all values in the sequence will be emitted. When 
+         * using the !!set tag, the user needs to ensure that all elements in 
+         * the sequence are unique, otherwise $(B invalid) YAML code will be 
+         * emitted.)
          *
-         * Params:  value = Value to add to the sequence.
+         * Params:  value = Value to _add to the sequence.
          */
         void add(T)(T value)
         {
@@ -923,20 +930,20 @@ struct Node
         }
 
         /**
-         * Add a key-value pair to a mapping node.
+         * Add a key-value pair to a mapping.
          *
          * This method can only be called on mapping nodes.
          *
          * If key and/or value is a node, it is copied to the mapping directly. 
          * Otherwise it is converted to a node and then stored in the mapping.
          *
-         * It is possible to for the same key to be present more than once in a
+         * $(P It is possible for the same key to be present more than once in a
          * mapping. When emitting, all key-value pairs will be emitted. 
-         * This is useful with the !!pairs tag, but will result in invalid YAML
-         * with !!map and !!omap tags.
+         * This is useful with the "!!pairs" tag, but will result in 
+         * $(B invalid) YAML with "!!map" and "!!omap" tags.)
          *
-         * Params:  key   = Key to add.
-         *          value = Value to add.
+         * Params:  key   = Key to _add.
+         *          value = Value to _add.
          */
         void add(K, V)(K key, V value)
         {
@@ -965,10 +972,10 @@ struct Node
          *
          * If the node is a sequence, the first node matching value (including
          * conversion, so e.g. "42" matches 42) is removed.
-         * If the node is a mapping, the first key-value pair where value_ 
-         * matches value is removed.
+         * If the node is a mapping, the first key-value pair where _value 
+         * matches specified value is removed.
          * 
-         * Params:  value = Value to remove.
+         * Params:  value = Value to _remove.
          *
          * Throws:  NodeException if the node is not a collection.
          */

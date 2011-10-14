@@ -24,9 +24,13 @@
 <div class="navblock">
 <ul><li><a href="index.html">Main page</a></li>
 <li><a href="dyaml.constructor.html">dyaml.constructor</a></li>
+<li><a href="dyaml.dumper.html">dyaml.dumper</a></li>
+<li><a href="dyaml.encoding.html">dyaml.encoding</a></li>
 <li><a href="dyaml.exception.html">dyaml.exception</a></li>
+<li><a href="dyaml.linebreak.html">dyaml.linebreak</a></li>
 <li><a href="dyaml.loader.html">dyaml.loader</a></li>
 <li><a href="dyaml.node.html">dyaml.node</a></li>
+<li><a href="dyaml.representer.html">dyaml.representer</a></li>
 <li><a href="dyaml.resolver.html">dyaml.resolver</a></li>
 </ul>
 </div>
@@ -45,7 +49,7 @@
 </p>
 <p>Can be thrown by custom constructor functions.</p>
 
-<dl><dt class="d_decl">this(string <b>msg</b>, Mark <b>start</b>, Mark <b>end</b>);
+<dl><dt class="d_decl">this(string <b>msg</b>, Mark <b>start</b>, Mark <b>end</b>, string <b>file</b> = __FILE__, int <b>line</b> = __LINE__);
 </dt>
 <dd><p>Construct a ConstructorException.
 </p>
@@ -98,6 +102,9 @@
  the node in file) and either a string (if constructing from scalar),
  an array of Nodes (from sequence) or an array of Node.Pair (from mapping).
  The value returned by this function will be stored in the resulring node.
+<br>
+
+ Only one constructor function can be set for one tag.
 
 </p>
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>tag</td>

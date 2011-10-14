@@ -47,7 +47,7 @@
 are caused by difficulty of implementation of some features, such as multiple
 Unicode encodings within single stream, and some by unnecessary restrictions or
 ambiguities in the specification.</p>
-<p>Still, D:YAML tries to be as close to the specification as possible. D:YAML should
+<p>Still, D:YAML tries to be as close to the specification as possible. It should
 never load documents with different meaning than according to the specification,
 and documents that fail to load should be very rare (for instance, very few
 files use multiple Unicode encodings).</p>
@@ -55,11 +55,6 @@ files use multiple Unicode encodings).</p>
 <h2>List of known differences:<a class="headerlink" href="#list-of-known-differences" title="Permalink to this headline">¶</a></h2>
 <p>Differences that can cause valid YAML documents not to load:</p>
 <ul>
-<li><p class="first">At the moment, all mappings in the internal representation are ordered,
-and a comparison for equality between equal mappings with differing order
-will return false. This will be fixed once Phobos has a usable map type or
-D associative arrays work with variants.</p>
-</li>
 <li><p class="first">No support for byte order marks and multiple Unicode encodings in a stream.</p>
 </li>
 <li><p class="first">Plain scalars in flow context cannot contain <tt class="docutils literal"><span class="pre">,</span></tt>, <tt class="docutils literal"><span class="pre">:</span></tt> and <tt class="docutils literal"><span class="pre">?</span></tt>.
@@ -143,8 +138,8 @@ struct appears in Phobos.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Aug 16, 2011.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Last updated on Oct 14, 2011.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

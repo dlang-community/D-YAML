@@ -186,8 +186,7 @@ resolution for the Color data type (in its scalar form).
 
 We use the *addImplicitResolver* method of *Resolver*, passing the tag, regular
 expression the value must match to resolve to this tag, and a string of possible
-starting characters of the value. Then we pass the *Resolver* to the constructor 
-of *Loader*.
+starting characters of the value. Then we pass the *Resolver* to *Loader*.
 
 Note that resolvers added first override ones added later. If no resolver 
 matches a scalar, YAML string tag is used. Therefore our custom values must not 

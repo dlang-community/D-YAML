@@ -5,8 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * YAML representer.
- * Code based on PyYAML: http://www.pyyaml.org
+ * YAML node _representer.
+ *
+ * Code based on $(LINK2 http://www.pyyaml.org, PyYAML).
  */
 module dyaml.representer;
 
@@ -33,7 +34,7 @@ class RepresenterException : YAMLException
     mixin ExceptionCtors;
 }
 
-///Used to represent YAML nodes various data types into scalar/sequence/mapping nodes ready for output.
+///Used to represent YAML nodes various data types into scalar, sequence and mapping nodes ready for output.
 final class Representer
 {
     private:
@@ -43,7 +44,7 @@ final class Representer
         /**
          * Construct a Representer.
          * 
-         * Params:  useDefaultRepresenters = Use defualt representer functions
+         * Params:  useDefaultRepresenters = Use default representer functions
          *                                   for default YAML types? This can be
          *                                   disabled to use custom representer
          *                                   functions for default types.
@@ -180,11 +181,11 @@ final class Representer
         //user code.
 
         /**
-         * Represent a scalar with specified tag.
+         * Represent a _scalar with specified _tag.
          *
          * This is used by representer functions that produce scalars.
          *
-         * Params:  tag    = Tag of the scalar.
+         * Params:  tag    = Tag of the _scalar.
          *          scalar = Scalar value.
          *
          * Returns: The represented node.
@@ -210,7 +211,7 @@ final class Representer
         }
 
         /**
-         * Represent a sequence with specified tag, representing children first.
+         * Represent a _sequence with specified _tag, representing children first.
          *
          * This is used by representer functions that produce sequences.
          *
@@ -248,12 +249,12 @@ final class Representer
         }
 
         /**
-         * Represent a mapping with specified tag, representing children first.
+         * Represent a mapping with specified _tag, representing children first.
          *
          * This is used by representer functions that produce mappings.
          *
          * Params:  tag   = Tag of the mapping.
-         *          pairs = Key-value pairs of the mapping.
+         *          pairs = Key-value _pairs of the mapping.
          *
          * Returns: The represented node.
          *
@@ -288,7 +289,7 @@ final class Representer
         }
 
     package:
-        ///Represent a node based on its type, and return the represented result.
+        //Represent a node based on its type, and return the represented result.
         Node representData(ref Node data)
         {
             //User types are wrapped in YAMLObject.
@@ -302,7 +303,7 @@ final class Representer
             return result;
         }
 
-        ///Represent a node, serializing with specified Serializer.
+        //Represent a node, serializing with specified Serializer.
         void represent(ref Serializer serializer, ref Node node)
         {
             auto data = representData(node);
@@ -310,13 +311,14 @@ final class Representer
         }
 }
 
-///Represent a null node as a null.
+
+///Represent a _null _node as a _null YAML value.
 Node representNull(ref Node node, Representer representer)
 {
     return representer.representScalar("tag:yaml.org,2002:null", "null");
 }
 
-///Represent a string node as a string scalar.
+///Represent a string _node as a string scalar.
 Node representString(ref Node node, Representer representer)
 {
     string value = node.get!string;
@@ -324,7 +326,7 @@ Node representString(ref Node node, Representer representer)
                          : representer.representScalar("tag:yaml.org,2002:str", value);
 }
 
-///Represent a bytes node as a binary scalar.
+///Represent a bytes _node as a binary scalar.
 Node representBytes(ref Node node, Representer representer)
 {
     const ubyte[] value = node.get!(ubyte[]);
@@ -333,21 +335,21 @@ Node representBytes(ref Node node, Representer representer)
                                        cast(string)Base64.encode(value));
 }
 
-///Represent a bool node as a bool scalar.
+///Represent a bool _node as a bool scalar.
 Node representBool(ref Node node, Representer representer)
 {
     return representer.representScalar("tag:yaml.org,2002:bool", 
                                        node.get!bool ? "true" : "false");
 }
 
-///Represent a long node as an integer scalar.
+///Represent a long _node as an integer scalar.
 Node representLong(ref Node node, Representer representer)
 {
     return representer.representScalar("tag:yaml.org,2002:int", 
                                        to!string(node.get!long));
 }
 
-///Represent a real node as a floating point scalar.
+///Represent a real _node as a floating point scalar.
 Node representReal(ref Node node, Representer representer)
 {
     real f = node.get!real;
@@ -361,7 +363,14 @@ Node representReal(ref Node node, Representer representer)
     return representer.representScalar("tag:yaml.org,2002:float", value);
 }
 
-///Represent a sequence node as sequence/set.
+///Represent a SysTime _node as a timestamp.
+Node representSysTime(ref Node node, Representer representer)
+{
+    return representer.representScalar("tag:yaml.org,2002:timestamp", 
+                                       node.get!SysTime.toISOExtString());
+}
+
+///Represent a sequence _node as sequence/set.
 Node representNodes(ref Node node, Representer representer)
 {
     auto nodes = node.get!(Node[]);
@@ -383,7 +392,7 @@ Node representNodes(ref Node node, Representer representer)
     }
 }
 
-///Represent a mapping node as map/ordered map/pairs.
+///Represent a mapping _node as map/ordered map/pairs.
 Node representPairs(ref Node node, Representer representer)
 {
     auto pairs = node.get!(Node.Pair[]);
@@ -431,13 +440,6 @@ Node representPairs(ref Node node, Representer representer)
                                          "in an unordered map"));
         return representer.representMapping("tag:yaml.org,2002:map", pairs);
     }
-}
-
-///Represent a SysTime node as a timestamp.
-Node representSysTime(ref Node node, Representer representer)
-{
-    return representer.representScalar("tag:yaml.org,2002:timestamp", 
-                                       node.get!SysTime.toISOExtString());
 }
 
 //Unittests

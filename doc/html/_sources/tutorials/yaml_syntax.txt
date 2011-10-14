@@ -8,14 +8,14 @@ which this article is based on,
 `Chapter 2 of the YAML specification <http://yaml.org/spec/1.1/#id857168>`_
 or the `Wikipedia page <http://en.wikipedia.org/wiki/YAML>`_.
 
-YAML is a data serialization format designed to be as human readable as 
-possible. YAML is a recursive acronym for "YAML Ain't Markup Language".
+YAML is a data serialization format designed for human readability. YAML is a 
+recursive acronym for "YAML Ain't Markup Language".
 
 YAML is similar to JSON, and in fact, JSON is a subset of YAML 1.2; but YAML has
-some more advanced features and is easier to read. However, YAML is also more
+some more advanced features and is easier to read. However, it is also more
 difficult to parse (and probably somewhat slower). Data is stored in mappings
 (associative arrays), sequences (lists) and scalars (single values). Data 
-structure hierarchy either depends on indentation (block context, similar to
+structure hierarchy depends either on indentation (block context, similar to
 Python code), or nesting of brackets and braces (flow context, similar to JSON).
 YAML comments begin with ``#`` and continue until the end of line.
 
@@ -25,8 +25,7 @@ Documents
 ---------
 
 A YAML stream consists of one or more documents starting with ``---`` and
-optionally ending with ``...`` . If there is only one document, ``---`` can be
-left out.
+optionally ending with ``...`` . ``---`` can be left out for the first document.
 
 Single document with no explicit start or end:
 

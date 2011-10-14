@@ -100,7 +100,7 @@ to use D:YAML - it automatically imports all needed modules.
 
 Next we load the file using the *Loader.load()* method. *Loader* is the struct 
 used for parsing YAML documents, and *load()* is a method that loads the file as
-**one** YAML document and throws *YAMLException*, D:YAML exception type, if the 
+**one** YAML document, or throws *YAMLException*, D:YAML exception type, if the 
 file could not be parsed or does not contain exactly one document. Note that we 
 don't do any error checking here in order to keep the example as simple as 
 possible.

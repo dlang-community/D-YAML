@@ -47,10 +47,10 @@
             
   <div class="section" id="custom-yaml-data-types">
 <h1>Custom YAML data types<a class="headerlink" href="#custom-yaml-data-types" title="Permalink to this headline">¶</a></h1>
-<p>Often you will want to serialize complex data types such as classes. You can use
-functions to process nodes; e.g. a mapping containing class data members indexed
-by name. Alternatively, YAML supports custom data types using identifiers called
-<em>tags</em>. That is the topic of this tutorial.</p>
+<p>Often you might want to serialize complex data types such as classes. You can
+use functions to process nodes such as a mapping containing class data members
+indexed by name. Alternatively, YAML supports custom data types using
+identifiers called <em>tags</em>. That is the topic of this tutorial.</p>
 <p>Each YAML node has a tag specifying its type. For instance: strings use the tag
 <tt class="docutils literal"><span class="pre">tag:yaml.org,2002:str</span></tt>. Tags of most default types are <em>implicitly resolved</em>
 during parsing, so you don&#8217;t need to specify tag for each float, integer, etc.
@@ -59,9 +59,9 @@ It is also possible to implicitly resolve custom tags, as we will show later.</p
 <h2>Constructor<a class="headerlink" href="#constructor" title="Permalink to this headline">¶</a></h2>
 <p>D:YAML uses the <em>Constructor</em> class to process each node to hold data type
 corresponding to its tag. <em>Constructor</em> stores a function for each supported
-tag to process it. These functions can be supplied by the user using the
-<em>addConstructor()</em> method. <em>Constructor</em> is then passed to <em>Loader</em>, which will
-parse YAML input.</p>
+tag to process it. These functions are supplied by the user using the
+<em>addConstructor()</em> method. <em>Constructor</em> is then passed to <em>Loader</em>, which
+parses YAML input.</p>
 <p>We will implement support for an RGB color type. It is implemented as the
 following struct:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">struct</span> <span class="n">Color</span>
@@ -146,7 +146,7 @@ RRGGBB, or from a mapping, where we use the following format:
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Next, we need some YAML code using our new tag. Create a file called input.yaml
+<p>Next, we need some YAML data using our new tag. Create a file called input.yaml
 with the following contents:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar-red</span><span class="p-Indicator">:</span> <span class="kt">!color</span> <span class="l-Scalar-Plain">FF0000</span>
 <span class="l-Scalar-Plain">scalar-orange</span><span class="p-Indicator">:</span> <span class="kt">!color</span> <span class="l-Scalar-Plain">FFFF00</span>
@@ -173,9 +173,10 @@ with the following contents:</p>
         <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructor</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorScalar</span><span class="p">);</span>
         <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructor</span><span class="p">(</span><span class="s">&quot;!color-mapping&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorMapping</span><span class="p">);</span>
 
-        <span class="k">auto</span> <span class="n">loader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="k">new</span> <span class="n">Resolver</span><span class="p">);</span>
+        <span class="k">auto</span> <span class="n">loader</span> <span class="p">=</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">);</span>
+        <span class="n">loader</span><span class="p">.</span><span class="n">constructor</span> <span class="p">=</span> <span class="n">constructor</span><span class="p">;</span>
 
-        <span class="k">auto</span> <span class="n">root</span> <span class="p">=</span> <span class="n">loader</span><span class="p">.</span><span class="n">loadSingleDocument</span><span class="p">();</span>
+        <span class="k">auto</span> <span class="n">root</span> <span class="p">=</span> <span class="n">loader</span><span class="p">.</span><span class="n">load</span><span class="p">();</span>
 
         <span class="k">if</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="s">&quot;scalar-red&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
            <span class="n">root</span><span class="p">[</span><span class="s">&quot;mapping-red&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
@@ -196,23 +197,21 @@ with the following contents:</p>
 </pre></div>
 </div>
 <p>First, we create a <em>Constructor</em> and pass functions to handle the <tt class="docutils literal"><span class="pre">!color</span></tt>
-and <tt class="docutils literal"><span class="pre">!color-mapping</span></tt> tag. We construct a <em>Loader</em> using the <em>Constructor</em>.
-We also need a <em>Resolver</em>, but for now we just default-construct it. We then
-load the YAML document, and finally, read the colors using <em>get()</em> method to
-test if they were loaded as expected.</p>
+and <tt class="docutils literal"><span class="pre">!color-mapping</span></tt> tag. We construct a <em>Loader*m and pass the *Constructor</em>
+to it. We then load the YAML document, and finally, read the colors using
+<em>get()</em> method to test if they were loaded as expected.</p>
 <p>You can find the source code for what we&#8217;ve done so far in the
 <tt class="docutils literal"><span class="pre">examples/constructor</span></tt> directory in the D:YAML package.</p>
 </div>
 <div class="section" id="resolver">
 <h2>Resolver<a class="headerlink" href="#resolver" title="Permalink to this headline">¶</a></h2>
 <p>Specifying tag for every color value can be tedious. D:YAML can implicitly
-resolve tag of a scalar using a regular expression. This is how default types,
-e.g. int, are resolved. We will use the <em>Resolver</em> class to add implicit tag
+resolve scalar tags using regular expressions. This is how default types such as
+int are resolved. We will use the <em>Resolver</em> class to add implicit tag
 resolution for the Color data type (in its scalar form).</p>
 <p>We use the <em>addImplicitResolver</em> method of <em>Resolver</em>, passing the tag, regular
 expression the value must match to resolve to this tag, and a string of possible
-starting characters of the value. Then we pass the <em>Resolver</em> to the constructor
-of <em>Loader</em>.</p>
+starting characters of the value. Then we pass the <em>Resolver</em> to <em>Loader</em>.</p>
 <p>Note that resolvers added first override ones added later. If no resolver
 matches a scalar, YAML string tag is used. Therefore our custom values must not
 be resolvable as any non-string YAML data type.</p>
@@ -223,12 +222,15 @@ be resolvable as any non-string YAML data type.</p>
 <span class="n">resolver</span><span class="p">.</span><span class="n">addImplicitResolver</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="n">std</span><span class="p">.</span><span class="n">regex</span><span class="p">.</span><span class="n">regex</span><span class="p">(</span><span class="s">&quot;[0-9a-fA-F]{6}&quot;</span><span class="p">,</span>
                              <span class="s">&quot;0123456789abcdefABCDEF&quot;</span><span class="p">));</span>
 
-<span class="k">auto</span> <span class="n">loader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="n">resolver</span><span class="p">);</span>
+<span class="k">auto</span> <span class="n">loader</span> <span class="p">=</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">);</span>
+
+<span class="n">loader</span><span class="p">.</span><span class="n">constructor</span> <span class="p">=</span> <span class="n">constructor</span><span class="p">;</span>
+<span class="n">loader</span><span class="p">.</span><span class="n">resolver</span> <span class="p">=</span> <span class="n">resolver</span><span class="p">;</span>
 
 <span class="c1">//code from the previous example...</span>
 </pre></div>
 </div>
-<p>Now, change contents of input.dyaml to this:</p>
+<p>Now, change contents of input.yaml to this:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">scalar-red</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FF0000</span>
 <span class="l-Scalar-Plain">scalar-orange</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FFFF00</span>
 <span class="l-Scalar-Plain">mapping-red</span><span class="p-Indicator">:</span> <span class="kt">!color-mapping</span> <span class="p-Indicator">{</span><span class="nv">r</span><span class="p-Indicator">:</span> <span class="nv">255</span><span class="p-Indicator">,</span> <span class="nv">g</span><span class="p-Indicator">:</span> <span class="nv">0</span><span class="p-Indicator">,</span> <span class="nv">b</span><span class="p-Indicator">:</span> <span class="nv">0</span><span class="p-Indicator">}</span>
@@ -282,8 +284,8 @@ D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Aug 16, 2011.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Last updated on Oct 14, 2011.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

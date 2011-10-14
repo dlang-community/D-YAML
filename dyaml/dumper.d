@@ -5,8 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * YAML dumper.
- * Code based on PyYAML: http://www.pyyaml.org
+ * YAML _dumper.
+ *
+ * Code based on $(LINK2 http://www.pyyaml.org, PyYAML).
  */
 module dyaml.dumper;
 
@@ -33,7 +34,7 @@ import dyaml.tagdirectives;
  * User specified Representer and/or Resolver can be used to support new 
  * tags / data types.
  *
- * Setters are provided to affect the output (style, encoding)..
+ * Setters are provided to affect output details (style, encoding, etc.).
  * 
  * Examples: 
  *
@@ -48,6 +49,11 @@ import dyaml.tagdirectives;
  * auto node1 = Node([1, 2, 3, 4, 5]);
  * auto node2 = Node("This document contains only one string");
  * Dumper("file.yaml").dump(node1, node2);
+ *
+ * //Or with an array:
+ * //Dumper("file.yaml").dump([node1, node2]);
+ *
+ *
  * --------------------
  *
  * Write to memory:
@@ -142,7 +148,7 @@ struct Dumper
          *
          * Params: filename = File name to write to.
          *
-         * Throws: YAMLException if the file can not be dumped to (e.g. cannot be read).
+         * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
         this(string filename)
         {
@@ -153,7 +159,7 @@ struct Dumper
             }
         }
 
-        ///Construct a Dumper writing to a stream. This is useful to e.g. write to memory.
+        ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
         this(Stream stream)
         {
             resolver_ = new Resolver();
@@ -185,7 +191,7 @@ struct Dumper
             representer_ = representer;
         }
 
-        ///Write scalars in canonical form?
+        ///Write scalars in _canonical form?
         void canonical(in bool canonical)
         {
             canonical_ = canonical;
@@ -202,7 +208,7 @@ struct Dumper
             indent_ = indent;
         }
 
-        ///Set preferred text width.
+        ///Set preferred text _width.
         void textWidth(in uint width)
         {
             textWidth_ = width;
@@ -214,7 +220,7 @@ struct Dumper
             lineBreak_ = lineBreak;
         }
 
-        ///Set character encoding to use. UTF-8 by default.
+        ///Set character _encoding to use. UTF-8 by default.
         void encoding(in Encoding encoding)
         {
             encoding_ = encoding;
@@ -241,18 +247,18 @@ struct Dumper
         /**
          * Specify tag directives. 
          *
-         * A tag directive specifies a shorthand notation for specifying tags.
+         * A tag directive specifies a shorthand notation for specifying _tags.
          * Each tag directive associates a handle with a prefix. This allows for 
          * compact tag notation.
          *
          * Each handle specified MUST start and end with a '!' character
          * (a single character "!" handle is allowed as well).
          *
-         * Only alphanumeric characters, '-', and '_' may be used in handles.
+         * Only alphanumeric characters, '-', and '__' may be used in handles.
          *
          * Each prefix MUST not be empty.
          *
-         * The "!!" handle is used for default YAML tags with prefix 
+         * The "!!" handle is used for default YAML _tags with prefix 
          * "tag:yaml.org,2002:". This can be overridden.
          *
          * Params:  tags = Tag directives (keys are handles, values are prefixes).
@@ -281,13 +287,13 @@ struct Dumper
         }
 
         /**
-         * Dump one or more YAML documents to the file/stream.
+         * Dump one or more YAML _documents to the file/stream.
          *
          * Note that while you can call dump() multiple times on the same 
          * dumper, you will end up writing multiple YAML "files" to the same
          * file/stream.
          *
-         * Params:  documents = Documents to dump (root nodes of the documents).
+         * Params:  documents = Documents to _dump (root nodes of the _documents).
          *
          * Throws:  YAMLException on error (e.g. invalid nodes, 
          *          unable to write to file/stream).

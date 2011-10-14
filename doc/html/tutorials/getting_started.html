@@ -64,9 +64,8 @@ Download the version of DMD for your operating system and install it.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">Other D compilers exist, such as
 <a class="reference external" href="http://bitbucket.org/goshawk/gdc/wiki/Home">GDC</a> and
-<a class="reference external" href="http://www.dsource.org/projects/ldc/">LDC</a>.
-Setting up with either one of them should be similar to DMD,
-however, at the moment they are not as up to date as DMD.</p>
+<a class="reference external" href="http://www.dsource.org/projects/ldc/">LDC</a>. Setting up with either one of
+them should be similar to DMD, but they are not yet as stable as DMD.</p>
 </div>
 </div>
 <div class="section" id="download-and-compile-d-yaml">
@@ -109,7 +108,7 @@ into the file:</p>
 
 <span class="kt">void</span> <span class="n">main</span><span class="p">()</span>
 <span class="p">{</span>
-    <span class="n">yaml</span><span class="p">.</span><span class="n">Node</span> <span class="n">root</span> <span class="p">=</span> <span class="n">yaml</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">);</span>
+    <span class="n">Node</span> <span class="n">root</span> <span class="p">=</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">).</span><span class="n">load</span><span class="p">();</span>
     <span class="k">foreach</span><span class="p">(</span><span class="nb">string</span> <span class="n">word</span><span class="p">;</span> <span class="n">root</span><span class="p">[</span><span class="s">&quot;Hello World&quot;</span><span class="p">])</span>
     <span class="p">{</span>
         <span class="n">writeln</span><span class="p">(</span><span class="n">word</span><span class="p">);</span>
@@ -122,27 +121,28 @@ into the file:</p>
 <h3>Explanation of the code<a class="headerlink" href="#explanation-of-the-code" title="Permalink to this headline">¶</a></h3>
 <p>First, we import the <em>yaml</em> module. This is the only module you need to import
 to use D:YAML - it automatically imports all needed modules.</p>
-<p>Next we load the file using the <em>yaml.load()</em> function - this loads the file as
-<strong>one</strong> YAML document and throws <em>YAMLException</em>, D:YAML exception type, if the
+<p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is the struct
+used for parsing YAML documents, and <em>load()</em> is a method that loads the file as
+<strong>one</strong> YAML document, or throws <em>YAMLException</em>, D:YAML exception type, if the
 file could not be parsed or does not contain exactly one document. Note that we
 don&#8217;t do any error checking here in order to keep the example as simple as
 possible.</p>
-<p><em>yaml.Node</em> represents a node in a YAML document. It can be a sequence (array),
+<p><em>Node</em> represents a node in a YAML document. It can be a sequence (array),
 mapping (associative array) or a scalar (value). Here the root node is a
 mapping, and we use the index operator to get subnodes with keys &#8220;Hello World&#8221;
 and &#8220;Answer&#8221;. We iterate over the first, as it is a sequence, and use the
-<em>yaml.Node.get()</em> method on the second to get its value as an integer.</p>
+<em>Node.get()</em> method on the second to get its value as an integer.</p>
 <p>You can iterate over a mapping or sequence as if it was an associative or normal
 array. If you try to iterate over a scalar, it will throw a <em>YAMLException</em>.</p>
-<p>You can iterate over subnodes using yaml.Node as the iterated type, or specify
+<p>You can iterate over subnodes using <em>Node</em> as the iterated type, or specify
 the type subnodes are expected to have. D:YAML will automatically convert
 iterated subnodes to that type if possible. Here we specify the <em>string</em> type,
 so we iterate over the &#8220;Hello World&#8221; sequence as an array of strings. If it is
 not possible to convert to iterated type, a <em>YAMLException</em> is thrown. For
 instance, if we specified <em>int</em> here, we would get an error, as &#8220;Hello&#8221;
 cannot be converted to an integer.</p>
-<p>The <em>yaml.Node.get()</em> method is used to get value of a scalar node as specified
-type. D:YAML will try to return the scalar as specified type, converting if
+<p>The <em>Node.get()</em> method is used to get value of a scalar node, allowing to
+specify type. D:YAML will try to return the scalar as this type, converting if
 needed, throwing <em>YAMLException</em> if not possible.</p>
 </div>
 <div class="section" id="compiling">
@@ -150,15 +150,14 @@ needed, throwing <em>YAMLException</em> if not possible.</p>
 <p>To compile your project, you must give DMD the directories containing import
 modules and the library. You also need to tell it to link with D:YAML. The import
 directory should be the D:YAML package directory. You can specify it using the
-<tt class="docutils literal"><span class="pre">-I</span></tt> option of DMD.  The library directory should point to where you put the
-compiled D:YAML library. On Unix/Linux you can specify it using the <tt class="docutils literal"><span class="pre">-L-L</span></tt>
-option, and link with D:YAML using the <tt class="docutils literal"><span class="pre">-L-l</span></tt> option. On Windows, the import
-directory is used as the library directory. To link with the library on Windows,
-just add the path to it relative to the current directory.</p>
-<p>For example, if you extracted D:YAML to <tt class="docutils literal"><span class="pre">/home/xxx/dyaml</span></tt> and compiled it in
-that directory, your project is in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml-project</span></tt>, and you are
-currently in that directory, you can compile the project with the following
-command on Unix/Linux:</p>
+<tt class="docutils literal"><span class="pre">-I</span></tt> option of DMD. The library directory should be where you put the compiled
+D:YAML library. On Unix/Linux you can specify it using the <tt class="docutils literal"><span class="pre">-L-L</span></tt> option, and
+link with D:YAML using the <tt class="docutils literal"><span class="pre">-L-l</span></tt> option. On Windows, the import directory is
+used as the library directory. To link with the library on Windows, just add the
+path to it relative to the current directory.</p>
+<p>For example, if you extracted and compiled D:YAML in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml</span></tt>, your
+project is in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml-project</span></tt>, and you are currently in that
+directory, you can compile the project with the following command on Unix/Linux:</p>
 <div class="highlight-python"><pre>dmd -I../dyaml -L-L../dyaml -L-ldyaml main.d</pre>
 </div>
 <p>And the following on Windows:</p>
@@ -225,8 +224,8 @@ example in the <tt class="docutils literal"><span class="pre">example/getting_st
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Aug 16, 2011.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Last updated on Oct 14, 2011.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

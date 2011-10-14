@@ -2,10 +2,10 @@
 Custom YAML data types
 ======================
 
-Often you will want to serialize complex data types such as classes. You can use
-functions to process nodes; e.g. a mapping containing class data members indexed 
-by name. Alternatively, YAML supports custom data types using identifiers called
-*tags*. That is the topic of this tutorial.
+Often you might want to serialize complex data types such as classes. You can 
+use functions to process nodes such as a mapping containing class data members 
+indexed by name. Alternatively, YAML supports custom data types using 
+identifiers called *tags*. That is the topic of this tutorial.
 
 Each YAML node has a tag specifying its type. For instance: strings use the tag 
 ``tag:yaml.org,2002:str``. Tags of most default types are *implicitly resolved* 
@@ -19,9 +19,9 @@ Constructor
 
 D:YAML uses the *Constructor* class to process each node to hold data type
 corresponding to its tag. *Constructor* stores a function for each supported 
-tag to process it. These functions can be supplied by the user using the 
-*addConstructor()* method. *Constructor* is then passed to *Loader*, which will
-parse YAML input.
+tag to process it. These functions are supplied by the user using the 
+*addConstructor()* method. *Constructor* is then passed to *Loader*, which 
+parses YAML input.
 
 We will implement support for an RGB color type. It is implemented as the 
 following struct:
@@ -111,7 +111,7 @@ RRGGBB, or from a mapping, where we use the following format:
        return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);
    }
 
-Next, we need some YAML code using our new tag. Create a file called input.yaml 
+Next, we need some YAML data using our new tag. Create a file called input.yaml 
 with the following contents:
 
 .. code-block:: yaml
@@ -144,9 +144,10 @@ Finally, the code to put it all together:
            constructor.addConstructor("!color", &constructColorScalar);
            constructor.addConstructor("!color-mapping", &constructColorMapping);
 
-           auto loader = new Loader("input.yaml", constructor, new Resolver);
+           auto loader = Loader("input.yaml");
+           loader.constructor = constructor;
 
-           auto root = loader.loadSingleDocument();
+           auto root = loader.load();
 
            if(root["scalar-red"].get!Color == red && 
               root["mapping-red"].get!Color == red && 
@@ -166,10 +167,9 @@ Finally, the code to put it all together:
    }
 
 First, we create a *Constructor* and pass functions to handle the ``!color`` 
-and ``!color-mapping`` tag. We construct a *Loader* using the *Constructor*. 
-We also need a *Resolver*, but for now we just default-construct it. We then 
-load the YAML document, and finally, read the colors using *get()* method to
-test if they were loaded as expected.
+and ``!color-mapping`` tag. We construct a *Loader*m and pass the *Constructor*
+to it. We then load the YAML document, and finally, read the colors using 
+*get()* method to test if they were loaded as expected.
 
 You can find the source code for what we've done so far in the 
 ``examples/constructor`` directory in the D:YAML package.
@@ -180,14 +180,13 @@ Resolver
 --------
 
 Specifying tag for every color value can be tedious. D:YAML can implicitly 
-resolve tag of a scalar using a regular expression. This is how default types, 
-e.g. int, are resolved. We will use the *Resolver* class to add implicit tag 
+resolve scalar tags using regular expressions. This is how default types such as
+int are resolved. We will use the *Resolver* class to add implicit tag 
 resolution for the Color data type (in its scalar form).
 
 We use the *addImplicitResolver* method of *Resolver*, passing the tag, regular
 expression the value must match to resolve to this tag, and a string of possible
-starting characters of the value. Then we pass the *Resolver* to the constructor 
-of *Loader*.
+starting characters of the value. Then we pass the *Resolver* to *Loader*.
 
 Note that resolvers added first override ones added later. If no resolver 
 matches a scalar, YAML string tag is used. Therefore our custom values must not 
@@ -203,11 +202,14 @@ Add this to your code to add implicit resolution of ``!color``.
    resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}",
                                 "0123456789abcdefABCDEF"));
    
-   auto loader = new Loader("input.yaml", constructor, resolver);
+   auto loader = Loader("input.yaml");
+   
+   loader.constructor = constructor;
+   loader.resolver = resolver;
 
    //code from the previous example...
 
-Now, change contents of input.dyaml to this:
+Now, change contents of input.yaml to this:
 
 .. code-block:: yaml
 

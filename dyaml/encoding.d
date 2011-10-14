@@ -7,10 +7,13 @@
 module dyaml.encoding;
 
 
-///Text encodings.
+///Text encodings supported by D:YAML.
 enum Encoding : ubyte
 {
+    ///Unicode UTF-8
     UTF_8,
+    ///Unicode UTF-16
     UTF_16,
+    ///Unicode UTF-32
     UTF_32
 }

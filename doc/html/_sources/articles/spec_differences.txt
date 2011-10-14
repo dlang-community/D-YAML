@@ -9,7 +9,7 @@ are caused by difficulty of implementation of some features, such as multiple
 Unicode encodings within single stream, and some by unnecessary restrictions or
 ambiguities in the specification. 
 
-Still, D:YAML tries to be as close to the specification as possible. D:YAML should
+Still, D:YAML tries to be as close to the specification as possible. It should
 never load documents with different meaning than according to the specification, 
 and documents that fail to load should be very rare (for instance, very few 
 files use multiple Unicode encodings).
@@ -21,10 +21,6 @@ List of known differences:
 
 Differences that can cause valid YAML documents not to load:
 
-* At the moment, all mappings in the internal representation are ordered,
-  and a comparison for equality between equal mappings with differing order
-  will return false. This will be fixed once Phobos has a usable map type or
-  D associative arrays work with variants.
 * No support for byte order marks and multiple Unicode encodings in a stream.
 * Plain scalars in flow context cannot contain ``,``, ``:`` and ``?``.
   This might change with ``:`` in the future. 

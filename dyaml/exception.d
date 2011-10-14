@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-///D:YAML exceptions and exception related code.
+///Exceptions thrown by D:YAML and _exception related code.
 module dyaml.exception;
 
 
@@ -78,7 +78,7 @@ abstract class MarkedYAMLException : YAMLException
     }
 }
 
-///Constructors of YAML exceptions are mostly the same, so we use a mixin.
+//Constructors of YAML exceptions are mostly the same, so we use a mixin.
 template ExceptionCtors()
 {
     public:
@@ -88,7 +88,7 @@ template ExceptionCtors()
         }
 }
 
-///Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+//Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
 template MarkedExceptionCtors()
 {
     public:

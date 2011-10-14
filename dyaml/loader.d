@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * Class and convenience functions used to load YAML documents.
+ * Class used to load YAML documents.
  */
 module dyaml.loader;
 
@@ -125,11 +125,11 @@ struct Loader
         }
         
         /**
-         * Construct a Loader to load YAML from a stream.
+         * Construct a Loader to load YAML from a _stream.
          *
          * Params:  stream = Stream to read from. Must be readable.
          *
-         * Throws:  YAMLException if the stream could not be read from.
+         * Throws:  YAMLException if stream could not be read from.
          */
         this(Stream stream)
         {
@@ -160,19 +160,19 @@ struct Loader
             clear(parser_);
         }
 
-        ///Set stream name. Used in debugging messages.
+        ///Set stream _name. Used in debugging messages.
         @property void name(string name)
         {
             name_ = name;
         }
 
-        ///Set Resolver to use.
+        ///Specify custom Resolver to use.
         @property void resolver(Resolver resolver)
         {
             resolver_ = resolver;
         }
 
-        ///Set Constructor to use.
+        ///Specify custom Constructor to use.
         @property void constructor(Constructor constructor)
         {
             constructor_ = constructor;
@@ -181,7 +181,7 @@ struct Loader
         /**
          * Load single YAML document.
          *
-         * If no or more than one YAML document is found, this will throw a YAMLException.
+         * If none or more than one YAML document is found, this will throw a YAMLException.
          *                  
          * Returns: Root node of the document.
          *
@@ -208,8 +208,7 @@ struct Loader
          *                  
          * Returns: Array of root nodes of all documents in the file/stream.
          *
-         * Throws:  YAMLException if there wasn't exactly one document
-         *          or on a YAML parsing error.
+         * Throws:  YAMLException on a YAML parsing error.
          */
         Node[] loadAll()
         {
@@ -224,7 +223,7 @@ struct Loader
         /**
          * Foreach over YAML documents.
          *
-         * Parses documents lazily, as they are needed.
+         * Parses documents lazily, when they are needed.
          *
          * Throws: YAMLException on a parsing error.
          */
