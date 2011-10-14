@@ -162,7 +162,7 @@ struct Node
                          Node.Pair[], Node[], YAMLObject) Value;
 
     private:
-        //Stored value.
+        ///Stored value.
         Value value_;
         ///Start position of the node.
         Mark startMark_;

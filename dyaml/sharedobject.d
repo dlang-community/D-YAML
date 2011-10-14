@@ -7,6 +7,7 @@
 ///Shared object.
 module dyaml.sharedobject;
 
+
 /**
  * Mixin for shared objects (need a better name). 
  *
@@ -18,65 +19,92 @@ module dyaml.sharedobject;
  * and when there are many instances of a data type that are mostly
  * duplicates (e.g. tags). 
  *
- * Disadvantage is, this is not thread-safe (and neither is D:YAML, at the 
- * moment). That might be fixed in futurere, though.
- *
- * This is not the most elegant way to store the extra data  and change in future.
+ * This is not the most elegant way to store the extra data and might change in future.
  */
 template SharedObject(T, MixedIn)
 {
     private:
-        ///Index of the object in objects_.
+        ///This class stores the data that is shared between the objects.
+        class SharedData
+        {
+            private:
+                /**
+                 * Reference count.
+                 *
+                 * When this reaches zero, objects_ are cleared. This is not
+                 * the number of shared objects, but rather of objects using this kind 
+                 * of shared object. This is used e.g. with Anchor, but not with Tag 
+                 * - tags can be stored by the user in Nodes so there is no way to know 
+                 * when there are no Tags anymore.
+                 */
+                int referenceCount_ = 0;  
+
+                ///All known objects of type T are in this array.
+                T[] objects_;
+
+            public:
+                ///Increment the reference count.
+                void addReference()
+                {
+                    assert(referenceCount_ >= 0);
+                    ++referenceCount_;
+                }
+
+                ///Decrement the reference count and clear the constructed objects if zero.
+                void removeReference()
+                {
+                    --referenceCount_;
+                    assert(referenceCount_ >= 0);
+                    if(referenceCount_ == 0)
+                    {
+                        clear(objects_);
+                        objects_ = [];
+                    }
+                }
+
+                ///Add an object and return its index.
+                uint add(ref T object)
+                {
+                    foreach(uint index, ref T known; objects_)
+                    {
+                        if(object == known)
+                        {
+                            return index;
+                        }
+                    }
+                    objects_ ~= object;
+                    return cast(uint)objects_.length - 1;
+                }
+
+                ///Get the object at specified object.
+                @property T get(in uint index) 
+                {
+                    return objects_[index];
+                }
+        }
+
+        ///Index of the object in data_.
         uint index_ = uint.max;
 
-        /**
-         * Reference count.
-         *
-         * When this reaches zero, objects_ are cleared. This count is not
-         * the number of shared objects, but rather of objects using this kind 
-         * of shared object. This is used e.g. with Anchor, but not with Tag 
-         * - tags can be stored by the user in Nodes so there is no way to know 
-         * when there are no Tags anymore.
-         */
-        static int referenceCount_ = 0;
+        ///Stores the actual objects.
+        static __gshared SharedData data_;
 
-        /**
-         * All known objects of this type are in this array.
-         *
-         * Note that this is not shared among threads.
-         * Working the same YAML file in multiple threads is NOT safe with D:YAML.
-         */
-        static T[] objects_;
-
-        ///Add a new object, checking if identical object already exists.
-        void add(ref T object)
+        static this()
         {
-            foreach(uint index, known; objects_)
-            {
-                if(object == known)
-                {
-                    index_ = index;
-                    return;
-                }
-            }
-            index_ = cast(uint)objects_.length;
-            objects_ ~= object;
+            data_ = new SharedData;
         }
 
     public:
         ///Increment the reference count.
         static void addReference()
         {
-            assert(referenceCount_ >= 0);
-            ++referenceCount_;
+            synchronized(data_){data_.addReference();}
         }
 
         ///Decrement the reference count and clear the constructed objects if zero.
         static void removeReference()
         {
-            --referenceCount_;
-            assert(referenceCount_ >= 0);
-            if(referenceCount_ == 0){objects_ = [];}
+            synchronized(data_){data_.removeReference();}
         }
 
         ///Get the object.
@@ -84,7 +112,9 @@ template SharedObject(T, MixedIn)
         in{assert(!isNull());}
         body
         {
-            return objects_[index_];
+            T result;
+            synchronized(data_){result = data_.get(index_);}
+            return result;
         }
 
         ///Test for equality with another object.
@@ -95,5 +125,12 @@ template SharedObject(T, MixedIn)
 
         ///Is this object null (invalid)?
         bool isNull() const {return index_ == uint.max;}
+
+    private:
+        ///Add a new object, checking if identical object already exists.
+        void add(ref T object)
+        {
+            synchronized(data_){index_ = data_.add(object);}
+        }
 }
 
