@@ -101,19 +101,25 @@ To do this on Unix/Linux, use the following command:</p>
 </pre></div>
 </div>
 <p>This will serve as input for our example.</p>
-<p>Now we need to parse it. Create a file called &#8220;main.d&#8221;. Paste following code
+<p>Now we need to parse it. Create a file called <tt class="docutils literal"><span class="pre">main.d</span></tt>. Paste following code
 into the file:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">stdio</span><span class="p">;</span>
 <span class="k">import</span> <span class="n">yaml</span><span class="p">;</span>
 
 <span class="kt">void</span> <span class="n">main</span><span class="p">()</span>
 <span class="p">{</span>
+    <span class="c1">//Read the input.</span>
     <span class="n">Node</span> <span class="n">root</span> <span class="p">=</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">).</span><span class="n">load</span><span class="p">();</span>
+
+    <span class="c1">//Display the data read.</span>
     <span class="k">foreach</span><span class="p">(</span><span class="nb">string</span> <span class="n">word</span><span class="p">;</span> <span class="n">root</span><span class="p">[</span><span class="s">&quot;Hello World&quot;</span><span class="p">])</span>
     <span class="p">{</span>
         <span class="n">writeln</span><span class="p">(</span><span class="n">word</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="n">writeln</span><span class="p">(</span><span class="s">&quot;The answer is &quot;</span><span class="p">,</span> <span class="n">root</span><span class="p">[</span><span class="s">&quot;Answer&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">);</span>
+
+    <span class="c1">//Dump the loaded document to output.yaml.</span>
+    <span class="n">Dumper</span><span class="p">(</span><span class="s">&quot;output.yaml&quot;</span><span class="p">).</span><span class="n">dump</span><span class="p">(</span><span class="n">root</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -121,8 +127,8 @@ into the file:</p>
 <h3>Explanation of the code<a class="headerlink" href="#explanation-of-the-code" title="Permalink to this headline">¶</a></h3>
 <p>First, we import the <em>yaml</em> module. This is the only module you need to import
 to use D:YAML - it automatically imports all needed modules.</p>
-<p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is the struct
-used for parsing YAML documents, and <em>load()</em> is a method that loads the file as
+<p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is a struct
+used for parsing YAML documents. The <em>load()</em> method loads the file as
 <strong>one</strong> YAML document, or throws <em>YAMLException</em>, D:YAML exception type, if the
 file could not be parsed or does not contain exactly one document. Note that we
 don&#8217;t do any error checking here in order to keep the example as simple as
@@ -144,6 +150,13 @@ cannot be converted to an integer.</p>
 <p>The <em>Node.get()</em> method is used to get value of a scalar node, allowing to
 specify type. D:YAML will try to return the scalar as this type, converting if
 needed, throwing <em>YAMLException</em> if not possible.</p>
+<p>Finally we dump the document we just read to <tt class="docutils literal"><span class="pre">output.yaml</span></tt> with the
+<em>Dumper.dump()</em> method. <em>Dumper</em> is a struct used to dump YAML documents.
+The <em>dump()</em> method writes one or more documents to a file, throwing
+<em>YAMLException</em> if the file could not be written to.</p>
+<p>D:YAML doesn&#8217;t preserve style information in documents, so even though
+<tt class="docutils literal"><span class="pre">output.yaml</span></tt> will contain the same data as <tt class="docutils literal"><span class="pre">input.yaml</span></tt>, it might be
+formatted differently. Comments are not preserved, either.</p>
 </div>
 <div class="section" id="compiling">
 <h3>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h3>
@@ -224,7 +237,7 @@ example in the <tt class="docutils literal"><span class="pre">example/getting_st
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Oct 14, 2011.
+      Last updated on Oct 15, 2011.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>

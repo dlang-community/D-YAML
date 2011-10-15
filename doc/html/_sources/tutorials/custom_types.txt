@@ -17,11 +17,16 @@ It is also possible to implicitly resolve custom tags, as we will show later.
 Constructor
 -----------
 
-D:YAML uses the *Constructor* class to process each node to hold data type
-corresponding to its tag. *Constructor* stores a function for each supported 
-tag to process it. These functions are supplied by the user using the 
-*addConstructor()* method. *Constructor* is then passed to *Loader*, which 
-parses YAML input.
+D:YAML uses the `Constructor <../api/dyaml.constructor.html>`_ class to process
+each node to hold data type corresponding to its tag. *Constructor* stores a 
+function for each supported tag to process it. These functions are supplied by
+the user using the *addConstructor()* method. *Constructor* is then passed to 
+*Loader*, which parses YAML input.
+
+Struct types have no specific requirements for YAML support. Class types should
+define the *opEquals()* operator, as this is used in equality comparisons of 
+nodes. Default class *opEquals()* compares references, which means two identical 
+objects might be considered unequal.
 
 We will implement support for an RGB color type. It is implemented as the 
 following struct:
@@ -111,8 +116,8 @@ RRGGBB, or from a mapping, where we use the following format:
        return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);
    }
 
-Next, we need some YAML data using our new tag. Create a file called input.yaml 
-with the following contents:
+Next, we need some YAML data using our new tag. Create a file called 
+``input.yaml`` with the following contents:
 
 .. code-block:: yaml
 
@@ -167,7 +172,7 @@ Finally, the code to put it all together:
    }
 
 First, we create a *Constructor* and pass functions to handle the ``!color`` 
-and ``!color-mapping`` tag. We construct a *Loader*m and pass the *Constructor*
+and ``!color-mapping`` tag. We construct a *Loader* and pass the *Constructor*
 to it. We then load the YAML document, and finally, read the colors using 
 *get()* method to test if they were loaded as expected.
 
@@ -181,12 +186,13 @@ Resolver
 
 Specifying tag for every color value can be tedious. D:YAML can implicitly 
 resolve scalar tags using regular expressions. This is how default types such as
-int are resolved. We will use the *Resolver* class to add implicit tag 
-resolution for the Color data type (in its scalar form).
+int are resolved. We will use the `Resolver <../api/dyaml.resolver.html>`_ class 
+to add implicit tag resolution for the Color data type (in its scalar form).
 
-We use the *addImplicitResolver* method of *Resolver*, passing the tag, regular
-expression the value must match to resolve to this tag, and a string of possible
-starting characters of the value. Then we pass the *Resolver* to *Loader*.
+We use the *addImplicitResolver()* method of *Resolver*, passing the tag, 
+regular expression the scalar must match to resolve to this tag, and a string of
+possible starting characters of the scalar. Then we pass the *Resolver* to 
+*Loader*.
 
 Note that resolvers added first override ones added later. If no resolver 
 matches a scalar, YAML string tag is used. Therefore our custom values must not 
@@ -199,8 +205,8 @@ Add this to your code to add implicit resolution of ``!color``.
    //code from the previous example...
 
    auto resolver = new Resolver;
-   resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}",
-                                "0123456789abcdefABCDEF"));
+   resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
+                                "0123456789abcdefABCDEF");
    
    auto loader = Loader("input.yaml");
    
@@ -209,7 +215,7 @@ Add this to your code to add implicit resolution of ``!color``.
 
    //code from the previous example...
 
-Now, change contents of input.yaml to this:
+Now, change contents of ``input.yaml`` to this:
 
 .. code-block:: yaml
 
@@ -227,3 +233,107 @@ the example. If everything went as expected, it should report success.
 
 You can find the complete code in the ``examples/resolver`` directory in the 
 D:YAML package.
+
+
+-----------
+Representer
+-----------
+
+Now that you know how to load custom data types, it might also be useful to know
+how to dump them. D:YAML uses the `Representer <../api/dyaml.representer.html>`_
+class for this purpose.
+
+*Representer* processes YAML nodes into plain mapping, sequence or scalar nodes
+ready for output. Just like with *Constructor*, this is done by user specified 
+functions. These functions take references to a node to process and to the 
+*Representer*, and return the processed node. 
+
+Representer functions can be added with the *addRepresenter()* method. The 
+*Representer* is then passed to *Dumper*, which dumps YAML documents. Only one
+representer can be added for a type. This is asserted in *addRepresenter()*
+preconditions. By default, the default YAML types already have representer
+functions, but you can disable them by constructing *Representer* with the
+*useDefaultRepresenters* parameter set to false.
+
+By default, tags are explicitly specified for all non-default types. If you
+want the tags to be implicit, you can pass a *Resolver* that will resolve them
+implicitly. Of course, you will then need to use an identical *Resolver* when 
+loading the output.
+
+With the following code, we will add support for dumping the our Color type.
+
+.. code-block:: d
+
+   Node representColor(ref Node node, Representer representer)
+   {
+       //The node is guaranteed to be Color as we add representer for Color.
+       Color color = node.get!Color;
+
+       static immutable hex = "0123456789ABCDEF";
+
+       //Using the color format from the Constructor example.
+       string scalar;
+       foreach(channel; [color.red, color.green, color.blue])
+       {
+           scalar ~= hex[channel / 16]; 
+           scalar ~= hex[channel % 16];
+       }
+
+       //Representing as a scalar, with custom tag to specify this data type.
+       return representer.representScalar("!color", scalar);
+   }
+
+First we get the *Color* from the node. Then we convert it to a string with the
+HTML-like format we've used before. Finally, we use the *representScalar()* 
+method of *Representer* to get a scalar node ready for output.
+There are corresponding *representMapping()* and *representSequence()* methods
+as well, with examples in the 
+`Resolver API documentation <../api/dyaml.resolver.html>`_.
+
+Since a type can only have one representer function, we don't dump *Color* both 
+in the scalar and mapping formats we've used before. However, you can decide to
+dump the node with different formats/tags in the representer function itself. 
+E.g. you could dump the Color as a mapping based on some arbitrary condition, 
+such as the color being white.
+
+.. code-block:: d
+
+   void main()
+   {
+       try
+       {
+           auto representer = new Representer;
+           representer.addRepresenter!Color(&representColor);
+
+           auto resolver = new Resolver;
+           resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
+                                        "0123456789abcdefABCDEF");
+
+           auto dumper = Dumper("output.yaml");
+           dumper.representer = representer;
+           dumper.resolver    = resolver;
+
+           auto document = Node([Color(255, 0, 0), 
+                                 Color(0, 255, 0), 
+                                 Color(0, 0, 255)]);
+
+           dumper.dump(document);
+       }
+       catch(YAMLException e)
+       {
+           writeln(e.msg);
+       }
+   }
+
+We construct a new *Representer*, and specify a representer function for the 
+*Color* (the template argument) type. We also construct a *Resolver*, same as in
+the previous section, so the ``!color`` tag will be implicit. Of course,
+identical *Resolver* would then have to be used when loading the file.
+You don't need to do this if you want the tag to be explicit.
+
+We construct a *Dumper* to file ``output.yaml`` and pass the *Representer* and 
+*Resolver* to it. Then, we create a simple node containing a sequence of colors 
+and finally, we dump it.
+
+Source code for this section can be found in the ``examples/representer`` 
+directory of the D:YAML package.

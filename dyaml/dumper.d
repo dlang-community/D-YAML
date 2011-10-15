@@ -152,7 +152,7 @@ struct Dumper
          */
         this(string filename)
         {
-            try{this(new File(filename));}
+            try{this(new File(filename, FileMode.OutNew));}
             catch(StreamException e)
             {
                 throw new YAMLException("Unable to use file for YAML dumping " ~ filename ~ " : " ~ e.msg);

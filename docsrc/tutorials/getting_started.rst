@@ -72,7 +72,7 @@ Create a directory for your project and in that directory, create a file called
 
 This will serve as input for our example.
 
-Now we need to parse it. Create a file called "main.d". Paste following code 
+Now we need to parse it. Create a file called ``main.d``. Paste following code 
 into the file:
 
 .. code-block:: d
@@ -82,12 +82,18 @@ into the file:
 
    void main()
    {
+       //Read the input.
        Node root = Loader("input.yaml").load();
+
+       //Display the data read.
        foreach(string word; root["Hello World"])
        {
            writeln(word);
        }
        writeln("The answer is ", root["Answer"].get!int);
+
+       //Dump the loaded document to output.yaml.
+       Dumper("output.yaml").dump(root);
    }
 
 
@@ -98,8 +104,8 @@ Explanation of the code
 First, we import the *yaml* module. This is the only module you need to import 
 to use D:YAML - it automatically imports all needed modules.
 
-Next we load the file using the *Loader.load()* method. *Loader* is the struct 
-used for parsing YAML documents, and *load()* is a method that loads the file as
+Next we load the file using the *Loader.load()* method. *Loader* is a struct 
+used for parsing YAML documents. The *load()* method loads the file as
 **one** YAML document, or throws *YAMLException*, D:YAML exception type, if the 
 file could not be parsed or does not contain exactly one document. Note that we 
 don't do any error checking here in order to keep the example as simple as 
@@ -125,6 +131,15 @@ cannot be converted to an integer.
 The *Node.get()* method is used to get value of a scalar node, allowing to 
 specify type. D:YAML will try to return the scalar as this type, converting if 
 needed, throwing *YAMLException* if not possible.
+
+Finally we dump the document we just read to ``output.yaml`` with the 
+*Dumper.dump()* method. *Dumper* is a struct used to dump YAML documents.
+The *dump()* method writes one or more documents to a file, throwing 
+*YAMLException* if the file could not be written to.
+
+D:YAML doesn't preserve style information in documents, so even though
+``output.yaml`` will contain the same data as ``input.yaml``, it might be 
+formatted differently. Comments are not preserved, either.
 
 
 ^^^^^^^^^

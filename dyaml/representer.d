@@ -5,7 +5,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * YAML node _representer.
+ * YAML node _representer. Prepares YAML nodes for output. A tutorial can be 
+ * found $(LINK2 ../tutorials/custom_types.html, here).    
  *
  * Code based on $(LINK2 http://www.pyyaml.org, PyYAML).
  */
