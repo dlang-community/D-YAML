@@ -1,0 +1,19 @@
+0.2.0:
+
+
+- FEATURES/IMPROVEMENTS:
+
+ - Implemented YAML emitter, and related unittests/documentation.
+
+ - Tags are now stored in nodes, allowing D:YAML to be closer to the 
+   specification.
+ 
+ - Loader API has been broken to make it more extensible in future - 
+   Representer and Constructor are no more specified in the constructor,
+   and the load() shortcut functions have been removed, as all that's needed to
+   load a YAML document now is Loader("file.yaml").load() .
+
+
+- BUGFIXES:
+ 
+ - Fixed many bugs in the parser, scanner, composer and constructor.

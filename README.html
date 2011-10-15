@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
-<title>D:YAML 0.1</title>
+<title>D:YAML 0.2</title>
 <style type="text/css">
 
 /*
@@ -310,22 +310,20 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="d-yaml-0-1">
-<h1 class="title">D:YAML 0.1</h1>
+<div class="document" id="d-yaml-0-2">
+<h1 class="title">D:YAML 0.2</h1>
 
 <div class="section" id="introduction">
 <h1>Introduction</h1>
-<p>D:YAML is an open source YAML parser library for the D programming language.
-It is
+<p>D:YAML is an open source YAML parser and emitter library for the D programming
+language.  It is
 (<a class="reference external" href="https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification">almost</a>)
 compliant to the YAML 1.1 specification. Much of D:YAML code is based on
 <a class="reference external" href="http://www.pyyaml.org">PyYAML</a> created by Kirill Simonov. D:YAML has no
 external dependencies, all it needs is a D compiler and Phobos (standard
 library). It is written in D2 and there are no plans for D1 or Tango support.</p>
-<p>At the moment, D:YAML can only read, not write YAML files. This will change in
-the following releases. D:YAML is designed to be as easy to use as possible while
-supporting the full feature set of YAML. To start using it in your project,
-see the
+<p>D:YAML is designed to be as easy to use as possible while supporting the full
+feature set of YAML. To start using it in your project, see the
 <a class="reference external" href="https://github.com/kiith-sa/D-YAML/wiki/Getting-Started">Getting Started</a>
 tutorial.</p>
 <p>D:YAML is still a work in progress. Its API is still not stable and there might
@@ -341,7 +339,7 @@ to be rewritten in future and D:YAML will change accordingly.</p>
 <li>No external dependencies.</li>
 <li>Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
 are parsed correctly.</li>
-<li>Read from YAML files as well as from memory or user defined streams.</li>
+<li>Read and write from/to YAML files as well as memory or user defined streams.</li>
 <li>UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian
 (plain ASCII also works as it is a subset of UTF-8).</li>
 <li>Support for both block (Python-like, based on indentation) and flow
@@ -349,11 +347,10 @@ are parsed correctly.</li>
 <li>Support for YAML anchors and aliases.</li>
 <li>Support for default values in mappings.</li>
 <li>Support for custom tags (data types), and implicit tag resolution for custom
-tags.</li>
+scalar tags.</li>
 <li>All tags (data types) described at <a class="reference external" href="http://yaml.org/type/">http://yaml.org/type/</a> are supported, with
 the exception of <tt class="docutils literal">tag:yaml.org,2002:yaml</tt>, which is used to represent YAML
 code in YAML.</li>
-<li>Cannot write YAML at the moment. This will change in the future.</li>
 <li>There is no support for recursive data structures.
 There are no plans to implement this at the moment.</li>
 </ul>
@@ -445,11 +442,6 @@ DEALINGS IN THE SOFTWARE.
 <p>D:YAML was created using Vim and DMD on Debian and Ubuntu Linux as a YAML parsing
 library for the <a class="reference external" href="http://www.d-programming-language.org">D programming language</a>.</p>
 </div>
-</div>
-<div class="footer">
-<hr class="footer" />
-Generated on: 2011-08-16 20:07 UTC.
-
 </div>
 </body>
 </html>

@@ -1,23 +1,21 @@
 ==========
-D:YAML 0.1
+D:YAML 0.2
 ==========
 
 ------------
 Introduction 
 ------------
 
-D:YAML is an open source YAML parser library for the D programming language.
-It is 
+D:YAML is an open source YAML parser and emitter library for the D programming
+language.  It is 
 (`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_) 
 compliant to the YAML 1.1 specification. Much of D:YAML code is based on 
 `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. D:YAML has no 
 external dependencies, all it needs is a D compiler and Phobos (standard 
 library). It is written in D2 and there are no plans for D1 or Tango support.
 
-At the moment, D:YAML can only read, not write YAML files. This will change in
-the following releases. D:YAML is designed to be as easy to use as possible while
-supporting the full feature set of YAML. To start using it in your project,
-see the 
+D:YAML is designed to be as easy to use as possible while supporting the full 
+feature set of YAML. To start using it in your project, see the 
 `Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
 tutorial.
  
@@ -36,7 +34,7 @@ Features
 * No external dependencies.
 * Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
   are parsed correctly.
-* Read from YAML files as well as from memory or user defined streams.
+* Read and write from/to YAML files as well as memory or user defined streams.
 * UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian 
   (plain ASCII also works as it is a subset of UTF-8).
 * Support for both block (Python-like, based on indentation) and flow 
@@ -44,11 +42,10 @@ Features
 * Support for YAML anchors and aliases.
 * Support for default values in mappings.
 * Support for custom tags (data types), and implicit tag resolution for custom 
-  tags.
+  scalar tags.
 * All tags (data types) described at http://yaml.org/type/ are supported, with 
   the exception of ``tag:yaml.org,2002:yaml``, which is used to represent YAML
   code in YAML.
-* Cannot write YAML at the moment. This will change in the future.
 * There is no support for recursive data structures. 
   There are no plans to implement this at the moment.
 
@@ -57,16 +54,16 @@ Features
 Directory structure
 -------------------
 
-===============  ======================================================================
+===============  =======================================================================
 Directory        Contents
-===============  ======================================================================
+===============  =======================================================================
 ``./``           This README file, utility scripts, D:YAML sources outside any packages.
 ``./doc``        Documentation.
 ``./docsrc``     Documentation sources.
 ``./dyaml``      D:YAML source code.
 ``./examples/``  Example D:YAML code.
 ``./test``       Unittest code and inputs.
-===============  ======================================================================
+===============  =======================================================================
 
 
 -----------------------
