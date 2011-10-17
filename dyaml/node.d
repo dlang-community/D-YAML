@@ -456,6 +456,9 @@ struct Node
          * If the specifed type does not match type in the node,
          * conversion is attempted.
          *
+         * Numeric values are range checked, throwing if out of range of 
+         * requested type.
+         *
          * Timestamps are stored as std.datetime.SysTime.
          * Binary values are decoded and stored as ubyte[]. 
          *
@@ -483,7 +486,8 @@ struct Node
          *
          * Returns: Value of the node as specified type.
          *
-         * Throws:  NodeException if unable to convert to specified type.
+         * Throws:  NodeException if unable to convert to specified type, or if
+         *          the value is out of range of requested type.
          */
         @property T get(T)()
         {

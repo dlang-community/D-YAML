@@ -88,29 +88,23 @@ of these functions:
 
    Color constructColorMapping(Mark start, Mark end, ref Node node)
    {
-       int r,g,b;
-       bool error = false;
-
-       //Might throw if a value is missing or is not an integer.
+       ubyte r,g,b;
+   
+       //Might throw if a value is missing is not an integer, or is out of range.
        try
        {
-           r = node["r"].get!int;
-           g = node["g"].get!int;
-           b = node["b"].get!int;
+           r = node["r"].get!ubyte;
+           g = node["g"].get!ubyte;
+           b = node["b"].get!ubyte;
        }
        catch(NodeException e)
        {
-           error = true;
+           throw new ConstructorException("Invalid color: " ~ e.msg, start, end);
        }
-
-       if(error || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
-       {
-           throw new ConstructorException("Invalid color", start, end);
-       }
-
+   
        return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);
    }
-
+   
 Next, we need some YAML data using our new tag. Create a file called 
 ``input.yaml`` with the following contents:
 

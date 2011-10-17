@@ -280,6 +280,10 @@
  conversion is attempted.
 <br>
 
+ Numeric values are range checked, throwing if out of range of
+ requested type.
+<br>
+
  Timestamps are stored as std.datetime.SysTime.
  Binary values are decoded and stored as ubyte[].
 <br>
@@ -308,7 +312,8 @@
 <b>Returns:</b><div class="pbr">Value of the node as specified type.
 
 </div>
-<b>Throws:</b><div class="pbr">NodeException if unable to convert to specified type.</div>
+<b>Throws:</b><div class="pbr">NodeException if unable to convert to specified type, or if
+          the value is out of range of requested type.</div>
 
 </dd>
 <dt class="d_decl">void <a name="getToVar"></a><span class="ddoc_psymbol">getToVar</span>(T)(out T <b>target</b>);

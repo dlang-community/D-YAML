@@ -46,24 +46,18 @@ Color constructColorScalar(Mark start, Mark end, ref Node node)
 
 Color constructColorMapping(Mark start, Mark end, ref Node node)
 {
-    int r,g,b;
-    bool error = false;
+    ubyte r,g,b;
 
-    //Might throw if a value is missing or is not an integer.
+    //Might throw if a value is missing is not an integer, or is out of range.
     try
     {
-        r = node["r"].get!int;
-        g = node["g"].get!int;
-        b = node["b"].get!int;
+        r = node["r"].get!ubyte;
+        g = node["g"].get!ubyte;
+        b = node["b"].get!ubyte;
     }
     catch(NodeException e)
     {
-        error = true;
-    }
-
-    if(error || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
-    {
-        throw new ConstructorException("Invalid color", start, end);
+        throw new ConstructorException("Invalid color: " ~ e.msg, start, end);
     }
 
     return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);

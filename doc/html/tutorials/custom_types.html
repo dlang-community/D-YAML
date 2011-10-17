@@ -121,24 +121,18 @@ of these functions:</p>
 
 <span class="n">Color</span> <span class="n">constructColorMapping</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">error</span> <span class="p">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="kt">ubyte</span> <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">;</span>
 
-    <span class="c1">//Might throw if a value is missing or is not an integer.</span>
+    <span class="c1">//Might throw if a value is missing is not an integer, or is out of range.</span>
     <span class="k">try</span>
     <span class="p">{</span>
-        <span class="n">r</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;r&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
-        <span class="n">g</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;g&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
-        <span class="n">b</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
+        <span class="n">r</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;r&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
+        <span class="n">g</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;g&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
+        <span class="n">b</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="n">NodeException</span> <span class="n">e</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="n">error</span> <span class="p">=</span> <span class="kc">true</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span><span class="p">(</span><span class="n">error</span> <span class="p">||</span> <span class="n">r</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">r</span> <span class="p">&gt;</span> <span class="mi">255</span> <span class="p">||</span> <span class="n">g</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">g</span> <span class="p">&gt;</span> <span class="mi">255</span> <span class="p">||</span> <span class="n">b</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">b</span> <span class="p">&gt;</span> <span class="mi">255</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="n">ConstructorException</span><span class="p">(</span><span class="s">&quot;Invalid color&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">ConstructorException</span><span class="p">(</span><span class="s">&quot;Invalid color: &quot;</span> <span class="p">~</span> <span class="n">e</span><span class="p">.</span><span class="n">msg</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="n">Color</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="kt">ubyte</span><span class="p">)</span><span class="n">r</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="kt">ubyte</span><span class="p">)</span><span class="n">g</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="kt">ubyte</span><span class="p">)</span><span class="n">b</span><span class="p">);</span>
