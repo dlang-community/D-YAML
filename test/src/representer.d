@@ -58,8 +58,8 @@ void testRepresenterTypes(bool verbose, string codeFilename)
         output = cast(string)emitStream.data;
         auto loadStream  = new MemoryStream(emitStream.data);
         auto constructor = new Constructor;
-        constructor.addConstructor("!tag1", &constructClass);
-        constructor.addConstructor("!tag2", &constructStruct);
+        constructor.addConstructorMapping("!tag1", &constructClass);
+        constructor.addConstructorScalar("!tag2", &constructStruct);
 
         auto loader        = Loader(loadStream);
         loader.name        = "TEST";

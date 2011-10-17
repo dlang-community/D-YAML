@@ -251,11 +251,12 @@ struct Node
         {
             tag_ = Tag(tag);
 
+            //Construction from raw node or pair array.
             static if(is(T == Node) || is(T == Node.Pair))
             {
                 value_ = Value(array);
             }
-            //Need to handle byte buffers separately
+            //Need to handle byte buffers separately.
             else static if(is(T == byte) || is(T == ubyte))
             {
                 value_ = Value(cast(ubyte[]) array);

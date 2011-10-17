@@ -68,11 +68,11 @@ final class Constructor
 {
     private:
         ///Constructor functions from scalars.
-        Node.Value delegate(Mark, Mark, string)      [Tag] fromScalar_;
+        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromScalar_;
         ///Constructor functions from sequences.
-        Node.Value delegate(Mark, Mark, Node[])      [Tag] fromSequence_;
+        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromSequence_;
         ///Constructor functions from mappings.
-        Node.Value delegate (Mark, Mark, Node.Pair[])[Tag] fromMapping_;
+        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromMapping_;
 
     public:
         /**
@@ -85,26 +85,25 @@ final class Constructor
          */
         this(in bool defaultConstructors = true)
         {
-            if(defaultConstructors)
-            {
-                addConstructor("tag:yaml.org,2002:null",      &constructNull);
-                addConstructor("tag:yaml.org,2002:bool",      &constructBool);
-                addConstructor("tag:yaml.org,2002:int",       &constructLong);
-                addConstructor("tag:yaml.org,2002:float",     &constructReal);
-                addConstructor("tag:yaml.org,2002:binary",    &constructBinary);
-                addConstructor("tag:yaml.org,2002:timestamp", &constructTimestamp);
-                addConstructor("tag:yaml.org,2002:str",       &constructString);
+            if(!defaultConstructors){return;}
 
-                ///In a mapping, the default value is kept as an entry with the '=' key.
-                addConstructor("tag:yaml.org,2002:value",     &constructString);
+            addConstructorScalar("tag:yaml.org,2002:null",      &constructNull);
+            addConstructorScalar("tag:yaml.org,2002:bool",      &constructBool);
+            addConstructorScalar("tag:yaml.org,2002:int",       &constructLong);
+            addConstructorScalar("tag:yaml.org,2002:float",     &constructReal);
+            addConstructorScalar("tag:yaml.org,2002:binary",    &constructBinary);
+            addConstructorScalar("tag:yaml.org,2002:timestamp", &constructTimestamp);
+            addConstructorScalar("tag:yaml.org,2002:str",       &constructString);
 
-                addConstructor("tag:yaml.org,2002:omap",      &constructOrderedMap);
-                addConstructor("tag:yaml.org,2002:pairs",     &constructPairs);
-                addConstructor("tag:yaml.org,2002:set",       &constructSet);
-                addConstructor("tag:yaml.org,2002:seq",       &constructSequence);
-                addConstructor("tag:yaml.org,2002:map",       &constructMap);
-                addConstructor("tag:yaml.org,2002:merge",     &constructMerge);
-            }
+            ///In a mapping, the default value is kept as an entry with the '=' key.
+            addConstructorScalar("tag:yaml.org,2002:value",     &constructString);
+
+            addConstructorSequence("tag:yaml.org,2002:omap",    &constructOrderedMap);
+            addConstructorSequence("tag:yaml.org,2002:pairs",   &constructPairs);
+            addConstructorMapping("tag:yaml.org,2002:set",      &constructSet);
+            addConstructorSequence("tag:yaml.org,2002:seq",     &constructSequence);
+            addConstructorMapping("tag:yaml.org,2002:map",      &constructMap);
+            addConstructorScalar("tag:yaml.org,2002:merge",     &constructMerge);
         }
 
         ///Destroy the constructor.
@@ -119,139 +118,129 @@ final class Constructor
         }
 
         /**
-         * Add a constructor function.
+         * Add a constructor function from scalar.
          *
-         * The function passed must two Marks (determining start and end positions of
-         * the node in file) and either a string (if constructing from scalar),
-         * an array of Nodes (from sequence) or an array of Node.Pair (from mapping).
-         * The value returned by this function will be stored in the resulring node.
+         * The function must take two Marks (start and end positions of
+         * the node in file) and a reference to Node to construct from.
+         * The node contains a string for scalars, Node[] for sequences and 
+         * Node.Pair[] for mappings.
+         * The value returned by this function will be stored in the resulting node.
          *
          * Only one constructor function can be set for one tag.
          *
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        void addConstructor(T, U)(in string tag, T function(Mark, Mark, U) ctor)
-            if(is(U == string) || is(U == Node[]) || is(U == Node.Pair[]))
+        void addConstructorScalar(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
         {
-            Node.Value delegate(Mark, Mark, U) deleg;
+            const t = Tag(tag);
+            auto deleg = addConstructor!T(t, ctor);
+            (*delegates!string)[t] = deleg;
+        }
 
-            //Type that natively fits into Node.Value.
-            static if(Node.Value.allowed!T)
-            {
-                deleg = (Mark s, Mark e, U p){return Node.Value(ctor(s,e,p));};
-            }
-            //User defined type.
-            else
-            {
-                deleg = (Mark s, Mark e, U p){return Node.userValue(ctor(s,e,p));};
-            }
+        /**
+         * Add a constructor function from sequence.
+         *
+         * See_Also:    addConstructorScalar
+         */
+        void addConstructorSequence(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
+        {
+            const t = Tag(tag);
+            auto deleg = addConstructor!T(t, ctor);
+            (*delegates!(Node[]))[t] = deleg;
+        }
 
-            const Tag t = Tag(tag);
-
-            assert((t in fromScalar_) is null && 
-                   (t in fromSequence_) is null &&
-                   (t in fromMapping_) is null,
-                   "Constructor function for tag " ~ tag ~ " is already "
-                   "specified. Can't specify another one.");
-
-            
-            static if(is(U == string))          
-            {
-                fromScalar_[t] = deleg;
-            }
-            else static if(is(U == Node[]))     
-            {
-                fromSequence_[t] = deleg;
-            }
-            else static if(is(U == Node.Pair[]))
-            {
-                fromMapping_[t] = deleg;
-            }
+        /**
+         * Add a constructor function from a mapping.
+         *
+         * See_Also:    addConstructorScalar
+         */
+        void addConstructorMapping(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
+        {
+            const t = Tag(tag);
+            auto deleg = addConstructor!T(t, ctor);
+            (*delegates!(Node.Pair[]))[t] = deleg;
         }
 
     package:
         /*
-         * Construct a node from scalar.
+         * Construct a node.
          *
          * Params:  start = Start position of the node.
          *          end   = End position of the node.
          *          tag   = Tag (data type) of the node.
-         *          value = String value of the node.
+         *          value = Value to construct node from (string, nodes or pairs).
          *
          * Returns: Constructed node.
          */ 
-        Node node(in Mark start, in Mark end, in Tag tag, string value) const
+        Node node(T)(in Mark start, in Mark end, in Tag tag, T value) 
+            if(is(T : string) || is(T == Node[]) || is(T == Node.Pair[]))
         {
-            enforce((tag in fromScalar_) !is null,
-                    new ConstructorException("Could not determine a constructor from " 
-                                             "scalar for tag " ~ tag.get(), start, end));
-            return Node.rawNode(fromScalar_[tag](start, end, value), start, tag);
+            enforce((tag in *delegates!T) !is null,
+                    new ConstructorException("Could not determine a constructor for tag " 
+                                             ~ tag.get(), start, end));
+            Node node = Node(value);
+            return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag);
         }
 
-        /*
-         * Construct a node from sequence.
+    private:
+        /* 
+         * Add a constructor function.
          *
-         * Params:  start = Start position of the node.
-         *          end   = End position of the node.
-         *          tag   = Tag (data type) of the node.
-         *          value = Sequence to construct node from.
-         *
-         * Returns: Constructed node.
-         */ 
-        Node node(in Mark start, in Mark end, in Tag tag, Node[] value) const
+         * Params:  tag  = Tag for the function to handle.
+         *          ctor = Constructor function.
+         */
+        auto addConstructor(T)(in Tag tag, T function(Mark, Mark, ref Node) ctor)
         {
-            enforce((tag in fromSequence_) !is null,
-                    new ConstructorException("Could not determine a constructor from " 
-                                             "sequence for tag " ~ tag.get(), start, end));
-            return Node.rawNode(fromSequence_[tag](start, end, value), start, tag);
+            assert((tag in fromScalar_) is null && 
+                   (tag in fromSequence_) is null &&
+                   (tag in fromMapping_) is null,
+                   "Constructor function for tag " ~ tag.get ~ " is already "
+                   "specified. Can't specify another one.");
+
+            return (Mark s, Mark e, ref Node n)
+            {
+                static if(Node.Value.allowed!T){return Node.Value(ctor(s,e,n));}
+                else                           {return Node.userValue(ctor(s,e,n));}
+            }; 
         }
 
-        /*
-         * Construct a node from mapping.
-         *
-         * Params:  start = Start position of the node.
-         *          end   = End position of the node.
-         *          tag   = Tag (data type) of the node.
-         *          value = Mapping to construct node from.
-         *
-         * Returns: Constructed node.
-         */ 
-        Node node(in Mark start, in Mark end, in Tag tag, Node.Pair[] value) const
+        //Get the array of constructor functions for scalar, sequence or mapping.
+        auto delegates(T)() 
         {
-            enforce((tag in fromMapping_) !is null,
-                    new ConstructorException("Could not determine a constructor from " 
-                                             "mapping for tag " ~ tag.get(), start, end));
-            return Node.rawNode(fromMapping_[tag](start, end, value), start, tag);
+            static if(is(T : string))          {return &fromScalar_;}
+            else static if(is(T : Node[]))     {return &fromSequence_;}
+            else static if(is(T : Node.Pair[])){return &fromMapping_;}
+            else static assert(false);
         }
 }
 
 
 ///Construct a null node.
-YAMLNull constructNull(Mark start, Mark end, string value)
+YAMLNull constructNull(Mark start, Mark end, ref Node node)
 {
     return YAMLNull();
 }
 
 ///Construct a merge node - a node that merges another node into a mapping.
-YAMLMerge constructMerge(Mark start, Mark end, string value)
+YAMLMerge constructMerge(Mark start, Mark end, ref Node node)
 {
     return YAMLMerge();
 }
 
 ///Construct a boolean node.
-bool constructBool(Mark start, Mark end, string value)
+bool constructBool(Mark start, Mark end, ref Node node)
 {
-    value = value.toLower();
+    string value = node.get!string().toLower();
     if(["yes", "true", "on"].canFind(value)) {return true;}
     if(["no", "false", "off"].canFind(value)){return false;}
     throw new ConstructorException("Unable to parse boolean value: " ~ value, start, end);
 }
 
 ///Construct an integer (long) node.
-long constructLong(Mark start, Mark end, string value)
+long constructLong(Mark start, Mark end, ref Node node)
 {
-    value = value.replace("_", "");
+    string value = node.get!string().replace("_", "");
     const char c = value[0];
     const long sign = c != '-' ? 1 : -1;
     if(c == '-' || c == '+')
@@ -299,7 +288,7 @@ unittest
 {
     long getLong(string str)
     {
-        return constructLong(Mark(), Mark(), str);
+        return constructLong(Mark(), Mark(), Node(str));
     }
 
     string canonical   = "685230";
@@ -318,9 +307,9 @@ unittest
 }
 
 ///Construct a floating point (real) node.
-real constructReal(Mark start, Mark end, string value)
+real constructReal(Mark start, Mark end, ref Node node)
 {
-    value = value.replace("_", "").toLower();
+    string value = node.get!string().replace("_", "").toLower();
     const char c = value[0];
     const real sign = c != '-' ? 1.0 : -1.0;
     if(c == '-' || c == '+')
@@ -369,7 +358,7 @@ unittest
 
     real getReal(string str)
     {
-        return constructReal(Mark(), Mark(), str);
+        return constructReal(Mark(), Mark(), Node(str));
     }
 
     string canonical   = "6.8523015e+5";
@@ -388,8 +377,9 @@ unittest
 }
 
 ///Construct a binary (base64) node.
-ubyte[] constructBinary(Mark start, Mark end, string value)
+ubyte[] constructBinary(Mark start, Mark end, ref Node node)
 {
+    string value = node.get!string;
     //For an unknown reason, this must be nested to work (compiler bug?).
     try
     {
@@ -411,13 +401,15 @@ unittest
     char[] buffer;
     buffer.length = 256;
     string input = cast(string)Base64.encode(test, buffer);
-    auto value = constructBinary(Mark(), Mark(), input);
+    auto value = constructBinary(Mark(), Mark(), Node(input));
     assert(value == test);
 }
 
 ///Construct a timestamp (SysTime) node.
-SysTime constructTimestamp(Mark start, Mark end, string value)
+SysTime constructTimestamp(Mark start, Mark end, ref Node node)
 {
+    string value = node.get!string;
+
     immutable YMDRegexp = regex("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)");
     immutable HMSRegexp = regex("^[Tt \t]+([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(\\.[0-9]*)?");
     immutable TZRegexp  = regex("^[ \t]*Z|([-+][0-9][0-9]?)(:[0-9][0-9])?");
@@ -492,7 +484,7 @@ unittest
 
     string timestamp(string value)
     {
-        return constructTimestamp(Mark(), Mark(), value).toISOString();
+        return constructTimestamp(Mark(), Mark(), Node(value)).toISOString();
     }
 
     string canonical      = "2001-12-15T02:59:43.1Z";
@@ -515,9 +507,9 @@ unittest
 }
 
 ///Construct a string node.
-string constructString(Mark start, Mark end, string value)
+string constructString(Mark start, Mark end, ref Node node)
 {
-    return value;
+    return node.get!string;
 }
 
 ///Convert a sequence of single-element mappings into a sequence of pairs.
@@ -539,9 +531,9 @@ Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes)
 }
 
 ///Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.
-Node.Pair[] constructOrderedMap(Mark start, Mark end, Node[] nodes)
+Node.Pair[] constructOrderedMap(Mark start, Mark end, ref Node node)
 {
-    auto pairs = getPairs("ordered map", start, end, nodes);
+    auto pairs = getPairs("ordered map", start, end, node.get!(Node[]));
 
     //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
@@ -588,7 +580,7 @@ unittest
 
     bool hasDuplicates(Node[] nodes)
     {
-        return null !is collectException(constructOrderedMap(Mark(), Mark(), nodes));
+        return null !is collectException(constructOrderedMap(Mark(), Mark(), Node(nodes)));
     }
 
     assert(hasDuplicates(alternateTypes(8) ~ alternateTypes(2)));
@@ -600,14 +592,16 @@ unittest
 }
 
 ///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.
-Node.Pair[] constructPairs(Mark start, Mark end, Node[] nodes)
+Node.Pair[] constructPairs(Mark start, Mark end, ref Node node)
 {
-    return getPairs("pairs", start, end, nodes);
+    return getPairs("pairs", start, end, node.get!(Node[]));
 }
 
 ///Construct a set node.
-Node[] constructSet(Mark start, Mark end, Node.Pair[] pairs)
+Node[] constructSet(Mark start, Mark end, ref Node node)
 {
+    auto pairs = node.get!(Node.Pair[]);
+
     //In future, the map here should be replaced with something with deterministic
     //memory allocation if possible.
     //Detect duplicates.
@@ -658,24 +652,25 @@ unittest
     }
 
     assert(null !is collectException
-           (constructSet(Mark(), Mark(), DuplicatesShort.dup)));
+           (constructSet(Mark(), Mark(), Node(DuplicatesShort.dup))));
     assert(null is collectException
-           (constructSet(Mark(), Mark(), noDuplicatesShort.dup)));
+           (constructSet(Mark(), Mark(), Node(noDuplicatesShort.dup))));
     assert(null !is collectException
-           (constructSet(Mark(), Mark(), DuplicatesLong.dup)));
+           (constructSet(Mark(), Mark(), Node(DuplicatesLong.dup))));
     assert(null is collectException
-           (constructSet(Mark(), Mark(), noDuplicatesLong.dup)));
+           (constructSet(Mark(), Mark(), Node(noDuplicatesLong.dup))));
 }
 
 ///Construct a sequence (array) node.
-Node[] constructSequence(Mark start, Mark end, Node[] nodes)
+Node[] constructSequence(Mark start, Mark end, ref Node node)
 {
-    return nodes;
+    return node.get!(Node[]);
 }
 
 ///Construct an unordered map (unordered set of key: value _pairs without duplicates) node.
-Node.Pair[] constructMap(Mark start, Mark end, Node.Pair[] pairs)
+Node.Pair[] constructMap(Mark start, Mark end, ref Node node)
 {
+    auto pairs = node.get!(Node.Pair[]);
     //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
     //Detect duplicates.

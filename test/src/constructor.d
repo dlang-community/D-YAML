@@ -88,8 +88,7 @@ Node[] constructBool()
 
 Node[] constructCustom()
 {
-    return [Node([Node(new TestClass(1, 0, 0)), 
-                  Node(new TestClass(1, 2, 3)), 
+    return [Node([Node(new TestClass(1, 2, 3)), 
                   Node(TestStruct(10))])];
 }
 
@@ -338,21 +337,17 @@ struct TestStruct
 }
 
 ///Constructor function for TestClass.
-TestClass constructClass(Mark start, Mark end, Node.Pair[] pairs)
+TestClass constructClass(Mark start, Mark end, ref Node node)
 {
-    int x, y, z;
-    foreach(ref pair; pairs)
+    try
     {
-        switch(pair.key.get!string)
-        {
-            case "x": x = pair.value.get!int; break;
-            case "y": y = pair.value.get!int; break;
-            case "z": z = pair.value.get!int; break;
-            default: break;
-        }
+        return new TestClass(node["x"].get!int, node["y"].get!int, node["z"].get!int);
     }
-
-    return new TestClass(x, y, z);
+    catch(NodeException e)
+    {
+        throw new ConstructorException("Error constructing TestClass (missing data members?) " 
+                                       ~ e.msg, start, end);
+    }
 }
 
 Node representClass(ref Node node, Representer representer)
@@ -367,9 +362,9 @@ Node representClass(ref Node node, Representer representer)
 }
           
 ///Constructor function for TestStruct.
-TestStruct constructStruct(Mark start, Mark end, string value)
+TestStruct constructStruct(Mark start, Mark end, ref Node node)
 {
-    return TestStruct(to!int(value));
+    return TestStruct(to!int(node.get!string));
 }
 
 ///Representer function for TestStruct.
@@ -395,8 +390,8 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy)
             new Exception("Unimplemented constructor test: " ~ base));
 
     auto constructor = new Constructor;
-    constructor.addConstructor("!tag1", &constructClass);
-    constructor.addConstructor("!tag2", &constructStruct);
+    constructor.addConstructorMapping("!tag1", &constructClass);
+    constructor.addConstructorScalar("!tag2", &constructStruct);
 
     auto loader        = Loader(dataFilename);
     loader.constructor = constructor;

@@ -60,8 +60,9 @@ It is also possible to implicitly resolve custom tags, as we will show later.</p
 <p>D:YAML uses the <a class="reference external" href="../api/dyaml.constructor.html">Constructor</a> class to process
 each node to hold data type corresponding to its tag. <em>Constructor</em> stores a
 function for each supported tag to process it. These functions are supplied by
-the user using the <em>addConstructor()</em> method. <em>Constructor</em> is then passed to
-<em>Loader</em>, which parses YAML input.</p>
+the user using the <em>addConstructorXXX()</em> methods, where <em>XXX</em> is <em>Scalar</em>,
+<em>Sequence</em> or <em>Mapping</em>. <em>Constructor</em> is then passed to <em>Loader</em>, which parses
+YAML input.</p>
 <p>Struct types have no specific requirements for YAML support. Class types should
 define the <em>opEquals()</em> operator, as this is used in equality comparisons of
 nodes. Default class <em>opEquals()</em> compares references, which means two identical
@@ -77,14 +78,17 @@ following struct:</p>
 </pre></div>
 </div>
 <p>First, we need a function to construct our data type. It must take two <em>Mark</em>
-structs, which store position of the node in the file, and either a <em>string</em>, an
-array of <em>Node</em> or of <em>Node.Pair</em>, depending on whether we&#8217;re constructing our
-value from a scalar, sequence, or mapping, respectively. In this tutorial, we
-have functions to construct a color from a scalar, using HTML-like format,
-RRGGBB, or from a mapping, where we use the following format:
-{r:RRR, g:GGG, b:BBB} . Code of these functions:</p>
-<div class="highlight-d"><div class="highlight"><pre><span class="n">Color</span> <span class="n">constructColorScalar</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="nb">string</span> <span class="n">value</span><span class="p">)</span>
+structs, which store position of the node in the file, and a reference to <em>Node</em>
+to construct from. The node is guaranteed to contain either a <em>string</em>, an array
+of <em>Node</em> or of <em>Node.Pair</em>, depending on whether we&#8217;re constructing our value
+from a scalar, sequence, or mapping, respectively. In this tutorial, we have
+functions to construct a color from a scalar, using CSS-like format, RRGGBB, or
+from a mapping, where we use the following format: {r:RRR, g:GGG, b:BBB} . Code
+of these functions:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">Color</span> <span class="n">constructColorScalar</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">)</span>
 <span class="p">{</span>
+    <span class="nb">string</span> <span class="n">value</span> <span class="p">=</span> <span class="n">node</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="nb">string</span><span class="p">;</span>
+
     <span class="k">if</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">length</span> <span class="p">!=</span> <span class="mi">6</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="n">ConstructorException</span><span class="p">(</span><span class="s">&quot;Invalid color: &quot;</span> <span class="p">~</span> <span class="n">value</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">);</span>
@@ -115,30 +119,21 @@ RRGGBB, or from a mapping, where we use the following format:
     <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="n">Color</span> <span class="n">constructColorMapping</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="n">Node</span><span class="p">.</span><span class="n">Pair</span><span class="p">[]</span> <span class="n">pairs</span><span class="p">)</span>
+<span class="n">Color</span> <span class="n">constructColorMapping</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
-    <span class="n">r</span> <span class="p">=</span> <span class="n">g</span> <span class="p">=</span> <span class="n">b</span> <span class="p">=</span> <span class="p">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">error</span> <span class="p">=</span> <span class="n">pairs</span><span class="p">.</span><span class="n">length</span> <span class="p">!=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="n">error</span> <span class="p">=</span> <span class="kc">false</span><span class="p">;</span>
 
-    <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">pair</span><span class="p">;</span> <span class="n">pairs</span><span class="p">)</span>
+    <span class="c1">//Might throw if a value is missing or is not an integer.</span>
+    <span class="k">try</span>
     <span class="p">{</span>
-        <span class="c1">//Key might not be a string, and value might not be an int,</span>
-        <span class="c1">//so we need to check for that</span>
-        <span class="k">try</span>
-        <span class="p">{</span>
-            <span class="k">switch</span><span class="p">(</span><span class="n">pair</span><span class="p">.</span><span class="n">key</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="nb">string</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="k">case</span> <span class="s">&quot;r&quot;</span><span class="p">:</span> <span class="n">r</span> <span class="p">=</span> <span class="n">pair</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span> <span class="k">break</span><span class="p">;</span>
-                <span class="k">case</span> <span class="s">&quot;g&quot;</span><span class="p">:</span> <span class="n">g</span> <span class="p">=</span> <span class="n">pair</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span> <span class="k">break</span><span class="p">;</span>
-                <span class="k">case</span> <span class="s">&quot;b&quot;</span><span class="p">:</span> <span class="n">b</span> <span class="p">=</span> <span class="n">pair</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span> <span class="k">break</span><span class="p">;</span>
-                <span class="k">default</span><span class="p">:</span>  <span class="n">error</span> <span class="p">=</span> <span class="kc">true</span><span class="p">;</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-        <span class="k">catch</span><span class="p">(</span><span class="n">NodeException</span> <span class="n">e</span><span class="p">)</span>
-        <span class="p">{</span>
-            <span class="n">error</span> <span class="p">=</span> <span class="kc">true</span><span class="p">;</span>
-        <span class="p">}</span>
+        <span class="n">r</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;r&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
+        <span class="n">g</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;g&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
+        <span class="n">b</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">int</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="n">NodeException</span> <span class="n">e</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">error</span> <span class="p">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span><span class="p">(</span><span class="n">error</span> <span class="p">||</span> <span class="n">r</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">r</span> <span class="p">&gt;</span> <span class="mi">255</span> <span class="p">||</span> <span class="n">g</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">g</span> <span class="p">&gt;</span> <span class="mi">255</span> <span class="p">||</span> <span class="n">b</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">||</span> <span class="n">b</span> <span class="p">&gt;</span> <span class="mi">255</span><span class="p">)</span>
@@ -174,8 +169,8 @@ RRGGBB, or from a mapping, where we use the following format:
     <span class="p">{</span>
         <span class="k">auto</span> <span class="n">constructor</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Constructor</span><span class="p">;</span>
         <span class="c1">//both functions handle the same tag, but one handles scalar, one mapping.</span>
-        <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructor</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorScalar</span><span class="p">);</span>
-        <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructor</span><span class="p">(</span><span class="s">&quot;!color-mapping&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorMapping</span><span class="p">);</span>
+        <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructorScalar</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorScalar</span><span class="p">);</span>
+        <span class="n">constructor</span><span class="p">.</span><span class="n">addConstructorMapping</span><span class="p">(</span><span class="s">&quot;!color-mapping&quot;</span><span class="p">,</span> <span class="p">&amp;</span><span class="n">constructColorMapping</span><span class="p">);</span>
 
         <span class="k">auto</span> <span class="n">loader</span> <span class="p">=</span> <span class="n">Loader</span><span class="p">(</span><span class="s">&quot;input.yaml&quot;</span><span class="p">);</span>
         <span class="n">loader</span><span class="p">.</span><span class="n">constructor</span> <span class="p">=</span> <span class="n">constructor</span><span class="p">;</span>
@@ -292,7 +287,7 @@ loading the output.</p>
 </pre></div>
 </div>
 <p>First we get the <em>Color</em> from the node. Then we convert it to a string with the
-HTML-like format we&#8217;ve used before. Finally, we use the <em>representScalar()</em>
+CSS-like format we&#8217;ve used before. Finally, we use the <em>representScalar()</em>
 method of <em>Representer</em> to get a scalar node ready for output.
 There are corresponding <em>representMapping()</em> and <em>representSequence()</em> methods
 as well, with examples in the
@@ -380,7 +375,7 @@ directory of the D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Oct 15, 2011.
+      Last updated on Oct 17, 2011.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>

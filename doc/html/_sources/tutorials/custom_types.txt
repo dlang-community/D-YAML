@@ -20,8 +20,9 @@ Constructor
 D:YAML uses the `Constructor <../api/dyaml.constructor.html>`_ class to process
 each node to hold data type corresponding to its tag. *Constructor* stores a 
 function for each supported tag to process it. These functions are supplied by
-the user using the *addConstructor()* method. *Constructor* is then passed to 
-*Loader*, which parses YAML input.
+the user using the *addConstructorXXX()* methods, where *XXX* is *Scalar*,
+*Sequence* or *Mapping*. *Constructor* is then passed to *Loader*, which parses
+YAML input.
 
 Struct types have no specific requirements for YAML support. Class types should
 define the *opEquals()* operator, as this is used in equality comparisons of 
@@ -41,17 +42,20 @@ following struct:
    }
 
 First, we need a function to construct our data type. It must take two *Mark* 
-structs, which store position of the node in the file, and either a *string*, an
-array of *Node* or of *Node.Pair*, depending on whether we're constructing our 
-value from a scalar, sequence, or mapping, respectively. In this tutorial, we 
-have functions to construct a color from a scalar, using HTML-like format, 
-RRGGBB, or from a mapping, where we use the following format: 
-{r:RRR, g:GGG, b:BBB} . Code of these functions:
+structs, which store position of the node in the file, and a reference to *Node* 
+to construct from. The node is guaranteed to contain either a *string*, an array
+of *Node* or of *Node.Pair*, depending on whether we're constructing our value 
+from a scalar, sequence, or mapping, respectively. In this tutorial, we have 
+functions to construct a color from a scalar, using CSS-like format, RRGGBB, or 
+from a mapping, where we use the following format: {r:RRR, g:GGG, b:BBB} . Code 
+of these functions:
 
 .. code-block:: d
 
-   Color constructColorScalar(Mark start, Mark end, string value)
+   Color constructColorScalar(Mark start, Mark end, ref Node node)
    {
+       string value = node.get!string;
+
        if(value.length != 6)
        {
            throw new ConstructorException("Invalid color: " ~ value, start, end);
@@ -82,30 +86,21 @@ RRGGBB, or from a mapping, where we use the following format:
        return result;
    }
 
-   Color constructColorMapping(Mark start, Mark end, Node.Pair[] pairs)
+   Color constructColorMapping(Mark start, Mark end, ref Node node)
    {
-       int r, g, b;
-       r = g = b = -1;
-       bool error = pairs.length != 3;
+       int r,g,b;
+       bool error = false;
 
-       foreach(ref pair; pairs)
+       //Might throw if a value is missing or is not an integer.
+       try
        {
-           //Key might not be a string, and value might not be an int,
-           //so we need to check for that
-           try
-           {
-               switch(pair.key.get!string)
-               {
-                   case "r": r = pair.value.get!int; break;
-                   case "g": g = pair.value.get!int; break;
-                   case "b": b = pair.value.get!int; break;
-                   default:  error = true;
-               }
-           }
-           catch(NodeException e)
-           {
-               error = true;
-           }
+           r = node["r"].get!int;
+           g = node["g"].get!int;
+           b = node["b"].get!int;
+       }
+       catch(NodeException e)
+       {
+           error = true;
        }
 
        if(error || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
@@ -146,8 +141,8 @@ Finally, the code to put it all together:
        {
            auto constructor = new Constructor;
            //both functions handle the same tag, but one handles scalar, one mapping.
-           constructor.addConstructor("!color", &constructColorScalar);
-           constructor.addConstructor("!color-mapping", &constructColorMapping);
+           constructor.addConstructorScalar("!color", &constructColorScalar);
+           constructor.addConstructorMapping("!color-mapping", &constructColorMapping);
 
            auto loader = Loader("input.yaml");
            loader.constructor = constructor;
@@ -284,7 +279,7 @@ With the following code, we will add support for dumping the our Color type.
    }
 
 First we get the *Color* from the node. Then we convert it to a string with the
-HTML-like format we've used before. Finally, we use the *representScalar()* 
+CSS-like format we've used before. Finally, we use the *representScalar()* 
 method of *Representer* to get a scalar node ready for output.
 There are corresponding *representMapping()* and *representSequence()* methods
 as well, with examples in the 
