@@ -140,6 +140,9 @@ struct Dumper
         ///Always write document end?
         bool explicitEnd_ = false;
 
+        ///Name of the output file or stream, used in error messages.
+        string name_ = "<unknown>";
+
     public:
         @disable this();
 
@@ -152,10 +155,12 @@ struct Dumper
          */
         this(string filename)
         {
+            name_ = filename;
             try{this(new File(filename, FileMode.OutNew));}
             catch(StreamException e)
             {
-                throw new YAMLException("Unable to use file for YAML dumping " ~ filename ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to open file " ~ filename ~ 
+                                        " for YAML dumping: " ~ e.msg);
             }
         }
 
@@ -175,6 +180,12 @@ struct Dumper
             Anchor.removeReference();
             TagDirectives.removeReference();
             YAMLVersion_ = null;
+        }
+
+        ///Set stream _name. Used in debugging messages.
+        @property void name(string name)
+        {
+            name_ = name;
         }
 
         ///Specify custom Resolver to use.
@@ -312,7 +323,8 @@ struct Dumper
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to dump YAML: " ~ e.msg);
+                throw new YAMLException("Unable to dump YAML to stream " 
+                                        ~ name_ ~ " : " ~ e.msg);
             }
         }
 
@@ -336,7 +348,8 @@ struct Dumper
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to emit YAML: " ~ e.msg);
+                throw new YAMLException("Unable to emit YAML to stream " 
+                                        ~ name_ ~ " : " ~ e.msg);
             }
         }
 }

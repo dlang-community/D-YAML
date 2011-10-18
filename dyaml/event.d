@@ -83,6 +83,9 @@ struct Event
     {
         return id == EventID.Invalid;
     }
+
+    ///Get string representation of the token ID.
+    @property string idString() const {return to!string(id);}
 }
 
 /**

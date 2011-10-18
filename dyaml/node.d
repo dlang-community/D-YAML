@@ -39,9 +39,11 @@ class NodeException : YAMLException
          */
         this(string msg, Mark start, string file = __FILE__, int line = __LINE__)
         {
-            super(msg ~ "\nNode at:" ~ start.toString(), file, line);
+            super(msg ~ "\nNode at: " ~ start.toString(), file, line);
         }
 }
+
+private alias NodeException Error;
 
 //Node kinds.
 package enum NodeID : ubyte
@@ -532,8 +534,8 @@ struct Node
             void throwUnexpectedType()
             {
                 //Can't get the value.
-                throw new NodeException("Node has unexpected type " ~ type.toString ~ 
-                                        ". Expected " ~ typeid(T).toString, startMark_);
+                throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                                ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
             static if(isSomeString!T)
@@ -546,8 +548,7 @@ struct Node
                 }
                 catch(VariantException e)
                 {
-                    throw new NodeException("Unable to convert node value to a string",
-                                            startMark_);
+                    throw new Error("Unable to convert node value to string", startMark_);
                 }
             }
             else static if(isFloatingPoint!T)
@@ -571,9 +572,9 @@ struct Node
                     long temp = value_.get!long;
                     if(temp < T.min || temp > T.max)
                     {
-                        throw new NodeException("Integer value out of range of type " ~
-                                                typeid(T).toString ~ "Value: " ~ 
-                                                to!string(temp), startMark_);
+                        throw new Error("Integer value out of range of type " ~
+                                        typeid(T).toString ~ "Value: " ~ to!string(temp), 
+                                        startMark_);
                     }
                     target = to!T(temp);
                     return;
@@ -602,8 +603,7 @@ struct Node
         {
             if(isSequence)    {return get!(Node[]).length;}
             else if(isMapping){return get!(Pair[]).length;}
-            throw new NodeException("Trying to get length of a node that is not a collection",
-                                    startMark_);
+            throw new Error("Trying to get length of a scalar node", startMark_);
         }
 
         /**
@@ -637,12 +637,10 @@ struct Node
                 auto idx = findPair(index);
                 if(idx >= 0){return get!(Pair[])[idx].value;}
 
-                throw new NodeException("Mapping index not found" ~ 
-                                        isSomeString!T ? ": " ~ to!string(index) : "",
-                                        startMark_);
+                throw new Error("Mapping index not found" ~ 
+                                isSomeString!T ? ": " ~ to!string(index) : "", startMark_);
             }
-            throw new NodeException("Trying to index node that does not support indexing",
-                                    startMark_);
+            throw new Error("Trying to index node that does not support indexing", startMark_);
         }
         unittest
         {
@@ -723,8 +721,7 @@ struct Node
                 return;
             }
 
-            throw new NodeException("Trying to index a YAML node that is not a collection.", 
-                                    startMark_);
+            throw new Error("Trying to index a scalar node.", startMark_);
         }
         unittest
         {
@@ -758,8 +755,8 @@ struct Node
         int opApply(T)(int delegate(ref T) dg)
         {
             enforce(isSequence, 
-                    new NodeException("Trying to iterate over a node that is not a sequence",
-                                      startMark_));
+                    new Error("Trying to iterate over a node that is not a sequence",
+                              startMark_));
 
             int result = 0;
             foreach(ref node; get!(Node[]))
@@ -815,8 +812,8 @@ struct Node
         int opApply(K, V)(int delegate(ref K, ref V) dg)
         {
             enforce(isMapping,
-                    new NodeException("Trying to iterate over a node that is not a mapping",
-                                      startMark_));
+                    new Error("Trying to iterate over a node that is not a mapping",
+                              startMark_));
 
             int result = 0;
             foreach(ref pair; get!(Node.Pair[]))
@@ -915,8 +912,7 @@ struct Node
         void add(T)(T value)
         {
             enforce(isSequence(), 
-                    new NodeException("Trying to add an element to a "
-                                      "non-sequence YAML node", startMark_));
+                    new Error("Trying to add an element to a non-sequence node", startMark_));
 
             auto nodes = get!(Node[])();
             static if(is(T == Node)){nodes ~= value;}
@@ -953,8 +949,8 @@ struct Node
         void add(K, V)(K key, V value)
         {
             enforce(isMapping(), 
-                    new NodeException("Trying to add a key-value pair to a "
-                                      "non-mapping YAML node", startMark_));
+                    new Error("Trying to add a key-value pair to a non-mapping node", 
+                              startMark_));
 
             auto pairs = get!(Node.Pair[])();
             pairs ~= Pair(key, value);
@@ -1010,8 +1006,7 @@ struct Node
                 }
                 return;
             }
-            throw new NodeException("Trying to remove an element from a YAML node that "
-                                    "is not a collection.", startMark_);
+            throw new Error("Trying to remove an element from a scalar node", startMark_);
         }
         unittest
         {
@@ -1077,8 +1072,7 @@ struct Node
                 }
                 return;
             }
-            throw new NodeException("Trying to remove an element from a YAML node that "
-                                    "is not a collection.", startMark_);
+            throw new Error("Trying to remove an element from a scalar node", startMark_);
         }
         unittest
         {
@@ -1334,14 +1328,13 @@ struct Node
         {
             static if(!isIntegral!T)
             {
-                throw new NodeException("Indexing a YAML sequence with a non-integral type.",
-                                        startMark_);
+                throw new Error("Indexing a sequence with a non-integral type.", startMark_);
             }
             else
             {
                 enforce(index >= 0 && index < value_.get!(Node[]).length,
-                        new NodeException("Index to a YAML sequence out of range: " 
-                                          ~ to!string(index), startMark_));
+                        new Error("Sequence index out of range: " ~ to!string(index), 
+                                  startMark_));
             }
         }
 }

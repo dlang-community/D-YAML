@@ -104,23 +104,23 @@ struct Loader
         string name_ = "<unknown>";
 
     public:
+        @disable this();
+
         /**
          * Construct a Loader to load YAML from a file.
          *
          * Params:  filename = Name of the file to load from.
          *
-         * Throws:  YAMLException if the file could not be opened or read from.
+         * Throws:  YAMLException if the file could not be opened or read.
          */
         this(in string filename)
         {
-            try
-            {
-                name = filename;
-                this(new File(filename));
-            }
+            name_ = filename;
+            try{this(new File(filename));}
             catch(StreamException e)
             {
-                throw new YAMLException("Unable to load YAML file " ~ filename ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to open file " ~ filename ~ 
+                                        " for YAML loading: " ~ e.msg);
             }
         }
         
@@ -129,7 +129,7 @@ struct Loader
          *
          * Params:  stream = Stream to read from. Must be readable.
          *
-         * Throws:  YAMLException if stream could not be read from.
+         * Throws:  YAMLException if stream could not be read.
          */
         this(Stream stream)
         {
@@ -145,8 +145,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                e.name = name_;
-                throw e;
+                throw new YAMLException("Unable to open stream " ~ name_ ~ 
+                                        " for YAML loading: " ~ e.msg);
             }
         }
 
@@ -181,7 +181,7 @@ struct Loader
         /**
          * Load single YAML document.
          *
-         * If none or more than one YAML document is found, this will throw a YAMLException.
+         * If none or more than one YAML document is found, this throws a YAMLException.
          *                  
          * Returns: Root node of the document.
          *
@@ -198,8 +198,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                e.name = name_;
-                throw e;
+                throw new YAMLException("Unable to load YAML from stream " ~ 
+                                        name_ ~ " : " ~ e.msg);
             }
         }
 
@@ -208,15 +208,12 @@ struct Loader
          *                  
          * Returns: Array of root nodes of all documents in the file/stream.
          *
-         * Throws:  YAMLException on a YAML parsing error.
+         * Throws:  YAMLException on a parsing error.
          */
         Node[] loadAll()
         {
             Node[] nodes;
-            foreach(ref node; this)
-            {
-                nodes ~= node;
-            }
+            foreach(ref node; this){nodes ~= node;}
             return nodes;
         }
 
@@ -245,8 +242,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                e.name = name_;
-                throw e;
+                throw new YAMLException("Unable to load YAML from stream " ~ 
+                                        name_ ~ " : " ~ e.msg);
             }
         }
 
@@ -262,8 +259,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                e.name = name_;
-                throw e;
+                throw new YAMLException("Unable to scan YAML from stream " ~ 
+                                        name_ ~ " : " ~ e.msg);
             }
         }
 
@@ -278,8 +275,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                e.name = name_;
-                throw e;
+                throw new YAMLException("Unable to parse YAML from stream " ~ 
+                                        name_ ~ " : " ~ e.msg);
             }
         }
 }

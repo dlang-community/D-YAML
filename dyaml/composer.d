@@ -26,7 +26,7 @@ import dyaml.resolver;
 
 package:
 /**
- * Marked exception thrown at composer errors.
+ * Exception thrown at composer errors.
  *
  * See_Also: MarkedYAMLException
  */
@@ -113,7 +113,7 @@ final class Composer
             //Ensure that the stream contains no more documents.
             enforce(parser_.checkEvent(EventID.StreamEnd),
                     new ComposerException("Expected single document in the stream, "
-                                          "but found another document: ",
+                                          "but found another document.",
                                           parser_.getEvent().startMark));
 
             //Drop the STREAM-END event.
@@ -246,6 +246,18 @@ final class Composer
         {
             Node.Pair[] result;
 
+            void error(Node node)
+            {
+                //this is Composer, but the code is related to Constructor.
+                throw new ConstructorException("While constructing a mapping, "
+                                               "expected a mapping or a list of "
+                                               "mappings for merging, but found: " 
+                                               ~ node.type.toString ~
+                                               " NOTE: line/column shows topmost parent "
+                                               "to which the content is being merged",
+                                               startMark, endMark);
+            }
+
             if(root.isMapping)
             {
                 Node[] toMerge;
@@ -259,32 +271,15 @@ final class Composer
                     merge(result, flatten(node, startMark, endMark));
                 }
             }
-            else if(root.isSequence)
+            //Must be a sequence of mappings.
+            else if(root.isSequence) foreach(ref Node node; root)
             {
-                //Must be a sequence of mappings.
-                foreach(ref Node node; root)
-                {
-                    //this is Composer, but the code is related to constructor
-                    enforce(node.isType!(Node.Pair[]),
-                            new ConstructorException("While constructing a mapping, " ~
-                                                     "expected a mapping for merging, but found" 
-                                                     ~ node.type.toString ~
-                                                     "NOTE: line/column shows topmost parent "
-                                                     "to which the content is being merged",
-                                                     startMark, endMark));
-                    merge(result, flatten(node, startMark, endMark));
-                }
+                if(!node.isType!(Node.Pair[])){error(node);}
+                merge(result, flatten(node, startMark, endMark));
             }
             else
             {
-                //this is Composer, but the code is related to constructor
-                throw new ConstructorException("While constructing a mapping, " ~
-                                               "expected a mapping or a list of mappings for "
-                                               "merging, but found: " 
-                                               ~ root.type.toString ~
-                                               "NOTE: line/column shows topmost parent "
-                                               "to which the content is being merged",
-                                               startMark, endMark);
+                error(root);
             }
 
             return result;

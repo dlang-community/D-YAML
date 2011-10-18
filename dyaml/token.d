@@ -11,6 +11,8 @@
 module dyaml.token;
 
 
+import std.conv;
+
 import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
@@ -81,6 +83,9 @@ immutable struct Token
     ScalarStyle style;
     ///Encoding, if this is a stream start token.
     Encoding encoding;
+
+    ///Get string representation of the token ID.
+    @property string idString() const {return to!string(id);}
 }
 
 /**

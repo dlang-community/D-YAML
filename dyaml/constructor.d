@@ -45,10 +45,12 @@ class ConstructorException : YAMLException
      */
     this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
     {
-        super(msg ~ "\nstart:" ~ start.toString() ~ "\nend:" ~ end.toString(),
+        super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
               file, line);
     }
 }
+
+private alias ConstructorException Error;
 
 /**
  * Constructs YAML values.
@@ -177,8 +179,7 @@ final class Constructor
             if(is(T : string) || is(T == Node[]) || is(T == Node.Pair[]))
         {
             enforce((tag in *delegates!T) !is null,
-                    new ConstructorException("Could not determine a constructor for tag " 
-                                             ~ tag.get(), start, end));
+                    new Error("No constructor function for tag " ~ tag.get(), start, end));
             Node node = Node(value);
             return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag);
         }
@@ -234,7 +235,7 @@ bool constructBool(Mark start, Mark end, ref Node node)
     string value = node.get!string().toLower();
     if(["yes", "true", "on"].canFind(value)) {return true;}
     if(["no", "false", "off"].canFind(value)){return false;}
-    throw new ConstructorException("Unable to parse boolean value: " ~ value, start, end);
+    throw new Error("Unable to parse boolean value: " ~ value, start, end);
 }
 
 ///Construct an integer (long) node.
@@ -248,8 +249,7 @@ long constructLong(Mark start, Mark end, ref Node node)
         value = value[1 .. $];
     }
 
-    enforce(value != "", new ConstructorException("Unable to parse float value: " ~ value,
-                                                  start, end));
+    enforce(value != "", new Error("Unable to parse float value: " ~ value, start, end));
 
     long result;
     try
@@ -279,7 +279,7 @@ long constructLong(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new ConstructorException("Unable to parse integer value: " ~ value, start, end);
+        throw new Error("Unable to parse integer value: " ~ value, start, end);
     }
 
     return result;
@@ -318,7 +318,7 @@ real constructReal(Mark start, Mark end, ref Node node)
     }
 
     enforce(value != "" && value != "nan" && value != "inf" && value != "-inf",
-            new ConstructorException("Unable to parse float value: " ~ value, start, end));
+            new Error("Unable to parse float value: " ~ value, start, end));
 
     real result;
     try
@@ -344,7 +344,7 @@ real constructReal(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new ConstructorException("Unable to parse float value: " ~ value, start, end);
+        throw new Error("Unable to parse float value: " ~ value, start, end);
     }
 
     return result;
@@ -386,13 +386,13 @@ ubyte[] constructBinary(Mark start, Mark end, ref Node node)
         try{return Base64.decode(value.removechars("\n"));}
         catch(Exception e)
         {
-            throw new ConstructorException("Unable to decode base64 value: " ~ e.msg, start, 
-                                           end);
+            throw new Error("Unable to decode base64 value: " ~ e.msg,
+                                           start, end);
         }
     }
     catch(UtfException e)
     {
-        throw new ConstructorException("Unable to decode base64 value: " ~ e.msg, start, end);
+        throw new Error("Unable to decode base64 value: " ~ e.msg, start, end);
     }
 }
 unittest
@@ -419,8 +419,8 @@ SysTime constructTimestamp(Mark start, Mark end, ref Node node)
         //First, get year, month and day.
         auto matches = match(value, YMDRegexp);
 
-        enforce(!matches.empty, new ConstructorException("Unable to parse timestamp value: " 
-                                                         ~ value, start, end));
+        enforce(!matches.empty, 
+                new Error("Unable to parse timestamp value: " ~ value, start, end));
 
         auto captures = matches.front.captures;
         const year  = to!int(captures[1]);
@@ -467,13 +467,11 @@ SysTime constructTimestamp(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new ConstructorException("Unable to parse timestamp value: " ~ value ~ 
-                                       " Reason: " ~ e.msg, start, end);
+        throw new Error("Unable to parse timestamp value " ~ value ~ " : " ~ e.msg, start, end);
     }
     catch(DateTimeException e)
     {
-        throw new ConstructorException("Invalid timestamp value: " ~ value ~ 
-                                       " Reason: " ~ e.msg, start, end);
+        throw new Error("Invalid timestamp value " ~ value ~ " : " ~ e.msg, start, end);
     }
 
     assert(false, "This code should never be reached");
@@ -520,9 +518,8 @@ Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes)
     foreach(ref node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
-                new ConstructorException("While constructing " ~ type ~ 
-                                         ", expected a mapping with single element,", start,
-                                         end));
+                new Error("While constructing " ~ type ~ 
+                          ", expected a mapping with single element", start, end));
 
         pairs ~= node.get!(Node.Pair[]);
     }
@@ -542,8 +539,7 @@ Node.Pair[] constructOrderedMap(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new ConstructorException("Found a duplicate entry in an ordered map", 
-                                         start, end));
+                new Error("Duplicate entry in an ordered map", start, end));
         map[pair.key] = true;
     }
     clear(map);
@@ -611,7 +607,7 @@ Node[] constructSet(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new ConstructorException("Found a duplicate entry in a set", start, end));
+                new Error("Duplicate entry in a set", start, end));
         map[pair.key] = 0;
         nodes ~= pair.key;
     }
@@ -679,7 +675,7 @@ Node.Pair[] constructMap(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new ConstructorException("Found a duplicate entry in a map", start, end));
+                new Error("Duplicate entry in a map", start, end));
         map[pair.key] = true;
     }
     return pairs;

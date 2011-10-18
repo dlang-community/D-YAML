@@ -63,6 +63,8 @@ class ScannerException : MarkedYAMLException
     mixin MarkedExceptionCtors;
 }
 
+private alias ScannerException Error;
+
 ///Generates tokens from data provided by a Reader.
 final class Scanner
 {
@@ -269,9 +271,9 @@ final class Scanner
             if(c == '\"')                  {return fetchDouble();}
             if(checkPlain())               {return fetchPlain();}
 
-            throw new ScannerException(format("While scanning for the next token, found "
-                                       "character \'", c, "\', index ",to!int(c), 
-                                       " that cannot start " "any token"), reader_.mark);
+            throw new Error(format("While scanning for the next token, found "
+                                   "character \'", c, "\', index ",to!int(c), 
+                                   " that cannot start any token"), reader_.mark);
         }
 
 
@@ -303,9 +305,9 @@ final class Scanner
                 if(key.line != reader_.line || reader_.charIndex - key.charIndex > 1024)
                 {
                     enforce(!key.required, 
-                            new ScannerException("While scanning a simple key", 
-                                                 Mark(key.line, key.column), 
-                                                 "could not find expected ':'", reader_.mark));
+                            new Error("While scanning a simple key", 
+                                      Mark(key.line, key.column), 
+                                      "could not find expected ':'", reader_.mark));
                     levelsToRemove ~= level;
                 }
             }
@@ -341,10 +343,8 @@ final class Scanner
             {
                 auto key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required, 
-                        new ScannerException("While scanning a simple key",
-                                             Mark(key.line, key.column), 
-                                             "could not find expected ':'", 
-                                             reader_.mark));
+                        new Error("While scanning a simple key", Mark(key.line, key.column), 
+                                  "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_.remove(flowLevel_);
             }
         }
@@ -369,8 +369,8 @@ final class Scanner
                 //restrictive than what the specification requires.
                 //if(pedantic_ && flowLevel_ > 0 && indent_ > column)
                 //{
-                //    throw new ScannerException("Invalid intendation or unclosed '[' or '{'",
-                //                               reader_.mark)
+                //    throw new Error("Invalid intendation or unclosed '[' or '{'",
+                //                    reader_.mark)
                 //}
                 return;
             }
@@ -510,8 +510,8 @@ final class Scanner
         void blockChecks(string type, TokenID id)()
         {
             //Are we allowed to start a key (not neccesarily a simple one)?
-            enforce(allowSimpleKey_, new ScannerException(type ~ " keys are not allowed here", 
-                                                          reader_.mark));
+            enforce(allowSimpleKey_, new Error(type ~ " keys are not allowed here", 
+                                               reader_.mark));
 
             if(addIndent(reader_.column))
             {
@@ -585,8 +585,7 @@ final class Scanner
             {
                 //We can start a complex value if and only if we can start a simple key.
                 enforce(flowLevel_ > 0 || allowSimpleKey_,
-                        new ScannerException("Mapping values are not allowed here",
-                                             reader_.mark));
+                        new Error("Mapping values are not allowed here", reader_.mark));
 
                 //If this value starts a new block mapping, we need to add
                 //BLOCK-MAPPING-START. It'll be detected as an error later by the parser.
@@ -777,9 +776,9 @@ final class Scanner
             }
 
             enforce(length > 0, 
-                    new ScannerException("While scanning " ~ name, startMark,
-                                         "expected alphanumeric, - or _, but found " 
-                                         ~ to!string(c), reader_.mark));
+                    new Error("While scanning " ~ name, startMark,
+                              "expected alphanumeric, - or _, but found " ~ to!string(c), 
+                              reader_.mark));
 
             return reader_.get(length);
         }
@@ -856,9 +855,9 @@ final class Scanner
             const name = scanAlphaNumeric!"a directive"(startMark);
 
             enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()), 
-                    new ScannerException("While scanning a directive", startMark,
-                                         "expected alphanumeric, - or _, but found " 
-                                         ~ to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive", startMark,
+                              "expected alphanumeric, - or _, but found " 
+                              ~ to!string(reader_.peek()), reader_.mark));
             return name;
         }
 
@@ -869,17 +868,17 @@ final class Scanner
 
             dstring result = scanYAMLDirectiveNumber(startMark);
             enforce(reader_.peek() == '.',
-                    new ScannerException("While scanning a directive", startMark, 
-                                         "expected a digit or '.', but found: " 
-                                         ~ to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive", startMark, 
+                              "expected a digit or '.', but found: " 
+                              ~ to!string(reader_.peek()), reader_.mark));
             //Skip the '.'.
             reader_.forward();
 
             result ~= '.' ~ scanYAMLDirectiveNumber(startMark);
             enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()), 
-                    new ScannerException("While scanning a directive", startMark,
-                                         "expected a digit or '.', but found: " 
-                                         ~ to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive", startMark,
+                              "expected a digit or '.', but found: " 
+                              ~ to!string(reader_.peek()), reader_.mark));
             return result;
         }
 
@@ -887,9 +886,9 @@ final class Scanner
         dstring scanYAMLDirectiveNumber(in Mark startMark)
         {
             enforce(isDigit(reader_.peek()),
-                    new ScannerException("While scanning a directive", startMark, 
-                                         "expected a digit, but found: " ~ 
-                                         to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive", startMark, 
+                              "expected a digit, but found: " ~ 
+                              to!string(reader_.peek()), reader_.mark));
 
             //Already found the first digit in the enforce(), so set length to 1.
             uint length = 1;
@@ -912,9 +911,9 @@ final class Scanner
         {
             const value = scanTagHandle("directive", startMark);
             enforce(reader_.peek() == ' ',
-                    new ScannerException("While scanning a directive handle", startMark, 
-                                         "expected ' ', but found: " ~ 
-                                         to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive handle", startMark, 
+                              "expected ' ', but found: " ~ to!string(reader_.peek()), 
+                              reader_.mark));
             return value;
         }
 
@@ -923,9 +922,9 @@ final class Scanner
         {
             const value = scanTagURI("directive", startMark);
             enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
-                    new ScannerException("While scanning a directive prefix", startMark,
-                                         "expected ' ', but found" ~ to!string(reader_.peek()),
-                                         reader_.mark));
+                    new Error("While scanning a directive prefix", startMark,
+                              "expected ' ', but found" ~ to!string(reader_.peek()),
+                              reader_.mark));
 
             return value;
         }
@@ -936,9 +935,9 @@ final class Scanner
             findNextNonSpace();
             if(reader_.peek() == '#'){scanToNextBreak();}
             enforce("\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
-                    new ScannerException("While scanning a directive", startMark,
-                                         "expected comment or a line break, but found" 
-                                         ~ to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a directive", startMark,
+                              "expected comment or a line break, but found" 
+                              ~ to!string(reader_.peek()), reader_.mark));
             scanLineBreak();
         }
 
@@ -966,7 +965,7 @@ final class Scanner
 
             enforce((" \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()) || 
                      ("?:,]}%@").canFind(reader_.peek())),
-                    new ScannerException("While scanning an " ~ (i == '*') ? "alias" : "anchor", 
+                    new Error("While scanning an " ~ (i == '*') ? "alias" : "anchor", 
                                          startMark, "expected alphanumeric, - or _, but found "~
                                          to!string(reader_.peek()), reader_.mark));
 
@@ -994,9 +993,9 @@ final class Scanner
                 reader_.forward(2);
                 suffix = scanTagURI("tag", startMark);
                 enforce(reader_.peek() == '>',
-                        new ScannerException("While scanning a tag", startMark,
-                                             "expected '>' but found" ~ 
-                                             to!string(reader_.peek()), reader_.mark));
+                        new Error("While scanning a tag", startMark,
+                                  "expected '>' but found" ~ to!string(reader_.peek()), 
+                                  reader_.mark));
                 reader_.forward();
             }
             else if(" \t\0\n\r\u0085\u2028\u2029".canFind(c))
@@ -1031,9 +1030,9 @@ final class Scanner
             }
 
             enforce(" \0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
-                    new ScannerException("While scanning a tag", startMark,
-                                         "expected ' ' but found" ~ 
-                                         to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a tag", startMark,
+                              "expected ' ' but found" ~ to!string(reader_.peek()), 
+                              reader_.mark));
             return tagToken(startMark, reader_.mark, to!string(handle ~ '\0' ~ suffix));
         }
 
@@ -1141,9 +1140,9 @@ final class Scanner
                 if(!isDigit(c)){return false;}
                 increment = to!int(""d ~ c);
                 enforce(increment != 0, 
-                        new ScannerException("While scanning a block scalar", startMark,
-                                             "expected indentation indicator in range 1-9, "
-                                             "but found 0", reader_.mark));
+                        new Error("While scanning a block scalar", startMark,
+                                  "expected indentation indicator in range 1-9, but found 0", 
+                                  reader_.mark));
                 reader_.forward();
                 c = reader_.peek();
                 return true;
@@ -1154,9 +1153,9 @@ final class Scanner
             else if(getIncrement()){getChomping();}
 
             enforce(" \0\n\r\u0085\u2028\u2029".canFind(c),
-                    new ScannerException("While scanning a block scalar", startMark,
-                                         "expected chomping or indentation indicator, "
-                                         "but found " ~ to!string(c), reader_.mark));
+                    new Error("While scanning a block scalar", startMark,
+                              "expected chomping or indentation indicator, but found " 
+                              ~ to!string(c), reader_.mark));
 
             return tuple(chomping, increment);
         }
@@ -1168,9 +1167,9 @@ final class Scanner
             if(reader_.peek == '#'){scanToNextBreak();}
 
             enforce("\0\n\r\u0085\u2028\u2029".canFind(reader_.peek()),
-                    new ScannerException("While scanning a block scalar", startMark,
-                                         "expected a comment or a line break, but found "
-                                         ~ to!string(reader_.peek()), reader_.mark));
+                    new Error("While scanning a block scalar", startMark,
+                              "expected a comment or a line break, but found "
+                              ~ to!string(reader_.peek()), reader_.mark));
             scanLineBreak();
         }
 
@@ -1300,7 +1299,7 @@ final class Scanner
                         foreach(i; 0 .. length)
                         {
                             enforce(isHexDigit(reader_.peek(i)),
-                                    new ScannerException(
+                                    new Error(
                                         "While scanning a double qouted scalar", startMark, 
                                         "expected escape sequence of " ~ to!string(length) ~
                                         " hexadecimal numbers, but found " ~ 
@@ -1317,7 +1316,7 @@ final class Scanner
                     }
                     else
                     {
-                        throw new ScannerException("While scanning a double quoted scalar",
+                        throw new Error("While scanning a double quoted scalar",
                                                    startMark, 
                                                    "found unknown escape character: " ~ 
                                                    to!string(c), reader_.mark);
@@ -1336,8 +1335,8 @@ final class Scanner
 
             dchar c = reader_.peek();
             enforce(c != '\0', 
-                    new ScannerException("While scanning a quoted scalar", startMark, 
-                                         "found unexpected end of stream", reader_.mark));
+                    new Error("While scanning a quoted scalar", startMark, 
+                              "found unexpected end of stream", reader_.mark));
 
             auto appender = appender!dstring();
             if("\n\r\u0085\u2028\u2029".canFind(c))
@@ -1364,9 +1363,8 @@ final class Scanner
                 if((prefix == "---" || prefix == "...") && 
                    " \t\0\n\r\u0085\u2028\u2029".canFind(reader_.peek(3)))
                 {
-                    throw new ScannerException("While scanning a quoted scalar", startMark,
-                                               "found unexpected document separator", 
-                                               reader_.mark);
+                    throw new Error("While scanning a quoted scalar", startMark,
+                                    "found unexpected document separator", reader_.mark);
                 }
 
                 while(" \t".canFind(reader_.peek())){reader_.forward();}
@@ -1417,10 +1415,10 @@ final class Scanner
                    !",[]{}".canFind(reader_.peek(length + 1)))
                 {
                     reader_.forward(length);
-                    throw new ScannerException("While scanning a plain scalar", startMark,
-                                               "found unexpected ':' . Please check "
-                                               "http://pyyaml.org/wiki/YAMLColonInFlowContext "
-                                               "for details.", reader_.mark);
+                    throw new Error("While scanning a plain scalar", startMark,
+                                    "found unexpected ':' . Please check "
+                                    "http://pyyaml.org/wiki/YAMLColonInFlowContext "
+                                    "for details.", reader_.mark);
                 }
 
                 if(length == 0){break;}
@@ -1494,9 +1492,8 @@ final class Scanner
         {
             dchar c = reader_.peek();
             enforce(c == '!', 
-                    new ScannerException("While scanning a " ~ name, startMark, 
-                                         "expected a '!', but found: " ~ to!string(c),
-                                         reader_.mark));
+                    new Error("While scanning a " ~ name, startMark, 
+                              "expected a '!', but found: " ~ to!string(c), reader_.mark));
 
             uint length = 1;
             c = reader_.peek(length);
@@ -1510,9 +1507,9 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    throw new ScannerException("While scanning a " ~ name, startMark, 
-                                               "expected a '!', but found: " ~ to!string(c),
-                                               reader_.mark);
+                    throw new Error("While scanning a " ~ name, startMark, 
+                                    "expected a '!', but found: " ~ to!string(c),
+                                    reader_.mark);
                 }
                 ++length;
             }
@@ -1544,9 +1541,8 @@ final class Scanner
                 length = 0;
             }
             enforce(appender.data.length > 0,
-                    new ScannerException("While parsing a " ~ name, startMark, 
-                                         "expected URI, but found: " ~ to!string(c),
-                                         reader_.mark));
+                    new Error("While parsing a " ~ name, startMark, 
+                              "expected URI, but found: " ~ to!string(c), reader_.mark));
 
             return appender.data;
         }
@@ -1567,11 +1563,11 @@ final class Scanner
                 foreach(k; 0 .. 2)
                 {
                     dchar c = reader_.peek(k);
-                    enforce("0123456789ABCDEFabcdef".canFind(c),
-                            new ScannerException("While scanning a " ~ name, startMark, 
-                                                 "expected URI escape sequence of "
-                                                 "2 hexadecimal numbers, but found: " ~ 
-                                                 to!string(c), reader_.mark));
+                    enforce(isHexDigit(c),
+                            new Error("While scanning a " ~ name, startMark, 
+                                      "expected URI escape sequence of "
+                                      "2 hexadecimal numbers, but found: " ~ 
+                                      to!string(c), reader_.mark));
 
                     uint digit;
                     if(c - '0' < 10){digit = c - '0';}
@@ -1589,11 +1585,11 @@ final class Scanner
             try{return to!dstring(cast(string)bytes);}
             catch(ConvException e)
             {
-                throw new ScannerException("While scanning a " ~ name, startMark, e.msg, mark);
+                throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
             }
             catch(UtfException e)
             {
-                throw new ScannerException("While scanning a " ~ name, startMark, e.msg, mark);
+                throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
             }
         }
 

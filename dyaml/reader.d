@@ -29,7 +29,7 @@ class ReaderException : YAMLException
 {
     this(string msg, string file = __FILE__, int line = __LINE__)
     {
-        super("Error reading YAML stream: " ~ msg, file, line);
+        super("Error reading stream: " ~ msg, file, line);
     }
 }
 
@@ -105,11 +105,11 @@ final class Reader
                     rawBuffer16_[0] = stream_.getcw();
                     rawUsed_ = 1;
                     enforce(stream_.available % 2 == 0, 
-                            new ReaderException("Odd number of bytes in an UTF-16 stream"));
+                            new ReaderException("Odd byte count in an UTF-16 stream"));
                     break;
                 case 3, 4: 
                     enforce(stream_.available % 4 == 0, 
-                            new ReaderException("Number of bytes in an UTF-32 stream not divisible by 4"));
+                            new ReaderException("Byte count in an UTF-32 stream not divisible by 4"));
                     encoding_ = Encoding.UTF_32;
                     break;
                 default: assert(false, "Unknown UTF BOM");
@@ -286,7 +286,7 @@ final class Reader
          *
          * Params:  chars = Maximum number of characters to load.
          *
-         * Throws:  ReaderException on unicode decoding error,
+         * Throws:  ReaderException on Unicode decoding error,
          *          if nonprintable characters are detected, or
          *          if there is an error reading from the stream.
          */
@@ -382,13 +382,12 @@ final class Reader
             catch(UtfException e)
             {
                 const position = stream_.position;
-                throw new ReaderException("Unicode decoding error between bytes " ~ 
-                                                 to!string(oldPosition) ~ " and " ~
-                                                 to!string(position) ~ " " ~ e.msg);
+                throw new ReaderException(format("Unicode decoding error between bytes ",
+                                          oldPosition, " and ", position, " : ", e.msg));
             }
             catch(ReadException e)
             {
-                throw new ReaderException("Error reading from the stream: " ~ e.msg);
+                throw new ReaderException(e.msg);
             }
 
             enforce(printable(buffer_[oldLength .. $]), 

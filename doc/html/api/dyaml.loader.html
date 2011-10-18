@@ -104,7 +104,7 @@
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>filename</b></td>
 <td valign=top>Name of the file to load from.</td></tr>
 </table></div>
-<b>Throws:</b><div class="pbr">YAMLException if the file could not be opened or read from.</div>
+<b>Throws:</b><div class="pbr">YAMLException if the file could not be opened or read.</div>
 
 </dd>
 <dt class="d_decl">this(Stream <b>stream</b>);
@@ -114,7 +114,7 @@
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Stream <b>stream</b></td>
 <td valign=top>Stream to read from. Must be readable.</td></tr>
 </table></div>
-<b>Throws:</b><div class="pbr">YAMLException if <b>stream</b> could not be read from.</div>
+<b>Throws:</b><div class="pbr">YAMLException if <b>stream</b> could not be read.</div>
 
 </dd>
 <dt class="d_decl">@property void <a name="name"></a><span class="ddoc_psymbol">name</span>(string <a name="name"></a><span class="ddoc_psymbol">name</span>);
@@ -136,7 +136,7 @@
 </dt>
 <dd><p>Load single YAML document.
 </p>
-<p>If none or more than one YAML document is found, this will throw a YAMLException.
+<p>If none or more than one YAML document is found, this throws a YAMLException.
 
 </p>
 <b>Returns:</b><div class="pbr">Root node of the document.
@@ -153,7 +153,7 @@
 <b>Returns:</b><div class="pbr">Array of root nodes of all documents in the file/stream.
 
 </div>
-<b>Throws:</b><div class="pbr">YAMLException on a YAML parsing error.</div>
+<b>Throws:</b><div class="pbr">YAMLException on a parsing error.</div>
 
 </dd>
 <dt class="d_decl">int <a name="opApply"></a><span class="ddoc_psymbol">opApply</span>(int delegate(ref Node) <b>dg</b>);

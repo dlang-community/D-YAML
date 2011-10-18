@@ -99,6 +99,8 @@ class ParserException : MarkedYAMLException
     mixin MarkedExceptionCtors;
 }
 
+private alias ParserException Error;
+
 ///Generates events from tokens provided by a Scanner.
 final class Parser 
 {
@@ -225,7 +227,7 @@ final class Parser
         Event delegate() popState()
         {
             enforce(states_.length > 0, 
-                    new YAMLException("Parser: Need to pop a state but there are no states left"));
+                    new YAMLException("Parser: Need to pop state but no states left to pop"));
             const result = states_.back();
             states_.popBack;
             return result;
@@ -235,7 +237,7 @@ final class Parser
         Mark popMark()
         {
             enforce(marks_.length > 0, 
-                    new YAMLException("Parser: Need to pop a mark but there are no marks left"));
+                    new YAMLException("Parser: Need to pop mark but no marks left to pop"));
             const result = marks_.back();
             marks_.popBack;
             return result;
@@ -286,9 +288,9 @@ final class Parser
 
                 auto tagDirectives = processDirectives();
                 enforce(scanner_.checkToken(TokenID.DocumentStart),
-                        new ParserException("Expected document start but found " ~
-                                            to!string(scanner_.peekToken().id), 
-                                            scanner_.peekToken().startMark));
+                        new Error("Expected document start but found " ~
+                                  scanner_.peekToken().idString, 
+                                  scanner_.peekToken().startMark));
 
                 const endMark = scanner_.getToken().endMark;
                 states_ ~= &parseDocumentEnd;
@@ -347,12 +349,11 @@ final class Parser
                 if(name == "YAML")
                 {
                     enforce(YAMLVersion_ is null, 
-                            new ParserException("Found duplicate YAML directive", 
-                                                token.startMark));
+                            new Error("Duplicate YAML directive", token.startMark));
                     const minor = parts[1].split(".")[0];
                     enforce(to!int(minor) == 1, 
-                            new ParserException("Found incompatible YAML document (version "
-                                                "1.* is required)", token.startMark));
+                            new Error("Incompatible document (version 1.x is required)",
+                                      token.startMark));
                     YAMLVersion_ = parts[1];
                 }
                 else if(name == "TAG")
@@ -365,8 +366,8 @@ final class Parser
                         //handle
                         auto h = pair[0];
                         auto replacement = pair[1];
-                        enforce(h != handle, new ParserException("Duplicate tag handle: " ~ 
-                                                                 handle, token.startMark));
+                        enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
+                                                       token.startMark));
                     }
                     tagHandles_ ~= tuple(handle, parts[2]);
                 }
@@ -515,9 +516,9 @@ final class Parser
             }
 
             Token token = scanner_.peekToken();
-            throw new ParserException("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
-                                      startMark, "expected the node content, but found: " 
-                                      ~ to!string(token.id), token.startMark);
+            throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
+                            startMark, "expected the node content, but found: " 
+                            ~ token.idString, token.startMark);
         }
 
         /**
@@ -549,8 +550,8 @@ final class Parser
                 }
                 //handle must be in tagHandles_
                 enforce(replacement !is null,
-                        new ParserException("While parsing a node", startMark,
-                                            "found undefined tag handle: " ~ handle, tagMark));
+                        new Error("While parsing a node", startMark,
+                                  "found undefined tag handle: " ~ handle, tagMark));
                 return replacement ~ suffix;
             }
             return suffix;
@@ -584,9 +585,9 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 Token token = scanner_.peekToken();
-                throw new ParserException("While parsing a block collection", marks_[$ - 1],
-                                          "expected block end, but found " 
-                                          ~ to!string(token.id), token.startMark);
+                throw new Error("While parsing a block collection", marks_[$ - 1],
+                                "expected block end, but found " ~ token.idString, 
+                                token.startMark);
             }
 
             state_ = popState();
@@ -649,9 +650,9 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 Token token = scanner_.peekToken();
-                throw new ParserException("While parsing a block mapping", marks_[$ - 1],
-                                          "expected block end, but found: " 
-                                          ~ to!string(token.id), token.startMark);
+                throw new Error("While parsing a block mapping", marks_[$ - 1],
+                                "expected block end, but found: " ~ token.idString, 
+                                token.startMark);
             }
 
             state_ = popState();
@@ -710,10 +711,9 @@ final class Parser
                     else
                     {
                         Token token = scanner_.peekToken;
-                        throw new ParserException("While parsing a flow sequence", 
-                                                  marks_[$ - 1],
-                                                  "expected ',' or ']', but got: " ~
-                                                  to!string(token.id), token.startMark);
+                        throw new Error("While parsing a flow sequence", marks_[$ - 1],
+                                        "expected ',' or ']', but got: " ~
+                                        token.idString, token.startMark);
                     }
                 }
 
@@ -818,10 +818,9 @@ final class Parser
                     else
                     {
                         Token token = scanner_.peekToken;
-                        throw new ParserException("While parsing a flow mapping", 
-                                                  marks_[$ - 1],
-                                                  "expected ',' or '}', but got: " ~
-                                                  to!string(token.id), token.startMark);
+                        throw new Error("While parsing a flow mapping", marks_[$ - 1],
+                                        "expected ',' or '}', but got: " ~
+                                        token.idString, token.startMark);
                     }
                 }
 

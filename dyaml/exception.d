@@ -16,19 +16,11 @@ import std.string;
 ///Base class for all exceptions thrown by D:YAML.
 class YAMLException : Exception
 {
-    public:
-        ///Construct a YAMLException with specified message, and position where it was thrown.
-        this(string msg, string file = __FILE__, int line = __LINE__)
-        {
-            super(msg, file, line);
-        }
-
-    package:
-        //Set name of the file that was being processed when this exception was thrown.
-        @property name(in string name)
-        {
-            msg = name ~ ":\n" ~ msg;
-        }
+    ///Construct a YAMLException with specified message and position where it was thrown.
+    public this(string msg, string file = __FILE__, int line = __LINE__)
+    {
+        super(msg, file, line);
+    }
 }
 
 ///Position in a YAML stream, used for error messages.
@@ -65,9 +57,9 @@ abstract class MarkedYAMLException : YAMLException
     this(string context, Mark contextMark, string problem, Mark problemMark,
          string file = __FILE__, int line = __LINE__)
     {
-        string msg = context ~ '\n';
-        if(contextMark != problemMark){msg ~= contextMark.toString() ~ '\n';}
-        msg ~= problem ~ '\n' ~ problemMark.toString() ~ '\n';
+        const msg = context ~ '\n' ~
+                    (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
+                    problem ~ '\n' ~ problemMark.toString() ~ '\n';
         super(msg, file, line);
     }
 
@@ -81,11 +73,10 @@ abstract class MarkedYAMLException : YAMLException
 //Constructors of YAML exceptions are mostly the same, so we use a mixin.
 template ExceptionCtors()
 {
-    public:
-        this(string msg, string file = __FILE__, int line = __LINE__)
-        {
-            super(msg, file, line);
-        }
+    public this(string msg, string file = __FILE__, int line = __LINE__)
+    {
+        super(msg, file, line);
+    }
 }
 
 //Constructors of marked YAML exceptions are mostly the same, so we use a mixin.

@@ -73,12 +73,12 @@ final class Representer
         /**
          * Add a function to represent nodes with a specific data type.
          *
-         * The representer function takes a reference to a Node storing the data
+         * The representer function takes references to a Node storing the data
          * type and to the Representer. It returns the represented node and may
          * throw a RepresenterException. See the example for more information.
          * 
          * Only one function may be specified for one data type. Default data 
-         * types already have representer functions unless disabled in these
+         * types already have representer functions unless disabled in the
          * Representer constructor.
          *
          * Params:  representer = Representer function to add.
@@ -297,8 +297,8 @@ final class Representer
             auto type = data.isUserType ? data.get!YAMLObject.type : data.type;
 
             enforce((type in representers_) !is null,
-                    new RepresenterException("No YAML representer function for type " 
-                                             ~ type.toString() ~ " cannot represent."));
+                    new RepresenterException("No representer function for type " 
+                                             ~ type.toString() ~ " , cannot represent."));
             Node result = representers_[type](data, this);
             if(!data.tag.isNull()){result.tag = data.tag;}
             return result;
@@ -426,8 +426,7 @@ Node representPairs(ref Node node, Representer representer)
     if(node.tag == Tag("tag:yaml.org,2002:omap"))
     {
         enforce(!hasDuplicates(pairs),
-                new RepresenterException("Found a duplicate entry "
-                                         "in an ordered map"));
+                new RepresenterException("Duplicate entry in an ordered map"));
         return representer.representSequence(node.tag.get, mapToSequence(pairs));
     }
     else if(node.tag == Tag("tag:yaml.org,2002:pairs"))
@@ -437,8 +436,7 @@ Node representPairs(ref Node node, Representer representer)
     else
     {
         enforce(!hasDuplicates(pairs),
-                new RepresenterException("Found a duplicate entry "
-                                         "in an unordered map"));
+                new RepresenterException("Duplicate entry in an unordered map"));
         return representer.representMapping("tag:yaml.org,2002:map", pairs);
     }
 }
