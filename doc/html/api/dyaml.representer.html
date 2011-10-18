@@ -104,7 +104,7 @@
 
  <span class="d_keyword">void</span> main()
  {
-     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.txt"</span>);
+     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
      <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
      representer.<span class="d_psymbol">addRepresenter</span>!MyStruct(&amp;representMyStruct);
      dumper.representer = representer;
@@ -156,7 +156,7 @@
 
  <span class="d_keyword">void</span> main()
  {
-     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.txt"</span>);
+     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
      <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
      representer.<span class="d_psymbol">addRepresenter</span>!MyClass(&amp;representMyClass);
      dumper.representer = representer;

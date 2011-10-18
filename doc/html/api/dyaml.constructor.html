@@ -113,20 +113,130 @@
 <tr><td valign=top>ctor</td>
 <td valign=top>Constructor function.</td></tr>
 </table></div>
+<p><b>Example:</b><br>
+<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+
+ <span class="d_keyword">import</span> yaml;
+
+ <span class="d_keyword">struct</span> MyStruct
+ {
+     <span class="d_keyword">int</span> x, y, z;
+ }
+
+ MyStruct constructMyStructScalar(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ {
+     <span class="d_comment">//Guaranteed to be string as we construct from scalar.
+</span>     <span class="d_comment">//!mystruct x:y:z
+</span>     <span class="d_keyword">auto</span> parts = node.get!string().split(<span class="d_string">":"</span>);
+     <span class="d_keyword">try</span>
+     {
+         <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
+     }
+     <span class="d_keyword">catch</span>(Exception e)
+     {
+         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
+                                        start, end);
+     }
+ }
+
+ <span class="d_keyword">void</span> main()
+ {
+     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+     constructor.<span class="d_psymbol">addConstructorScalar</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructScalar);
+     loader.constructor = constructor;
+     Node node = loader.load();
+ }
+</pre>
+</p>
 
 </dd>
 <dt class="d_decl">void <a name="addConstructorSequence"></a><span class="ddoc_psymbol">addConstructorSequence</span>(T)(in string <b>tag</b>, T function(Mark, Mark, ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from sequence.
 </p>
-<b>See Also:</b><div class="pbr">addConstructorScalar</div>
+<b>See Also:</b><div class="pbr">addConstructorScalar
+
+</div>
+<p><b>Example:</b><br>
+<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+
+ <span class="d_keyword">import</span> yaml;
+
+ <span class="d_keyword">struct</span> MyStruct
+ {
+     <span class="d_keyword">int</span> x, y, z;
+ }
+
+ MyStruct constructMyStructSequence(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ {
+     <span class="d_comment">//node is guaranteed to be sequence.
+</span>     <span class="d_comment">//!mystruct [x, y, z]
+</span>     <span class="d_keyword">try</span>
+     {
+         <span class="d_keyword">return</span> MyStruct(node[0].get!<span class="d_keyword">int</span>, node[1].get!<span class="d_keyword">int</span>, node[2].get!<span class="d_keyword">int</span>);
+     }
+     <span class="d_keyword">catch</span>(NodeException e)
+     {
+         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
+                                        start, end);
+     }
+ }
+
+ <span class="d_keyword">void</span> main()
+ {
+     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+     constructor.<span class="d_psymbol">addConstructorSequence</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructSequence);
+     loader.constructor = constructor;
+     Node node = loader.load();
+ }
+</pre>
+</p>
 
 </dd>
 <dt class="d_decl">void <a name="addConstructorMapping"></a><span class="ddoc_psymbol">addConstructorMapping</span>(T)(in string <b>tag</b>, T function(Mark, Mark, ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from a mapping.
 </p>
-<b>See Also:</b><div class="pbr">addConstructorScalar</div>
+<b>See Also:</b><div class="pbr">addConstructorScalar
+
+</div>
+<p><b>Example:</b><br>
+<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+
+ <span class="d_keyword">import</span> yaml;
+
+ <span class="d_keyword">struct</span> MyStruct
+ {
+     <span class="d_keyword">int</span> x, y, z;
+ }
+
+ MyStruct constructMyStructMapping(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ {
+     <span class="d_comment">//node is guaranteed to be mapping.
+</span>     <span class="d_comment">//!mystruct {"x": x, "y": y, "z": z}
+</span>     <span class="d_keyword">try</span>
+     {
+         <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].get!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].get!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].get!<span class="d_keyword">int</span>);
+     }
+     <span class="d_keyword">catch</span>(NodeException e)
+     {
+         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
+                                        start, end);
+     }
+ }
+
+ <span class="d_keyword">void</span> main()
+ {
+     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+     constructor.<span class="d_psymbol">addConstructorMapping</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructMapping);
+     loader.constructor = constructor;
+     Node node = loader.load();
+ }
+</pre>
+</p>
 
 </dd>
 </dl>

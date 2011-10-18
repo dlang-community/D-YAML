@@ -108,7 +108,7 @@ final class Representer
          *
          * void main()
          * {
-         *     auto dumper = Dumper("file.txt");
+         *     auto dumper = Dumper("file.yaml");
          *     auto representer = new Representer;
          *     representer.addRepresenter!MyStruct(&representMyStruct);
          *     dumper.representer = representer;
@@ -161,7 +161,7 @@ final class Representer
          *
          * void main()
          * {
-         *     auto dumper = Dumper("file.txt");
+         *     auto dumper = Dumper("file.yaml");
          *     auto representer = new Representer;
          *     representer.addRepresenter!MyClass(&representMyClass);
          *     dumper.representer = representer;

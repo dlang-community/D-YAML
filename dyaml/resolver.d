@@ -91,7 +91,7 @@ final class Resolver
          *
          * Examples:
          *
-         * Resolve scalars starting with 'A' to !tag :
+         * Resolve scalars starting with 'A' to !_tag :
          * --------------------
          * import std.regex;
          *
