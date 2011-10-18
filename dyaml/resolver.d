@@ -76,10 +76,11 @@ final class Resolver
         /**
          * Add an implicit scalar resolver. 
          *
-         * If a scalar matches regexp and starts with one of the characters in first, 
-         * its _tag is set to tag.  If the scalar matches more than one resolver 
-         * regular expression, resolvers added _first override those added later. 
-         * Default resolvers override any user specified resolvers.
+         * If a scalar matches regexp and starts with any character in first, 
+         * its _tag is set to tag. If it matches more than one resolver _regexp
+         * resolvers added _first override ones added later. Default resolvers 
+         * override any user specified resolvers, but they can be disabled in
+         * Resolver constructor.
          *
          * If a scalar is not resolved to anything, it is assigned the default
          * YAML _tag for strings.
@@ -87,6 +88,29 @@ final class Resolver
          * Params:  tag    = Tag to resolve to.
          *          regexp = Regular expression the scalar must match to have this _tag.
          *          first  = String of possible starting characters of the scalar.
+         *
+         * Examples:
+         *
+         * Resolve scalars starting with 'A' to !tag :
+         * --------------------
+         * import std.regex;
+         *
+         * import yaml;
+         *
+         * void main()
+         * {
+         *     auto loader = Loader("file.txt");
+         *     auto resolver = new Resolver();
+         *     resolver.addImplicitResolver("!tag", std.regex.regex("A*"), "A");
+         *     loader.resolver = resolver;
+         *     
+         *     //Note that we have no constructor from tag "!tag", so we can't
+         *     //actually load anything that resolves to this tag.
+         *     //See Constructor API documentation and tutorial for more information.
+         *
+         *     auto node = loader.load();
+         * }
+         * --------------------
          */
         void addImplicitResolver(string tag, Regex!char regexp, in string first)
         {

@@ -69,10 +69,11 @@
 </dt>
 <dd><p>Add an implicit scalar resolver.
 </p>
-<p>If a scalar matches <b>regexp</b> and starts with one of the characters in <b>first</b>,
- its tag is set to <b>tag</b>.  If the scalar matches more than one resolver
- regular expression, resolvers added first override those added later.
- Default resolvers override any user specified resolvers.
+<p>If a scalar matches <b>regexp</b> and starts with any character in <b>first</b>,
+ its tag is set to <b>tag</b>. If it matches more than one resolver regexp
+ resolvers added first override ones added later. Default resolvers
+ override any user specified resolvers, but they can be disabled in
+ Resolver constructor.
 <br>
 
  If a scalar is not resolved to anything, it is assigned the default
@@ -86,6 +87,26 @@
 <tr><td valign=top>string <b>first</b></td>
 <td valign=top>String of possible starting characters of the scalar.</td></tr>
 </table></div>
+<b>Examples:</b><div class="pbr">Resolve scalars starting with 'A' to !<b>tag</b> :
+<pre class="d_code"> <span class="d_keyword">import</span> std.regex;
+
+ <span class="d_keyword">import</span> yaml;
+
+ <span class="d_keyword">void</span> main()
+ {
+     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.txt"</span>);
+     <span class="d_keyword">auto</span> resolver = <span class="d_keyword">new</span> Resolver();
+     resolver.<span class="d_psymbol">addImplicitResolver</span>(<span class="d_string">"!tag"</span>, std.regex.regex(<span class="d_string">"A*"</span>), <span class="d_string">"A"</span>);
+     loader.resolver = resolver;
+
+     <span class="d_comment">//Note that we have no constructor from tag "!tag", so we can't
+</span>     <span class="d_comment">//actually load anything that resolves to this tag.
+</span>     <span class="d_comment">//See Constructor API documentation and tutorial for more information.
+</span>
+     <span class="d_keyword">auto</span> node = loader.load();
+ }
+</pre>
+</div>
 
 </dd>
 <dt class="d_decl">package const @property Tag <a name="defaultScalarTag"></a><span class="ddoc_psymbol">defaultScalarTag</span>();
