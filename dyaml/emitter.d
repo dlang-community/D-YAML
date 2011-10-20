@@ -30,6 +30,7 @@ import dyaml.event;
 import dyaml.exception;
 import dyaml.flags;
 import dyaml.linebreak;
+import dyaml.queue;
 import dyaml.tag;
 import dyaml.token;
 
@@ -83,7 +84,7 @@ struct Emitter
 
         //TODO Should be replaced by a queue or linked list once Phobos has anything usable.
         ///Event queue.
-        Event[] events_;
+        Queue!Event events_;
         ///Event we're currently emitting.
         Event event_;
 
@@ -171,21 +172,25 @@ struct Emitter
         {
             stream_ = null;
             clear(states_);
+            states_ = null;
             clear(events_);
             clear(indents_);
+            indents_ = null;
             clear(tagDirectives_);
+            tagDirectives_ = null;
             clear(preparedAnchor_);
+            preparedAnchor_ = null;
             clear(preparedTag_);
+            preparedTag_ = null;
         }
 
         ///Emit an event. Throws EmitterException on error.
         void emit(immutable Event event)
         {
-            events_ ~= event;
+            events_.push(event);
             while(!needMoreEvents())
             {
-                event_ = events_.front;
-                events_.popFront();
+                event_ = events_.pop();
                 state_();
                 clear(event_);
             }
@@ -237,23 +242,31 @@ struct Emitter
         }
 
         ///In some cases, we wait for a few next events before emitting.
-        bool needMoreEvents() const
+        bool needMoreEvents()
         {
             if(events_.length == 0){return true;}
 
-            if(events_[0].id == EventID.DocumentStart){return needEvents(1);}
-            if(events_[0].id == EventID.SequenceStart){return needEvents(2);}
-            if(events_[0].id == EventID.MappingStart) {return needEvents(3);}
+            immutable event = events_.peek();
+            if(event.id == EventID.DocumentStart){return needEvents(1);}
+            if(event.id == EventID.SequenceStart){return needEvents(2);}
+            if(event.id == EventID.MappingStart) {return needEvents(3);}
 
             return false;
         }
 
         ///Determines if we need specified number of more events.
-        bool needEvents(in uint count) const
+        bool needEvents(in uint count) 
         {
             int level = 0;
-            foreach(ref event; events_[1 .. $])
+
+            //Rather ugly, but good enough for now. 
+            //Couldn't be bothered writing a range as events_ should eventually
+            //become a Phobos queue/linked list.
+            events_.startIteration();
+            events_.next();
+            while(!events_.iterationOver())
             {
+                immutable event = events_.next();
                 if([EventID.DocumentStart, EventID.SequenceStart,
                     EventID.MappingStart].canFind(event.id))
                 {
@@ -645,14 +658,14 @@ struct Emitter
         bool checkEmptySequence() const
         {
             return event_.id == EventID.SequenceStart && events_.length > 0 
-                   && events_[0].id == EventID.SequenceEnd;
+                   && events_.peek().id == EventID.SequenceEnd;
         }
 
         ///Check if an empty mapping is next.
         bool checkEmptyMapping() const
         {
             return event_.id == EventID.MappingStart && events_.length > 0 
-                   && events_[0].id == EventID.MappingEnd;
+                   && events_.peek().id == EventID.MappingEnd;
         }
 
         ///Check if an empty document is next.
@@ -663,7 +676,7 @@ struct Emitter
                 return false;
             }
 
-            immutable event = events_[0];
+            immutable event = events_.peek();
             bool emptyScalar = event.id == EventID.Scalar && event.anchor.isNull() &&
                                event.tag.isNull() && event.implicit && event.value == "";
             return emptyScalar;

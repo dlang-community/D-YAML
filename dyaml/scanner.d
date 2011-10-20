@@ -23,6 +23,7 @@ import std.typecons;
 import std.utf;
 
 import dyaml.exception;
+import dyaml.queue;
 import dyaml.reader;
 import dyaml.token;
 
@@ -119,9 +120,9 @@ final class Scanner
         ///Past indentation levels. Used as a stack.
         int[] indents_;
 
-        //Should be replaced by a queue or linked list once Phobos has anything usable.
         ///Processed tokens not yet emitted. Used as a queue.
-        Token[] tokens_;
+        Queue!Token tokens_;
+
         ///Number of tokens emitted through the getToken method.
         uint tokensTaken_;
 
@@ -152,7 +153,6 @@ final class Scanner
         ~this()
         {
             clear(tokens_);
-            tokens_ = null;
             clear(indents_);
             indents_ = null;
             clear(possibleSimpleKeys_);
@@ -180,7 +180,7 @@ final class Scanner
                 if(ids.length == 0){return true;}
                 else
                 {
-                    const nextId = tokens_.front.id;
+                    const nextId = tokens_.peek().id;
                     foreach(id; ids)
                     {
                         if(nextId == id){return true;}
@@ -195,10 +195,10 @@ final class Scanner
          *
          * Must not be called if there are no tokens left.
          */
-        ref Token peekToken()
+        ref const(Token) peekToken()
         {
             while(needMoreTokens){fetchToken();}
-            if(!tokens_.empty){return tokens_.front;}
+            if(!tokens_.empty){return tokens_.peek();}
             assert(false, "No token left to peek");
         }
 
@@ -213,9 +213,7 @@ final class Scanner
             if(!tokens_.empty)
             {
                 ++tokensTaken_;
-                Token result = tokens_.front;
-                tokens_.popFront();
-                return result;
+                return tokens_.pop();
             }
             assert(false, "No token left to get");
         }
@@ -380,7 +378,7 @@ final class Scanner
             {
                 indent_ = indents_.back;
                 indents_.popBack();
-                tokens_ ~= blockEndToken(reader_.mark, reader_.mark);
+                tokens_.push(blockEndToken(reader_.mark, reader_.mark));
             }
         }
 
@@ -403,7 +401,7 @@ final class Scanner
         ///Add STREAM-START token.
         void fetchStreamStart()
         {
-            tokens_ ~= streamStartToken(reader_.mark, reader_.mark, reader_.encoding);
+            tokens_.push(streamStartToken(reader_.mark, reader_.mark, reader_.encoding));
         }
 
         ///Add STREAM-END token.
@@ -417,7 +415,7 @@ final class Scanner
             SimpleKey[uint] empty;
             possibleSimpleKeys_ = empty;
 
-            tokens_ ~= streamEndToken(reader_.mark, reader_.mark);
+            tokens_.push(streamEndToken(reader_.mark, reader_.mark));
             done_ = true;
         }
 
@@ -430,7 +428,7 @@ final class Scanner
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
 
-            tokens_ ~= scanDirective();
+            tokens_.push(scanDirective());
         }
 
         ///Add DOCUMENT-START or DOCUMENT-END token.
@@ -445,7 +443,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward(3);
-            tokens_ ~= simpleToken!id(startMark, reader_.mark);
+            tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
         ///Aliases to add DOCUMENT-START or DOCUMENT-END token.
@@ -463,7 +461,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= simpleToken!id(startMark, reader_.mark);
+            tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
         ///Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
@@ -481,7 +479,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= simpleToken!id(startMark, reader_.mark);
+            tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
         ///Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token/
@@ -498,7 +496,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= flowEntryToken(startMark, reader_.mark);
+            tokens_.push(flowEntryToken(startMark, reader_.mark));
         }
 
         /**
@@ -515,7 +513,7 @@ final class Scanner
 
             if(addIndent(reader_.column))
             {
-                tokens_ ~= simpleToken!id(reader_.mark, reader_.mark);
+                tokens_.push(simpleToken!id(reader_.mark, reader_.mark));
             }
         }
 
@@ -534,7 +532,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= blockEntryToken(startMark, reader_.mark);
+            tokens_.push(blockEntryToken(startMark, reader_.mark));
         }
 
         ///Add KEY token. Might add BLOCK-MAPPING-START in the process.
@@ -549,7 +547,7 @@ final class Scanner
 
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= keyToken(startMark, reader_.mark);
+            tokens_.push(keyToken(startMark, reader_.mark));
         }
 
         ///Add VALUE token. Might add KEY and/or BLOCK-MAPPING-START in the process.
@@ -567,14 +565,12 @@ final class Scanner
 
                 //Add KEY.
                 //Manually inserting since tokens are immutable (need linked list).
-                tokens_ = tokens_[0 .. idx] ~ keyToken(keyMark, keyMark) ~
-                          tokens_[idx .. tokens_.length];
+                tokens_.insert(keyToken(keyMark, keyMark), idx);
 
                 //If this key starts a new block mapping, we need to add BLOCK-MAPPING-START.
                 if(flowLevel_ == 0 && addIndent(key.column))
                 {
-                    tokens_ = tokens_[0 .. idx] ~ blockMappingStartToken(keyMark, keyMark) ~
-                              tokens_[idx .. tokens_.length];
+                    tokens_.insert(blockMappingStartToken(keyMark, keyMark), idx);
                 }
 
                 //There cannot be two simple keys in a row.
@@ -591,7 +587,7 @@ final class Scanner
                 //BLOCK-MAPPING-START. It'll be detected as an error later by the parser.
                 if(flowLevel_ == 0 && addIndent(reader_.column))
                 {
-                    tokens_ ~= blockMappingStartToken(reader_.mark, reader_.mark);
+                    tokens_.push(blockMappingStartToken(reader_.mark, reader_.mark));
                 }
 
                 //Reset possible simple key on the current level.
@@ -603,7 +599,7 @@ final class Scanner
             //Add VALUE.
             Mark startMark = reader_.mark;
             reader_.forward();
-            tokens_ ~= valueToken(startMark, reader_.mark);
+            tokens_.push(valueToken(startMark, reader_.mark));
         }
 
         ///Add ALIAS or ANCHOR token.
@@ -615,7 +611,7 @@ final class Scanner
             //No simple keys after ALIAS/ANCHOR.
             allowSimpleKey_ = false;
 
-            tokens_ ~= scanAnchor(id);
+            tokens_.push(scanAnchor(id));
         }
 
         ///Aliases to add ALIAS or ANCHOR token.
@@ -630,7 +626,7 @@ final class Scanner
             //No simple keys after TAG.
             allowSimpleKey_ = false;
 
-            tokens_ ~= scanTag();
+            tokens_.push(scanTag());
         }
 
         ///Add block SCALAR token.
@@ -642,7 +638,7 @@ final class Scanner
             //A simple key may follow a block scalar.
             allowSimpleKey_ = true;
 
-            tokens_ ~= scanBlockScalar(style);
+            tokens_.push(scanBlockScalar(style));
         }
 
         ///Aliases to add literal or folded block scalar.
@@ -658,7 +654,7 @@ final class Scanner
             allowSimpleKey_ = false;
 
             //Scan and add SCALAR.
-            tokens_ ~= scanFlowScalar(quotes);
+            tokens_.push(scanFlowScalar(quotes));
         }
 
         ///Aliases to add single or double quoted block scalar.
@@ -675,7 +671,7 @@ final class Scanner
             allowSimpleKey_ = false;
 
             //Scan and add SCALAR. May change allowSimpleKey_
-            tokens_ ~= scanPlain();
+            tokens_.push(scanPlain());
         }
 
 

@@ -69,7 +69,7 @@ enum CollectionStyle : ubyte
  *
  * 32 bytes on 64-bit.
  */
-immutable struct Token 
+struct Token 
 {
     ///Value of the token, if any.
     string value;

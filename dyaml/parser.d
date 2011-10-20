@@ -252,7 +252,7 @@ final class Parser
         ///Parse stream start.
         Event parseStreamStart()
         {
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
             state_ = &parseImplicitDocumentStart;
             return streamStartEvent(token.startMark, token.endMark, token.encoding);
         }
@@ -265,7 +265,7 @@ final class Parser
                                     TokenID.StreamEnd))
             {
                 tagHandles_ = defaultTags_;
-                Token token = scanner_.peekToken();
+                immutable token = scanner_.peekToken();
 
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseBlockNode;
@@ -300,7 +300,7 @@ final class Parser
             else
             {
                 //Parse the end of the stream.
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 assert(states_.length == 0);
                 assert(marks_.length == 0);
                 state_ = null;
@@ -342,7 +342,7 @@ final class Parser
             //Process directives.
             while(scanner_.checkToken(TokenID.Directive))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 //Name and value are separated by '\0'.
                 auto parts = token.value.split("\0");
                 const name = parts[0];
@@ -416,7 +416,7 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.Alias))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 state_ = popState();
                 return aliasEvent(token.startMark, token.endMark, Anchor(token.value));
             }
@@ -431,7 +431,7 @@ final class Parser
             {
                 if(!scanner_.checkToken(id)){return false;}
                 invalidMarks = false;
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 if(start){startMark = token.startMark;}
                 if(id == TokenID.Tag){tagMark = token.startMark;}
                 endMark = token.endMark; 
@@ -462,7 +462,7 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.Scalar))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
 
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 bool implicit_2 = (!implicit) && tag is null;
@@ -515,7 +515,7 @@ final class Parser
                                    [implicit, false] , "");
             }
 
-            Token token = scanner_.peekToken();
+            immutable token = scanner_.peekToken();
             throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
                             startMark, "expected the node content, but found: " 
                             ~ token.idString, token.startMark);
@@ -571,7 +571,7 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.BlockEnd))
                 {
                     states_~= &parseBlockSequenceEntry!false;
@@ -584,7 +584,7 @@ final class Parser
 
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
-                Token token = scanner_.peekToken();
+                immutable token = scanner_.peekToken();
                 throw new Error("While parsing a block collection", marks_[$ - 1],
                                 "expected block end, but found " ~ token.idString, 
                                 token.startMark);
@@ -592,7 +592,7 @@ final class Parser
 
             state_ = popState();
             popMark();
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -603,7 +603,7 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
 
                 if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key, 
                                         TokenID.Value, TokenID.BlockEnd))
@@ -617,7 +617,7 @@ final class Parser
             }
 
             state_ = popState();
-            Token token = scanner_.peekToken();
+            immutable token = scanner_.peekToken();
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -635,7 +635,7 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.Key))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
@@ -649,7 +649,7 @@ final class Parser
 
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
-                Token token = scanner_.peekToken();
+                immutable token = scanner_.peekToken();
                 throw new Error("While parsing a block mapping", marks_[$ - 1],
                                 "expected block end, but found: " ~ token.idString, 
                                 token.startMark);
@@ -657,7 +657,7 @@ final class Parser
 
             state_ = popState();
             popMark();
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
             return mappingEndEvent(token.startMark, token.endMark);
         }
 
@@ -666,7 +666,7 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.Value))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
@@ -710,7 +710,7 @@ final class Parser
                     }
                     else
                     {
-                        Token token = scanner_.peekToken;
+                        immutable token = scanner_.peekToken;
                         throw new Error("While parsing a flow sequence", marks_[$ - 1],
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
@@ -719,7 +719,7 @@ final class Parser
 
                 if(scanner_.checkToken(TokenID.Key))
                 {
-                    Token token = scanner_.peekToken();
+                    immutable token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
                     return mappingStartEvent(token.startMark, token.endMark, 
                                              Anchor(), Tag(), true, CollectionStyle.Flow);
@@ -731,7 +731,7 @@ final class Parser
                 }
             }
 
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
             state_ = popState();
             popMark();
             return sequenceEndEvent(token.startMark, token.endMark);
@@ -740,7 +740,7 @@ final class Parser
         ///Parse a key in flow context.
         Event parseFlowKey(in Event delegate() nextState)
         {
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
 
             if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry, 
                                     TokenID.FlowSequenceEnd))
@@ -764,7 +764,7 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.Value))
             {
-                Token token = scanner_.getToken();
+                immutable token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.FlowEntry, checkId))
                 {
                     states_ ~= nextState;
@@ -790,7 +790,7 @@ final class Parser
         Event parseFlowSequenceEntryMappingEnd()
         {
             state_ = &parseFlowSequenceEntry!false;
-            Token token = scanner_.peekToken();
+            immutable token = scanner_.peekToken();
             return mappingEndEvent(token.startMark, token.startMark);
         }
 
@@ -817,7 +817,7 @@ final class Parser
                     }
                     else
                     {
-                        Token token = scanner_.peekToken;
+                        immutable token = scanner_.peekToken;
                         throw new Error("While parsing a flow mapping", marks_[$ - 1],
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);
@@ -836,7 +836,7 @@ final class Parser
                 }
             }
 
-            Token token = scanner_.getToken();
+            immutable token = scanner_.getToken();
             state_ = popState();
             popMark();
             return mappingEndEvent(token.startMark, token.endMark);
