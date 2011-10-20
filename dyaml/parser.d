@@ -351,7 +351,7 @@ final class Parser
                     enforce(YAMLVersion_ is null, 
                             new Error("Duplicate YAML directive", token.startMark));
                     const minor = parts[1].split(".")[0];
-                    enforce(to!int(minor) == 1, 
+                    enforce(minor == "1", 
                             new Error("Incompatible document (version 1.x is required)",
                                       token.startMark));
                     YAMLVersion_ = parts[1];
