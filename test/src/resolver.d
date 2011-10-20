@@ -40,7 +40,7 @@ void testImplicitResolver(bool verbose, string dataFilename, string detectFilena
     foreach(ref Node scalar; node)
     {
         assert(scalar.isScalar);
-        assert(scalar.tag.get == correctTag);
+        assert(scalar.tag == correctTag);
     }
 }
 

@@ -300,7 +300,7 @@ final class Representer
                     new RepresenterException("No representer function for type " 
                                              ~ type.toString() ~ " , cannot represent."));
             Node result = representers_[type](data, this);
-            if(!data.tag.isNull()){result.tag = data.tag;}
+            if(!data.tag_.isNull()){result.tag_ = data.tag_;}
             return result;
         }
 
@@ -375,7 +375,7 @@ Node representSysTime(ref Node node, Representer representer)
 Node representNodes(ref Node node, Representer representer)
 {
     auto nodes = node.get!(Node[]);
-    if(node.tag == Tag("tag:yaml.org,2002:set"))
+    if(node.tag_ == Tag("tag:yaml.org,2002:set"))
     {
         ///YAML sets are mapping with null values.
         Node.Pair[] pairs;
@@ -385,7 +385,7 @@ Node representNodes(ref Node node, Representer representer)
         {
             pairs[idx] = Node.Pair(key, representNull(dummy, representer));
         }
-        return representer.representMapping(node.tag.get, pairs);
+        return representer.representMapping(node.tag_.get, pairs);
     }
     else
     {
@@ -423,15 +423,15 @@ Node representPairs(ref Node node, Representer representer)
         return nodes;
     }
 
-    if(node.tag == Tag("tag:yaml.org,2002:omap"))
+    if(node.tag_ == Tag("tag:yaml.org,2002:omap"))
     {
         enforce(!hasDuplicates(pairs),
                 new RepresenterException("Duplicate entry in an ordered map"));
-        return representer.representSequence(node.tag.get, mapToSequence(pairs));
+        return representer.representSequence(node.tag_.get, mapToSequence(pairs));
     }
-    else if(node.tag == Tag("tag:yaml.org,2002:pairs"))
+    else if(node.tag_ == Tag("tag:yaml.org,2002:pairs"))
     {
-        return representer.representSequence(node.tag.get, mapToSequence(pairs));
+        return representer.representSequence(node.tag_.get, mapToSequence(pairs));
     }
     else
     {

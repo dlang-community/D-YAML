@@ -196,16 +196,16 @@ struct Serializer
                 Tag detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
                 Tag defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
 
-                emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag,
-                              [node.tag == detectedTag, node.tag == defaultTag], 
+                emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
+                              [node.tag_ == detectedTag, node.tag_ == defaultTag], 
                               value, ScalarStyle.Invalid));
                 return;
             }
             if(node.isSequence)
             {
                 auto defaultTag = resolver_.defaultSequenceTag;
-                bool implicit = node.tag == defaultTag;
-                emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag,
+                bool implicit = node.tag_ == defaultTag;
+                emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                  implicit, CollectionStyle.Invalid));
                 foreach(ref Node item; node)
                 {
@@ -217,8 +217,8 @@ struct Serializer
             if(node.isMapping)
             {
                 auto defaultTag = resolver_.defaultMappingTag; 
-                bool implicit = node.tag == defaultTag;
-                emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag,
+                bool implicit = node.tag_ == defaultTag;
+                emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                 implicit, CollectionStyle.Invalid));
                 foreach(ref Node key, ref Node value; node)
                 { 

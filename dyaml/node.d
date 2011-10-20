@@ -168,7 +168,9 @@ struct Node
         Value value_;
         ///Start position of the node.
         Mark startMark_;
-        ///Tag of the node.
+
+    package:
+        //Tag of the node. Is package as it is both written to and read all over D:YAML.
         Tag tag_;
 
     public:
@@ -425,6 +427,9 @@ struct Node
 
         ///Is this node a user defined type?
         @property bool isUserType() const {return isType!YAMLObject;}
+
+        ///Return tag of the node.
+        @property string tag()      const {return tag_.get;}
 
         /**
          * Equality test.
@@ -1243,12 +1248,6 @@ struct Node
          * This only works for default YAML types, not for user defined types.
          */
         @property bool isType(T)() const {return value_.type is typeid(T);}
-
-        //Return tag of the node.
-        @property Tag tag() const {return tag_;}
-
-        //Set tag of the node.
-        @property void tag(Tag tag) {tag_ = tag;}
 
     private:
         //Is the value an integer of some kind?
