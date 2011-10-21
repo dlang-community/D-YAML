@@ -642,8 +642,8 @@ struct Node
                 auto idx = findPair(index);
                 if(idx >= 0){return get!(Pair[])[idx].value;}
 
-                throw new Error("Mapping index not found" ~ 
-                                isSomeString!T ? ": " ~ to!string(index) : "", startMark_);
+                string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
+                throw new Error(msg, startMark_);
             }
             throw new Error("Trying to index node that does not support indexing", startMark_);
         }
