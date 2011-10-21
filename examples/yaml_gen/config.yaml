@@ -1,0 +1,41 @@
+root-type:              seq
+documents:              2
+complex-keys:           false
+min-nodes-per-document: 512 
+encoding:               utf-32
+indent:                 4
+text-width:             40
+
+string: 
+    probability: 10 
+    range: {min: 1, max: 40, dist: cubic}
+int: 
+    probability: 10 
+    range: {min: -10000000, max: 10000000, dist: linear}
+float: 
+    probability: 10 
+    range: {min: -10000000.0, max: 10000000.0, dist: linear}
+bool: 
+    probability: 10 
+timestamp:
+    probability: 10
+    round-chance: 0.9
+    range: {min: 0, max: 1231200000000000000, dist: linear}
+binary: 
+    probability: 4 
+    range: {min: 1, max: 400, dist: quadratic}
+map:
+    probability: 2 
+    range: {min: 1, max: 20, dist: cubic}
+omap:
+    probability: 1 
+    range: {min: 1, max: 20, dist: cubic}
+pairs:
+    probability: 1 
+    range: {min: 1, max: 20, dist: cubic}
+seq:
+    probability: 2 
+    range: {min: 1, max: 20, dist: cubic}
+set:
+    probability: 1 
+    range: {min: 1, max: 20, dist: cubic}
