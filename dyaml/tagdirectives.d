@@ -11,15 +11,17 @@ import std.typecons;
 
 import dyaml.sharedobject;
 
+///Single tag directive. handle is the shortcut, prefix is the prefix that replaces it.
+alias Tuple!(string, "handle", string, "prefix") tagDirective;
 
 ///Tag directives stored in Event.
 struct TagDirectives
 {
     public:
-        mixin SharedObject!(Tuple!(string, string)[], TagDirectives);
+        mixin SharedObject!(tagDirective[], TagDirectives);
 
         ///Construct a tags object from an array of tag directives.
-        this(Tuple!(string, string)[] tagDirectives)
+        this(tagDirective[] tagDirectives)
         {
             add(tagDirectives);
         }

@@ -106,10 +106,10 @@ final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
-        static Tuple!(string, string)[] defaultTags_;
+        static tagDirective[] defaultTagDirectives_;
         static this()
         {
-            defaultTags_ = [tuple("!", "!"), tuple("!!", "tag:yaml.org,2002:")];
+            defaultTagDirectives_ = [tagDirective("!", "!"), tagDirective("!!", "tag:yaml.org,2002:")];
         }
 
         ///Scanner providing YAML tokens.
@@ -121,7 +121,7 @@ final class Parser
         ///YAML version string.
         string YAMLVersion_ = null;
         ///Tag handle shortcuts and replacements.
-        Tuple!(string, string)[] tagHandles_;
+        tagDirective[] tagHandles_;
 
         ///Stack of states.
         Event delegate()[] states_;
@@ -264,7 +264,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
                                     TokenID.StreamEnd))
             {
-                tagHandles_ = defaultTags_;
+                tagHandles_ = defaultTagDirectives_;
                 immutable token = scanner_.peekToken();
 
                 states_ ~= &parseDocumentEnd;
@@ -369,14 +369,14 @@ final class Parser
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagHandles_ ~= tuple(handle, parts[2]);
+                    tagHandles_ ~= tagDirective(handle, parts[2]);
                 }
             }
 
             TagDirectives value = tagHandles_.length == 0 ? TagDirectives() : TagDirectives(tagHandles_);
 
             //Add any default tag handles that haven't been overridden.
-            foreach(ref defaultPair; defaultTags_)
+            foreach(ref defaultPair; defaultTagDirectives_)
             {
                 bool found = false;
                 foreach(ref pair; tagHandles_)

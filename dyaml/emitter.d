@@ -65,12 +65,11 @@ align(4) struct ScalarAnalysis
 struct Emitter 
 {
     private:
+        alias dyaml.tagdirectives.tagDirective tagDirective;
+
         ///Default tag handle shortcuts and replacements.
-        static string[string] defaultTags_;
-        static this()
-        {
-            defaultTags_ = ["!" : "!", "tag:yaml.org,2002:" :  "!!"];
-        }
+        static tagDirective[] defaultTagDirectives_ = 
+            [tagDirective("!", "!"), tagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
         Stream stream_;
@@ -82,7 +81,6 @@ struct Emitter
         ///Current state.
         void delegate() state_;
 
-        //TODO Should be replaced by a queue or linked list once Phobos has anything usable.
         ///Event queue.
         Queue!Event events_;
         ///Event we're currently emitting.
@@ -130,8 +128,8 @@ struct Emitter
         ///Best line break character/s.
         LineBreak bestLineBreak_;
 
-        ///Tag directive handles and prefixes.
-        Tuple!(string, string)[] tagDirectives_;
+        ///Tag directive handle - prefix pairs.
+        tagDirective[] tagDirectives_;
 
         ///Anchor/alias to process.
         string preparedAnchor_ = null;
@@ -366,11 +364,16 @@ struct Emitter
 
                     foreach(ref pair; tagDirectives_)
                     {
-                        const handle = pair[0];
-                        const prefix = pair[1];
-                        writeTagDirective(prepareTagHandle(handle), 
-                                          prepareTagPrefix(prefix));
+                        writeTagDirective(prepareTagHandle(pair.handle), 
+                                          prepareTagPrefix(pair.prefix));
                     }
+                }
+
+                bool eq(ref tagDirective a, ref tagDirective b){return a.handle == b.handle;}
+                //Add any default tag directives that have not been overriden.
+                foreach(ref def; defaultTagDirectives_) if(!canFind!eq(tagDirectives_, def))
+                {
+                    tagDirectives_ ~= def;
                 }
 
                 const implicit = first && !event_.explicitDocument && !canonical_ &&

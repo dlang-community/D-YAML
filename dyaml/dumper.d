@@ -277,22 +277,24 @@ struct Dumper
          * Example:
          * --------------------
          * Dumper dumper = Dumper("file.yaml");
+         * string[string] directives;
+         * directives["!short!"] = "tag:long.org,2011:";
          * //This will emit tags starting with "tag:long.org,2011"
          * //with a "!short!" prefix instead.
-         * dumper.tags("short", "tag:long.org,2011:");
+         * dumper.tagDirectives(directives);
          * dumper.dump(Node("foo"));
          * --------------------
          */
         void tagDirectives(string[string] tags)
         {
-            Tuple!(string, string)[] t;
+            tagDirective[] t;
             foreach(handle, prefix; tags)
             {
                 assert(handle.length >= 1 && handle[0] == '!' && handle[$ - 1] == '!',
                        "A tag handle is empty or does not start and end with a "
                        "'!' character : " ~ handle);
                 assert(prefix.length >= 1, "A tag prefix is empty");
-                t ~= tuple(handle, prefix);
+                t ~= tagDirective(handle, prefix);
             }
             tags_ = TagDirectives(t);
         }
