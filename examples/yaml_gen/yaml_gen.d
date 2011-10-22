@@ -1,4 +1,6 @@
 
+///Random YAML generator. Used to generate benchmarking inputs.
+
 import std.conv;
 import std.datetime;
 import std.math;
@@ -8,7 +10,7 @@ import std.string;
 import yaml;
 
 
-immutable alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+immutable alphabet = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
 immutable digits   = "0123456789";
 
 Node config;

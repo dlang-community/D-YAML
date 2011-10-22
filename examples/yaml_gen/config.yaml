@@ -6,6 +6,9 @@ encoding:               utf-32
 indent:                 4
 text-width:             40
 
+#Note: setting collection probabilities too high can lead to stack overflow as 
+#we end up with extremely deeply nested structures
+
 string: 
     probability: 10 
     range: {min: 1, max: 40, dist: cubic}
@@ -25,7 +28,7 @@ binary:
     probability: 4 
     range: {min: 1, max: 400, dist: quadratic}
 map:
-    probability: 2 
+    probability: 2
     range: {min: 1, max: 20, dist: cubic}
 omap:
     probability: 1 

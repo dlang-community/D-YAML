@@ -143,16 +143,13 @@ void main(string[] args)
     args = args[1 .. $];
     foreach(arg; args)
     {
-        if(arg[0] == '-')
+        if(arg[0] == '-') switch(arg)
         {
-            switch(arg)
-            {
-                case "--help", "-h": help(); return;
-                case "--dmd": compiler = "dmd"; break;
-                case "--gdc": compiler = "gdmd"; break;
-                case "--ldc": compiler = "ldmd"; break;
-                default: extra_args ~= arg;
-            }
+            case "--help", "-h": help(); return;
+            case "--dmd": compiler = "dmd"; break;
+            case "--gdc": compiler = "gdmd"; break;
+            case "--ldc": compiler = "ldmd"; break;
+            default: extra_args ~= arg;
         }
     }
     if(args.length > 0 && args[$ - 1][0] != '-'){target = args[$ - 1];}
