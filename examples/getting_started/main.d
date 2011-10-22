@@ -11,7 +11,7 @@ void main()
     {
         writeln(word);
     }
-    writeln("The answer is ", root["Answer"].get!int);
+    writeln("The answer is ", root["Answer"].as!int);
 
     //Dump the loaded document to output.yaml.
     Dumper("output.yaml").dump(root);

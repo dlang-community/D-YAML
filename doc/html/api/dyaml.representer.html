@@ -95,7 +95,7 @@
  Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
  {
      <span class="d_comment">//The node is guaranteed to be MyStruct as we add representer for MyStruct.
-</span>     <span class="d_keyword">auto</span> value = node.get!MyStruct;
+</span>     <span class="d_keyword">auto</span> value = node.as!MyStruct;
      <span class="d_comment">//Using custom scalar format, x:y:z.
 </span>     <span class="d_keyword">auto</span> scalar = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
      <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
@@ -136,7 +136,7 @@
          <span class="d_keyword">return</span> x == t.x &amp;&amp; y == t.y &amp;&amp; z == t.z;
      }
 
-     <span class="d_comment">///Useful for Node.get!string .
+     <span class="d_comment">///Useful for Node.as!string .
 </span>     <span class="d_keyword">override</span> string toString()
      {
          <span class="d_keyword">return</span> format(<span class="d_string">"MyClass("), x, <span class="d_string">", "</span>, y, <span class="d_string">", "</span>, z, <span class="d_string">"</span>"</span>);
@@ -147,7 +147,7 @@
 </span> Node representMyClass(<span class="d_keyword">ref</span> Node node, Representer representer)
  {
      <span class="d_comment">//The node is guaranteed to be MyClass as we add representer for MyClass.
-</span>     <span class="d_keyword">auto</span> value = node.get!MyClass;
+</span>     <span class="d_keyword">auto</span> value = node.as!MyClass;
      <span class="d_comment">//Using custom scalar format, x:y:z.
 </span>     <span class="d_keyword">auto</span> scalar = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
      <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
@@ -189,7 +189,7 @@
 
  Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
  {
-     <span class="d_keyword">auto</span> value = node.get!MyStruct;
+     <span class="d_keyword">auto</span> value = node.as!MyStruct;
      <span class="d_keyword">auto</span> <span class="d_param">scalar</span> = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
      <span class="d_keyword">return</span> representer.<span class="d_psymbol">representScalar</span>(<span class="d_string">"!mystruct.tag"</span>, <span class="d_param">scalar</span>);
  }
@@ -223,7 +223,7 @@
 
  Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
  {
-     <span class="d_keyword">auto</span> value = node.get!MyStruct;
+     <span class="d_keyword">auto</span> value = node.as!MyStruct;
      <span class="d_keyword">auto</span> nodes = [Node(value.x), Node(value.y), Node(value.z)];
      <span class="d_keyword">return</span> representer.<span class="d_psymbol">representSequence</span>(<span class="d_string">"!mystruct.tag"</span>, nodes);
  }
@@ -257,7 +257,7 @@
 
  Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
  {
-     <span class="d_keyword">auto</span> value = node.get!MyStruct;
+     <span class="d_keyword">auto</span> value = node.as!MyStruct;
      <span class="d_keyword">auto</span> <span class="d_param">pairs</span> = [Node.Pair(<span class="d_string">"x"</span>, value.x),
                    Node.Pair(<span class="d_string">"y"</span>, value.y),
                    Node.Pair(<span class="d_string">"z"</span>, value.z)];

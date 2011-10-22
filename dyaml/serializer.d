@@ -123,8 +123,8 @@ struct Serializer
         {
             if(node.isScalar)
             {
-                return node.isType!string    ? node.get!string.length > 64 :
-                       node.isType!(ubyte[]) ? node.get!(ubyte[]).length > 64:
+                return node.isType!string    ? node.as!string.length > 64 :
+                       node.isType!(ubyte[]) ? node.as!(ubyte[]).length > 64:
                                                false;
             }
             return node.length > 2;
@@ -192,7 +192,7 @@ struct Serializer
             if(node.isScalar)
             {
                 assert(node.isType!string, "Scalar node type must be string before serialized");
-                auto value = node.get!string;
+                auto value = node.as!string;
                 Tag detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
                 Tag defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
 

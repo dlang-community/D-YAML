@@ -127,7 +127,7 @@
  {
      <span class="d_comment">//Guaranteed to be string as we construct from scalar.
 </span>     <span class="d_comment">//!mystruct x:y:z
-</span>     <span class="d_keyword">auto</span> parts = node.get!string().split(<span class="d_string">":"</span>);
+</span>     <span class="d_keyword">auto</span> parts = node.as!string().split(<span class="d_string">":"</span>);
      <span class="d_keyword">try</span>
      {
          <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
@@ -174,7 +174,7 @@
 </span>     <span class="d_comment">//!mystruct [x, y, z]
 </span>     <span class="d_keyword">try</span>
      {
-         <span class="d_keyword">return</span> MyStruct(node[0].get!<span class="d_keyword">int</span>, node[1].get!<span class="d_keyword">int</span>, node[2].get!<span class="d_keyword">int</span>);
+         <span class="d_keyword">return</span> MyStruct(node[0].as!<span class="d_keyword">int</span>, node[1].as!<span class="d_keyword">int</span>, node[2].as!<span class="d_keyword">int</span>);
      }
      <span class="d_keyword">catch</span>(NodeException e)
      {
@@ -218,7 +218,7 @@
 </span>     <span class="d_comment">//!mystruct {"x": x, "y": y, "z": z}
 </span>     <span class="d_keyword">try</span>
      {
-         <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].get!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].get!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].get!<span class="d_keyword">int</span>);
+         <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].as!<span class="d_keyword">int</span>);
      }
      <span class="d_keyword">catch</span>(NodeException e)
      {

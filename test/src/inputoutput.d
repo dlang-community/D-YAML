@@ -58,13 +58,13 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
     string expected = data.split().join(" ");
 
     Node output = Loader(new MemoryStream(to!(char[])(data))).load();
-    assert(output.get!string == expected);
+    assert(output.as!string == expected);
 
     foreach(stream; [new MemoryStream(cast(byte[])(bom16() ~ to!(wchar[])(data))),
                      new MemoryStream(cast(byte[])(bom32() ~ to!(dchar[])(data)))])    
     {
         output = Loader(stream).load();
-        assert(output.get!string == expected);
+        assert(output.as!string == expected);
     }
 }
 

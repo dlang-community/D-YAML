@@ -11,7 +11,7 @@ struct Color
 Node representColor(ref Node node, Representer representer)
 {
    //The node is guaranteed to be Color as we add representer for Color.
-   Color color = node.get!Color;
+   Color color = node.as!Color;
 
    static immutable hex = "0123456789ABCDEF";
 

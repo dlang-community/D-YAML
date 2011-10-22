@@ -29,13 +29,13 @@ void extract(ref Node document)
     {
         if(root.isScalar) switch(root.tag)
         {
-            case "tag:yaml.org,2002:null":      auto value = root.get!YAMLNull;  break;
-            case "tag:yaml.org,2002:bool":      auto value = root.get!bool;      break;
-            case "tag:yaml.org,2002:int":       auto value = root.get!long;      break;
-            case "tag:yaml.org,2002:float":     auto value = root.get!real;      break;
-            case "tag:yaml.org,2002:binary":    auto value = root.get!(ubyte[]); break;
-            case "tag:yaml.org,2002:timestamp": auto value = root.get!SysTime;   break;
-            case "tag:yaml.org,2002:str":       auto value = root.get!string;    break;
+            case "tag:yaml.org,2002:null":      auto value = root.as!YAMLNull;  break;
+            case "tag:yaml.org,2002:bool":      auto value = root.as!bool;      break;
+            case "tag:yaml.org,2002:int":       auto value = root.as!long;      break;
+            case "tag:yaml.org,2002:float":     auto value = root.as!real;      break;
+            case "tag:yaml.org,2002:binary":    auto value = root.as!(ubyte[]); break;
+            case "tag:yaml.org,2002:timestamp": auto value = root.as!SysTime;   break;
+            case "tag:yaml.org,2002:str":       auto value = root.as!string;    break;
             default: writeln("Unrecognozed tag: ", root.tag);
         }
         else if(root.isSequence) foreach(ref Node node; root)

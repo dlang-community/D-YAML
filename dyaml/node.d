@@ -216,7 +216,7 @@ struct Node
             with(Node(42))
             {
                 assert(isScalar() && !isSequence && !isMapping && !isUserType);
-                assert(get!int == 42 && get!float == 42.0f && get!string == "42");
+                assert(as!int == 42 && as!float == 42.0f && as!string == "42");
                 assert(!isUserType());
             }
             with(Node(new class{int a = 5;}))
@@ -278,7 +278,7 @@ struct Node
             {
                 assert(!isScalar() && isSequence && !isMapping && !isUserType);
                 assert(length == 3);
-                assert(opIndex(2).get!int == 3);
+                assert(opIndex(2).as!int == 3);
             }
 
             //Will be emitted as a sequence (default for arrays)
@@ -332,7 +332,7 @@ struct Node
             {
                 assert(!isScalar() && !isSequence && isMapping && !isUserType);
                 assert(length == 2);
-                assert(opIndex("2").get!int == 2);
+                assert(opIndex("2").as!int == 2);
             }
 
             //Will be emitted as an unordered mapping (default for mappings)
@@ -402,7 +402,7 @@ struct Node
             {
                 assert(!isScalar() && !isSequence && isMapping && !isUserType);
                 assert(length == 2);
-                assert(opIndex("2").get!int == 2);
+                assert(opIndex("2").as!int == 2);
             }
 
             //Will be emitted as an unordered mapping (default for mappings)
@@ -457,6 +457,9 @@ struct Node
             return equals!(T, true)(rhs);
         }
 
+        ///Shortcut for get().
+        alias get as;
+
         /**
          * Get the value of the node as specified type.
          *
@@ -486,9 +489,9 @@ struct Node
          * --------------------
          * auto node = Node(42);
          *
-         * assert(node.get!int == 42);
-         * assert(node.get!string == "42");
-         * assert(node.get!double == 42.0);
+         * assert(node.as!int == 42);
+         * assert(node.as!string == "42");
+         * assert(node.as!double == 42.0);
          * --------------------
          *
          * Returns: Value of the node as specified type.
@@ -524,7 +527,7 @@ struct Node
             ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
             if(isUserType)
             {
-                auto object = get!YAMLObject;
+                auto object = as!YAMLObject;
                 if(object.type is typeid(T))
                 {
                     target = (cast(YAMLContainer!T)object).value_;
@@ -534,7 +537,7 @@ struct Node
 
             //If we're getting from a mapping and we're not getting Node.Pair[],
             //we're getting the default value.
-            if(isMapping){return this["="].get!T;}
+            if(isMapping){return this["="].as!T;}
 
             void throwUnexpectedType()
             {
@@ -606,8 +609,8 @@ struct Node
          */
         @property size_t length()
         {
-            if(isSequence)    {return get!(Node[]).length;}
-            else if(isMapping){return get!(Pair[]).length;}
+            if(isSequence)    {return as!(Node[]).length;}
+            else if(isMapping){return as!(Pair[]).length;}
             throw new Error("Trying to get length of a scalar node", startMark_);
         }
 
@@ -640,7 +643,7 @@ struct Node
             else if(isMapping)
             {
                 auto idx = findPair(index);
-                if(idx >= 0){return get!(Pair[])[idx].value;}
+                if(idx >= 0){return as!(Pair[])[idx].value;}
 
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
                 throw new Error(msg, startMark_);
@@ -669,10 +672,10 @@ struct Node
                                       Pair(k3, n3),  
                                       Pair(k4, n4)]));
 
-            assert(narray[0].get!int == 11);
+            assert(narray[0].as!int == 11);
             assert(null !is collectException(narray[42]));
-            assert(nmap["11"].get!int == 11);
-            assert(nmap["14"].get!int == 14);
+            assert(nmap["11"].as!int == 11);
+            assert(nmap["14"].as!int == 14);
             assert(null !is collectException(nmap["42"]));
         }
 
@@ -718,7 +721,7 @@ struct Node
                 if(idx < 0){add(index, value);}
                 else
                 {
-                    auto pairs = get!(Node.Pair[])();
+                    auto pairs = as!(Node.Pair[])();
                     static if(is(V == Node)){pairs[idx].value = value;}
                     else                    {pairs[idx].value = Node(value);}
                     value_ = Value(pairs);
@@ -736,15 +739,15 @@ struct Node
             {
                 opIndexAssign(42, 3);
                 assert(length == 5);
-                assert(opIndex(3).get!int == 42);
+                assert(opIndex(3).as!int == 42);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
                 opIndexAssign(42, "3");
                 opIndexAssign(123, 456);
                 assert(length == 4);
-                assert(opIndex("3").get!int == 42);
-                assert(opIndex(456).get!int == 123);
+                assert(opIndex("3").as!int == 42);
+                assert(opIndex(456).as!int == 123);
             }
         }
 
@@ -772,7 +775,7 @@ struct Node
                 }
                 else
                 {
-                    T temp = node.get!T;
+                    T temp = node.as!T;
                     result = dg(temp);
                 }
                 if(result){break;}
@@ -799,7 +802,7 @@ struct Node
             }
             foreach(Node node; narray)
             {
-                array2 ~= node.get!int;
+                array2 ~= node.as!int;
             }
             assert(array == [11, 12, 13, 14]);
             assert(array2 == [11, 12, 13, 14]);
@@ -829,18 +832,18 @@ struct Node
                 }
                 else static if(is(K == Node))
                 {
-                    V tempValue = pair.value.get!V;
+                    V tempValue = pair.value.as!V;
                     result = dg(pair.key, tempValue);
                 }
                 else static if(is(V == Node))
                 {
-                    K tempKey   = pair.key.get!K;
+                    K tempKey   = pair.key.as!K;
                     result = dg(tempKey, pair.value);
                 }
                 else
                 {
-                    K tempKey   = pair.key.get!K;
-                    V tempValue = pair.value.get!V;
+                    K tempKey   = pair.key.as!K;
+                    V tempValue = pair.value.as!V;
                     result = dg(tempKey, tempValue);
                 }
                     
@@ -890,10 +893,10 @@ struct Node
             {
                 switch(key)
                 {
-                    case "11": assert(value.get!int    == 5      ); break;
-                    case "12": assert(value.get!bool   == true   ); break;
-                    case "13": assert(value.get!float  == 1.0    ); break;
-                    case "14": assert(value.get!string == "yarly"); break;
+                    case "11": assert(value.as!int    == 5      ); break;
+                    case "12": assert(value.as!bool   == true   ); break;
+                    case "13": assert(value.as!float  == 1.0    ); break;
+                    case "14": assert(value.as!string == "yarly"); break;
                     default:   assert(false);
                 }
             }
@@ -931,7 +934,7 @@ struct Node
             with(Node([1, 2, 3, 4]))
             {
                 add(5.0f);
-                assert(opIndex(4).get!float == 5.0f);
+                assert(opIndex(4).as!float == 5.0f);
             }
         }
 
@@ -967,7 +970,7 @@ struct Node
             with(Node([1, 2], [3, 4]))
             {
                 add(5, "6");
-                assert(opIndex(5).get!string == "6");
+                assert(opIndex(5).as!string == "6");
             }
         }
 
@@ -991,7 +994,7 @@ struct Node
             {
                 foreach(idx, ref elem; get!(Node[]))
                 {
-                    if(elem.convertsTo!T && elem.get!T == value)
+                    if(elem.convertsTo!T && elem.as!T == value)
                     {
                         removeAt(idx);
                         return;
@@ -1004,7 +1007,7 @@ struct Node
                 auto idx = findPair!(T, true)(value);
                 if(idx >= 0)
                 {
-                    auto pairs = get!(Node.Pair[])();
+                    auto pairs = as!(Node.Pair[])();
                     moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
                     pairs.length = pairs.length - 1;
                     value_ = Value(pairs);
@@ -1020,8 +1023,8 @@ struct Node
             {
                 remove(3);
                 assert(length == 4);
-                assert(opIndex(2).get!int == 4);
-                assert(opIndex(3).get!int == 3);
+                assert(opIndex(2).as!int == 4);
+                assert(opIndex(3).as!int == 3);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
@@ -1070,7 +1073,7 @@ struct Node
                 auto idx = findPair(index);
                 if(idx >= 0)
                 {
-                    auto pairs = get!(Node.Pair[])();
+                    auto pairs = as!(Node.Pair[])();
                     moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
                     pairs.length = pairs.length - 1;
                     value_ = Value(pairs);
@@ -1086,7 +1089,7 @@ struct Node
             {
                 removeAt(3);
                 assert(length == 4);
-                assert(opIndex(3).get!int == 3);
+                assert(opIndex(3).as!int == 3);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
@@ -1136,8 +1139,8 @@ struct Node
                 }
                 if(isSequence)
                 {
-                    auto seq1 = get!(Node[]);
-                    auto seq2 = rhs.get!(Node[]);
+                    auto seq1 = as!(Node[]);
+                    auto seq2 = rhs.as!(Node[]);
                     if(seq1 is seq2){return true;}
                     if(seq1.length != seq2.length){return false;}
                     foreach(node; 0 .. seq1.length)
@@ -1148,8 +1151,8 @@ struct Node
                 }
                 if(isMapping)
                 {
-                    auto map1 = get!(Node.Pair[]);
-                    auto map2 = rhs.get!(Node.Pair[]);
+                    auto map1 = as!(Node.Pair[]);
+                    auto map2 = rhs.as!(Node.Pair[]);
                     if(map1 is map2){return true;}
                     if(map1.length != map2.length){return false;}
                     foreach(pair; 0 .. map1.length)
@@ -1163,7 +1166,7 @@ struct Node
                     if(isUserType)
                     {
                         if(!rhs.isUserType){return false;}
-                        return get!YAMLObject.equals(rhs.get!YAMLObject);
+                        return get!YAMLObject.equals(rhs.as!YAMLObject);
                     }
                     if(isFloat)
                     {
@@ -1287,7 +1290,7 @@ struct Node
         //Get index of pair with key (or value, if value is true) matching index.
         long findPair(T, bool value = false)(const ref T index)
         {
-            auto pairs = get!(Node.Pair[])();
+            auto pairs = as!(Node.Pair[])();
             Node* node;
             foreach(idx, ref pair; pairs)
             {
@@ -1301,8 +1304,8 @@ struct Node
                 else static if(isFloatingPoint!T)
                 {
                     //Need to handle NaNs separately.
-                    if((node.get!T == index) ||
-                       (isFloat && isNaN(index) && isNaN(node.get!real)))
+                    if((node.as!T == index) ||
+                       (isFloat && isNaN(index) && isNaN(node.as!real)))
                     {
                         return idx;
                     }
@@ -1311,7 +1314,7 @@ struct Node
                 {  
                     try
                     {
-                        if(node.get!T == index){return idx;}
+                        if(node.as!T == index){return idx;}
                     }
                     catch(NodeException e)
                     {

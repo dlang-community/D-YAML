@@ -75,7 +75,7 @@ string randomType(string[] types)
     auto probabilities = new uint[types.length];
     foreach(index, type; types)
     {
-        probabilities[index] = config[type]["probability"].get!uint;
+        probabilities[index] = config[type]["probability"].as!uint;
     }
     return types[dice(probabilities)];
 }
@@ -84,8 +84,8 @@ Node genString(bool root = false)
 {
     auto range = config["string"]["range"];
 
-    const chars = randomLong(range["min"].get!uint, range["max"].get!uint, 
-                             range["dist"].get!string);
+    const chars = randomLong(range["min"].as!uint, range["max"].as!uint, 
+                             range["dist"].as!string);
 
     char[] result = new char[chars];
     result[0] = randomChar(alphabet);
@@ -101,8 +101,8 @@ Node genInt(bool root = false)
 {
     auto range = config["int"]["range"];
 
-    const result = randomLong(range["min"].get!int, range["max"].get!int, 
-                              range["dist"].get!string);
+    const result = randomLong(range["min"].as!int, range["max"].as!int, 
+                              range["dist"].as!string);
 
     return Node(result);
 }
@@ -111,8 +111,8 @@ Node genFloat(bool root = false)
 {
     auto range = config["float"]["range"];
 
-    const result = randomReal(range["min"].get!real, range["max"].get!real, 
-                              range["dist"].get!string);
+    const result = randomReal(range["min"].as!real, range["max"].as!real, 
+                              range["dist"].as!string);
 
     return Node(result);
 }
@@ -126,10 +126,10 @@ Node genTimestamp(bool root = false)
 {
     auto range = config["timestamp"]["range"];
 
-    auto hnsecs = randomLong(range["min"].get!ulong, range["max"].get!ulong, 
-                             range["dist"].get!string);
+    auto hnsecs = randomLong(range["min"].as!ulong, range["max"].as!ulong, 
+                             range["dist"].as!string);
 
-    if(randomNormalized() <= config["timestamp"]["round-chance"].get!real)
+    if(randomNormalized() <= config["timestamp"]["round-chance"].as!real)
     {
         hnsecs -= hnsecs % 10000000;
     }
@@ -141,8 +141,8 @@ Node genBinary(bool root = false)
 {
     auto range = config["binary"]["range"];
 
-    const bytes = randomLong(range["min"].get!uint, range["max"].get!uint, 
-                             range["dist"].get!string);
+    const bytes = randomLong(range["min"].as!uint, range["max"].as!uint, 
+                             range["dist"].as!string);
 
     ubyte[] result = new ubyte[bytes];
     foreach(i; 0 .. bytes)
@@ -167,8 +167,8 @@ Node nodes(in bool root, Node range, in string tag, in bool set = false)
     }
     else
     {
-        const elems = randomLong(range["min"].get!uint, range["max"].get!uint, 
-                                 range["dist"].get!string);
+        const elems = randomLong(range["min"].as!uint, range["max"].as!uint, 
+                                 range["dist"].as!string);
 
         nodes = new Node[elems];
         foreach(i; 0 .. elems)
@@ -204,8 +204,8 @@ Node pairs(bool root, bool complex, Node range, string tag)
     }
     else
     {
-        const pairs = randomLong(range["min"].get!uint, range["max"].get!uint, 
-                                 range["dist"].get!string);
+        const pairs = randomLong(range["min"].as!uint, range["max"].as!uint, 
+                                 range["dist"].as!string);
 
         keys = new Node[pairs];
         values = new Node[pairs];
@@ -222,7 +222,7 @@ Node pairs(bool root, bool complex, Node range, string tag)
 Node genMap(bool root = false)
 {
     Node range = config["map"]["range"];
-    const complex = config["complex-keys"].get!bool;
+    const complex = config["complex-keys"].as!bool;
 
     return pairs(root, complex, range, "tag:yaml.org,2002:map");
 }
@@ -230,7 +230,7 @@ Node genMap(bool root = false)
 Node genOmap(bool root = false)
 {
     Node range = config["omap"]["range"];
-    const complex = config["complex-keys"].get!bool;
+    const complex = config["complex-keys"].as!bool;
 
     return pairs(root, complex, range, "tag:yaml.org,2002:omap");
 }
@@ -238,7 +238,7 @@ Node genOmap(bool root = false)
 Node genPairs(bool root = false)
 {
     Node range = config["pairs"]["range"];
-    const complex = config["complex-keys"].get!bool;
+    const complex = config["complex-keys"].as!bool;
 
     return pairs(root, complex, range, "tag:yaml.org,2002:pairs");
 }
@@ -253,12 +253,12 @@ Node[] generate(in string configFileName)
 {
     config = Loader(configFileName).load();
 
-    minNodesDocument = config["min-nodes-per-document"].get!long;
+    minNodesDocument = config["min-nodes-per-document"].as!long;
 
     Node[] result;
-    foreach(i; 0 .. config["documents"].get!uint)
+    foreach(i; 0 .. config["documents"].as!uint)
     {
-        result ~= generateNode(config["root-type"].get!string, true);
+        result ~= generateNode(config["root-type"].as!string, true);
         totalNodes = 0;
     }
 
@@ -290,8 +290,8 @@ void main(string[] args)
                           encoding == "utf-32" ? Encoding.UTF_32: 
                                                  Encoding.UTF_8;
                 
-        dumper.indent = config["indent"].get!uint;
-        dumper.textWidth = config["text-width"].get!uint;
+        dumper.indent = config["indent"].as!uint;
+        dumper.textWidth = config["text-width"].as!uint;
         dumper.dump(generated);
     }
     catch(YAMLException e)

@@ -189,9 +189,11 @@
 </table></div>
 <p><b>Example:</b><br>
 <pre class="d_code"> Dumper dumper = Dumper(<span class="d_string">"file.yaml"</span>);
+ string[string] directives;
+ directives[<span class="d_string">"!short!"</span>] = <span class="d_string">"tag:long.org,2011:"</span>;
  <span class="d_comment">//This will emit tags starting with "tag:long.org,2011"
 </span> <span class="d_comment">//with a "!short!" prefix instead.
-</span> dumper.<span class="d_param">tags</span>(<span class="d_string">"short"</span>, <span class="d_string">"tag:long.org,2011:"</span>);
+</span> dumper.<span class="d_psymbol">tagDirectives</span>(directives);
  dumper.dump(Node(<span class="d_string">"foo"</span>));
 </pre>
 </p>

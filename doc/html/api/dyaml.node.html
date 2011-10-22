@@ -247,6 +247,11 @@
 <dd><p>Is this node a user defined type?</p>
 
 </dd>
+<dt class="d_decl">const @property string <a name="tag"></a><span class="ddoc_psymbol">tag</span>();
+</dt>
+<dd><p>Return <a name="tag"></a><span class="ddoc_psymbol">tag</span> of the node.</p>
+
+</dd>
 <dt class="d_decl">bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(T)(ref T <b>rhs</b>);
 </dt>
 <dd><p>Equality test.
@@ -270,6 +275,11 @@
 <td valign=top>Variable to test equality with.</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr"><b>true</b> if equal, <b>false</b> otherwise.</div>
+
+</dd>
+<dt class="d_decl">alias <a name="as"></a><span class="ddoc_psymbol">as</span>;
+</dt>
+<dd><p>Shortcut for get().</p>
 
 </dd>
 <dt class="d_decl">T <a name="get"></a><span class="ddoc_psymbol">get</span>(T)();
@@ -303,9 +313,9 @@
 <b>Examples:</b><div class="pbr">Automatic type conversion:
 <pre class="d_code"> <span class="d_keyword">auto</span> node = Node(42);
 
- <span class="d_keyword">assert</span>(node.<span class="d_psymbol">get</span>!<span class="d_keyword">int</span> == 42);
- <span class="d_keyword">assert</span>(node.<span class="d_psymbol">get</span>!string == <span class="d_string">"42"</span>);
- <span class="d_keyword">assert</span>(node.<span class="d_psymbol">get</span>!<span class="d_keyword">double</span> == 42.0);
+ <span class="d_keyword">assert</span>(node.as!<span class="d_keyword">int</span> == 42);
+ <span class="d_keyword">assert</span>(node.as!string == <span class="d_string">"42"</span>);
+ <span class="d_keyword">assert</span>(node.as!<span class="d_keyword">double</span> == 42.0);
 </pre>
 
 </div>

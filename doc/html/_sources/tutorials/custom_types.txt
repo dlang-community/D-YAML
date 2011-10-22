@@ -54,7 +54,7 @@ of these functions:
 
    Color constructColorScalar(Mark start, Mark end, ref Node node)
    {
-       string value = node.get!string;
+       string value = node.as!string;
 
        if(value.length != 6)
        {
@@ -93,9 +93,9 @@ of these functions:
        //Might throw if a value is missing is not an integer, or is out of range.
        try
        {
-           r = node["r"].get!ubyte;
-           g = node["g"].get!ubyte;
-           b = node["b"].get!ubyte;
+           r = node["r"].as!ubyte;
+           g = node["g"].as!ubyte;
+           b = node["b"].as!ubyte;
        }
        catch(NodeException e)
        {
@@ -143,10 +143,10 @@ Finally, the code to put it all together:
 
            auto root = loader.load();
 
-           if(root["scalar-red"].get!Color == red && 
-              root["mapping-red"].get!Color == red && 
-              root["scalar-orange"].get!Color == orange && 
-              root["mapping-orange"].get!Color == orange)
+           if(root["scalar-red"].as!Color == red && 
+              root["mapping-red"].as!Color == red && 
+              root["scalar-orange"].as!Color == orange && 
+              root["mapping-orange"].as!Color == orange)
            {
                writeln("SUCCESS");
                return;
@@ -162,8 +162,8 @@ Finally, the code to put it all together:
 
 First, we create a *Constructor* and pass functions to handle the ``!color`` 
 and ``!color-mapping`` tag. We construct a *Loader* and pass the *Constructor*
-to it. We then load the YAML document, and finally, read the colors using 
-*get()* method to test if they were loaded as expected.
+to it. We then load the YAML document, and finally, read the colors to test if
+they were loaded as expected.
 
 You can find the source code for what we've done so far in the 
 ``examples/constructor`` directory in the D:YAML package.
@@ -256,7 +256,7 @@ With the following code, we will add support for dumping the our Color type.
    Node representColor(ref Node node, Representer representer)
    {
        //The node is guaranteed to be Color as we add representer for Color.
-       Color color = node.get!Color;
+       Color color = node.as!Color;
 
        static immutable hex = "0123456789ABCDEF";
 

@@ -149,7 +149,7 @@ final class Constructor
          * { 
          *     //Guaranteed to be string as we construct from scalar.
          *     //!mystruct x:y:z
-         *     auto parts = node.get!string().split(":");
+         *     auto parts = node.as!string().split(":");
          *     try
          *     {
          *         return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
@@ -201,7 +201,7 @@ final class Constructor
          *     //!mystruct [x, y, z]
          *     try
          *     {
-         *         return MyStruct(node[0].get!int, node[1].get!int, node[2].get!int);
+         *         return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
          *     }
          *     catch(NodeException e)
          *     {
@@ -250,7 +250,7 @@ final class Constructor
          *     //!mystruct {"x": x, "y": y, "z": z}
          *     try
          *     {
-         *         return MyStruct(node["x"].get!int, node["y"].get!int, node["z"].get!int);
+         *         return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
          *     }
          *     catch(NodeException e)
          *     {
@@ -344,7 +344,7 @@ YAMLMerge constructMerge(Mark start, Mark end, ref Node node)
 ///Construct a boolean node.
 bool constructBool(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string().toLower();
+    string value = node.as!string().toLower();
     if(["yes", "true", "on"].canFind(value)) {return true;}
     if(["no", "false", "off"].canFind(value)){return false;}
     throw new Error("Unable to parse boolean value: " ~ value, start, end);
@@ -353,7 +353,7 @@ bool constructBool(Mark start, Mark end, ref Node node)
 ///Construct an integer (long) node.
 long constructLong(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string().replace("_", "");
+    string value = node.as!string().replace("_", "");
     const char c = value[0];
     const long sign = c != '-' ? 1 : -1;
     if(c == '-' || c == '+')
@@ -421,7 +421,7 @@ unittest
 ///Construct a floating point (real) node.
 real constructReal(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string().replace("_", "").toLower();
+    string value = node.as!string().replace("_", "").toLower();
     const char c = value[0];
     const real sign = c != '-' ? 1.0 : -1.0;
     if(c == '-' || c == '+')
@@ -491,7 +491,7 @@ unittest
 ///Construct a binary (base64) node.
 ubyte[] constructBinary(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string;
+    string value = node.as!string;
     //For an unknown reason, this must be nested to work (compiler bug?).
     try
     {
@@ -520,7 +520,7 @@ unittest
 ///Construct a timestamp (SysTime) node.
 SysTime constructTimestamp(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string;
+    string value = node.as!string;
 
     immutable YMDRegexp = regex("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)");
     immutable HMSRegexp = regex("^[Tt \t]+([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(\\.[0-9]*)?");
@@ -619,7 +619,7 @@ unittest
 ///Construct a string node.
 string constructString(Mark start, Mark end, ref Node node)
 {
-    return node.get!string;
+    return node.as!string;
 }
 
 ///Convert a sequence of single-element mappings into a sequence of pairs.
@@ -633,7 +633,7 @@ Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes)
                 new Error("While constructing " ~ type ~ 
                           ", expected a mapping with single element", start, end));
 
-        pairs ~= node.get!(Node.Pair[]);
+        pairs ~= node.as!(Node.Pair[]);
     }
 
     return pairs;
@@ -642,7 +642,7 @@ Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes)
 ///Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.
 Node.Pair[] constructOrderedMap(Mark start, Mark end, ref Node node)
 {
-    auto pairs = getPairs("ordered map", start, end, node.get!(Node[]));
+    auto pairs = getPairs("ordered map", start, end, node.as!(Node[]));
 
     //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
@@ -702,13 +702,13 @@ unittest
 ///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.
 Node.Pair[] constructPairs(Mark start, Mark end, ref Node node)
 {
-    return getPairs("pairs", start, end, node.get!(Node[]));
+    return getPairs("pairs", start, end, node.as!(Node[]));
 }
 
 ///Construct a set node.
 Node[] constructSet(Mark start, Mark end, ref Node node)
 {
-    auto pairs = node.get!(Node.Pair[]);
+    auto pairs = node.as!(Node.Pair[]);
 
     //In future, the map here should be replaced with something with deterministic
     //memory allocation if possible.
@@ -772,13 +772,13 @@ unittest
 ///Construct a sequence (array) node.
 Node[] constructSequence(Mark start, Mark end, ref Node node)
 {
-    return node.get!(Node[]);
+    return node.as!(Node[]);
 }
 
 ///Construct an unordered map (unordered set of key: value _pairs without duplicates) node.
 Node.Pair[] constructMap(Mark start, Mark end, ref Node node)
 {
-    auto pairs = node.get!(Node.Pair[]);
+    auto pairs = node.as!(Node.Pair[]);
     //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
     //Detect duplicates.
@@ -808,7 +808,7 @@ struct MyStruct
 MyStruct constructMyStructScalar(Mark start, Mark end, ref Node node)
 { 
     //Guaranteed to be string as we construct from scalar.
-    auto parts = node.get!string().split(":");
+    auto parts = node.as!string().split(":");
     try
     {
         return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
@@ -825,7 +825,7 @@ MyStruct constructMyStructSequence(Mark start, Mark end, ref Node node)
     //node is guaranteed to be sequence.
     try
     {
-        return MyStruct(node[0].get!int, node[1].get!int, node[2].get!int);
+        return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
     }
     catch(NodeException e)
     {
@@ -839,7 +839,7 @@ MyStruct constructMyStructMapping(Mark start, Mark end, ref Node node)
     //node is guaranteed to be mapping.
     try
     {
-        return MyStruct(node["x"].get!int, node["y"].get!int, node["z"].get!int);
+        return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
     }
     catch(NodeException e)
     {
@@ -858,7 +858,7 @@ unittest
     loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.get!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }
 
 unittest
@@ -871,7 +871,7 @@ unittest
     loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.get!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }
 
 unittest
@@ -884,5 +884,5 @@ unittest
     loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.get!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }

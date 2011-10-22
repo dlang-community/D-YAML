@@ -90,7 +90,7 @@ into the file:
        {
            writeln(word);
        }
-       writeln("The answer is ", root["Answer"].get!int);
+       writeln("The answer is ", root["Answer"].as!int);
 
        //Dump the loaded document to output.yaml.
        Dumper("output.yaml").dump(root);
@@ -115,7 +115,7 @@ possible.
 mapping (associative array) or a scalar (value). Here the root node is a 
 mapping, and we use the index operator to get subnodes with keys "Hello World"
 and "Answer". We iterate over the first, as it is a sequence, and use the 
-*Node.get()* method on the second to get its value as an integer.
+*Node.as()* method on the second to read its value as an integer.
 
 You can iterate over a mapping or sequence as if it was an associative or normal 
 array. If you try to iterate over a scalar, it will throw a *YAMLException*. 
@@ -128,9 +128,9 @@ not possible to convert to iterated type, a *YAMLException* is thrown. For
 instance, if we specified *int* here, we would get an error, as "Hello" 
 cannot be converted to an integer.
 
-The *Node.get()* method is used to get value of a scalar node, allowing to 
-specify type. D:YAML will try to return the scalar as this type, converting if 
-needed, throwing *YAMLException* if not possible.
+The *Node.as()* method is used to read value of a scalar node as specified type.
+D:YAML will try to return the scalar as this type, converting if needed, 
+throwing *YAMLException* if not possible.
 
 Finally we dump the document we just read to ``output.yaml`` with the 
 *Dumper.dump()* method. *Dumper* is a struct used to dump YAML documents.

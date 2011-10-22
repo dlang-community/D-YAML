@@ -341,7 +341,7 @@ TestClass constructClass(Mark start, Mark end, ref Node node)
 {
     try
     {
-        return new TestClass(node["x"].get!int, node["y"].get!int, node["z"].get!int);
+        return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
     }
     catch(NodeException e)
     {
@@ -352,7 +352,7 @@ TestClass constructClass(Mark start, Mark end, ref Node node)
 
 Node representClass(ref Node node, Representer representer)
 { 
-    auto value = node.get!TestClass;
+    auto value = node.as!TestClass;
     auto pairs = [Node.Pair("x", value.x), 
                   Node.Pair("y", value.y), 
                   Node.Pair("z", value.z)];
@@ -364,14 +364,14 @@ Node representClass(ref Node node, Representer representer)
 ///Constructor function for TestStruct.
 TestStruct constructStruct(Mark start, Mark end, ref Node node)
 {
-    return TestStruct(to!int(node.get!string));
+    return TestStruct(to!int(node.as!string));
 }
 
 ///Representer function for TestStruct.
 Node representStruct(ref Node node, Representer representer)
 {
     string[] keys, values;
-    auto value = node.get!TestStruct;
+    auto value = node.as!TestStruct;
     return representer.representScalar("!tag2", to!string(value.value));
 }
 

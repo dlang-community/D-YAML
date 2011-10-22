@@ -87,7 +87,7 @@ from a mapping, where we use the following format: {r:RRR, g:GGG, b:BBB} . Code
 of these functions:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="n">Color</span> <span class="n">constructColorScalar</span><span class="p">(</span><span class="n">Mark</span> <span class="n">start</span><span class="p">,</span> <span class="n">Mark</span> <span class="n">end</span><span class="p">,</span> <span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="nb">string</span> <span class="n">value</span> <span class="p">=</span> <span class="n">node</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="nb">string</span><span class="p">;</span>
+    <span class="nb">string</span> <span class="n">value</span> <span class="p">=</span> <span class="n">node</span><span class="p">.</span><span class="n">as</span><span class="p">!</span><span class="nb">string</span><span class="p">;</span>
 
     <span class="k">if</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">length</span> <span class="p">!=</span> <span class="mi">6</span><span class="p">)</span>
     <span class="p">{</span>
@@ -126,9 +126,9 @@ of these functions:</p>
     <span class="c1">//Might throw if a value is missing is not an integer, or is out of range.</span>
     <span class="k">try</span>
     <span class="p">{</span>
-        <span class="n">r</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;r&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
-        <span class="n">g</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;g&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
-        <span class="n">b</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
+        <span class="n">r</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;r&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
+        <span class="n">g</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;g&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
+        <span class="n">b</span> <span class="p">=</span> <span class="n">node</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="kt">ubyte</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="n">NodeException</span> <span class="n">e</span><span class="p">)</span>
     <span class="p">{</span>
@@ -171,10 +171,10 @@ of these functions:</p>
 
         <span class="k">auto</span> <span class="n">root</span> <span class="p">=</span> <span class="n">loader</span><span class="p">.</span><span class="n">load</span><span class="p">();</span>
 
-        <span class="k">if</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="s">&quot;scalar-red&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
-           <span class="n">root</span><span class="p">[</span><span class="s">&quot;mapping-red&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
-           <span class="n">root</span><span class="p">[</span><span class="s">&quot;scalar-orange&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">orange</span> <span class="p">&amp;&amp;</span>
-           <span class="n">root</span><span class="p">[</span><span class="s">&quot;mapping-orange&quot;</span><span class="p">].</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">orange</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="s">&quot;scalar-red&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
+           <span class="n">root</span><span class="p">[</span><span class="s">&quot;mapping-red&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">red</span> <span class="p">&amp;&amp;</span>
+           <span class="n">root</span><span class="p">[</span><span class="s">&quot;scalar-orange&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">orange</span> <span class="p">&amp;&amp;</span>
+           <span class="n">root</span><span class="p">[</span><span class="s">&quot;mapping-orange&quot;</span><span class="p">].</span><span class="n">as</span><span class="p">!</span><span class="n">Color</span> <span class="p">==</span> <span class="n">orange</span><span class="p">)</span>
         <span class="p">{</span>
             <span class="n">writeln</span><span class="p">(</span><span class="s">&quot;SUCCESS&quot;</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
@@ -191,8 +191,8 @@ of these functions:</p>
 </div>
 <p>First, we create a <em>Constructor</em> and pass functions to handle the <tt class="docutils literal"><span class="pre">!color</span></tt>
 and <tt class="docutils literal"><span class="pre">!color-mapping</span></tt> tag. We construct a <em>Loader</em> and pass the <em>Constructor</em>
-to it. We then load the YAML document, and finally, read the colors using
-<em>get()</em> method to test if they were loaded as expected.</p>
+to it. We then load the YAML document, and finally, read the colors to test if
+they were loaded as expected.</p>
 <p>You can find the source code for what we&#8217;ve done so far in the
 <tt class="docutils literal"><span class="pre">examples/constructor</span></tt> directory in the D:YAML package.</p>
 </div>
@@ -263,7 +263,7 @@ loading the output.</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="n">Node</span> <span class="n">representColor</span><span class="p">(</span><span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">,</span> <span class="n">Representer</span> <span class="n">representer</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="c1">//The node is guaranteed to be Color as we add representer for Color.</span>
-    <span class="n">Color</span> <span class="n">color</span> <span class="p">=</span> <span class="n">node</span><span class="p">.</span><span class="n">get</span><span class="p">!</span><span class="n">Color</span><span class="p">;</span>
+    <span class="n">Color</span> <span class="n">color</span> <span class="p">=</span> <span class="n">node</span><span class="p">.</span><span class="n">as</span><span class="p">!</span><span class="n">Color</span><span class="p">;</span>
 
     <span class="k">static</span> <span class="n">immutable</span> <span class="n">hex</span> <span class="p">=</span> <span class="s">&quot;0123456789ABCDEF&quot;</span><span class="p">;</span>
 
@@ -369,7 +369,7 @@ directory of the D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Oct 18, 2011.
+      Last updated on Oct 22, 2011.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>

@@ -150,6 +150,12 @@
 </dt>
 <dd><p>Load all YAML documents.
 </p>
+<p>This is just a shortcut that iterates over all documents and returns
+ them all at once. Calling <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span> after iterating over the node or
+ vice versa will not return any documents, as they have all been parsed
+ already.
+
+</p>
 <b>Returns:</b><div class="pbr">Array of root nodes of all documents in the file/stream.
 
 </div>

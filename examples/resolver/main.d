@@ -12,7 +12,7 @@ struct Color
 
 Color constructColorScalar(Mark start, Mark end, ref Node node)
 {
-    string value = node.get!string;
+    string value = node.as!string;
 
     if(value.length != 6)
     {
@@ -51,9 +51,9 @@ Color constructColorMapping(Mark start, Mark end, ref Node node)
     //Might throw if a value is missing is not an integer, or is out of range.
     try
     {
-        r = node["r"].get!ubyte;
-        g = node["g"].get!ubyte;
-        b = node["b"].get!ubyte;
+        r = node["r"].as!ubyte;
+        g = node["g"].as!ubyte;
+        b = node["b"].as!ubyte;
     }
     catch(NodeException e)
     {
@@ -85,10 +85,10 @@ void main()
 
        auto root = loader.load();
 
-       if(root["scalar-red"].get!Color == red && 
-          root["mapping-red"].get!Color == red && 
-          root["scalar-orange"].get!Color == orange && 
-          root["mapping-orange"].get!Color == orange)
+       if(root["scalar-red"].as!Color == red && 
+          root["mapping-red"].as!Color == red && 
+          root["scalar-orange"].as!Color == orange && 
+          root["mapping-orange"].as!Color == orange)
        {
            writeln("SUCCESS");
            return;
