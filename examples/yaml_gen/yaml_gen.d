@@ -155,7 +155,8 @@ Node genBinary(bool root = false)
 
 Node nodes(in bool root, Node range, in string tag, in bool set = false)
 {
-    auto types = typesCollection ~ (set ? typesScalarKey : typesScalar);
+    auto types = config["collection-keys"].as!bool ? typesCollection : [];
+    types ~= (set ? typesScalarKey : typesScalar);
 
     Node[] nodes;
     if(root)

@@ -138,7 +138,7 @@ void main(string[] args)
 
     scope(failure){help(); core.stdc.stdlib.exit(-1);}
 
-    string[] extra_args = ["-w", "-wi"];
+    string[] extra_args = ["-gc", "-w", "-wi"];
 
     args = args[1 .. $];
     foreach(arg; args)
@@ -154,7 +154,7 @@ void main(string[] args)
     }
     if(args.length > 0 && args[$ - 1][0] != '-'){target = args[$ - 1];}
 
-    string[] dbg      = ["-gc", "-debug"];
+    string[] dbg      = ["-debug"];
     string[] optimize = ["-O", "-inline", "-release"];
     string[] lib_src  = ["dyaml/", "yaml.d"];
 

@@ -1,8 +1,9 @@
 root-type:              seq
 documents:              2
 complex-keys:           false
-min-nodes-per-document: 512 
-encoding:               utf-32
+collection-keys:        false
+min-nodes-per-document: 65536 
+encoding:               utf-8
 indent:                 4
 text-width:             40
 
