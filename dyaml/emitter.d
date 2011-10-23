@@ -14,6 +14,7 @@ module dyaml.emitter;
 import std.algorithm;
 import std.array;
 import std.ascii;
+import std.container;
 import std.conv;
 import std.exception;
 import std.format;
@@ -78,7 +79,7 @@ struct Emitter
         Encoding encoding_ = Encoding.UTF_8;
 
         ///Stack of states.
-        void delegate()[] states_;
+        Array!(void delegate()) states_;
         ///Current state.
         void delegate() state_;
 
@@ -155,6 +156,7 @@ struct Emitter
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
         {
+            states_.reserve(32);
             stream_ = stream;
             canonical_ = canonical;
             state_ = &expectStreamStart;
@@ -171,7 +173,6 @@ struct Emitter
         {
             stream_ = null;
             clear(states_);
-            states_ = null;
             clear(events_);
             clear(indents_);
             indents_ = null;
@@ -201,8 +202,8 @@ struct Emitter
         {
             enforce(states_.length > 0, 
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
-            const result = states_.back();
-            states_.popBack;
+            const result = states_.back;
+            states_.length = states_.length - 1;
             return result;
         }
 
@@ -266,20 +267,12 @@ struct Emitter
             while(!events_.iterationOver())
             {
                 immutable event = events_.next();
-                if([EventID.DocumentStart, EventID.SequenceStart,
-                    EventID.MappingStart].canFind(event.id))
-                {
-                    ++level;
-                }
-                else if([EventID.DocumentEnd, EventID.SequenceEnd,
-                         EventID.MappingEnd].canFind(event.id))
-                {
-                    --level;
-                }
-                else if(event.id == EventID.StreamStart)
-                {
-                    level = -1;
-                }
+                static starts = [EventID.DocumentStart, EventID.SequenceStart, EventID.MappingStart];
+                static ends   = [EventID.DocumentEnd, EventID.SequenceEnd, EventID.MappingEnd];
+                if(starts.canFind(event.id))            {++level;}
+                else if(ends.canFind(event.id))         {--level;}
+                else if(event.id == EventID.StreamStart){level = -1;}
+
                 if(level < 0)
                 {
                     return false;
@@ -692,8 +685,8 @@ struct Emitter
             uint length = 0;
             const id = event_.id;
             const scalar = id == EventID.Scalar;
-            const collectionStart = [EventID.MappingStart, 
-                                     EventID.SequenceStart].canFind(id);
+            const collectionStart = id == EventID.MappingStart || 
+                                    id == EventID.SequenceStart;
 
             if((id == EventID.Alias || scalar || collectionStart) 
                && !event_.anchor.isNull())
@@ -815,8 +808,8 @@ struct Emitter
             if(analysis_.flags.isNull){analysis_ = analyzeScalar(event_.value);}
 
             const style          = event_.scalarStyle;
-            const invalidOrPlain = [ScalarStyle.Invalid, ScalarStyle.Plain].canFind(style);
-            const block          = [ScalarStyle.Literal, ScalarStyle.Folded].canFind(style);
+            const invalidOrPlain = style == ScalarStyle.Invalid || style == ScalarStyle.Plain;
+            const block          = style == ScalarStyle.Literal || style == ScalarStyle.Folded;
             const singleQuoted   = style == ScalarStyle.SingleQuoted;
             const doubleQuoted   = style == ScalarStyle.DoubleQuoted;
 
@@ -880,7 +873,7 @@ struct Emitter
 
             if(handle.length > 1) foreach(const dchar c; handle[1 .. $ - 1])
             {
-                enforce(isAlphaNum(c) || "-_".canFind(c),
+                enforce(isAlphaNum(c) || "-_"d.canFind(c),
                         new Error("Invalid character: " ~ to!string(c)  ~
                                   " in tag handle " ~ handle));
             }
@@ -901,7 +894,7 @@ struct Emitter
             foreach(const size_t i, const dchar c; prefix)
             {
                 const size_t idx = i + offset;
-                if(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%".canFind(c))
+                if(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
                 {
                     end = idx + 1;
                     continue;
@@ -947,7 +940,7 @@ struct Emitter
             size_t end = 0;
             foreach(const dchar c; suffix)
             {
-                if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]".canFind(c) || 
+                if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]"d.canFind(c) || 
                    (c == '!' && handle != "!"))
                 {
                     ++end;
@@ -973,7 +966,7 @@ struct Emitter
             const str = anchor.get;
             foreach(const dchar c; str)
             {
-                enforce(isAlphaNum(c) || "-_".canFind(c),
+                enforce(isAlphaNum(c) || "-_"d.canFind(c),
                         new Error("Invalid character: " ~ to!string(c) ~ " in anchor: " ~ str));
             }
             return str;
@@ -1017,7 +1010,7 @@ struct Emitter
 
             //Last character or followed by a whitespace.
             bool followedByWhitespace = scalar.length == 1 || 
-                                        " \t\0\n\r\u0085\u2028\u2029".canFind(scalar[1]);
+                                        " \t\0\n\r\u0085\u2028\u2029"d.canFind(scalar[1]);
 
             //The previous character is a space/break (false by default).
             bool previousSpace, previousBreak;
@@ -1028,11 +1021,11 @@ struct Emitter
                 if(index == 0)
                 {
                     //Leading indicators are special characters.
-                    if("#,[]{}&*!|>\'\"%@`".canFind(c))
+                    if("#,[]{}&*!|>\'\"%@`"d.canFind(c))
                     {
                         flowIndicators = blockIndicators = true;
                     }
-                    if("?:".canFind(c))
+                    if("?:"d.canFind(c))
                     {
                         flowIndicators = true;
                         if(followedByWhitespace){blockIndicators = true;}
@@ -1045,7 +1038,7 @@ struct Emitter
                 else
                 {
                     //Some indicators cannot appear within a scalar as well.
-                    if(",?[]{}".canFind(c)){flowIndicators = true;}
+                    if(",?[]{}"d.canFind(c)){flowIndicators = true;}
                     if(c == ':')
                     {
                         flowIndicators = true;
@@ -1058,7 +1051,7 @@ struct Emitter
                 }
 
                 //Check for line breaks, special, and unicode characters.
-                if("\n\u0085\u2028\u2029".canFind(c)){lineBreaks = true;}
+                if("\n\u0085\u2028\u2029"d.canFind(c)){lineBreaks = true;}
                 if(!(c == '\n' || (c >= '\x20' && c <= '\x7E')) &&
                    !((c == '\u0085' || (c >= '\xA0' && c <= '\uD7FF') ||
                      (c >= '\uE000' && c <= '\uFFFD')) && c != '\uFEFF'))
@@ -1075,7 +1068,7 @@ struct Emitter
                     previousSpace = true;
                     previousBreak = false;
                 }
-                else if("\n\u0085\u2028\u2029".canFind(c))
+                else if("\n\u0085\u2028\u2029"d.canFind(c))
                 {
                     if(index == 0){leadingBreak = true;}
                     if(index == scalar.length - 1){trailingBreak = true;}
@@ -1089,9 +1082,9 @@ struct Emitter
                 }
 
                 //Prepare for the next character.
-                preceededByWhitespace = "\0\n\r\u0085\u2028\u2029 \t".canFind(c);
+                preceededByWhitespace = "\0\n\r\u0085\u2028\u2029 \t"d.canFind(c);
                 followedByWhitespace = index + 2 >= scalar.length || 
-                                       "\0\n\r\u0085\u2028\u2029 \t".canFind(scalar[index + 2]);
+                                       "\0\n\r\u0085\u2028\u2029 \t"d.canFind(scalar[index + 2]);
             }
 
             with(analysis.flags)
@@ -1317,14 +1310,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!"\n\u0085\u2028\u2029".canFind(c))
+                    if(!"\n\u0085\u2028\u2029"d.canFind(c))
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         emitter_.writeIndent();
                     }
                 }
-                else if((c == dcharNone || "\' \n\u0085\u2028\u2029".canFind(c))
+                else if((c == dcharNone || "\' \n\u0085\u2028\u2029"d.canFind(c))
                         && startChar_ < endChar_)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
@@ -1350,7 +1343,7 @@ struct ScalarWriter
             {   
                 const dchar c = nextChar();
                 //handle special characters
-                if(c == dcharNone || "\"\\\u0085\u2028\u2029\uFEFF".canFind(c) ||
+                if(c == dcharNone || "\"\\\u0085\u2028\u2029\uFEFF"d.canFind(c) ||
                    !((c >= '\x20' && c <= '\x7E') || 
                      ((c >= '\xA0' && c <= '\uD7FF') || (c >= '\uE000' && c <= '\uFFFD'))))
                 {
@@ -1417,7 +1410,7 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!"\n\u0085\u2028\u2029".canFind(c))
+                    if(!"\n\u0085\u2028\u2029"d.canFind(c))
                     {
                         if(!leadingSpace && c != dcharNone && c != ' ')
                         {
@@ -1440,7 +1433,7 @@ struct ScalarWriter
                         writeCurrentRange(Flag!"UpdateColumn".yes);
                     }
                 }
-                else if(c == dcharNone || " \n\u0085\u2028\u2029".canFind(c))
+                else if(c == dcharNone || " \n\u0085\u2028\u2029"d.canFind(c))
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1461,13 +1454,13 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!"\n\u0085\u2028\u2029".canFind(c))
+                    if(!"\n\u0085\u2028\u2029"d.canFind(c))
                     {
                         writeLineBreaks();
                         if(c != dcharNone){emitter_.writeIndent();}
                     }
                 }
-                else if(c == dcharNone || "\n\u0085\u2028\u2029".canFind(c))
+                else if(c == dcharNone || "\n\u0085\u2028\u2029"d.canFind(c))
                 {
                     writeCurrentRange(Flag!"UpdateColumn".no);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1507,14 +1500,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!"\n\u0085\u2028\u2029".canFind(c))
+                    if(!"\n\u0085\u2028\u2029"d.canFind(c))
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         writeIndent(Flag!"ResetSpace".yes);
                     }
                 }
-                else if(c == dcharNone || " \n\u0085\u2028\u2029".canFind(c))
+                else if(c == dcharNone || " \n\u0085\u2028\u2029"d.canFind(c))
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                 }
@@ -1562,16 +1555,16 @@ struct ScalarWriter
             const last = lastChar(text_, end);
             const secondLast = end > 0 ? lastChar(text_, end) : 0;
 
-            if(" \n\u0085\u2028\u2029".canFind(text_[0]))
+            if(" \n\u0085\u2028\u2029"d.canFind(text_[0]))
             {
                 hints[hintsIdx++] = cast(char)('0' + bestIndent);
             }
-            if(!"\n\u0085\u2028\u2029".canFind(last))
+            if(!"\n\u0085\u2028\u2029"d.canFind(last))
             {
                 hints[hintsIdx++] = '-';
             }
             else if(std.utf.count(text_) == 1 || 
-                    "\n\u0085\u2028\u2029".canFind(secondLast))
+                    "\n\u0085\u2028\u2029"d.canFind(secondLast))
             {
                 hints[hintsIdx++] = '+';
             }
@@ -1643,7 +1636,7 @@ struct ScalarWriter
         void updateBreaks(in dchar c, in Flag!"UpdateSpaces" updateSpaces)
         {
             if(c == dcharNone){return;}
-            breaks_ = "\n\u0085\u2028\u2029".canFind(c);
+            breaks_ = "\n\u0085\u2028\u2029"d.canFind(c);
             if(updateSpaces){spaces_ = c == ' ';}
         }
 

@@ -122,7 +122,7 @@ final class Parser
         ///YAML version string.
         string YAMLVersion_ = null;
         ///Tag handle shortcuts and replacements.
-        tagDirective[] tagHandles_;
+        tagDirective[] tagDirectives_;
 
         ///Stack of states.
         Array!(Event delegate()) states_;
@@ -146,8 +146,8 @@ final class Parser
         ~this()
         {
             clear(currentEvent_);
-            clear(tagHandles_);
-            tagHandles_ = null;
+            clear(tagDirectives_);
+            tagDirectives_ = null;
             clear(states_);
             clear(marks_);
         }
@@ -266,7 +266,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
                                     TokenID.StreamEnd))
             {
-                tagHandles_ = defaultTagDirectives_;
+                tagDirectives_ = defaultTagDirectives_;
                 immutable token = scanner_.peekToken();
 
                 states_ ~= &parseDocumentEnd;
@@ -339,7 +339,7 @@ final class Parser
         {
             //Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
-            tagHandles_.length = 0;
+            tagDirectives_.length = 0;
 
             //Process directives.
             while(scanner_.checkToken(TokenID.Directive))
@@ -363,7 +363,7 @@ final class Parser
                     assert(parts.length == 3, "Tag directive stored incorrectly in a token");
                     auto handle = parts[1];
 
-                    foreach(ref pair; tagHandles_)
+                    foreach(ref pair; tagDirectives_)
                     {
                         //handle
                         auto h = pair[0];
@@ -371,17 +371,17 @@ final class Parser
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagHandles_ ~= tagDirective(handle, parts[2]);
+                    tagDirectives_ ~= tagDirective(handle, parts[2]);
                 }
             }
 
-            TagDirectives value = tagHandles_.length == 0 ? TagDirectives() : TagDirectives(tagHandles_);
+            TagDirectives value = tagDirectives_.length == 0 ? TagDirectives() : TagDirectives(tagDirectives_);
 
             //Add any default tag handles that haven't been overridden.
             foreach(ref defaultPair; defaultTagDirectives_)
             {
                 bool found = false;
-                foreach(ref pair; tagHandles_)
+                foreach(ref pair; tagDirectives_)
                 {
                     if(defaultPair[0] == pair[0] )
                     {
@@ -389,7 +389,7 @@ final class Parser
                         break;
                     }
                 }
-                if(!found){tagHandles_ ~= defaultPair;}
+                if(!found){tagDirectives_ ~= defaultPair;}
             }
 
             return value;
@@ -541,7 +541,7 @@ final class Parser
             if(handle.length > 0)
             {
                 string replacement = null;
-                foreach(ref pair; tagHandles_)
+                foreach(ref pair; tagDirectives_)
                 {
                     //pair[0] is handle, pair[1] replacement.
                     if(pair[0] == handle)
@@ -550,7 +550,7 @@ final class Parser
                         break;
                     }
                 }
-                //handle must be in tagHandles_
+                //handle must be in tagDirectives_
                 enforce(replacement !is null,
                         new Error("While parsing a node", startMark,
                                   "found undefined tag handle: " ~ handle, tagMark));

@@ -51,6 +51,8 @@ final class Reader
         uint line_;
         ///Current column in file.
         uint column_;
+        ///Number of bytes still available (not read) in the stream.
+        size_t available_;
 
         ///Capacity of raw buffers.
         static immutable bufferLength8_ = 8;
@@ -60,9 +62,9 @@ final class Reader
         union
         {
             ///Buffer to hold UTF-8 data before decoding.
-            char[bufferLength8_] rawBuffer8_;
+            char[bufferLength8_ + 1] rawBuffer8_;
             ///Buffer to hold UTF-16 data before decoding.
-            wchar[bufferLength16_] rawBuffer16_;
+            wchar[bufferLength16_ + 1] rawBuffer16_;
         }
         ///Number of elements held in the used raw buffer.
         uint rawUsed_ = 0;
@@ -71,18 +73,23 @@ final class Reader
         /**
          * Construct a Reader.
          *
-         * Params:  stream = Input stream. Must be readable.
+         * Params:  stream = Input stream. Must be readable and seekable.
          *
          * Throws:  ReaderException if the stream is invalid.
          */
         this(Stream stream)
-        in{assert(stream.readable, "Can't read YAML from a non-readable stream");}
+        in
+        {
+            assert(stream.readable && stream.seekable, 
+                   "Can't read YAML from a stream that is not readable and seekable");
+        }
         body
         {
             stream_ = new EndianStream(stream);
+            available_ = stream_.available;
 
             //handle files short enough not to have a BOM
-            if(stream_.available < 2)
+            if(available_ < 2)
             {
                 encoding_ = Encoding.UTF_8;
                 return;
@@ -104,16 +111,17 @@ final class Reader
                     encoding_ = Encoding.UTF_16; 
                     rawBuffer16_[0] = stream_.getcw();
                     rawUsed_ = 1;
-                    enforce(stream_.available % 2 == 0, 
+                    enforce(available_ % 2 == 0, 
                             new ReaderException("Odd byte count in an UTF-16 stream"));
                     break;
                 case 3, 4: 
-                    enforce(stream_.available % 4 == 0, 
+                    enforce(available_ % 4 == 0, 
                             new ReaderException("Byte count in an UTF-32 stream not divisible by 4"));
                     encoding_ = Encoding.UTF_32;
                     break;
                 default: assert(false, "Unknown UTF BOM");
             }
+            available_ = stream_.available;
         }
 
         ///Destroy the Reader.
@@ -209,7 +217,7 @@ final class Reader
         void forward(size_t length = 1)
         {
             //This is here due to optimization.
-            static newlines = "\n\u0085\u2028\u2029";
+            static newlines = "\n\u0085\u2028\u2029"d;
             updateBuffer(length + 1);
 
             while(length > 0)
@@ -294,16 +302,10 @@ final class Reader
          *          if nonprintable characters are detected, or
          *          if there is an error reading from the stream.
          */
-        void loadChars(uint chars)
+        void loadChars(size_t chars)
         {
-            /**
-             * Get next character from the stream.
-             *
-             * Params:  available = Bytes available in the stream.
-             *
-             * Returns: Next character in the stream.
-             */
-            dchar getDChar(in size_t available)
+            ///Get next character from the stream.
+            dchar getDChar()
             {
                 switch(encoding_)
                 {
@@ -317,13 +319,14 @@ final class Reader
                             const dchar result = rawBuffer8_[0];
                             --rawUsed_;
                             //Move the data.
-                            temp[0 .. rawUsed_] = rawBuffer8_[1 .. rawUsed_ + 1];
-                            rawBuffer8_[0 .. rawUsed_] = temp[0 .. rawUsed_];
+                            *(cast(ulong*)temp.ptr) = *(cast(ulong*)(rawBuffer8_.ptr + 1));
+                            *(cast(ulong*)rawBuffer8_.ptr) = *(cast(ulong*)temp.ptr);
                             return result;
                         }
 
                         //Bytes to read.
-                        const readBytes = min(available, bufferLength8_ - rawUsed_);
+                        const readBytes = min(available_, bufferLength8_ - rawUsed_);
+                        available_ -= readBytes;
                         //Length of data in rawBuffer8_ after reading.
                         const len = rawUsed_ + readBytes;
                         //Read the data.
@@ -342,7 +345,8 @@ final class Reader
                         //Temp buffer for moving data in rawBuffer8_.
                         wchar[bufferLength16_] temp;
                         //Words to read.
-                        size_t readWords = min(available / 2, bufferLength16_ - rawUsed_);
+                        size_t readWords = min(available_ / 2, bufferLength16_ - rawUsed_);
+                        available_ -= readWords * 2;
                         //Length of data in rawBuffer16_ after reading.
                         size_t len = rawUsed_;
                         //Read the data.
@@ -365,6 +369,7 @@ final class Reader
                         return result;
                     case Encoding.UTF_32:
                         dchar result;
+                        available_ -= 4;
                         stream_.read(result);
                         return result;
                     default: assert(false);
@@ -374,13 +379,11 @@ final class Reader
             const oldLength = buffer_.length;
             const oldPosition = stream_.position;
 
-
             //Preallocating memory to limit GC reallocations.
             buffer_.length = buffer_.length + chars;
             scope(exit)
             {
                 buffer_.length = buffer_.length - chars;
-
                 enforce(printable(buffer_[oldLength .. $]), 
                         new ReaderException("Special unicode characters are not allowed"));
             }
@@ -388,8 +391,7 @@ final class Reader
             try for(uint c = 0; chars; --chars, ++c)
             {
                 if(done){break;}
-                const available = stream_.available;
-                buffer_[oldLength + c] = getDChar(available);
+                buffer_[oldLength + c] = getDChar();
             }
             catch(UtfException e)
             {
@@ -428,7 +430,7 @@ final class Reader
         ///Are we done reading?
         @property bool done()
         {   
-            return (stream_.available == 0 && 
+            return (available_ == 0 && 
                     ((encoding_ == Encoding.UTF_8  && rawUsed_ == 0) ||
                      (encoding_ == Encoding.UTF_16 && rawUsed_ == 0) ||
                      encoding_ == Encoding.UTF_32));

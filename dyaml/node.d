@@ -666,11 +666,11 @@ struct Node
             Node k3 = Node("13");
             Node k4 = Node("14");
 
-            Node narray = Node(Value([n1, n2, n3, n4]));
-            Node nmap   = Node(Value([Pair(k1, n1),
-                                      Pair(k2, n2),  
-                                      Pair(k3, n3),  
-                                      Pair(k4, n4)]));
+            Node narray = Node([n1, n2, n3, n4]);
+            Node nmap   = Node([Pair(k1, n1),
+                                Pair(k2, n2),  
+                                Pair(k3, n3),  
+                                Pair(k4, n4)]);
 
             assert(narray[0].as!int == 11);
             assert(null !is collectException(narray[42]));
@@ -793,7 +793,7 @@ struct Node
             Node n2 = Node(Value(cast(long)12));
             Node n3 = Node(Value(cast(long)13));
             Node n4 = Node(Value(cast(long)14));
-            Node narray = Node(Value([n1, n2, n3, n4]));
+            Node narray = Node([n1, n2, n3, n4]);
 
             int[] array, array2;
             foreach(int value; narray)
@@ -858,20 +858,20 @@ struct Node
             alias Node.Value Value;
             alias Node.Pair Pair;
 
-            Node n1 = Node(Value(cast(long)11));
-            Node n2 = Node(Value(cast(long)12));
-            Node n3 = Node(Value(cast(long)13));
-            Node n4 = Node(Value(cast(long)14));
+            Node n1 = Node(cast(long)11);
+            Node n2 = Node(cast(long)12);
+            Node n3 = Node(cast(long)13);
+            Node n4 = Node(cast(long)14);
 
-            Node k1 = Node(Value("11"));
-            Node k2 = Node(Value("12"));
-            Node k3 = Node(Value("13"));
-            Node k4 = Node(Value("14"));
+            Node k1 = Node("11");
+            Node k2 = Node("12");
+            Node k3 = Node("13");
+            Node k4 = Node("14");
 
-            Node nmap1 = Node(Value([Pair(k1, n1),
-                                     Pair(k2, n2),  
-                                     Pair(k3, n3),  
-                                     Pair(k4, n4)]));
+            Node nmap1 = Node([Pair(k1, n1),
+                               Pair(k2, n2),  
+                               Pair(k3, n3),  
+                               Pair(k4, n4)]);
 
             int[string] expected = ["11" : 11,
                                     "12" : 12,
@@ -884,10 +884,10 @@ struct Node
             }
             assert(array == expected);
 
-            Node nmap2 = Node(Value([Pair(k1, Node(Value(cast(long)5))),
-                                     Pair(k2, Node(Value(true))),  
-                                     Pair(k3, Node(Value(cast(real)1.0))),  
-                                     Pair(k4, Node(Value("yarly")))]));
+            Node nmap2 = Node([Pair(k1, Node(cast(long)5)),
+                               Pair(k2, Node(true)),  
+                               Pair(k3, Node(cast(real)1.0)),  
+                               Pair(k4, Node("yarly"))]);
 
             foreach(string key, Node value; nmap2)
             {
@@ -1073,7 +1073,7 @@ struct Node
                 auto idx = findPair(index);
                 if(idx >= 0)
                 {
-                    auto pairs = as!(Node.Pair[])();
+                    auto pairs = get!(Node.Pair[])();
                     moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
                     pairs.length = pairs.length - 1;
                     value_ = Value(pairs);

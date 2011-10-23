@@ -127,7 +127,7 @@ struct Loader
         /**
          * Construct a Loader to load YAML from a _stream.
          *
-         * Params:  stream = Stream to read from. Must be readable.
+         * Params:  stream = Stream to read from. Must be readable and seekable.
          *
          * Throws:  YAMLException if stream could not be read.
          */

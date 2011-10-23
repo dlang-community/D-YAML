@@ -344,9 +344,11 @@ YAMLMerge constructMerge(Mark start, Mark end, ref Node node)
 ///Construct a boolean node.
 bool constructBool(Mark start, Mark end, ref Node node)
 {
+    static yes = ["yes", "true", "on"];
+    static no = ["no", "false", "off"];
     string value = node.as!string().toLower();
-    if(["yes", "true", "on"].canFind(value)) {return true;}
-    if(["no", "false", "off"].canFind(value)){return false;}
+    if(yes.canFind(value)){return true;}
+    if(no.canFind(value)) {return false;}
     throw new Error("Unable to parse boolean value: " ~ value, start, end);
 }
 
