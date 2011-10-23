@@ -10,6 +10,7 @@ module dyaml.testemitter;
 import std.algorithm;
 import std.file;
 import std.range;
+import std.typecons;
 
 import dyaml.dumper;
 import dyaml.event;
@@ -163,7 +164,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                     if(event.id == EventID.Scalar)
                     {
                         event = scalarEvent(Mark(), Mark(), event.anchor, event.tag,
-                                            [event.implicit, event.implicit_2],
+                                            tuple(event.implicit, event.implicit_2),
                                             event.value, style);
                     }
                     else if(event.id == EventID.SequenceStart)

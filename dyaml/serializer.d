@@ -13,6 +13,7 @@ module dyaml.serializer;
 
 import std.array;
 import std.format;
+import std.typecons;
 
 import dyaml.anchor;
 import dyaml.emitter;
@@ -193,12 +194,13 @@ struct Serializer
             {
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
-                Tag detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
-                Tag defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
+                const Tag detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
+                const Tag defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
+                bool isDetected = node.tag_ == detectedTag;
+                bool isDefault = node.tag_ == defaultTag;
 
                 emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
-                              [node.tag_ == detectedTag, node.tag_ == defaultTag], 
-                              value, ScalarStyle.Invalid));
+                              tuple(isDetected, isDefault), value, ScalarStyle.Invalid));
                 return;
             }
             if(node.isSequence)

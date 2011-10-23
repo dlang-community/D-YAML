@@ -138,8 +138,11 @@ final class Reader
         {
             updateBuffer(index + 1);
 
-            enforce(buffer_.length >= bufferOffset_ + index + 1, 
-                    new ReaderException("Trying to read past the end of the stream"));
+            if(buffer_.length < bufferOffset_ + index + 1)
+            {
+                throw new ReaderException("Trying to read past the end of the stream");
+            }
+
             return buffer_[bufferOffset_ + index];
         }
 
@@ -205,6 +208,8 @@ final class Reader
          */
         void forward(size_t length = 1)
         {
+            //This is here due to optimization.
+            static newlines = "\n\u0085\u2028\u2029";
             updateBuffer(length + 1);
 
             while(length > 0)
@@ -212,9 +217,8 @@ final class Reader
                 const c = buffer_[bufferOffset_];
                 ++bufferOffset_;
                 ++charIndex_;
-                //new line
-                if(['\n', '\u0085', '\u2028', '\u2029'].canFind(c) || 
-                   (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                //New line.
+                if(newlines.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
                     column_ = 0;
@@ -246,7 +250,7 @@ final class Reader
          * If there are not enough characters in the stream, it will get
          * as many as possible.
          *
-         * Params:  length = Number of characters we need to read.
+         * Params:  length = Mimimum number of characters we need to read.
          *
          * Throws:  ReaderException if trying to read past the end of the stream
          *          or if invalid data is read.
@@ -265,10 +269,10 @@ final class Reader
                 bufferOffset_ = 0;
             }
 
-            ////load chars in batches of at most 64 bytes
+            ////Load chars in batches of at most 1024 bytes (256 chars)
             while(buffer_.length <= bufferOffset_ + length)
             {
-                loadChars(16);
+                loadChars(256);
 
                 if(done)
                 {
@@ -290,10 +294,8 @@ final class Reader
          *          if nonprintable characters are detected, or
          *          if there is an error reading from the stream.
          */
-        void loadChars(in uint chars)
+        void loadChars(uint chars)
         {
-            const oldLength = buffer_.length;
-
             /**
              * Get next character from the stream.
              *
@@ -369,15 +371,25 @@ final class Reader
                 }
             }
 
+            const oldLength = buffer_.length;
             const oldPosition = stream_.position;
-            try 
+
+
+            //Preallocating memory to limit GC reallocations.
+            buffer_.length = buffer_.length + chars;
+            scope(exit)
             {
-                foreach(i; 0 .. chars)
-                {
-                    if(done){break;}
-                    const available = stream_.available;
-                    buffer_ ~= getDChar(available);
-                }
+                buffer_.length = buffer_.length - chars;
+
+                enforce(printable(buffer_[oldLength .. $]), 
+                        new ReaderException("Special unicode characters are not allowed"));
+            }
+
+            try for(uint c = 0; chars; --chars, ++c)
+            {
+                if(done){break;}
+                const available = stream_.available;
+                buffer_[oldLength + c] = getDChar(available);
             }
             catch(UtfException e)
             {
@@ -389,9 +401,6 @@ final class Reader
             {
                 throw new ReaderException(e.msg);
             }
-
-            enforce(printable(buffer_[oldLength .. $]), 
-                    new ReaderException("Special unicode characters are not allowed"));
         }
 
         /**

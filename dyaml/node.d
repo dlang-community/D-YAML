@@ -1350,7 +1350,7 @@ package:
  *
  * Params:  pairs   = Array of pairs to merge into.
  *          toMerge = Pair to merge.
- */
+ */ 
 void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge)
 {
     foreach(ref pair; pairs)
@@ -1371,5 +1371,14 @@ void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge)
  */
 void merge(ref Node.Pair[] pairs, Node.Pair[] toMerge)
 {
-    foreach(ref pair; toMerge){merge(pairs, pair);}
+    bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
+
+    //Preallocating to limit GC reallocations.
+    auto len = pairs.length;
+    pairs.length = len + toMerge.length;
+    foreach(ref pair; toMerge) if(!canFind!eq(pairs, pair))
+    {
+        pairs[len++] = pair;
+    }
+    pairs.length = len;
 }

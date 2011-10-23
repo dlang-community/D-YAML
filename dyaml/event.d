@@ -183,7 +183,7 @@ Event documentEndEvent(Mark start, Mark end, bool explicit)
  *          style    = Scalar style.
  */
 Event scalarEvent(in Mark start, in Mark end, in Anchor anchor, in Tag tag, 
-                  in bool[2] implicit, in string value, 
+                  in Tuple!(bool, bool) implicit, in string value, 
                   in ScalarStyle style = ScalarStyle.Invalid) 
 {
     return Event(value, start, end, anchor, tag, EventID.Scalar, style, implicit[0],

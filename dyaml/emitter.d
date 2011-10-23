@@ -26,6 +26,7 @@ import std.utf;
 
 import dyaml.anchor;
 import dyaml.encoding;
+import dyaml.escapes;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.flags;
@@ -1343,23 +1344,6 @@ struct ScalarWriter
         ///Write text as double quoted scalar.
         void writeDoubleQuoted()
         {
-            immutable dchar[dchar] escapeReplacements = 
-                ['\0':     '0',
-                 '\x07':   'a',
-                 '\x08':   'b',
-                 '\x09':   't',
-                 '\x0A':   'n',
-                 '\x0B':   'v',
-                 '\x0C':   'f',
-                 '\x0D':   'r',
-                 '\x1B':   'e',
-                 '\"':     '\"',
-                 '\\':     '\\',
-                 '\u0085': 'N',
-                 '\xA0':   '_',
-                 '\u2028': 'L',
-                 '\u2029': 'P'];
-
             resetTextPosition();
             emitter_.writeIndicator("\"", true);
             do
@@ -1377,10 +1361,10 @@ struct ScalarWriter
                     if(c != dcharNone)
                     {
                         auto appender = appender!string();
-                        if((c in escapeReplacements) !is null)
+                        if((c in dyaml.escapes.toEscapes) !is null)
                         {
                             appender.put('\\');
-                            appender.put(escapeReplacements[c]);
+                            appender.put(dyaml.escapes.toEscapes[c]);
                         }
                         else
                         {

@@ -22,6 +22,7 @@ import std.string;
 import std.typecons;
 import std.utf;
 
+import dyaml.escapes;
 import dyaml.exception;
 import dyaml.queue;
 import dyaml.reader;
@@ -140,12 +141,16 @@ final class Scanner
         ///Possible simple keys indexed by flow levels.
         SimpleKey[uint] possibleSimpleKeys_;
 
+        ///Used for constructing strings while limiting reallocation.
+        Appender!(dchar[]) appender_;
+
     public:
         ///Construct a Scanner using specified Reader.
         this(Reader reader)
         {
             //Return the next token, but do not delete it from the queue
             reader_ = reader;
+            appender_ = appender!(dchar[])();
             fetchStreamStart();
         }
 
@@ -156,6 +161,7 @@ final class Scanner
             clear(indents_);
             indents_ = null;
             clear(possibleSimpleKeys_);
+            clear(appender_);
             possibleSimpleKeys_ = null;
             reader_ = null;
         }
@@ -412,8 +418,7 @@ final class Scanner
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
             //There's probably a saner way to clear an associated array than this.
-            SimpleKey[uint] empty;
-            possibleSimpleKeys_ = empty;
+            clear(possibleSimpleKeys_);
 
             tokens_.push(streamEndToken(reader_.mark, reader_.mark));
             done_ = true;
@@ -1066,15 +1071,15 @@ final class Scanner
 
             dstring lineBreak = "";
 
-            //Used to construct the result.
-            auto appender = appender!string();
+            //Using appender_, so clear it when we're done.
+            scope(exit){appender_.clear();}
 
             //Scan the inner part of the block scalar.
             while(reader_.column == indent && reader_.peek() != '\0')
             {
-                appender.put(breaks);
+                appender_.put(breaks);
                 const bool leadingNonSpace = !" \t".canFind(reader_.peek());
-                appender.put(scanToNextBreak());
+                appender_.put(scanToNextBreak());
                 lineBreak = ""d ~ scanLineBreak();
 
                 auto scalarBreaks = scanBlockScalarBreaks(indent);
@@ -1089,9 +1094,9 @@ final class Scanner
                     if(style == ScalarStyle.Folded && lineBreak == "\n" &&
                        leadingNonSpace && !" \t".canFind(reader_.peek()))
                     {
-                        if(breaks.length == 0){appender.put(' ');}
+                        if(breaks.length == 0){appender_.put(' ');}
                     }
-                    else{appender.put(lineBreak);}
+                    else{appender_.put(lineBreak);}
                     ////this is Clark Evans's interpretation (also in the spec
                     ////examples):
                     //
@@ -1099,18 +1104,18 @@ final class Scanner
                     //{
                     //    if(breaks.length == 0)
                     //    {
-                    //        if(!" \t"d.canFind(reader_.peek())){appender.put(' ');}
+                    //        if(!" \t"d.canFind(reader_.peek())){appender_.put(' ');}
                     //        else{chunks ~= lineBreak;}
                     //    }
                     //}
-                    //else{appender.put(lineBreak);}
+                    //else{appender_.put(lineBreak);}
                 }
                 else{break;}
             }
-            if(chomping != Chomping.Strip){appender.put(lineBreak);}
-            if(chomping == Chomping.Keep){appender.put(breaks);}
+            if(chomping != Chomping.Strip){appender_.put(lineBreak);}
+            if(chomping == Chomping.Keep){appender_.put(breaks);}
 
-            return scalarToken(startMark, endMark, to!string(appender.data), style);
+            return scalarToken(startMark, endMark, to!string(cast(dstring)appender_.data), style);
         }
 
         ///Scan chomping and indentation indicators of a scalar token.
@@ -1214,45 +1219,25 @@ final class Scanner
             const startMark = reader_.mark;
             const quote = reader_.get();
 
-            auto appender = appender!dstring();
-            appender.put(scanFlowScalarNonSpaces(quotes, startMark));
+            //Using appender_, so clear it when we're done.
+            scope(exit){appender_.clear();}
+
+            //Puts scanned data to appender_.
+            scanFlowScalarNonSpaces(quotes, startMark);
             while(reader_.peek() != quote)
             {
-                appender.put(scanFlowScalarSpaces(startMark));
-                appender.put(scanFlowScalarNonSpaces(quotes, startMark));
+                //Puts scanned data to appender_.
+                scanFlowScalarSpaces(startMark);
+                scanFlowScalarNonSpaces(quotes, startMark);
             }
             reader_.forward();
 
-            return scalarToken(startMark, reader_.mark, to!string(appender.data), quotes);
+            return scalarToken(startMark, reader_.mark, to!string(cast(dstring)appender_.data), quotes);
         }
 
         ///Scan nonspace characters in a flow scalar.
-        dstring scanFlowScalarNonSpaces(ScalarStyle quotes, in Mark startMark)
+        void scanFlowScalarNonSpaces(ScalarStyle quotes, in Mark startMark)
         {
-            dchar[dchar] escapeReplacements = 
-                ['0':  '\0',
-                 'a':  '\x07',
-                 'b':  '\x08',
-                 't':  '\x09',
-                 '\t': '\x09',
-                 'n':  '\x0A',
-                 'v':  '\x0B',
-                 'f':  '\x0C',
-                 'r':  '\x0D',
-                 'e':  '\x1B',
-                 ' ':  '\x20',
-                 '\"': '\"',
-                 '\\': '\\',
-                 'N':  '\u0085',
-                 '_':  '\xA0',
-                 'L':  '\u2028',
-                 'P':  '\u2029'];
-
-            uint[dchar] escapeCodes = ['x': 2, 'u': 4, 'U': 8];
-
-            //Can't use an Appender due to a Phobos bug, so appending to a string.
-            dstring result;
-
             for(;;)
             {
                 dchar c = reader_.peek();
@@ -1263,33 +1248,33 @@ final class Scanner
                     c = reader_.peek(length);
                 }
 
-                if(length > 0){result ~= reader_.get(length);}
+                if(length > 0){appender_.put(reader_.get(length));}
 
                 c = reader_.peek();
                 if(quotes == ScalarStyle.SingleQuoted && 
                    c == '\'' && reader_.peek(1) == '\'')
                 {
-                    result ~= '\'';
+                    appender_.put('\'');
                     reader_.forward(2);
                 }
                 else if((quotes == ScalarStyle.DoubleQuoted && c == '\'') || 
                         (quotes == ScalarStyle.SingleQuoted && "\"\\".canFind(c)))
                 {
-                    result ~= c;
+                    appender_.put(c);
                     reader_.forward();
                 }
                 else if(quotes == ScalarStyle.DoubleQuoted && c == '\\')
                 {
                     reader_.forward();
                     c = reader_.peek();
-                    if((c in escapeReplacements) !is null)
+                    if((c in dyaml.escapes.fromEscapes) !is null)
                     {
-                        result ~= escapeReplacements[c];
+                        appender_.put(dyaml.escapes.fromEscapes[c]);
                         reader_.forward();
                     }
-                    else if((c in escapeCodes) !is null)
+                    else if((c in dyaml.escapes.escapeHexCodes) !is null)
                     {
-                        length = escapeCodes[c];
+                        length = dyaml.escapes.escapeHexCodes[c];
                         reader_.forward();
 
                         foreach(i; 0 .. length)
@@ -1303,12 +1288,12 @@ final class Scanner
                         }
 
                         dstring hex = reader_.get(length);
-                        result ~= cast(dchar)parse!int(hex, 16);
+                        appender_.put(cast(dchar)parse!int(hex, 16));
                     }
                     else if("\n\r\u0085\u2028\u2029".canFind(c))
                     {
                         scanLineBreak();
-                        result ~= scanFlowScalarBreaks(startMark);
+                        appender_.put(scanFlowScalarBreaks(startMark));
                     }
                     else
                     {
@@ -1318,12 +1303,15 @@ final class Scanner
                                                    to!string(c), reader_.mark);
                     }
                 }
-                else{return result;}
+                else
+                {
+                    return;
+                }
             }
         }
 
         ///Scan space characters in a flow scalar.
-        dstring scanFlowScalarSpaces(in Mark startMark)
+        void scanFlowScalarSpaces(in Mark startMark)
         {
             uint length = 0;
             while(" \t".canFind(reader_.peek(length))){++length;}
@@ -1334,18 +1322,16 @@ final class Scanner
                     new Error("While scanning a quoted scalar", startMark, 
                               "found unexpected end of stream", reader_.mark));
 
-            auto appender = appender!dstring();
             if("\n\r\u0085\u2028\u2029".canFind(c))
             {
                 const lineBreak = scanLineBreak();
                 const breaks = scanFlowScalarBreaks(startMark);
 
-                if(lineBreak != '\n'){appender.put(lineBreak);}
-                else if(breaks.length == 0){appender.put(' ');}
-                appender.put(breaks);
+                if(lineBreak != '\n'){appender_.put(lineBreak);}
+                else if(breaks.length == 0){appender_.put(' ');}
+                appender_.put(breaks);
             }
-            else{appender.put(whitespaces);}
-            return appender.data;
+            else{appender_.put(whitespaces);}
         }
 
         ///Scan line breaks in a flow scalar.
@@ -1378,7 +1364,8 @@ final class Scanner
         {
             //We keep track of the allowSimpleKey_ flag here.
             //Indentation rules are loosed for the flow context
-            auto appender = appender!dstring();
+            //Using appender_, so clear it when we're done.
+            scope(exit){appender_.clear();}
             const startMark = reader_.mark;
             Mark endMark = startMark;
             const indent = indent_ + 1;
@@ -1420,8 +1407,8 @@ final class Scanner
                 if(length == 0){break;}
                 allowSimpleKey_ = false;
 
-                appender.put(spaces);
-                appender.put(reader_.get(length));
+                appender_.put(spaces);
+                appender_.put(reader_.get(length));
 
                 endMark = reader_.mark;
 
@@ -1432,7 +1419,7 @@ final class Scanner
                     break;
                 }
             }
-            return scalarToken(startMark, endMark, to!string(appender.data), ScalarStyle.Plain);
+            return scalarToken(startMark, endMark, to!string(cast(dstring)appender_.data), ScalarStyle.Plain);
         }
 
         ///Scan spaces in a plain scalar.
@@ -1516,7 +1503,8 @@ final class Scanner
         dstring scanTagURI(string name, in Mark startMark)
         {
             //Note: we do not check if URI is well-formed.
-            auto appender = appender!dstring();
+            //Using appender_, so clear it when we're done.
+            scope(exit){appender_.clear();}
             uint length = 0;
 
             dchar c = reader_.peek();
@@ -1524,23 +1512,23 @@ final class Scanner
             {
                 if(c == '%')
                 {
-                    appender.put(reader_.get(length));
+                    appender_.put(reader_.get(length));
                     length = 0;
-                    appender.put(scanURIEscapes(name, startMark));
+                    appender_.put(scanURIEscapes(name, startMark));
                 }
                 else{++length;}
                 c = reader_.peek(length);
             }
             if(length > 0)
             {
-                appender.put(reader_.get(length));
+                appender_.put(reader_.get(length));
                 length = 0;
             }
-            enforce(appender.data.length > 0,
+            enforce(appender_.data.length > 0,
                     new Error("While parsing a " ~ name, startMark, 
                               "expected URI, but found: " ~ to!string(c), reader_.mark));
 
-            return appender.data;
+            return cast(dstring)appender_.data;
         }
 
         ///Scan URI escape sequences.
@@ -1606,8 +1594,7 @@ final class Scanner
         {
             const c = reader_.peek();
 
-            dchar[] plainLineBreaks = ['\r', '\n', '\u0085'];
-            if(plainLineBreaks.canFind(c))
+            if("\r\n\u0085".canFind(c))
             {
                 if(reader_.prefix(2) == "\r\n"){reader_.forward(2);}
                 else{reader_.forward();}

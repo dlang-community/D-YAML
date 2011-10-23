@@ -12,6 +12,7 @@ module dyaml.parser;
 
 
 import std.array;
+import std.container;
 import std.conv;
 import std.exception;
 import std.typecons;
@@ -124,9 +125,10 @@ final class Parser
         tagDirective[] tagHandles_;
 
         ///Stack of states.
-        Event delegate()[] states_;
+        Array!(Event delegate()) states_;
         ///Stack of marks used to keep track of extents of e.g. YAML collections.
-        Mark[] marks_;
+        Array!Mark marks_;
+
         ///Current state.
         Event delegate() state_;
 
@@ -136,6 +138,8 @@ final class Parser
         {
             state_ = &parseStreamStart;
             scanner_ = scanner;
+            states_.reserve(32);
+            marks_.reserve(32);
         }
 
         ///Destroy the parser.
@@ -145,9 +149,7 @@ final class Parser
             clear(tagHandles_);
             tagHandles_ = null;
             clear(states_);
-            states_ = null;
             clear(marks_);
-            marks_ = null;
         }
 
         /**
@@ -228,8 +230,8 @@ final class Parser
         {
             enforce(states_.length > 0, 
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
-            const result = states_.back();
-            states_.popBack;
+            const result = states_.back;
+            states_.length = states_.length - 1;
             return result;
         }
 
@@ -238,8 +240,8 @@ final class Parser
         {
             enforce(marks_.length > 0, 
                     new YAMLException("Parser: Need to pop mark but no marks left to pop"));
-            const result = marks_.back();
-            marks_.popBack;
+            const result = marks_.back;
+            marks_.length = marks_.length - 1;
             return result;
         }
 
@@ -468,7 +470,7 @@ final class Parser
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
                 return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag), 
-                                   [implicit, implicit_2], token.value, token.style);
+                                   tuple(implicit, implicit_2), token.value, token.style);
             }
 
             if(scanner_.checkToken(TokenID.FlowSequenceStart))
@@ -512,7 +514,7 @@ final class Parser
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
                 return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
-                                   [implicit, false] , "");
+                                   tuple(implicit, false) , "");
             }
 
             immutable token = scanner_.peekToken();
@@ -585,7 +587,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 immutable token = scanner_.peekToken();
-                throw new Error("While parsing a block collection", marks_[$ - 1],
+                throw new Error("While parsing a block collection", marks_.back,
                                 "expected block end, but found " ~ token.idString, 
                                 token.startMark);
             }
@@ -650,7 +652,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 immutable token = scanner_.peekToken();
-                throw new Error("While parsing a block mapping", marks_[$ - 1],
+                throw new Error("While parsing a block mapping", marks_.back,
                                 "expected block end, but found: " ~ token.idString, 
                                 token.startMark);
             }
@@ -711,7 +713,7 @@ final class Parser
                     else
                     {
                         immutable token = scanner_.peekToken;
-                        throw new Error("While parsing a flow sequence", marks_[$ - 1],
+                        throw new Error("While parsing a flow sequence", marks_.back,
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
                     }
@@ -818,7 +820,7 @@ final class Parser
                     else
                     {
                         immutable token = scanner_.peekToken;
-                        throw new Error("While parsing a flow mapping", marks_[$ - 1],
+                        throw new Error("While parsing a flow mapping", marks_.back,
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);
                     }
@@ -860,6 +862,6 @@ final class Parser
         {
             //PyYAML uses a Tuple!(true, false) for the second last arg here,
             //but the second bool is never used after that - so we don't use it.
-            return scalarEvent(mark, mark, Anchor(), Tag(), [true, false], "");
+            return scalarEvent(mark, mark, Anchor(), Tag(), tuple(true, false), "");
         }
 }
