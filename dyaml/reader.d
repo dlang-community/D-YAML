@@ -40,6 +40,8 @@ final class Reader
     private:
         ///Input stream.
         EndianStream stream_;
+        ///Allocated space for buffer_.
+        dchar[] bufferAllocated_;
         ///Buffer of currently loaded characters.
         dchar[] buffer_;
         ///Current position within buffer. Only data after this position can be read.
@@ -123,13 +125,15 @@ final class Reader
                 default: assert(false, "Unknown UTF BOM");
             }
             available_ = stream_.available;
+
+            bufferReserve(256);
         }
 
         ///Destroy the Reader.
         ~this()
         {
-            clear(buffer_);
-            buffer_ = null;
+            core.stdc.stdlib.free(bufferAllocated_.ptr);
+            buffer_ = bufferAllocated_ = null;
         }
 
         /**
@@ -158,6 +162,9 @@ final class Reader
         /**
          * Get specified number of characters starting at current position.
          *
+         * Note: This gets only a "view" into the internal buffer,
+         *       which WILL get invalidated after other Reader calls.
+         *
          * Params: length = Number of characters to get.
          *
          * Returns: Characters starting at current position.
@@ -172,7 +179,7 @@ final class Reader
             const end = min(buffer_.length, bufferOffset_ + length);
             //need to duplicate as we change buffer content with C functions
             //and could end up with returned string referencing changed data
-            return cast(dstring)buffer_[bufferOffset_ .. end].dup;
+            return cast(dstring)buffer_[bufferOffset_ .. end];
         }
 
         /**
@@ -202,9 +209,9 @@ final class Reader
          */
         dstring get(in size_t length)
         {
-            dstring result = prefix(length);
+            auto result = prefix(length).dup;
             forward(length);
-            return result;
+            return cast(dstring)result;
         }
 
         /**
@@ -273,7 +280,7 @@ final class Reader
                 size_t bufferLength = buffer_.length - bufferOffset_;
                 memmove(buffer_.ptr, buffer_.ptr + bufferOffset_,
                         bufferLength * dchar.sizeof);
-                buffer_.length = bufferLength;
+                buffer_ = buffer_[0 .. bufferLength];
                 bufferOffset_ = 0;
             }
 
@@ -286,7 +293,9 @@ final class Reader
                 {
                     if(buffer_.length == 0 || buffer_[$ - 1] != '\0')
                     {
-                        buffer_ ~= '\0';
+                        bufferReserve(buffer_.length + 1);
+                        buffer_ = bufferAllocated_[0 .. buffer_.length + 1];
+                        buffer_[$ - 1] = '\0';
                     }
                     break;
                 }
@@ -380,10 +389,12 @@ final class Reader
             const oldPosition = stream_.position;
 
             //Preallocating memory to limit GC reallocations.
-            buffer_.length = buffer_.length + chars;
+
+            bufferReserve(buffer_.length + chars);
+            buffer_ = bufferAllocated_[0 .. buffer_.length + chars];
             scope(exit)
             {
-                buffer_.length = buffer_.length - chars;
+                buffer_ = buffer_[0 .. $ - chars];
                 enforce(printable(buffer_[oldLength .. $]), 
                         new ReaderException("Special unicode characters are not allowed"));
             }
@@ -434,6 +445,17 @@ final class Reader
                     ((encoding_ == Encoding.UTF_8  && rawUsed_ == 0) ||
                      (encoding_ == Encoding.UTF_16 && rawUsed_ == 0) ||
                      encoding_ == Encoding.UTF_32));
+        }
+
+        ///Ensure there is space for at least capacity characters in bufferAllocated_.
+        void bufferReserve(in size_t capacity)
+        {
+            if(bufferAllocated_.length >= capacity){return;}
+
+            auto newPtr = core.stdc.stdlib.realloc(bufferAllocated_.ptr,  
+                                                   capacity * dchar.sizeof);
+            bufferAllocated_ = (cast(dchar*)newPtr)[0 .. capacity];
+            buffer_ = bufferAllocated_[0 .. buffer_.length];
         }
 
     unittest

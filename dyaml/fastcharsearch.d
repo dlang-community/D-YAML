@@ -81,22 +81,16 @@ string searchCode(dstring chars, uint tableSize)()
 
     if(tableSize)
     {
-        code ~= specialChars.length 
-                ?
-                "    if(c < " ~ tableSizeStr ~ ")\n"
+        code ~= "    if(c < " ~ tableSizeStr ~ ")\n"
                 "    {\n"
                 "        return cast(bool)table_[c];\n"
-                "    }\n"
-                :
-                "    return cast(bool)table_[c];\n";
-    }
-    if(specialChars.length)
-    {
-        code ~= "    return " ~ specialCharsCode() ~ ";\n";
+                "    }\n";
     }
 
-    code ~= "    assert(false);\n"
-            "}\n";
+    code ~= specialChars.length 
+            ? "    return " ~ specialCharsCode() ~ ";\n"
+            : "    return false";
+    code ~= "}\n";
 
     return code;
 }
