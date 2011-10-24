@@ -22,6 +22,7 @@ import std.string;
 import std.typecons;
 import std.utf;
 
+import dyaml.fastcharsearch;
 import dyaml.escapes;
 import dyaml.exception;
 import dyaml.queue;
@@ -82,20 +83,22 @@ final class Scanner
          * simple key, we try to locate the corresponding ':' indicator.
          * Simple keys should be limited to a single line and 1024 characters.
          *
-         * 24 bytes on 64-bit.
+         * 16 bytes on 64-bit.
          */
         static struct SimpleKey
         {
             ///Character index in reader where the key starts.
-            size_t charIndex;
+            uint charIndex = uint.max;
             ///Index of the key token from start (first token scanned being 0).
             uint tokenIndex;
             ///Line the key starts at.
-            uint line;
+            ushort line;
             ///Column the key starts at.
-            uint column;
+            ushort column;
             ///Is this required to be a simple key?
             bool required;
+            ///Is this struct "null" (invalid)?.
+            bool isNull;
         }
 
         ///Block chomping types.
@@ -138,8 +141,9 @@ final class Scanner
          * may start at the current position.
          */
         bool allowSimpleKey_ = true;
+
         ///Possible simple keys indexed by flow levels.
-        SimpleKey[uint] possibleSimpleKeys_;
+        SimpleKey[] possibleSimpleKeys_;
 
         ///Used for constructing strings while limiting reallocation.
         Appender!(dchar[]) appender_;
@@ -161,8 +165,8 @@ final class Scanner
             clear(indents_);
             indents_ = null;
             clear(possibleSimpleKeys_);
-            clear(appender_);
             possibleSimpleKeys_ = null;
+            clear(appender_);
             reader_ = null;
         }
 
@@ -287,6 +291,7 @@ final class Scanner
             uint minTokenNumber = uint.max;
             foreach(k, ref simpleKey; possibleSimpleKeys_)
             {
+                if(simpleKey.isNull){continue;}
                 minTokenNumber = min(minTokenNumber, simpleKey.tokenIndex);
             }
             return minTokenNumber;
@@ -303,19 +308,18 @@ final class Scanner
          */
         void stalePossibleSimpleKeys()
         {
-            uint[] levelsToRemove;
             foreach(level, ref key; possibleSimpleKeys_)
             {
+                if(key.isNull){continue;}
                 if(key.line != reader_.line || reader_.charIndex - key.charIndex > 1024)
                 {
                     enforce(!key.required, 
                             new Error("While scanning a simple key", 
                                       Mark(key.line, key.column), 
                                       "could not find expected ':'", reader_.mark));
-                    levelsToRemove ~= level;
+                    key.isNull = true;
                 }
             }
-            foreach(level; levelsToRemove){possibleSimpleKeys_.remove(level);}
         }
 
         /**
@@ -335,21 +339,37 @@ final class Scanner
             //The next token might be a simple key, so save its number and position.
             removePossibleSimpleKey();
             uint tokenCount = tokensTaken_ + cast(uint)tokens_.length;
-            auto key = SimpleKey(reader_.charIndex, tokenCount, reader_.line, 
-                                 reader_.column, required);
+
+            const line = reader_.line;
+            const column = reader_.column;
+            const key = SimpleKey(cast(uint)reader_.charIndex, 
+                                  tokenCount, 
+                                  line < ushort.max ? cast(ushort)line : ushort.max,
+                                  column < ushort.max ? cast(ushort)column : ushort.max,
+                                  required);
+
+            if(possibleSimpleKeys_.length <= flowLevel_)
+            {
+                const oldLength = possibleSimpleKeys_.length;
+                possibleSimpleKeys_.length = flowLevel_ + 1;
+                //No need to initialize the last element, it's already done in the next line.
+                possibleSimpleKeys_[oldLength .. flowLevel_] = SimpleKey.init;
+            }
             possibleSimpleKeys_[flowLevel_] = key;
         }
 
         ///Remove the saved possible key position at the current flow level.
         void removePossibleSimpleKey()
         {
-            if((flowLevel_ in possibleSimpleKeys_) !is null)
+            if(possibleSimpleKeys_.length <= flowLevel_){return;}
+
+            if(!possibleSimpleKeys_[flowLevel_].isNull)
             {
-                auto key = possibleSimpleKeys_[flowLevel_];
+                const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required, 
                         new Error("While scanning a simple key", Mark(key.line, key.column), 
                                   "could not find expected ':'", reader_.mark));
-                possibleSimpleKeys_.remove(flowLevel_);
+                possibleSimpleKeys_[flowLevel_].isNull = true;
             }
         }
 
@@ -417,7 +437,6 @@ final class Scanner
             unwindIndent(-1);
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
-            //There's probably a saner way to clear an associated array than this.
             clear(possibleSimpleKeys_);
 
             tokens_.push(streamEndToken(reader_.mark, reader_.mark));
@@ -559,10 +578,11 @@ final class Scanner
         void fetchValue()
         {
             //Do we determine a simple key?
-            if(canFind(possibleSimpleKeys_.keys, flowLevel_))
+            if(possibleSimpleKeys_.length > flowLevel_ && 
+               !possibleSimpleKeys_[flowLevel_].isNull)
             {
                 auto key = possibleSimpleKeys_[flowLevel_];
-                possibleSimpleKeys_.remove(flowLevel_);
+                possibleSimpleKeys_[flowLevel_].isNull = true;
                 Mark keyMark = Mark(key.line, key.column);
                 auto idx = key.tokenIndex - tokensTaken_;
 
@@ -1242,7 +1262,10 @@ final class Scanner
             {
                 dchar c = reader_.peek();
                 uint length = 0;
-                while(!(" \t\0\n\r\u0085\u2028\u2029\'\"\\"d.canFind(c)))
+
+                mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
+
+                while(!search.canFind(c))
                 {
                     ++length;
                     c = reader_.peek(length);

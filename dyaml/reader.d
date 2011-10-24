@@ -18,6 +18,7 @@ import std.string;
 import std.system;
 import std.utf;
 
+import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
 
@@ -216,8 +217,7 @@ final class Reader
          */
         void forward(size_t length = 1)
         {
-            //This is here due to optimization.
-            static newlines = "\n\u0085\u2028\u2029"d;
+            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
             updateBuffer(length + 1);
 
             while(length > 0)
@@ -226,7 +226,7 @@ final class Reader
                 ++bufferOffset_;
                 ++charIndex_;
                 //New line.
-                if(newlines.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
                     column_ = 0;
