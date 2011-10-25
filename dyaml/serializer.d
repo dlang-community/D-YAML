@@ -194,8 +194,8 @@ struct Serializer
             {
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
-                const Tag detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
-                const Tag defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
+                const detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
+                const defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
                 bool isDetected = node.tag_ == detectedTag;
                 bool isDefault = node.tag_ == defaultTag;
 

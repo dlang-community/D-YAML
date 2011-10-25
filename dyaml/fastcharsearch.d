@@ -89,7 +89,7 @@ string searchCode(dstring chars, uint tableSize)()
 
     code ~= specialChars.length 
             ? "    return " ~ specialCharsCode() ~ ";\n"
-            : "    return false";
+            : "    return false;";
     code ~= "}\n";
 
     return code;

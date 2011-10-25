@@ -113,6 +113,18 @@ struct Dumper
     }
 
     private:
+        ///Resolver used by default.
+        static Resolver defaultResolver_;
+        ///Representer used by default.
+        static Representer defaultRepresenter_;
+
+        static this()
+        {
+            defaultResolver_ = new Resolver;
+            defaultRepresenter_ = new Representer;
+        }
+
+
         ///Resolver to resolve tags.
         Resolver resolver_;
         ///Representer to represent data types.
@@ -167,8 +179,8 @@ struct Dumper
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
         this(Stream stream)
         {
-            resolver_ = new Resolver();
-            representer_ = new Representer();
+            resolver_ = defaultResolver_;
+            representer_ = defaultRepresenter_;
             stream_ = stream;
             Anchor.addReference();
             TagDirectives.addReference();

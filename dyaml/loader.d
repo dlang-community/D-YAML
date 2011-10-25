@@ -90,6 +90,18 @@ import dyaml.token;
 struct Loader
 {
     private:
+        ///Resolver used by default.
+        static Resolver defaultResolver_;
+        ///Constructor used by default.
+        static Constructor defaultConstructor_;
+
+        static this()
+        {
+            defaultResolver_ = new Resolver;
+            defaultConstructor_ = new Constructor;
+        }
+
+
         ///Reads character data from a stream.
         Reader reader_;
         ///Processes character data to YAML tokens.
@@ -138,8 +150,8 @@ struct Loader
                 reader_      = new Reader(stream);
                 scanner_     = new Scanner(reader_);
                 parser_      = new Parser(scanner_);
-                resolver_    = new Resolver;
-                constructor_ = new Constructor;
+                resolver_    = defaultResolver_;
+                constructor_ = defaultConstructor_;
                 Anchor.addReference();
                 TagDirectives.addReference();
             }

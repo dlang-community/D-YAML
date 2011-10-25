@@ -149,9 +149,11 @@ final class Reader
          */
         dchar peek(in size_t index = 0)
         {
-            updateBuffer(index + 1);
-
-            if(buffer_.length < bufferOffset_ + index + 1)
+            if(buffer_.length <= bufferOffset_ + index + 1)
+            {
+                updateBuffer(index + 1);
+            }
+            if(buffer_.length <= bufferOffset_ + index)
             {
                 throw new ReaderException("Trying to read past the end of the stream");
             }
@@ -175,7 +177,10 @@ final class Reader
         dstring prefix(in size_t length)
         {
             if(length == 0){return "";}
-            updateBuffer(length);
+            if(buffer_.length <= bufferOffset_ + length)
+            {
+                updateBuffer(length);
+            }
             const end = min(buffer_.length, bufferOffset_ + length);
             //need to duplicate as we change buffer content with C functions
             //and could end up with returned string referencing changed data
@@ -225,7 +230,11 @@ final class Reader
         void forward(size_t length = 1)
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
-            updateBuffer(length + 1);
+
+            if(buffer_.length <= bufferOffset_ + length + 1)
+            {
+                updateBuffer(length + 1);
+            }
 
             while(length > 0)
             {
@@ -272,8 +281,6 @@ final class Reader
          */
         void updateBuffer(in size_t length)
         {
-            if(buffer_.length > bufferOffset_ + length){return;}
-
             //get rid of unneeded data in the buffer
             if(bufferOffset_ > 0)
             {

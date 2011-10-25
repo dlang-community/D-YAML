@@ -144,23 +144,19 @@ final class Resolver
 
             if(kind == NodeID.Scalar)
             {
-                if(implicit)
+                if(!implicit){return defaultScalarTag_;}
+
+                //Get the first char of the value.
+                size_t dummy;
+                const dchar first = value.length == 0 ? '\0' : decode(value, dummy);
+
+                auto resolvers = (first in yamlImplicitResolvers_) is null ? 
+                                 [] : yamlImplicitResolvers_[first];
+
+                //If regexp matches, return tag.
+                foreach(resolver; resolvers) if(!(match(value, resolver[1]).empty))
                 {
-                    //Get the first char of the value.
-                    size_t dummy;
-                    const dchar first = value.length == 0 ? '\0' : decode(value, dummy);
-
-                    auto resolvers = (first in yamlImplicitResolvers_) is null ? 
-                                     [] : yamlImplicitResolvers_[first];
-
-                    foreach(resolver; resolvers)
-                    {
-                        //If regexp matches, return tag.
-                        if(!(match(value, resolver[1]).empty))
-                        {
-                            return resolver[0];
-                        }
-                    }
+                    return resolver[0];
                 }
                 return defaultScalarTag_;
             }
