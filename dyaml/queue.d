@@ -12,6 +12,7 @@ import core.stdc.stdlib;
 import core.memory;
 
 import std.container;
+import std.traits;
 
 
 package:
@@ -184,7 +185,7 @@ T* allocate(T, Args...)(Args args)
     T* ptr = cast(T*)malloc(T.sizeof);
     *ptr = T(args);
     //The struct might contain references to GC-allocated memory, so tell the GC about it.
-    GC.addRange(cast(void*)ptr, T.sizeof);
+    if(hasIndirections!T){GC.addRange(cast(void*)ptr, T.sizeof);}
     return ptr;
 }
 
@@ -192,7 +193,7 @@ T* allocate(T, Args...)(Args args)
 void free(T)(T* ptr)
 {
     //GC doesn't need to care about any references in this struct anymore.
-    GC.removeRange(cast(void*)ptr);
+    if(hasIndirections!T){GC.removeRange(cast(void*)ptr);}
     clear(*ptr);
     std.c.stdlib.free(ptr);
 }

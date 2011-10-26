@@ -93,7 +93,7 @@ struct Emitter
         Event event_;
 
         ///Stack of previous indentation levels.
-        int[] indents_;
+        Array!int indents_;
         ///Current indentation level.
         int indent_ = -1;
 
@@ -161,6 +161,7 @@ struct Emitter
         body
         {
             states_.reserve(32);
+            indents_.reserve(32);
             stream_ = stream;
             canonical_ = canonical;
             state_ = &expectStreamStart;
@@ -179,7 +180,6 @@ struct Emitter
             clear(states_);
             clear(events_);
             clear(indents_);
-            indents_ = null;
             clear(tagDirectives_);
             tagDirectives_ = null;
             clear(preparedAnchor_);
@@ -217,8 +217,8 @@ struct Emitter
             enforce(indents_.length > 0, 
                     new YAMLException("Emitter: Need to pop an indent level but there"
                                       " are no indent levels left"));
-            const result = indents_.back();
-            indents_.popBack;
+            const result = indents_.back;
+            indents_.length = indents_.length - 1;
             return result;
         }
 
@@ -1328,7 +1328,7 @@ struct ScalarWriter
                         emitter_.writeIndent();
                     }
                 }
-                else if((c == dcharNone || "\' "d.canFind(c) || newlineSearch_.canFind(c))
+                else if((c == dcharNone || c == '\'' || c == ' ' || newlineSearch_.canFind(c))
                         && startChar_ < endChar_)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
@@ -1342,6 +1342,7 @@ struct ScalarWriter
                 }
                 updateBreaks(c, Flag!"UpdateSpaces".yes);
             }while(endByte_ < text_.length)
+
             emitter_.writeIndicator("\'", false);
         }
 

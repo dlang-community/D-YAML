@@ -1395,6 +1395,9 @@ final class Scanner
             //document separators at the beginning of the line.
             //if(indent == 0){indent = 1;}
             dstring spaces;
+
+            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
+
             for(;;)
             {
                 if(reader_.peek() == '#'){break;}
@@ -1405,9 +1408,8 @@ final class Scanner
                 for(;;)
                 {
                     c = reader_.peek(length);
-                    bool done = " \t\0\n\r\u0085\u2028\u2029"d.canFind(c) || 
-                                (flowLevel_ == 0 && c == ':' && 
-                                " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length + 1))) ||
+                    bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' && 
+                                search.canFind(reader_.peek(length + 1))) ||
                                 (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
                     if(done){break;}
                     ++length;
@@ -1415,7 +1417,7 @@ final class Scanner
 
                 //It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
-                   !" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length + 1)) &&
+                   !search.canFind(reader_.peek(length + 1)) &&
                    !",[]{}"d.canFind(reader_.peek(length + 1)))
                 {
                     reader_.forward(length);
@@ -1606,7 +1608,7 @@ final class Scanner
          *   '\r\n'      :   '\n'
          *   '\r'        :   '\n'
          *   '\n'        :   '\n'
-         *   '\u0085'      :   '\n'
+         *   '\u0085'    :   '\n'
          *   '\u2028'    :   '\u2028'
          *   '\u2029     :   '\u2029'
          *   no break    :   '\0'
@@ -1615,13 +1617,13 @@ final class Scanner
         {
             const c = reader_.peek();
 
-            if("\r\n\u0085"d.canFind(c))
+            if(c == '\n' || c == '\r' || c == '\u0085')
             {
                 if(reader_.prefix(2) == "\r\n"d){reader_.forward(2);}
                 else{reader_.forward();}
                 return '\n';
             }
-            if("\u2028\u2029"d.canFind(c))
+            if(c == '\u2028' || c == '\u2029')
             {
                 reader_.forward();
                 return c;

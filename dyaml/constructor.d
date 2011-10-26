@@ -500,8 +500,7 @@ ubyte[] constructBinary(Mark start, Mark end, ref Node node)
         try{return Base64.decode(value.removechars("\n"));}
         catch(Exception e)
         {
-            throw new Error("Unable to decode base64 value: " ~ e.msg,
-                                           start, end);
+            throw new Error("Unable to decode base64 value: " ~ e.msg, start, end);
         }
     }
     catch(UtfException e)
