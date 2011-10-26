@@ -138,7 +138,7 @@ void main(string[] args)
 
     scope(failure){help(); core.stdc.stdlib.exit(-1);}
 
-    string[] extra_args = ["-gc", "-w", "-wi"];
+    string[] extra_args = ["-w", "-wi"];
 
     args = args[1 .. $];
     foreach(arg; args)
@@ -154,11 +154,15 @@ void main(string[] args)
     }
     if(args.length > 0 && args[$ - 1][0] != '-'){target = args[$ - 1];}
 
-    string[] dbg      = ["-debug"];
+    string[] dbg      = ["-debug", "-gc"];
     string[] optimize = ["-O", "-inline", "-release"];
+    string[] profile  = ["-O", "-inline", "-release", "-gc"];
     string[] lib_src  = ["dyaml/", "yaml.d"];
 
-    void compile_(string[] args, string[] files){compile(files, args ~ extra_args);}
+    void compile_(string[] args, string[] files)
+    {
+        compile(files, args ~ extra_args);
+    }
 
     void build_unittest()
     {
@@ -176,6 +180,12 @@ void main(string[] args)
     {
         writeln("building release target");
         compile_(optimize ~ ["-oflibdyaml", "-lib"], lib_src);
+    }
+
+    void build_profile()
+    {
+        writeln("building profile target");
+        compile_(profile ~ ["-oflibdyaml", "-lib"], lib_src);
     }
 
     void build_tar_gz()
@@ -204,22 +214,19 @@ void main(string[] args)
 
     void build(string[] targets ...)
     {
-        foreach(target; targets)
+        foreach(target; targets) switch(target)
         {
-            switch(target)
-            {
-                //case "examples": build_examples(); break;
-                case "debug":    build_debug();    break;
-                case "release":  build_release();  break;
-                case "unittest": build_unittest(); break;
-                case "tar.gz":   build_tar_gz();   break;
-                case "tar.xz":   build_tar_xz();   break;
-                case "zip":      build_zip();      break;
-                case "all":      build("debug", "release", "unittest"); break;
-                default:
-                    writeln("unknown build target: ", target);
-                    writeln("available targets: 'debug', 'release', 'all'");
-            }
+            case "debug":    build_debug();    break;
+            case "release":  build_release();  break;
+            case "profile":  build_profile();  break;
+            case "unittest": build_unittest(); break;
+            case "tar.gz":   build_tar_gz();   break;
+            case "tar.xz":   build_tar_xz();   break;
+            case "zip":      build_zip();      break;
+            case "all":      build("debug", "release", "unittest"); break;
+            default:
+                writeln("unknown build target: ", target);
+                writeln("available targets: 'debug', 'release', 'all'");
         }
     }
 
@@ -245,11 +252,12 @@ void help()
         "Available build targets:\n"
         "    unittest        Build unit tests.\n"
         "    debug           Debug information, unittests, contracts built in.\n"
-        "                    No optimizations. Target binary name: 'pong-debug'\n"
-        "    release         Debug information, no unittests, contracts.\n"
+        "                    No optimizations.\n"
+        "    release         No debug information, no unittests, contracts.\n"
         "                    Optimizations, inlining enabled.\n"
-        "                    Target binary name: 'pong-release'\n"
-        "    all             All of the above.\n"
+        "    profile         Debug information, no unittests, contracts.\n"
+        "                    Optimizations, inlining enabled.\n"
+        "    all             Unittest, debug and release.\n"
         "    tar.gz          Needs git, gzip: Create a tar.gz package.\n"
         "    tar.xz          Needs git, xz: Create a tar.xz package.\n"
         "    zip             Needs zip: Create a zip package.\n"
