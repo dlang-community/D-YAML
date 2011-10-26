@@ -146,20 +146,14 @@ struct Serializer
             }
 
             anchors_[node] = Anchor(null);
-            if(node.isSequence)
+            if(node.isSequence) foreach(ref Node item; node)
             {
-                foreach(ref Node item; node)
-                {
-                    anchorNode(item);
-                }
+                anchorNode(item);
             }
-            else if(node.isMapping)
+            else if(node.isMapping) foreach(ref Node key, ref Node value; node)
             {
-                foreach(ref Node key, ref Node value; node)
-                {
-                    anchorNode(key);
-                    anchorNode(value);
-                }
+                anchorNode(key);
+                anchorNode(value);
             }
         }
 
@@ -205,7 +199,7 @@ struct Serializer
             }
             if(node.isSequence)
             {
-                auto defaultTag = resolver_.defaultSequenceTag;
+                const defaultTag = resolver_.defaultSequenceTag;
                 bool implicit = node.tag_ == defaultTag;
                 emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                  implicit, CollectionStyle.Invalid));

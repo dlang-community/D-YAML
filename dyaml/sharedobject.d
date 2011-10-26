@@ -33,9 +33,7 @@ template SharedObject(T, MixedIn)
                  *
                  * When this reaches zero, objects_ are cleared. This is not
                  * the number of shared objects, but rather of objects using this kind 
-                 * of shared object. This is used e.g. with Anchor, but not with Tag 
-                 * - tags can be stored by the user in Nodes so there is no way to know 
-                 * when there are no Tags anymore.
+                 * of shared object. 
                  */
                 int referenceCount_ = 0;  
 
@@ -124,7 +122,7 @@ template SharedObject(T, MixedIn)
         }
 
         ///Is this object null (invalid)?
-        bool isNull() const {return index_ == uint.max;}
+        @property bool isNull() const {return index_ == uint.max;}
 
     private:
         ///Add a new object, checking if identical object already exists.

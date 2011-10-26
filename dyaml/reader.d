@@ -126,7 +126,8 @@ final class Reader
             }
             available_ = stream_.available;
 
-            bufferReserve(256);
+            auto ptr = cast(dchar*)core.stdc.stdlib.malloc(dchar.sizeof * 256);
+            bufferAllocated_ = ptr[0 .. 256];
         }
 
         ///Destroy the Reader.

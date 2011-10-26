@@ -632,7 +632,7 @@ struct Node
          *          non-integral index is used with a sequence or the node is
          *          not a collection.
          */
-        Node opIndex(T)(T index)
+        ref Node opIndex(T)(T index)
         {
             if(isSequence)
             {
