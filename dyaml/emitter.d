@@ -34,8 +34,8 @@ import dyaml.fastcharsearch;
 import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.queue;
+import dyaml.style;
 import dyaml.tag;
-import dyaml.token;
 
 
 package:

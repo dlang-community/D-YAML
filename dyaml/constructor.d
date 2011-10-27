@@ -26,7 +26,7 @@ import std.utf;
 import dyaml.node;
 import dyaml.exception;
 import dyaml.tag;
-import dyaml.token;
+import dyaml.style;
 
 
 /**
@@ -284,16 +284,28 @@ final class Constructor
          *          end   = End position of the node.
          *          tag   = Tag (data type) of the node.
          *          value = Value to construct node from (string, nodes or pairs).
+         *          style = Style of the node (scalar or collection style).
          *
          * Returns: Constructed node.
          */ 
-        Node node(T)(in Mark start, in Mark end, in Tag tag, T value) 
-            if(is(T : string) || is(T == Node[]) || is(T == Node.Pair[]))
+        Node node(T, U)(in Mark start, in Mark end, in Tag tag, T value, U style) 
+            if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
+               (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function for tag " ~ tag.get(), start, end));
             Node node = Node(value);
-            return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag);
+            static if(is(U : ScalarStyle))
+            {
+                return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag,
+                                    style, CollectionStyle.Invalid);
+            }
+            else static if(is(U : CollectionStyle))
+            {
+                return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag,
+                                    ScalarStyle.Invalid, style);
+            }
+            else static assert(false);
         }
 
     private:

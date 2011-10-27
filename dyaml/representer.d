@@ -26,6 +26,7 @@ import std.stream;
 import dyaml.exception;
 import dyaml.node;
 import dyaml.serializer;
+import dyaml.style;
 import dyaml.tag;
 
 
@@ -35,11 +36,22 @@ class RepresenterException : YAMLException
     mixin ExceptionCtors;
 }
 
-///Used to represent YAML nodes various data types into scalar, sequence and mapping nodes ready for output.
+/**
+ * Represents YAML nodes of various data types as scalar, sequence and mapping nodes ready for output.
+ *
+ * This class is used to add support for dumping of custom data types.
+ *
+ * It can also override default node formatting styles for output.
+ */
 final class Representer
 {
     private:
+        ///Representer functions indexed by types.
         Node function(ref Node, Representer)[TypeInfo] representers_;
+        ///Default style for scalar nodes.
+        ScalarStyle defaultScalarStyle_ = ScalarStyle.Invalid;
+        ///Default style for collection nodes.
+        CollectionStyle defaultCollectionStyle_ = CollectionStyle.Invalid;
 
     public:
         /**
@@ -68,6 +80,18 @@ final class Representer
         {
             clear(representers_);
             representers_ = null;
+        }
+
+        ///Set default style for scalars. Invalid means the style is chosen automatically.
+        @property void defaultScalarStyle(ScalarStyle style)
+        {
+            defaultScalarStyle_ = style;
+        }
+
+        ///Set default style for collections. Invalid means the style is chosen automatically. 
+        @property void defaultCollectionStyle(CollectionStyle style)
+        {
+            defaultCollectionStyle_ = style;
         }
 
         /**
@@ -188,6 +212,7 @@ final class Representer
          *
          * Params:  tag    = Tag of the _scalar.
          *          scalar = Scalar value.
+         *          style  = Style of the scalar (will be default if invalid).
          *
          * Returns: The represented node.
          *
@@ -206,9 +231,12 @@ final class Representer
          * }
          * --------------------
          */
-        Node representScalar(in string tag, string scalar)
+        Node representScalar(in string tag, string scalar, 
+                             ScalarStyle style = ScalarStyle.Invalid)
         {
-            return Node.rawNode(Node.Value(scalar), Mark(), Tag(tag));
+            if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
+            return Node.rawNode(Node.Value(scalar), Mark(), Tag(tag), style,
+                                CollectionStyle.Invalid);
         }
 
         /**
@@ -218,6 +246,7 @@ final class Representer
          *
          * Params:  tag      = Tag of the sequence.
          *          sequence = Sequence of nodes.
+         *          style    = Style of the sequence (will be default if invalid).
          *
          * Returns: The represented node.
          *
@@ -238,15 +267,32 @@ final class Representer
          * }
          * --------------------
          */
-        Node representSequence(in string tag, Node[] sequence)
+        Node representSequence(in string tag, Node[] sequence, 
+                               CollectionStyle style = CollectionStyle.Invalid)
         {
             Node[] value;
             value.length = sequence.length;
+
+            auto bestStyle = CollectionStyle.Flow;
             foreach(idx, ref item; sequence)
             {
                 value[idx] = representData(item);
+                const isScalar = value[idx].isScalar;
+                const s = value[idx].scalarStyle;
+                if(!isScalar || (s != ScalarStyle.Invalid && s != ScalarStyle.Plain))
+                {
+                    bestStyle = CollectionStyle.Block;
+                }
             }
-            return Node.rawNode(Node.Value(value), Mark(), Tag(tag));
+
+            if(style == CollectionStyle.Invalid)
+            {
+                style = defaultCollectionStyle_ != CollectionStyle.Invalid 
+                        ? defaultCollectionStyle_
+                        : bestStyle;
+            }
+            return Node.rawNode(Node.Value(value), Mark(), Tag(tag), 
+                                ScalarStyle.Invalid, style);
         }
 
         /**
@@ -256,6 +302,7 @@ final class Representer
          *
          * Params:  tag   = Tag of the mapping.
          *          pairs = Key-value _pairs of the mapping.
+         *          style = Style of the mapping (will be default if invalid).
          *
          * Returns: The represented node.
          *
@@ -278,15 +325,40 @@ final class Representer
          * }
          * --------------------
          */
-        Node representMapping(in string tag, Node.Pair[] pairs)
+        Node representMapping(in string tag, Node.Pair[] pairs,
+                              CollectionStyle style = CollectionStyle.Invalid)
         {
             Node.Pair[] value;
             value.length = pairs.length;
+
+            auto bestStyle = CollectionStyle.Flow;
             foreach(idx, ref pair; pairs)
             {
                 value[idx] = Node.Pair(representData(pair.key), representData(pair.value));
+                const keyScalar = value[idx].key.isScalar;
+                const valScalar = value[idx].value.isScalar;
+                const keyStyle = value[idx].key.scalarStyle;
+                const valStyle = value[idx].value.scalarStyle;
+                if(!keyScalar ||
+                   (keyStyle != ScalarStyle.Invalid && keyStyle != ScalarStyle.Plain)))
+                {
+                    bestStyle = CollectionStyle.Block;
+                }
+                if(!valScalar ||
+                   (valStyle != ScalarStyle.Invalid && valStyle != ScalarStyle.Plain)))
+                {
+                    bestStyle = CollectionStyle.Block;
+                }
             }
-            return Node.rawNode(Node.Value(value), Mark(), Tag(tag));
+            
+            if(style == CollectionStyle.Invalid)
+            {
+                style = defaultCollectionStyle_ != CollectionStyle.Invalid 
+                        ? defaultCollectionStyle_
+                        : bestStyle;
+            }
+            return Node.rawNode(Node.Value(value), Mark(), Tag(tag), 
+                                ScalarStyle.Invalid, style);
         }
 
     package:
@@ -300,7 +372,19 @@ final class Representer
                     new RepresenterException("No representer function for type " 
                                              ~ type.toString() ~ " , cannot represent."));
             Node result = representers_[type](data, this);
+
+            //Override tag if specified.
             if(!data.tag_.isNull()){result.tag_ = data.tag_;}
+
+            //Remember style if this was loaded before.
+            if(data.scalarStyle != ScalarStyle.Invalid)
+            {
+                result.scalarStyle = data.scalarStyle;
+            }
+            if(data.collectionStyle != CollectionStyle.Invalid)
+            {
+                result.collectionStyle = data.collectionStyle;
+            }
             return result;
         }
 
@@ -323,8 +407,9 @@ Node representNull(ref Node node, Representer representer)
 Node representString(ref Node node, Representer representer)
 {
     string value = node.as!string;
-    return value is null ? representNull(node, representer) 
-                         : representer.representScalar("tag:yaml.org,2002:str", value);
+    return value is null 
+           ? representNull(node, representer) 
+           : representer.representScalar("tag:yaml.org,2002:str", value);
 }
 
 ///Represent a bytes _node as a binary scalar.
@@ -333,7 +418,8 @@ Node representBytes(ref Node node, Representer representer)
     const ubyte[] value = node.as!(ubyte[]);
     if(value is null){return representNull(node, representer);}
     return representer.representScalar("tag:yaml.org,2002:binary", 
-                                       cast(string)Base64.encode(value));
+                                       cast(string)Base64.encode(value),
+                                       ScalarStyle.Literal);
 }
 
 ///Represent a bool _node as a bool scalar.

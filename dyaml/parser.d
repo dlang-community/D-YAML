@@ -21,6 +21,7 @@ import dyaml.anchor;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.scanner;
+import dyaml.style;
 import dyaml.token;
 import dyaml.tag;
 import dyaml.tagdirectives;

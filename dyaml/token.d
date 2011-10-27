@@ -16,6 +16,7 @@ import std.conv;
 import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
+import dyaml.style;
 
 
 package:
@@ -43,25 +44,6 @@ enum TokenID : ubyte
     Anchor,             /// ANCHOR
     Tag,                /// TAG
     Scalar              /// SCALAR
-}
-
-///Scalar styles.
-enum ScalarStyle : ubyte
-{
-    Invalid = 0,  /// Invalid (uninitialized) style
-    Literal,      /// | (Literal block style)
-    Folded,       /// > (Folded block style)
-    Plain,        /// Plain scalar
-    SingleQuoted, /// Single quoted scalar
-    DoubleQuoted  /// Double quoted scalar
-}
-
-///Collection styles.
-enum CollectionStyle : ubyte
-{
-    Invalid = 0, /// Invalid (uninitialized) style 
-    Block,       /// Block style.
-    Flow         /// Flow style.
 }
 
 /**

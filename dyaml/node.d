@@ -24,6 +24,7 @@ import std.variant;
 
 import dyaml.event;
 import dyaml.exception;
+import dyaml.style;
 import dyaml.tag;
 
 
@@ -170,8 +171,12 @@ struct Node
         Mark startMark_;
 
     package:
-        //Tag of the node. Is package as it is both written to and read all over D:YAML.
+        //Tag of the node. 
         Tag tag_;
+        ///Node scalar style. Used to remember style this node was loaded with.
+        ScalarStyle scalarStyle = ScalarStyle.Invalid;
+        ///Node collection style. Used to remember style this node was loaded with.
+        CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     public:
         /**
@@ -1102,20 +1107,32 @@ struct Node
         /*
          * Construct a node from raw data.
          *
-         * Params:  value     = Value of the node.
-         *          startMark = Start position of the node in file.
-         *          tag       = Tag of the node.
+         * Params:  value           = Value of the node.
+         *          startMark       = Start position of the node in file.
+         *          tag             = Tag of the node.
+         *          scalarStyle     = Scalar style of the node.
+         *          collectionStyle = Collection style of the node.
          *
          * Returns: Constructed node.
          */
-        static Node rawNode(Value value, in Mark startMark = Mark(), in Tag tag = Tag("DUMMY_TAG"))
+        static Node rawNode(Value value, in Mark startMark, in Tag tag, 
+                            in ScalarStyle scalarStyle, 
+                            in CollectionStyle collectionStyle)
         {
             Node node;
             node.value_ = value;
             node.startMark_ = startMark;
             node.tag_ = tag;
+            node.scalarStyle = scalarStyle;
+            node.collectionStyle = collectionStyle;
 
             return node;
+        }
+
+        //Construct Node.Value from user defined type.
+        static Value userValue(T)(T value)
+        {
+            return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
         /*
@@ -1234,12 +1251,6 @@ struct Node
                        (convertsTo!string ? get!string : type.toString) ~ ")\n";
             }
             assert(false);
-        }
-
-        //Construct Node.Value from user defined type.
-        static Value userValue(T)(T value)
-        {
-            return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
         //Get type of the node value (YAMLObject for user types).

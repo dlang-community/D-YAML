@@ -20,7 +20,7 @@ import dyaml.exception;
 import dyaml.reader;
 import dyaml.tag;
 import dyaml.tagdirectives;
-import dyaml.token;
+import dyaml.style;
 
 
 package:
@@ -79,10 +79,7 @@ struct Event
     CollectionStyle collectionStyle;
 
     ///Is this a null (uninitialized) event?
-    @property bool isNull() const 
-    {
-        return id == EventID.Invalid;
-    }
+    @property bool isNull() const {return id == EventID.Invalid;}
 
     ///Get string representation of the token ID.
     @property string idString() const {return to!string(id);}

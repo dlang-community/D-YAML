@@ -207,7 +207,7 @@ final class Composer
                                           event.implicit);
 
             Node node = constructor_.node(event.startMark, event.endMark, tag, 
-                                          event.value);
+                                          event.value, event.scalarStyle);
 
             return node;
         }
@@ -226,7 +226,7 @@ final class Composer
             }
 
             Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark, 
-                                          tag, children);
+                                          tag, children, startEvent.collectionStyle);
 
             return node;
         }
@@ -315,7 +315,7 @@ final class Composer
             }
 
             Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark, 
-                                          tag, children);
+                                          tag, children, startEvent.collectionStyle);
 
             return node;
         }

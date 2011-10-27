@@ -27,6 +27,7 @@ import dyaml.escapes;
 import dyaml.exception;
 import dyaml.queue;
 import dyaml.reader;
+import dyaml.style;
 import dyaml.token;
 
 

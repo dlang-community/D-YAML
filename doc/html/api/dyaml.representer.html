@@ -51,7 +51,12 @@
 </dd>
 <dt class="d_decl">class <a name="Representer"></a><span class="ddoc_psymbol">Representer</span>;
 </dt>
-<dd><p>Used to represent YAML nodes various data types into scalar, sequence and mapping nodes ready for output.</p>
+<dd><p>Represents YAML nodes of various data types as scalar, sequence and mapping nodes ready for output.
+</p>
+<p>This class is used to add support for dumping of custom data types.
+<br>
+
+ It can also override default node formatting styles for output.</p>
 
 <dl><dt class="d_decl">this(bool <b>useDefaultRepresenters</b> = true);
 </dt>
@@ -63,6 +68,16 @@
                                    disabled to use custom representer
                                    functions for default types.</td></tr>
 </table></div>
+
+</dd>
+<dt class="d_decl">@property void <a name="defaultScalarStyle"></a><span class="ddoc_psymbol">defaultScalarStyle</span>(ScalarStyle <b>style</b>);
+</dt>
+<dd><p>Set default <b>style</b> for scalars. Invalid means the <b>style</b> is chosen automatically.</p>
+
+</dd>
+<dt class="d_decl">@property void <a name="defaultCollectionStyle"></a><span class="ddoc_psymbol">defaultCollectionStyle</span>(CollectionStyle <b>style</b>);
+</dt>
+<dd><p>Set default <b>style</b> for collections. Invalid means the <b>style</b> is chosen automatically. </p>
 
 </dd>
 <dt class="d_decl">void <a name="addRepresenter"></a><span class="ddoc_psymbol">addRepresenter</span>(T)(Node function(ref Node, Representer) <b>representer</b>);
@@ -166,7 +181,7 @@
 </div>
 
 </dd>
-<dt class="d_decl">Node <a name="representScalar"></a><span class="ddoc_psymbol">representScalar</span>(in string <b>tag</b>, string <b>scalar</b>);
+<dt class="d_decl">Node <a name="representScalar"></a><span class="ddoc_psymbol">representScalar</span>(in string <b>tag</b>, string <b>scalar</b>, ScalarStyle <b>style</b> = (ScalarStyle).Invalid);
 </dt>
 <dd><p>Represent a scalar with specified tag.
 </p>
@@ -177,6 +192,8 @@
 <td valign=top>Tag of the scalar.</td></tr>
 <tr><td valign=top>string <b>scalar</b></td>
 <td valign=top>Scalar value.</td></tr>
+<tr><td valign=top>ScalarStyle <b>style</b></td>
+<td valign=top>Style of the <b>scalar</b> (will be default if invalid).</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr">The represented node.
 
@@ -197,7 +214,7 @@
 </p>
 
 </dd>
-<dt class="d_decl">Node <a name="representSequence"></a><span class="ddoc_psymbol">representSequence</span>(in string <b>tag</b>, Node[] <b>sequence</b>);
+<dt class="d_decl">Node <a name="representSequence"></a><span class="ddoc_psymbol">representSequence</span>(in string <b>tag</b>, Node[] <b>sequence</b>, CollectionStyle <b>style</b> = (CollectionStyle).Invalid);
 </dt>
 <dd><p>Represent a sequence with specified tag, representing children first.
 </p>
@@ -208,6 +225,8 @@
 <td valign=top>Tag of the <b>sequence</b>.</td></tr>
 <tr><td valign=top>Node[] <b>sequence</b></td>
 <td valign=top>Sequence of nodes.</td></tr>
+<tr><td valign=top>CollectionStyle <b>style</b></td>
+<td valign=top>Style of the <b>sequence</b> (will be default if invalid).</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr">The represented node.
 
@@ -231,7 +250,7 @@
 </p>
 
 </dd>
-<dt class="d_decl">Node <a name="representMapping"></a><span class="ddoc_psymbol">representMapping</span>(in string <b>tag</b>, Pair[] <b>pairs</b>);
+<dt class="d_decl">Node <a name="representMapping"></a><span class="ddoc_psymbol">representMapping</span>(in string <b>tag</b>, Pair[] <b>pairs</b>, CollectionStyle <b>style</b> = (CollectionStyle).Invalid);
 </dt>
 <dd><p>Represent a mapping with specified tag, representing children first.
 </p>
@@ -242,6 +261,8 @@
 <td valign=top>Tag of the mapping.</td></tr>
 <tr><td valign=top>Pair[] <b>pairs</b></td>
 <td valign=top>Key-value pairs of the mapping.</td></tr>
+<tr><td valign=top>CollectionStyle <b>style</b></td>
+<td valign=top>Style of the mapping (will be default if invalid).</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr">The represented node.
 
