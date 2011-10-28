@@ -340,12 +340,12 @@ final class Representer
                 const keyStyle = value[idx].key.scalarStyle;
                 const valStyle = value[idx].value.scalarStyle;
                 if(!keyScalar ||
-                   (keyStyle != ScalarStyle.Invalid && keyStyle != ScalarStyle.Plain)))
+                   (keyStyle != ScalarStyle.Invalid && keyStyle != ScalarStyle.Plain))
                 {
                     bestStyle = CollectionStyle.Block;
                 }
                 if(!valScalar ||
-                   (valStyle != ScalarStyle.Invalid && valStyle != ScalarStyle.Plain)))
+                   (valStyle != ScalarStyle.Invalid && valStyle != ScalarStyle.Plain))
                 {
                     bestStyle = CollectionStyle.Block;
                 }

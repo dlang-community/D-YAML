@@ -148,6 +148,9 @@ struct Emitter
         ScalarStyle style_ = ScalarStyle.Invalid;
 
     public:
+        @disable int opCmp(ref Emitter e);
+        @disable bool opEquals(ref Emitter e);
+
         /**
          * Construct an emitter.
          *
@@ -1341,7 +1344,7 @@ struct ScalarWriter
                     startChar_ = endChar_ + 1;
                 }
                 updateBreaks(c, Flag!"UpdateSpaces".yes);
-            }while(endByte_ < text_.length)
+            }while(endByte_ < text_.length);
 
             emitter_.writeIndicator("\'", false);
         }
@@ -1404,7 +1407,7 @@ struct ScalarWriter
                         ++emitter_.column_;
                     }
                 }
-            }while(endByte_ < text_.length)
+            }while(endByte_ < text_.length);
             emitter_.writeIndicator("\"", false);
         }
 
@@ -1451,7 +1454,7 @@ struct ScalarWriter
                     if(c == dcharNone){emitter_.writeLineBreak();}
                 }
                 updateBreaks(c, Flag!"UpdateSpaces".yes);
-            }while(endByte_ < text_.length)
+            }while(endByte_ < text_.length);
         }
 
         ///Write text as literal block scalar.
@@ -1478,7 +1481,7 @@ struct ScalarWriter
                     if(c == dcharNone){emitter_.writeLineBreak();}
                 }
                 updateBreaks(c, Flag!"UpdateSpaces".no);
-            }while(endByte_ < text_.length)
+            }while(endByte_ < text_.length);
         }
 
         ///Write text as plain scalar.
@@ -1524,7 +1527,7 @@ struct ScalarWriter
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                 }
                 updateBreaks(c, Flag!"UpdateSpaces".yes);
-            }while(endByte_ < text_.length)
+            }while(endByte_ < text_.length);
         }
 
     private:

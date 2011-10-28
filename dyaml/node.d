@@ -20,7 +20,7 @@ import std.stdio;
 import std.string;
 import std.traits;
 import std.typecons;
-import std.variant;
+import dyaml.std.variant;
 
 import dyaml.event;
 import dyaml.exception;
@@ -65,15 +65,15 @@ package abstract class YAMLObject
 {
     public:
         ///Get type of the stored value.
-        @property TypeInfo type() const;
+        @property TypeInfo type() const {assert(false);}
 
     protected:
         ///Test for equality with another YAMLObject.
-        bool equals(const YAMLObject rhs) const;
+        bool equals(YAMLObject rhs) {assert(false);} 
 }
 
 //Stores a user defined YAML data type.
-package class YAMLContainer(T) : YAMLObject
+package class YAMLContainer(T) if (!Node.Value.allowed!T): YAMLObject
 {
     private:
         //Stored value.
@@ -98,10 +98,10 @@ package class YAMLContainer(T) : YAMLObject
 
     protected:
         //Test for equality with another YAMLObject.
-        override bool equals(const YAMLObject rhs) const 
+        override bool equals(YAMLObject rhs)
         {
             if(rhs.type !is typeid(T)){return false;}
-            return value_ == (cast(YAMLContainer)rhs).value_;
+            return cast(T)value_ == (cast(YAMLContainer)rhs).value_;
         }
 
     private:
@@ -130,13 +130,16 @@ struct Node
                 Node value;
 
             public:
+                @disable bool opEquals(ref Pair);
+                @disable int opCmp(ref Pair);
+
                 ///Construct a Pair from two values. Will be converted to Nodes if needed.
                 this(K, V)(K key, V value)
                 {
-                    static if(is(K == Node)){this.key = key;}
-                    else                    {this.key = Node(key);}
-                    static if(is(V == Node)){this.value = value;}
-                    else                    {this.value = Node(value);}
+                    static if(is(Unqual!K == Node)){this.key = key;}
+                    else                           {this.key = Node(key);}
+                    static if(is(Unqual!V == Node)){this.value = value;}
+                    else                           {this.value = Node(value);}
                 }
 
                 ///Equality test with another Pair.
@@ -179,6 +182,10 @@ struct Node
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     public:
+        @disable int opCmp(ref Node);
+
+        @disable bool opEquals(T)(ref T) const if(is(T == const));
+
         /**
          * Construct a Node from a value.
          *
@@ -205,7 +212,7 @@ struct Node
             tag_ = Tag(tag);
 
             //No copyconstruction.
-            static assert(!is(T == Node));
+            static assert(!is(Unqual!T == Node));
 
             //We can easily convert ints, floats, strings.
             static if(isIntegral!T)          {value_ = Value(cast(long) value);}
@@ -261,12 +268,12 @@ struct Node
             tag_ = Tag(tag);
 
             //Construction from raw node or pair array.
-            static if(is(T == Node) || is(T == Node.Pair))
+            static if(is(Unqual!T == Node) || is(Unqual!T == Node.Pair))
             {
                 value_ = Value(array);
             }
             //Need to handle byte buffers separately.
-            else static if(is(T == byte) || is(T == ubyte))
+            else static if(is(Unqual!T == byte) || is(Unqual!T == ubyte))
             {
                 value_ = Value(cast(ubyte[]) array);
             }
@@ -457,7 +464,7 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
-        bool opEquals(T)(ref T rhs)
+        bool opEquals(T)(ref T rhs) if(!is(T == const))
         {
             return equals!(T, true)(rhs);
         }
@@ -504,10 +511,10 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        @property T get(T)()
+        @property T get(T)() if(!is(T == const))
         {
             T result;
-            getToVar(result);
+            getToVar!T(result);
             return result;
         }
 
@@ -521,7 +528,7 @@ struct Node
          *
          * Throws:  NodeException if unable to convert to specified type.
          */
-        void getToVar(T)(out T target)
+        void getToVar(T)(out T target) if(!is(T == const))
         {
             if(isType!T)
             {
@@ -529,20 +536,27 @@ struct Node
                 return;
             }
 
-            ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            if(isUserType)
+            static if(!Value.allowed!T)
             {
-                auto object = as!YAMLObject;
-                if(object.type is typeid(T))
+                ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
+                if(isUserType)
                 {
-                    target = (cast(YAMLContainer!T)object).value_;
-                    return;
+                    auto object = as!YAMLObject;
+                    if(object.type is typeid(T))
+                    {
+                        target = (cast(YAMLContainer!T)object).value_;
+                        return;
+                    }
                 }
             }
 
             //If we're getting from a mapping and we're not getting Node.Pair[],
             //we're getting the default value.
-            if(isMapping){return this["="].as!T;}
+            if(isMapping)
+            {
+                target = this["="].as!T;
+                return;
+            }
 
             void throwUnexpectedType()
             {
@@ -713,8 +727,8 @@ struct Node
                 static if(isIntegral!K)
                 {
                     auto nodes = value_.get!(Node[]);
-                    static if(is(V == Node)){nodes[index] = value;}
-                    else                    {nodes[index] = Node(value);}
+                    static if(is(Unqual!V == Node)){nodes[index] = value;}
+                    else                           {nodes[index] = Node(value);}
                     value_ = Value(nodes);
                     return;
                 }
@@ -727,8 +741,8 @@ struct Node
                 else
                 {
                     auto pairs = as!(Node.Pair[])();
-                    static if(is(V == Node)){pairs[idx].value = value;}
-                    else                    {pairs[idx].value = Node(value);}
+                    static if(is(Unqual!V == Node)){pairs[idx].value = value;}
+                    else                           {pairs[idx].value = Node(value);}
                     value_ = Value(pairs);
                 }
                 return;
@@ -774,7 +788,7 @@ struct Node
             int result = 0;
             foreach(ref node; get!(Node[]))
             {
-                static if(is(T == Node))
+                static if(is(Unqual!T == Node))
                 {
                     result = dg(node);
                 }
@@ -831,16 +845,16 @@ struct Node
             int result = 0;
             foreach(ref pair; get!(Node.Pair[]))
             {
-                static if(is(K == Node) && is(V == Node))
+                static if(is(Unqual!K == Node) && is(Unqual!V == Node))
                 {
                     result = dg(pair.key, pair.value);
                 }
-                else static if(is(K == Node))
+                else static if(is(Unqual!K == Node))
                 {
                     V tempValue = pair.value.as!V;
                     result = dg(pair.key, tempValue);
                 }
-                else static if(is(V == Node))
+                else static if(is(Unqual!V == Node))
                 {
                     K tempKey   = pair.key.as!K;
                     result = dg(tempKey, pair.value);
@@ -928,7 +942,7 @@ struct Node
                     new Error("Trying to add an element to a non-sequence node", startMark_));
 
             auto nodes = get!(Node[])();
-            static if(is(T == Node)){nodes ~= value;}
+            static if(is(Unqual!T == Node)){nodes ~= value;}
             else                    {nodes ~= Node(value);}
             value_ = Value(nodes);
         }
@@ -1142,7 +1156,7 @@ struct Node
          */
         bool equals(T, bool useTag)(ref T rhs)
         {
-            static if(is(T == Node))
+            static if(is(Unqual!T == Node))
             {
                 static if(useTag)
                 {
@@ -1261,7 +1275,7 @@ struct Node
          *
          * This only works for default YAML types, not for user defined types.
          */
-        @property bool isType(T)() const {return value_.type is typeid(T);}
+        @property bool isType(T)() const {return value_.type is typeid(Unqual!T);}
 
     private:
         //Is the value an integer of some kind?
@@ -1274,7 +1288,7 @@ struct Node
         alias isType!string isString;
 
         //Does given node have the same type as this node?
-        bool hasEqualType(ref Node node)
+        bool hasEqualType(const ref Node node) const
         {                 
             return value_.type is node.value_.type;
         }
@@ -1308,7 +1322,7 @@ struct Node
                 static if(value){node = &pair.value;}
                 else{node = &pair.key;}
 
-                static if(is(T == Node))
+                static if(is(Unqual!T == Node))
                 {
                     if(*node == index){return idx;}
                 }
