@@ -2,15 +2,15 @@
 Custom YAML data types
 ======================
 
-Often you might want to serialize complex data types such as classes. You can 
-use functions to process nodes such as a mapping containing class data members 
-indexed by name. Alternatively, YAML supports custom data types using 
-identifiers called *tags*. That is the topic of this tutorial.
+Sometimes you need to serialize complex data types such as classes. To do this
+you could use plain nodes such as mappings with class data members. However, 
+YAML supports custom types with identifiers called *tags*. That is the topic of
+this tutorial.
 
 Each YAML node has a tag specifying its type. For instance: strings use the tag 
 ``tag:yaml.org,2002:str``. Tags of most default types are *implicitly resolved* 
 during parsing, so you don't need to specify tag for each float, integer, etc.
-It is also possible to implicitly resolve custom tags, as we will show later.
+D:YAML can also implicitly resolve custom tags, as we will show later.
 
 
 -----------
@@ -18,16 +18,16 @@ Constructor
 -----------
 
 D:YAML uses the `Constructor <../api/dyaml.constructor.html>`_ class to process
-each node to hold data type corresponding to its tag. *Constructor* stores a 
-function for each supported tag to process it. These functions are supplied by
-the user using the *addConstructorXXX()* methods, where *XXX* is *Scalar*,
-*Sequence* or *Mapping*. *Constructor* is then passed to *Loader*, which parses
-YAML input.
+each node to hold data type corresponding to its tag. *Constructor* stores
+functions to process each supported tag. These are supplied by the user using 
+the *addConstructorXXX()* methods, where *XXX* is *Scalar*, *Sequence* or 
+*Mapping*. *Constructor* is then passed to *Loader*, which parses YAML input.
 
 Struct types have no specific requirements for YAML support. Class types should
 define the *opEquals()* operator, as this is used in equality comparisons of 
 nodes. Default class *opEquals()* compares references, which means two identical 
-objects might be considered unequal.
+objects might be considered unequal. (Default struct *opEquals()* compares 
+byte-by-byte, sometimes you might want to override that as well.)
 
 We will implement support for an RGB color type. It is implemented as the 
 following struct:
@@ -173,10 +173,10 @@ You can find the source code for what we've done so far in the
 Resolver
 --------
 
-Specifying tag for every color value can be tedious. D:YAML can implicitly 
-resolve scalar tags using regular expressions. This is how default types such as
-int are resolved. We will use the `Resolver <../api/dyaml.resolver.html>`_ class 
-to add implicit tag resolution for the Color data type (in its scalar form).
+Specifying tag for every color can be tedious. D:YAML can implicitly resolve 
+scalar tags using regular expressions. This is how default types are resolved.
+We will use the `Resolver <../api/dyaml.resolver.html>`_ class to add implicit
+tag resolution for the Color data type (in its scalar form).
 
 We use the *addImplicitResolver()* method of *Resolver*, passing the tag, 
 regular expression the scalar must match to resolve to this tag, and a string of
@@ -228,9 +228,9 @@ D:YAML package.
 Representer
 -----------
 
-Now that you know how to load custom data types, it might also be useful to know
-how to dump them. D:YAML uses the `Representer <../api/dyaml.representer.html>`_
-class for this purpose.
+Now that you can load custom data types, it might be good to know how to dump 
+them. D:YAML uses the `Representer <../api/dyaml.representer.html>`_ class for 
+this purpose.
 
 *Representer* processes YAML nodes into plain mapping, sequence or scalar nodes
 ready for output. Just like with *Constructor*, this is done by user specified 
@@ -239,15 +239,14 @@ functions. These functions take references to a node to process and to the
 
 Representer functions can be added with the *addRepresenter()* method. The 
 *Representer* is then passed to *Dumper*, which dumps YAML documents. Only one
-representer can be added for a type. This is asserted in *addRepresenter()*
-preconditions. By default, the default YAML types already have representer
-functions, but you can disable them by constructing *Representer* with the
+function per type can be specified. This is asserted in *addRepresenter()*
+preconditions. Default YAML types already have representer functions specified, 
+but you can disable them by constructing *Representer* with the
 *useDefaultRepresenters* parameter set to false.
 
-By default, tags are explicitly specified for all non-default types. If you
-want the tags to be implicit, you can pass a *Resolver* that will resolve them
-implicitly. Of course, you will then need to use an identical *Resolver* when 
-loading the output.
+By default, tags are explicitly output for all non-default types. To make dumped
+tags implicit, you can pass a *Resolver* that will resolve them implicitly. Of 
+course, you will need to use an identical *Resolver* when loading the output.
 
 With the following code, we will add support for dumping the our Color type.
 
@@ -274,10 +273,10 @@ With the following code, we will add support for dumping the our Color type.
 
 First we get the *Color* from the node. Then we convert it to a string with the
 CSS-like format we've used before. Finally, we use the *representScalar()* 
-method of *Representer* to get a scalar node ready for output.
-There are corresponding *representMapping()* and *representSequence()* methods
+method of *Representer* to get a scalar node ready for output. There are 
+corresponding *representMapping()* and *representSequence()* methods
 as well, with examples in the 
-`Resolver API documentation <../api/dyaml.resolver.html>`_.
+`Resolver API documentation <../api/dyaml.resolver.html>`_. 
 
 Since a type can only have one representer function, we don't dump *Color* both 
 in the scalar and mapping formats we've used before. However, you can decide to

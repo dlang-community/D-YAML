@@ -32,6 +32,8 @@
 <li><a href="dyaml.node.html">dyaml.node</a></li>
 <li><a href="dyaml.representer.html">dyaml.representer</a></li>
 <li><a href="dyaml.resolver.html">dyaml.resolver</a></li>
+<li><a href="dyaml.std.variant.html">dyaml.std.variant</a></li>
+<li><a href="dyaml.style.html">dyaml.style</a></li>
 </ul>
 </div>
 </div>
@@ -74,7 +76,7 @@
 <dd><p>Value node.</p>
 
 </dd>
-<dt class="d_decl">auto this(K, V)(K <b>key</b>, V <b>value</b>);
+<dt class="d_decl">this(K, V)(K <b>key</b>, V <b>value</b>);
 </dt>
 <dd><p>Construct a Pair from two values. Will be converted to Nodes if needed.</p>
 
@@ -96,7 +98,7 @@
 <dd><p>Node collection style. Used to remember style this node was loaded with.</p>
 
 </dd>
-<dt class="d_decl">auto this(T)(T <b>value</b>, in string <b>tag</b> = null);
+<dt class="d_decl">this(T)(T <b>value</b>, in string <b>tag</b> = null);
 </dt>
 <dd><p>Construct a Node from a value.
 </p>
@@ -124,7 +126,7 @@
 </table></div>
 
 </dd>
-<dt class="d_decl">auto this(T)(T[] <b>array</b>, in string <b>tag</b> = null);
+<dt class="d_decl">this(T)(T[] <b>array</b>, in string <b>tag</b> = null);
 </dt>
 <dd><p>Construct a node from an array.
 </p>
@@ -154,7 +156,7 @@
 </div>
 
 </dd>
-<dt class="d_decl">auto this(K, V)(V[K] <b>array</b>, in string <b>tag</b> = null);
+<dt class="d_decl">this(K, V)(V[K] <b>array</b>, in string <b>tag</b> = null);
 </dt>
 <dd><p>Construct a node from an associative array.
 </p>
@@ -186,7 +188,7 @@
 </div>
 
 </dd>
-<dt class="d_decl">auto this(K, V)(K[] <b>keys</b>, V[] <b>values</b>, in string <b>tag</b> = null);
+<dt class="d_decl">this(K, V)(K[] <b>keys</b>, V[] <b>values</b>, in string <b>tag</b> = null);
 </dt>
 <dd><p>Construct a node from arrays of keys and values.
 </p>

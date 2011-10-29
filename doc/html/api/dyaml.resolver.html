@@ -32,6 +32,8 @@
 <li><a href="dyaml.node.html">dyaml.node</a></li>
 <li><a href="dyaml.representer.html">dyaml.representer</a></li>
 <li><a href="dyaml.resolver.html">dyaml.resolver</a></li>
+<li><a href="dyaml.std.variant.html">dyaml.std.variant</a></li>
+<li><a href="dyaml.style.html">dyaml.style</a></li>
 </ul>
 </div>
 </div>
@@ -52,7 +54,7 @@
 </p>
 <p>Can be used to implicitly resolve custom data types of scalar values.</p>
 
-<dl><dt class="d_decl">this(in bool <b>defaultImplicitResolvers</b> = true);
+<dl><dt class="d_decl">this(in const(bool) <b>defaultImplicitResolvers</b> = true);
 </dt>
 <dd><p>Construct a Resolver.
 </p>
@@ -60,7 +62,7 @@
  you can use <b>defaultImplicitResolvers</b> to disable default resolvers.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>bool <b>defaultImplicitResolvers</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>const(bool) <b>defaultImplicitResolvers</b></td>
 <td valign=top>Use default YAML implicit resolvers?</td></tr>
 </table></div>
 

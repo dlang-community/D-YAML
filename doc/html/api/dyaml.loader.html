@@ -32,6 +32,8 @@
 <li><a href="dyaml.node.html">dyaml.node</a></li>
 <li><a href="dyaml.representer.html">dyaml.representer</a></li>
 <li><a href="dyaml.resolver.html">dyaml.resolver</a></li>
+<li><a href="dyaml.std.variant.html">dyaml.std.variant</a></li>
+<li><a href="dyaml.style.html">dyaml.style</a></li>
 </ul>
 </div>
 </div>
@@ -97,11 +99,11 @@
 </pre>
 </div>
 
-<dl><dt class="d_decl">this(in string <b>filename</b>);
+<dl><dt class="d_decl">this(in const(immutable(char)[]) <b>filename</b>);
 </dt>
 <dd><p>Construct a Loader to load YAML from a file.
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>filename</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>const(immutable(char)[]) <b>filename</b></td>
 <td valign=top>Name of the file to load from.</td></tr>
 </table></div>
 <b>Throws:</b><div class="pbr">YAMLException if the file could not be opened or read.</div>

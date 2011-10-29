@@ -82,13 +82,13 @@ final class Representer
             representers_ = null;
         }
 
-        ///Set default style for scalars. Invalid means the style is chosen automatically.
+        ///Set default _style for scalars. Invalid means the _style is chosen automatically.
         @property void defaultScalarStyle(ScalarStyle style)
         {
             defaultScalarStyle_ = style;
         }
 
-        ///Set default style for collections. Invalid means the style is chosen automatically. 
+        ///Set default _style for collections. Invalid means the _style is chosen automatically. 
         @property void defaultCollectionStyle(CollectionStyle style)
         {
             defaultCollectionStyle_ = style;
@@ -212,7 +212,8 @@ final class Representer
          *
          * Params:  tag    = Tag of the _scalar.
          *          scalar = Scalar value.
-         *          style  = Style of the scalar (will be default if invalid).
+         *          style  = Style of the _scalar. If invalid, default _style will be used.
+         *                   If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
          *
@@ -228,6 +229,7 @@ final class Representer
          *     auto value = node.as!MyStruct;
          *     auto scalar = format(value.x, ":", value.y, ":", value.z);
          *     return representer.representScalar("!mystruct.tag", scalar);
+         *
          * }
          * --------------------
          */
@@ -246,7 +248,8 @@ final class Representer
          *
          * Params:  tag      = Tag of the sequence.
          *          sequence = Sequence of nodes.
-         *          style    = Style of the sequence (will be default if invalid).
+         *          style    = Style of the _sequence. If invalid, default _style will be used.
+         *                     If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
          *
@@ -263,7 +266,9 @@ final class Representer
          * { 
          *     auto value = node.as!MyStruct;
          *     auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
-         *     return representer.representSequence("!mystruct.tag", nodes);
+         *     //use flow style
+         *     return representer.representSequence("!mystruct.tag", nodes,
+         *                                          CollectionStyle.Flow);
          * }
          * --------------------
          */
@@ -302,7 +307,8 @@ final class Representer
          *
          * Params:  tag   = Tag of the mapping.
          *          pairs = Key-value _pairs of the mapping.
-         *          style = Style of the mapping (will be default if invalid).
+         *          style = Style of the _mapping. If invalid, default _style will be used.
+         *                  If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
          *

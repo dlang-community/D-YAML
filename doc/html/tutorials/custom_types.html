@@ -47,26 +47,26 @@
             
   <div class="section" id="custom-yaml-data-types">
 <h1>Custom YAML data types<a class="headerlink" href="#custom-yaml-data-types" title="Permalink to this headline">¶</a></h1>
-<p>Often you might want to serialize complex data types such as classes. You can
-use functions to process nodes such as a mapping containing class data members
-indexed by name. Alternatively, YAML supports custom data types using
-identifiers called <em>tags</em>. That is the topic of this tutorial.</p>
+<p>Sometimes you need to serialize complex data types such as classes. To do this
+you could use plain nodes such as mappings with class data members. However,
+YAML supports custom types with identifiers called <em>tags</em>. That is the topic of
+this tutorial.</p>
 <p>Each YAML node has a tag specifying its type. For instance: strings use the tag
 <tt class="docutils literal"><span class="pre">tag:yaml.org,2002:str</span></tt>. Tags of most default types are <em>implicitly resolved</em>
 during parsing, so you don&#8217;t need to specify tag for each float, integer, etc.
-It is also possible to implicitly resolve custom tags, as we will show later.</p>
+D:YAML can also implicitly resolve custom tags, as we will show later.</p>
 <div class="section" id="constructor">
 <h2>Constructor<a class="headerlink" href="#constructor" title="Permalink to this headline">¶</a></h2>
 <p>D:YAML uses the <a class="reference external" href="../api/dyaml.constructor.html">Constructor</a> class to process
-each node to hold data type corresponding to its tag. <em>Constructor</em> stores a
-function for each supported tag to process it. These functions are supplied by
-the user using the <em>addConstructorXXX()</em> methods, where <em>XXX</em> is <em>Scalar</em>,
-<em>Sequence</em> or <em>Mapping</em>. <em>Constructor</em> is then passed to <em>Loader</em>, which parses
-YAML input.</p>
+each node to hold data type corresponding to its tag. <em>Constructor</em> stores
+functions to process each supported tag. These are supplied by the user using
+the <em>addConstructorXXX()</em> methods, where <em>XXX</em> is <em>Scalar</em>, <em>Sequence</em> or
+<em>Mapping</em>. <em>Constructor</em> is then passed to <em>Loader</em>, which parses YAML input.</p>
 <p>Struct types have no specific requirements for YAML support. Class types should
 define the <em>opEquals()</em> operator, as this is used in equality comparisons of
 nodes. Default class <em>opEquals()</em> compares references, which means two identical
-objects might be considered unequal.</p>
+objects might be considered unequal. (Default struct <em>opEquals()</em> compares
+byte-by-byte, sometimes you might want to override that as well.)</p>
 <p>We will implement support for an RGB color type. It is implemented as the
 following struct:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">struct</span> <span class="n">Color</span>
@@ -198,10 +198,10 @@ they were loaded as expected.</p>
 </div>
 <div class="section" id="resolver">
 <h2>Resolver<a class="headerlink" href="#resolver" title="Permalink to this headline">¶</a></h2>
-<p>Specifying tag for every color value can be tedious. D:YAML can implicitly
-resolve scalar tags using regular expressions. This is how default types such as
-int are resolved. We will use the <a class="reference external" href="../api/dyaml.resolver.html">Resolver</a> class
-to add implicit tag resolution for the Color data type (in its scalar form).</p>
+<p>Specifying tag for every color can be tedious. D:YAML can implicitly resolve
+scalar tags using regular expressions. This is how default types are resolved.
+We will use the <a class="reference external" href="../api/dyaml.resolver.html">Resolver</a> class to add implicit
+tag resolution for the Color data type (in its scalar form).</p>
 <p>We use the <em>addImplicitResolver()</em> method of <em>Resolver</em>, passing the tag,
 regular expression the scalar must match to resolve to this tag, and a string of
 possible starting characters of the scalar. Then we pass the <em>Resolver</em> to
@@ -242,23 +242,22 @@ D:YAML package.</p>
 </div>
 <div class="section" id="representer">
 <h2>Representer<a class="headerlink" href="#representer" title="Permalink to this headline">¶</a></h2>
-<p>Now that you know how to load custom data types, it might also be useful to know
-how to dump them. D:YAML uses the <a class="reference external" href="../api/dyaml.representer.html">Representer</a>
-class for this purpose.</p>
+<p>Now that you can load custom data types, it might be good to know how to dump
+them. D:YAML uses the <a class="reference external" href="../api/dyaml.representer.html">Representer</a> class for
+this purpose.</p>
 <p><em>Representer</em> processes YAML nodes into plain mapping, sequence or scalar nodes
 ready for output. Just like with <em>Constructor</em>, this is done by user specified
 functions. These functions take references to a node to process and to the
 <em>Representer</em>, and return the processed node.</p>
 <p>Representer functions can be added with the <em>addRepresenter()</em> method. The
 <em>Representer</em> is then passed to <em>Dumper</em>, which dumps YAML documents. Only one
-representer can be added for a type. This is asserted in <em>addRepresenter()</em>
-preconditions. By default, the default YAML types already have representer
-functions, but you can disable them by constructing <em>Representer</em> with the
+function per type can be specified. This is asserted in <em>addRepresenter()</em>
+preconditions. Default YAML types already have representer functions specified,
+but you can disable them by constructing <em>Representer</em> with the
 <em>useDefaultRepresenters</em> parameter set to false.</p>
-<p>By default, tags are explicitly specified for all non-default types. If you
-want the tags to be implicit, you can pass a <em>Resolver</em> that will resolve them
-implicitly. Of course, you will then need to use an identical <em>Resolver</em> when
-loading the output.</p>
+<p>By default, tags are explicitly output for all non-default types. To make dumped
+tags implicit, you can pass a <em>Resolver</em> that will resolve them implicitly. Of
+course, you will need to use an identical <em>Resolver</em> when loading the output.</p>
 <p>With the following code, we will add support for dumping the our Color type.</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="n">Node</span> <span class="n">representColor</span><span class="p">(</span><span class="k">ref</span> <span class="n">Node</span> <span class="n">node</span><span class="p">,</span> <span class="n">Representer</span> <span class="n">representer</span><span class="p">)</span>
 <span class="p">{</span>
@@ -282,8 +281,8 @@ loading the output.</p>
 </div>
 <p>First we get the <em>Color</em> from the node. Then we convert it to a string with the
 CSS-like format we&#8217;ve used before. Finally, we use the <em>representScalar()</em>
-method of <em>Representer</em> to get a scalar node ready for output.
-There are corresponding <em>representMapping()</em> and <em>representSequence()</em> methods
+method of <em>Representer</em> to get a scalar node ready for output. There are
+corresponding <em>representMapping()</em> and <em>representSequence()</em> methods
 as well, with examples in the
 <a class="reference external" href="../api/dyaml.resolver.html">Resolver API documentation</a>.</p>
 <p>Since a type can only have one representer function, we don&#8217;t dump <em>Color</em> both
@@ -369,7 +368,7 @@ directory of the D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Oct 27, 2011.
+      Last updated on Oct 29, 2011.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>

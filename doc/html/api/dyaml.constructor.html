@@ -32,6 +32,8 @@
 <li><a href="dyaml.node.html">dyaml.node</a></li>
 <li><a href="dyaml.representer.html">dyaml.representer</a></li>
 <li><a href="dyaml.resolver.html">dyaml.resolver</a></li>
+<li><a href="dyaml.std.variant.html">dyaml.std.variant</a></li>
+<li><a href="dyaml.style.html">dyaml.style</a></li>
 </ul>
 </div>
 </div>
@@ -81,7 +83,7 @@
 
  If a tag is detected with no known constructor function, it is considered an error.</p>
 
-<dl><dt class="d_decl">this(in bool <b>defaultConstructors</b> = true);
+<dl><dt class="d_decl">this(in const(bool) <b>defaultConstructors</b> = true);
 </dt>
 <dd><p>Construct a Constructor.
 </p>
@@ -89,7 +91,7 @@
  <b>defaultConstructors</b> to disable constructor functions for these.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>bool <b>defaultConstructors</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>const(bool) <b>defaultConstructors</b></td>
 <td valign=top>Use constructors for default YAML tags?</td></tr>
 </table></div>
 
