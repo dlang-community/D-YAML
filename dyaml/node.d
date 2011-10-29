@@ -513,27 +513,9 @@ struct Node
          */
         @property T get(T)() if(!is(T == const))
         {
-            T result;
-            getToVar!T(result);
-            return result;
-        }
-
-        /**
-         * Write the value of the node to target.
-         *
-         * If the target type does not match node type,
-         * conversion is attempted.
-         *
-         * Params:  target = Variable to write to.
-         *
-         * Throws:  NodeException if unable to convert to specified type.
-         */
-        void getToVar(T)(out T target) if(!is(T == const))
-        {
             if(isType!T)
             {
-                target = value_.get!T;
-                return;
+                return value_.get!T;
             }
 
             static if(!Value.allowed!T)
@@ -544,8 +526,7 @@ struct Node
                     auto object = as!YAMLObject;
                     if(object.type is typeid(T))
                     {
-                        target = (cast(YAMLContainer!T)object).value_;
-                        return;
+                        return (cast(YAMLContainer!T)object).value_;
                     }
                 }
             }
@@ -554,8 +535,7 @@ struct Node
             //we're getting the default value.
             if(isMapping)
             {
-                target = this["="].as!T;
-                return;
+                return this["="].as!T;
             }
 
             void throwUnexpectedType()
@@ -570,8 +550,7 @@ struct Node
                 //Try to convert to string.
                 try
                 {
-                    target = value_.coerce!T();
-                    return;
+                    return value_.coerce!T();
                 }
                 catch(VariantException e)
                 {
@@ -583,37 +562,41 @@ struct Node
                 ///Can convert int to float.
                 if(isInt())
                 {
-                    target = to!T(value_.get!long);
-                    return;
+                    return to!T(value_.get!long);
                 }
                 else if(isFloat())
                 {
-                    target = to!T(value_.get!real);
-                    return;
+                    return to!T(value_.get!real);
+                }
+                else
+                {
+                    throwUnexpectedType();
+                    assert(false);
                 }
             }
             else static if(isIntegral!T)
             {
                 if(isInt())
                 {                
-                    long temp = value_.get!long;
+                    const temp = value_.get!long;
                     if(temp < T.min || temp > T.max)
                     {
                         throw new Error("Integer value out of range of type " ~
                                         typeid(T).toString ~ "Value: " ~ to!string(temp), 
                                         startMark_);
                     }
-                    target = to!T(temp);
-                    return;
+                    return to!T(temp);
                 }
                 else
                 {
                     throwUnexpectedType();
+                    assert(false);
                 }
             }
             else
             {
                 throwUnexpectedType();
+                assert(false);
             }
         }
 
