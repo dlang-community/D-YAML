@@ -155,8 +155,8 @@ void main(string[] args)
     if(args.length > 0 && args[$ - 1][0] != '-'){target = args[$ - 1];}
 
     string[] dbg      = ["-debug", "-gc"];
-    string[] optimize = ["-O", "-inline", "-release"];
-    string[] profile  = ["-O", "-inline", "-release", "-gc"];
+    string[] optimize = ["-O", "-inline", "-release", "-noboundscheck"];
+    string[] profile  = ["-O", "-release", "-noboundscheck", "-gc"];
     string[] lib_src  = ["dyaml/", "yaml.d"];
 
     void compile_(string[] args, string[] files)

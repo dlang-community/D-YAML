@@ -168,24 +168,38 @@ final class Reader
          * Note: This gets only a "view" into the internal buffer,
          *       which WILL get invalidated after other Reader calls.
          *
-         * Params: length = Number of characters to get.
+         * Params:  length = Number of characters to get.
          *
-         * Returns: Characters starting at current position.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
+         * Returns: Characters starting at current position or an empty slice if out of bounds.
          */
-        dstring prefix(in size_t length)
+        const(dstring) prefix(in size_t length)
         {
-            if(length == 0){return "";}
-            if(buffer_.length <= bufferOffset_ + length)
+            return slice(0, length);
+        }
+
+        /**
+         * Get a slice view of the internal buffer.
+         *
+         * Note: This gets only a "view" into the internal buffer,
+         *       which WILL get invalidated after other Reader calls.
+         *
+         * Params:  start = Start of the slice relative to current position.
+         *          end   = End of the slice relative to current position.
+         *
+         * Returns: Slice into the internal buffer or an empty slice if out of bounds.
+         */
+        const(dstring) slice(size_t start, size_t end)
+        {
+            if(buffer_.length <= bufferOffset_ + end)
             {
-                updateBuffer(length);
+                updateBuffer(end);
             }
-            const end = min(buffer_.length, bufferOffset_ + length);
-            //need to duplicate as we change buffer content with C functions
-            //and could end up with returned string referencing changed data
-            return cast(dstring)buffer_[bufferOffset_ .. end];
+            end += bufferOffset_;
+            start += bufferOffset_;
+            end = min(buffer_.length, end);
+            if(end <= start){return "";}
+
+            return cast(dstring)buffer_[start .. end];
         }
 
         /**
@@ -275,7 +289,7 @@ final class Reader
          * If there are not enough characters in the stream, it will get
          * as many as possible.
          *
-         * Params:  length = Mimimum number of characters we need to read.
+         * Params:  length = Number of characters we need to read.
          *
          * Throws:  ReaderException if trying to read past the end of the stream
          *          or if invalid data is read.
@@ -324,7 +338,7 @@ final class Reader
             ///Get next character from the stream.
             dchar getDChar()
             {
-                switch(encoding_)
+                final switch(encoding_)
                 {
                     case Encoding.UTF_8:
                         //Temp buffer for moving data in rawBuffer8_.
@@ -389,7 +403,6 @@ final class Reader
                         available_ -= 4;
                         stream_.read(result);
                         return result;
-                    default: assert(false);
                 }
             }
 

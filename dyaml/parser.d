@@ -219,7 +219,7 @@ final class Parser
             if(!currentEvent_.isNull)
             {
                 immutable Event result = currentEvent_;
-                clear(currentEvent_);
+                currentEvent_.id = EventID.Invalid;
                 return result;
             }
             assert(false, "No event left to get");

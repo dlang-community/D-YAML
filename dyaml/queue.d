@@ -185,7 +185,7 @@ T* allocate(T, Args...)(Args args)
     T* ptr = cast(T*)malloc(T.sizeof);
     *ptr = T(args);
     //The struct might contain references to GC-allocated memory, so tell the GC about it.
-    if(hasIndirections!T){GC.addRange(cast(void*)ptr, T.sizeof);}
+    static if(hasIndirections!T){GC.addRange(cast(void*)ptr, T.sizeof);}
     return ptr;
 }
 
@@ -193,8 +193,8 @@ T* allocate(T, Args...)(Args args)
 void free(T)(T* ptr)
 {
     //GC doesn't need to care about any references in this struct anymore.
-    if(hasIndirections!T){GC.removeRange(cast(void*)ptr);}
-    clear(*ptr);
+    static if(hasIndirections!T){GC.removeRange(cast(void*)ptr);}
+    static if(hasMember!(T, "__dtor")){clear(*ptr);}
     std.c.stdlib.free(ptr);
 }
 

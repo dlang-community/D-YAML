@@ -15,6 +15,7 @@ import core.stdc.string;
 
 import std.algorithm;
 import std.array;
+import std.container;
 import std.conv;
 import std.ascii : isAlphaNum, isDigit, isHexDigit;
 import std.exception;
@@ -123,7 +124,7 @@ final class Scanner
         ///Current indentation level.
         int indent_ = -1;
         ///Past indentation levels. Used as a stack.
-        int[] indents_;
+        Array!int indents_;
 
         ///Processed tokens not yet emitted. Used as a queue.
         Queue!Token tokens_;
@@ -164,7 +165,6 @@ final class Scanner
         {
             clear(tokens_);
             clear(indents_);
-            indents_ = null;
             clear(possibleSimpleKeys_);
             possibleSimpleKeys_ = null;
             clear(appender_);
@@ -404,7 +404,7 @@ final class Scanner
             while(indent_ > column)
             {
                 indent_ = indents_.back;
-                indents_.popBack();
+                indents_.length = indents_.length - 1;
                 tokens_.push(blockEndToken(reader_.mark, reader_.mark));
             }
         }
@@ -778,7 +778,6 @@ final class Scanner
                     (!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)) &&
                      (c == '-' || (flowLevel_ == 0 && "?:"d.canFind(c))));
         }
-
 
         ///Move to the next non-space character.
         void findNextNonSpace()
@@ -1266,13 +1265,23 @@ final class Scanner
 
                 mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
 
-                while(!search.canFind(c))
+                //This is an optimized way of writing:
+                //while(!search.canFind(reader_.peek(length))){++length;}
+                outer: for(;;)
                 {
-                    ++length;
-                    c = reader_.peek(length);
+                    const slice = reader_.slice(length, length + 32);
+                    enforce(slice.length > 0, 
+                            new Error("While reading a flow scalar", startMark,
+                                      "reached end of file", reader_.mark));
+                    foreach(ch; slice)
+                    {
+                        if(search.canFind(ch)){break outer;}
+                        ++length;
+                    }
                 }
 
-                if(length > 0){appender_.put(reader_.get(length));}
+                appender_.put(reader_.prefix(length));
+                reader_.forward(length);
 
                 c = reader_.peek();
                 if(quotes == ScalarStyle.SingleQuoted && 
@@ -1338,14 +1347,15 @@ final class Scanner
         {
             uint length = 0;
             while(" \t"d.canFind(reader_.peek(length))){++length;}
-            const whitespaces = reader_.get(length);
+            const whitespaces = reader_.prefix(length + 1);
 
-            dchar c = reader_.peek();
+            const c = whitespaces[$ - 1];
             enforce(c != '\0', new Error("While scanning a quoted scalar", startMark, 
                                          "found unexpected end of stream", reader_.mark));
 
             if("\n\r\u0085\u2028\u2029"d.canFind(c))
             {
+                reader_.forward(length);
                 const lineBreak = scanLineBreak();
                 const breaks = scanFlowScalarBreaks(startMark);
 
@@ -1353,7 +1363,11 @@ final class Scanner
                 else if(breaks.length == 0){appender_.put(' ');}
                 appender_.put(breaks);
             }
-            else{appender_.put(whitespaces);}
+            else
+            {
+                appender_.put(whitespaces[0 .. $ - 1]);
+                reader_.forward(length);
+            }
         }
 
         ///Scan line breaks in a flow scalar.
