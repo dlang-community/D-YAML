@@ -52,6 +52,12 @@
 </dt>
 <dd><p>Null YAML type. Used in nodes with null values.</p>
 
+<dl><dt class="d_decl">const string <a name="toString"></a><span class="ddoc_psymbol">toString</span>();
+</dt>
+<dd><p>Used for string conversion.</p>
+
+</dd>
+</dl>
 </dd>
 <dt class="d_decl">struct <a name="Node"></a><span class="ddoc_psymbol">Node</span>;
 </dt>
@@ -80,7 +86,7 @@
 <dd><p>Construct a Pair from two values. Will be converted to Nodes if needed.</p>
 
 </dd>
-<dt class="d_decl">bool <a name="equals"></a><span class="ddoc_psymbol">equals</span>(ref Pair <b>rhs</b>);
+<dt class="d_decl">const bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(ref const Pair <b>rhs</b>);
 </dt>
 <dd><p>Equality test with another Pair.</p>
 
@@ -263,7 +269,7 @@
 <dd><p>Return <a name="tag"></a><span class="ddoc_psymbol">tag</span> of the node.</p>
 
 </dd>
-<dt class="d_decl">bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(T)(ref T <b>rhs</b>);
+<dt class="d_decl">const bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(T)(ref const T <b>rhs</b>);
 </dt>
 <dd><p>Equality test.
 </p>
@@ -337,7 +343,7 @@
           the value is out of range of requested type.</div>
 
 </dd>
-<dt class="d_decl">@property size_t <a name="length"></a><span class="ddoc_psymbol">length</span>();
+<dt class="d_decl">const @property size_t <a name="length"></a><span class="ddoc_psymbol">length</span>();
 </dt>
 <dd><p>If this is a collection, return its length.
 </p>

@@ -69,7 +69,7 @@ void testRepresenterTypes(bool verbose, string codeFilename)
         assert(expectedNodes.length == readNodes.length);
         foreach(n; 0 .. expectedNodes.length)
         {
-            assert(expectedNodes[n].equals!(Node, false)(readNodes[n]));
+            assert(expectedNodes[n].equals!false(readNodes[n]));
         }
     }
 }

@@ -16,11 +16,12 @@ import std.conv;
 import std.datetime;
 import std.exception;
 import std.math;
+import std.range;
 import std.stdio;   
 import std.string;
 import std.traits;
 import std.typecons;
-import dyaml.std.variant;
+import std.variant;
 
 import dyaml.event;
 import dyaml.exception;
@@ -73,7 +74,7 @@ package abstract class YAMLObject
 
     protected:
         ///Test for equality with another YAMLObject.
-        bool equals(YAMLObject rhs) {assert(false);} 
+        bool equals(const YAMLObject rhs) const {assert(false);} 
 }
 
 //Stores a user defined YAML data type.
@@ -102,10 +103,10 @@ package class YAMLContainer(T) if (!Node.Value.allowed!T): YAMLObject
 
     protected:
         //Test for equality with another YAMLObject.
-        override bool equals(YAMLObject rhs)
+        override bool equals(const YAMLObject rhs) const
         {
             if(rhs.type !is typeid(T)){return false;}
-            return cast(T)value_ == (cast(YAMLContainer)rhs).value_;
+            return cast(T)value_ == (cast(const YAMLContainer)rhs).value_;
         }
 
     private:
@@ -134,7 +135,6 @@ struct Node
                 Node value;
 
             public:
-                @disable bool opEquals(ref Pair);
                 @disable int opCmp(ref Pair);
 
                 ///Construct a Pair from two values. Will be converted to Nodes if needed.
@@ -147,10 +147,10 @@ struct Node
                 }
 
                 ///Equality test with another Pair.
-                bool equals(ref Pair rhs)
+                bool opEquals(const ref Pair rhs) const
                 {
-                    return equals_!true(rhs);
-                }
+                    return equals!true(rhs);
+                } 
 
             private:
                 /* 
@@ -159,10 +159,10 @@ struct Node
                  * useTag determines whether or not we consider node tags 
                  * in the test.
                  */
-                bool equals_(bool useTag)(ref Pair rhs) 
+                bool equals(bool useTag)(ref const(Pair) rhs) const
                 {
-                    return key.equals!(Node, useTag)(rhs.key) && 
-                           value.equals!(Node, useTag)(rhs.value);
+                    return key.equals!(useTag)(rhs.key) && 
+                           value.equals!(useTag)(rhs.value);
                 }
         }
 
@@ -187,8 +187,6 @@ struct Node
 
     public:
         @disable int opCmp(ref Node);
-
-        @disable bool opEquals(T)(ref T) const if(is(T == const));
 
         /**
          * Construct a Node from a value.
@@ -468,9 +466,9 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
-        bool opEquals(T)(ref T rhs) if(!is(T == const))
+        bool opEquals(T)(const ref T rhs) const
         {
-            return equals!(T, true)(rhs);
+            return equals!true(rhs);
         }
 
         ///Shortcut for get().
@@ -517,37 +515,23 @@ struct Node
          */
         @property T get(T)() if(!is(T == const))
         {
-            if(isType!T)
-            {
-                return value_.get!T;
-            }
+            if(isType!T){return value_.get!T;}
 
-            static if(!Value.allowed!T)
+            ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
+            static if(!Value.allowed!T) if(isUserType)
             {
-                ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
-                if(isUserType)
+                auto object = as!YAMLObject;
+                if(object.type is typeid(T))
                 {
-                    auto object = as!YAMLObject;
-                    if(object.type is typeid(T))
-                    {
-                        return (cast(YAMLContainer!T)object).value_;
-                    }
+                    return (cast(YAMLContainer!T)object).value_;
                 }
+                throw new Error("Node has unexpected type: " ~ object.type.toString ~ 
+                                ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
             //If we're getting from a mapping and we're not getting Node.Pair[],
             //we're getting the default value.
-            if(isMapping)
-            {
-                return this["="].as!T;
-            }
-
-            void throwUnexpectedType()
-            {
-                //Can't get the value.
-                throw new Error("Node has unexpected type: " ~ type.toString ~ 
-                                ". Expected: " ~ typeid(T).toString, startMark_);
-            }
+            if(isMapping){return this["="].as!T;}
 
             static if(isSomeString!T)
             {
@@ -561,46 +545,79 @@ struct Node
                     throw new Error("Unable to convert node value to string", startMark_);
                 }
             }
-            else static if(isFloatingPoint!T)
+            else 
             {
-                ///Can convert int to float.
-                if(isInt())
+                static if(isFloatingPoint!T)
                 {
-                    return to!T(value_.get!long);
+                    ///Can convert int to float.
+                    if(isInt())       {return to!T(value_.get!(const long));}
+                    else if(isFloat()){return to!T(value_.get!(const real));}
                 }
-                else if(isFloat())
-                {
-                    return to!T(value_.get!real);
-                }
-                else
-                {
-                    throwUnexpectedType();
-                    assert(false);
-                }
-            }
-            else static if(isIntegral!T)
-            {
-                if(isInt())
+                else static if(isIntegral!T) if(isInt())
                 {                
-                    const temp = value_.get!long;
-                    if(temp < T.min || temp > T.max)
-                    {
-                        throw new Error("Integer value out of range of type " ~
-                                        typeid(T).toString ~ "Value: " ~ to!string(temp), 
-                                        startMark_);
-                    }
+                    const temp = value_.get!(const long);
+                    enforce(temp >= T.min && temp <= T.max,
+                            new Error("Integer value of type " ~ typeid(T).toString ~ 
+                                      " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                else
+                throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                                ". Expected: " ~ typeid(T).toString, startMark_);
+            }
+        }
+
+        //Const version of get.
+        @property T get(T)() const if(is(T == const))
+        {
+            if(isType!T){return value_.get!T;}
+
+            ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
+            static if(!Value.allowed!T) if(isUserType)
+            {
+                auto object = as!(const YAMLObject);
+                if(object.type is typeid(T))
                 {
-                    throwUnexpectedType();
-                    assert(false);
+                    return (cast(const YAMLContainer!T)object).value_;
+                }
+                throw new Error("Node has unexpected type: " ~ object.type.toString ~ 
+                                ". Expected: " ~ typeid(T).toString, startMark_);
+            }
+
+            //If we're getting from a mapping and we're not getting Node.Pair[],
+            //we're getting the default value.
+            if(isMapping){return indexConst("=").as!T;}
+
+            static if(isSomeString!T)
+            {
+                //Try to convert to string.
+                try
+                {
+                    //NOTE: We are casting away const here
+                    return (cast(Value)value_).coerce!T();
+                }
+                catch(VariantException e)
+                {
+                    throw new Error("Unable to convert node value to string", startMark_);
                 }
             }
-            else
+            else 
             {
-                throwUnexpectedType();
-                assert(false);
+                static if(isFloatingPoint!T)
+                {
+                    ///Can convert int to float.
+                    if(isInt())       {return to!T(value_.get!(const long));}
+                    else if(isFloat()){return to!T(value_.get!(const real));}
+                }
+                else static if(isIntegral!T) if(isInt())
+                {                
+                    const temp = value_.get!(const long);
+                    enforce(temp >= T.min && temp <= T.max,
+                            new Error("Integer value of type " ~ typeid(T).toString ~ 
+                                      " out of range. Value: " ~ to!string(temp), startMark_));
+                    return to!T(temp);
+                }
+                throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                                ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
 
@@ -643,13 +660,19 @@ struct Node
             if(isSequence)
             {
                 checkSequenceIndex(index);
-                static if(isIntegral!T){return value_.get!(Node[])[index];}
+                static if(isIntegral!T)
+                {
+                    return cast(Node)value_.get!(Node[])[index];
+                }
                 assert(false);
             }
             else if(isMapping)
             {
                 auto idx = findPair(index);
-                if(idx >= 0){return as!(Pair[])[idx].value;}
+                if(idx >= 0)
+                {
+                    return cast(Node)value_.get!(Pair[])[idx].value;
+                }
 
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
                 throw new Error(msg, startMark_);
@@ -1141,7 +1164,7 @@ struct Node
          *
          * useTag determines whether or not to consider tags in node-node comparisons.
          */
-        bool equals(T, bool useTag)(ref T rhs)
+        bool equals(bool useTag, T)(ref T rhs) const
         {
             static if(is(Unqual!T == Node))
             {
@@ -1155,55 +1178,50 @@ struct Node
                 {
                     return false;
                 }
-                if(isSequence)
+
+                static bool compareCollection(T)(const ref Node lhs, const ref Node rhs)
                 {
-                    auto seq1 = as!(Node[]);
-                    auto seq2 = rhs.as!(Node[]);
-                    if(seq1 is seq2){return true;}
-                    if(seq1.length != seq2.length){return false;}
-                    foreach(node; 0 .. seq1.length)
+                    const c1 = lhs.value_.get!(const T);
+                    const c2 = rhs.value_.get!(const T);
+                    if(c1 is c2){return true;}
+                    if(c1.length != c2.length){return false;}
+                    foreach(ref i1, ref i2; lockstep(c1, c2))
                     {
-                        if(!seq1[node].equals!(T, useTag)(seq2[node])){return false;}
+                        if(!i1.equals!useTag(i2)){return false;}
                     }
                     return true;
                 }
-                if(isMapping)
+
+                static bool compare(T)(const ref Node lhs, const ref Node rhs) 
                 {
-                    auto map1 = as!(Node.Pair[]);
-                    auto map2 = rhs.as!(Node.Pair[]);
-                    if(map1 is map2){return true;}
-                    if(map1.length != map2.length){return false;}
-                    foreach(pair; 0 .. map1.length)
-                    {
-                        if(!map1[pair].equals_!useTag(map2[pair])){return false;}
-                    }
-                    return true;
+                    return lhs.value_.get!(const T) == rhs.value_.get!(const T);
                 }
-                if(isScalar)
+
+                if(isSequence)    {return compareCollection!(Node[])(this, rhs);}
+                else if(isMapping){return compareCollection!(Pair[])(this, rhs);}
+                else if(isString) {return compare!string(this, rhs);}
+                else if(isInt)    {return compare!long(this, rhs);}
+                else if(isBool)   {return compare!bool(this, rhs);}
+                else if(isBinary) {return compare!(ubyte[])(this, rhs);}
+                else if(isNull)   {return true;}
+                else if(isFloat)
                 {
-                    if(isUserType)
-                    {
-                        if(!rhs.isUserType){return false;}
-                        return get!YAMLObject.equals(rhs.as!YAMLObject);
-                    }
-                    if(isFloat)
-                    {
-                        if(!rhs.isFloat){return false;}
-                        real r1 = get!real;
-                        real r2 = rhs.get!real;
-                        bool equals(real r1, real r2)
-                        {
-                            return r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon;
-                        }
-                        if(isNaN(r1)){return isNaN(r2);}
-                        return equals(r1, r2);
-                    }
-                    else
-                    {
-                        return value_ == rhs.value_;
-                    }
+                    const r1 = value_.get!(const real);
+                    const r2 = rhs.value_.get!(const real);
+                    return isNaN(r1) ? isNaN(r2) 
+                                     : (r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon);
                 }
-                assert(false, "Unknown kind of node");
+                else if(isTime)
+                {
+                    const t1 = value_.get!(const SysTime);
+                    const t2 = rhs.value_.get!(const SysTime);
+                    return t1 == t2;
+                }
+                else if(isUserType)
+                {
+                    return value_.get!(const YAMLObject).equals(rhs.value_.get!(const YAMLObject));
+                }
+                assert(false, "Unknown kind of node (equality comparison) : " ~ type.toString);
             }
             else
             {
@@ -1265,14 +1283,26 @@ struct Node
         @property bool isType(T)() const {return value_.type is typeid(Unqual!T);}
 
     private:
-        //Is the value an integer of some kind?
+        //Is the value a bool?
+        alias isType!bool isBool;
+
+        //Is the value a raw binary buffer?
+        alias isType!(ubyte[]) isBinary;
+
+        //Is the value an integer?
         alias isType!long isInt;
 
-        //Is the value a floating point number of some kind?
+        //Is the value a floating point number?
         alias isType!real isFloat;
 
-        //Is the value a string of some kind?
+        //Is the value a string?
         alias isType!string isString;
+
+        //Is the value a timestamp?
+        alias isType!SysTime isTime;
+
+        //Is the value a null value?
+        alias isType!YAMLNull isNull;
 
         //Does given node have the same type as this node?
         bool hasEqualType(const ref Node node) const
@@ -1293,11 +1323,11 @@ struct Node
         }
 
         //Get index of pair with key (or value, if value is true) matching index.
-        long findPair(T, bool value = false)(const ref T index)
+        long findPair(T, bool value = false)(const ref T index) const
         {
-            auto pairs = as!(Node.Pair[])();
-            Node* node;
-            foreach(idx, ref pair; pairs)
+            const pairs = value_.get!(const Pair[])();
+            const(Node)* node;
+            foreach(idx, ref const(Pair) pair; pairs)
             {
                 static if(value){node = &pair.value;}
                 else{node = &pair.key;}
@@ -1317,7 +1347,7 @@ struct Node
                 }
                 else 
                 {  
-                    try if(node.as!T == index){return idx;}
+                    try if(node.as!(const T) == index){return idx;}
                     catch(NodeException e)
                     {
                         continue;
@@ -1340,6 +1370,32 @@ struct Node
                         new Error("Sequence index out of range: " ~ to!string(index), 
                                   startMark_));
             }
+        }
+
+        //Const version of opIndex.
+        ref const(Node) indexConst(T)(T index) const
+        {
+            if(isSequence)
+            {
+                checkSequenceIndex(index);
+                static if(isIntegral!T)
+                {
+                    return value_.get!(const Node[])[index];
+                }
+                assert(false);
+            }
+            else if(isMapping)
+            {
+                auto idx = findPair(index);
+                if(idx >= 0)
+                {
+                    return value_.get!(const Pair[])[idx].value;
+                }
+
+                string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
+                throw new Error(msg, startMark_);
+            }
+            throw new Error("Trying to index node that does not support indexing", startMark_);
         }
 }
 
