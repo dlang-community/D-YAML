@@ -103,7 +103,7 @@ final class Reader
             {
                 case -1: 
                     //readBOM() eats two more bytes in this case so get them back
-                    wchar bytes = stream_.getcw();
+                    const wchar bytes = stream_.getcw();
                     rawBuffer8_[0] = cast(char)(bytes % 256);
                     rawBuffer8_[1] = cast(char)(bytes / 256);
                     rawUsed_ = 2;
@@ -444,7 +444,7 @@ final class Reader
          *
          * Returns: True if all the characters are printable, false otherwise.
          */
-        static bool printable(const ref dchar[] chars)
+        static bool printable(const ref dchar[] chars) pure
         {
             foreach(c; chars)
             {
@@ -460,7 +460,7 @@ final class Reader
         }
 
         ///Are we done reading?
-        @property bool done()
+        @property bool done() const
         {   
             return (available_ == 0 && 
                     ((encoding_ == Encoding.UTF_8  && rawUsed_ == 0) ||

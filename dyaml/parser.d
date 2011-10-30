@@ -347,7 +347,7 @@ final class Parser
             {
                 immutable token = scanner_.getToken();
                 //Name and value are separated by '\0'.
-                auto parts = token.value.split("\0");
+                const parts = token.value.split("\0");
                 const name = parts[0];
                 if(name == "YAML")
                 {
@@ -367,8 +367,7 @@ final class Parser
                     foreach(ref pair; tagDirectives_)
                     {
                         //handle
-                        auto h = pair[0];
-                        auto replacement = pair[1];
+                        const h = pair[0];
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
@@ -382,13 +381,10 @@ final class Parser
             foreach(ref defaultPair; defaultTagDirectives_)
             {
                 bool found = false;
-                foreach(ref pair; tagDirectives_)
+                foreach(ref pair; tagDirectives_) if(defaultPair[0] == pair[0])
                 {
-                    if(defaultPair[0] == pair[0] )
-                    {
-                        found = true;
-                        break;
-                    }
+                    found = true;
+                    break;
                 }
                 if(!found){tagDirectives_ ~= defaultPair;}
             }
@@ -415,7 +411,7 @@ final class Parser
          */
 
         ///Parse a node.
-        Event parseNode(bool block, bool indentlessSequence = false)
+        Event parseNode(in bool block, in bool indentlessSequence = false)
         {
             if(scanner_.checkToken(TokenID.Alias))
             {
@@ -861,8 +857,6 @@ final class Parser
         ///Return an empty scalar.
         Event processEmptyScalar(in Mark mark)
         {
-            //PyYAML uses a Tuple!(true, false) for the second last arg here,
-            //but the second bool is never used after that - so we don't use it.
             return scalarEvent(mark, mark, Anchor(), Tag(), tuple(true, false), "");
         }
 }

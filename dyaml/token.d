@@ -53,6 +53,8 @@ enum TokenID : ubyte
  */
 struct Token 
 {
+    @disable int opCmp(ref Token);
+
     ///Value of the token, if any.
     string value;
     ///Start position of the token in file/stream.
@@ -101,7 +103,7 @@ Token simpleToken(TokenID id)(in Mark start, in Mark end) pure
  *          end      = End position of the token.
  *          encoding = Encoding of the stream.
  */
-Token streamStartToken(in Mark start, in Mark end, in Encoding encoding)
+Token streamStartToken(in Mark start, in Mark end, in Encoding encoding) pure
 {
     return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
 }

@@ -117,6 +117,8 @@ struct Loader
 
     public:
         @disable this();
+        @disable int opCmp(ref Loader);
+        @disable bool opEquals(ref Loader);
 
         /**
          * Construct a Loader to load YAML from a file.

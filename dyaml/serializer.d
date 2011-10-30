@@ -69,7 +69,7 @@ struct Serializer
          *          tagDirectives = Tag directives to emit. 
          */
         this(ref Emitter emitter, Resolver resolver, Encoding encoding,
-             bool explicitStart, bool explicitEnd, string YAMLVersion, 
+             in bool explicitStart, in bool explicitEnd, string YAMLVersion, 
              TagDirectives tagDirectives)
         {
             emitter_ = &emitter;
@@ -200,7 +200,7 @@ struct Serializer
             if(node.isSequence)
             {
                 const defaultTag = resolver_.defaultSequenceTag;
-                bool implicit = node.tag_ == defaultTag;
+                const implicit = node.tag_ == defaultTag;
                 emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                  implicit, node.collectionStyle));
                 foreach(ref Node item; node)
@@ -212,8 +212,8 @@ struct Serializer
             }
             if(node.isMapping)
             {
-                auto defaultTag = resolver_.defaultMappingTag; 
-                bool implicit = node.tag_ == defaultTag;
+                const defaultTag = resolver_.defaultMappingTag; 
+                const implicit = node.tag_ == defaultTag;
                 emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                 implicit, node.collectionStyle));
                 foreach(ref Node key, ref Node value; node)

@@ -52,6 +52,8 @@ struct Queue(T)
 
     public:
         @disable void opAssign(ref Queue);
+        @disable bool opEquals(ref Queue);
+        @disable int opCmp(ref Queue);
 
         ///Destroy the queue, deallocating all its elements.
         ~this()

@@ -182,7 +182,7 @@ final class Scanner
          *          or if there are any tokens left if no types specified.
          *          false otherwise.
          */
-        bool checkToken(TokenID[] ids ...)
+        bool checkToken(in TokenID[] ids ...)
         {
             //Check if the next token is one of specified types.
             while(needMoreTokens()){fetchToken();}
@@ -255,7 +255,7 @@ final class Scanner
             unwindIndent(reader_.column);
 
             //Get the next character.
-            dchar c = reader_.peek();
+            const dchar c = reader_.peek();
 
             //Fetch the token.
             if(c == '\0')                  {return fetchStreamEnd();}
@@ -331,7 +331,7 @@ final class Scanner
         void savePossibleSimpleKey()
         {
             //Check if a simple key is required at the current position.
-            bool required = (flowLevel_ == 0 && indent_ == reader_.column);
+            const required = (flowLevel_ == 0 && indent_ == reader_.column);
             assert(allowSimpleKey_ || !required, "A simple key is required only if it is "
                    "the first token in the current line. Therefore it is always allowed.");
 
@@ -339,7 +339,7 @@ final class Scanner
 
             //The next token might be a simple key, so save its number and position.
             removePossibleSimpleKey();
-            uint tokenCount = tokensTaken_ + cast(uint)tokens_.length;
+            const tokenCount = tokensTaken_ + cast(uint)tokens_.length;
 
             const line = reader_.line;
             const column = reader_.column;
@@ -379,7 +379,7 @@ final class Scanner
          *
          * Params:  column = Current column in the file/stream.
          */
-        void unwindIndent(int column)
+        void unwindIndent(in int column)
         {
             if(flowLevel_ > 0)
             {
@@ -582,10 +582,10 @@ final class Scanner
             if(possibleSimpleKeys_.length > flowLevel_ && 
                !possibleSimpleKeys_[flowLevel_].isNull)
             {
-                auto key = possibleSimpleKeys_[flowLevel_];
+                const key = possibleSimpleKeys_[flowLevel_];
                 possibleSimpleKeys_[flowLevel_].isNull = true;
                 Mark keyMark = Mark(key.line, key.column);
-                auto idx = key.tokenIndex - tokensTaken_;
+                const idx = key.tokenIndex - tokensTaken_;
 
                 assert(idx >= 0);
 
@@ -922,7 +922,7 @@ final class Scanner
         dstring scanTagDirectiveValue(in Mark startMark)
         {
             findNextNonSpace();
-            dstring handle = scanTagDirectiveHandle(startMark);
+            const handle = scanTagDirectiveHandle(startMark);
             findNextNonSpace();
             return handle ~ '\0' ~ scanTagDirectivePrefix(startMark);
         }
@@ -979,7 +979,7 @@ final class Scanner
         {
             const startMark = reader_.mark;
 
-            dchar i = reader_.get();
+            const dchar i = reader_.get();
 
             dstring value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
                                      : scanAlphaNumeric!("an anchor")(startMark); 
@@ -1058,7 +1058,7 @@ final class Scanner
         }
 
         ///Scan a block scalar token with specified style.
-        Token scanBlockScalar(ScalarStyle style)
+        Token scanBlockScalar(in ScalarStyle style)
         {
             const startMark = reader_.mark;
 
@@ -1234,7 +1234,7 @@ final class Scanner
         }
 
         ///Scan a qouted flow scalar token with specified quotes.
-        Token scanFlowScalar(ScalarStyle quotes)
+        Token scanFlowScalar(in ScalarStyle quotes)
         {
             const startMark = reader_.mark;
             const quote = reader_.get();
@@ -1256,7 +1256,7 @@ final class Scanner
         }
 
         ///Scan nonspace characters in a flow scalar.
-        void scanFlowScalarNonSpaces(ScalarStyle quotes, in Mark startMark)
+        void scanFlowScalarNonSpaces(in ScalarStyle quotes, in Mark startMark)
         {
             for(;;)
             {
@@ -1423,9 +1423,9 @@ final class Scanner
                 for(;;)
                 {
                     c = reader_.peek(length);
-                    bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' && 
-                                search.canFind(reader_.peek(length + 1))) ||
-                                (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
+                    const bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' && 
+                                      search.canFind(reader_.peek(length + 1))) ||
+                                      (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
                     if(done){break;}
                     ++length;
                 }
@@ -1509,7 +1509,7 @@ final class Scanner
         }
 
         ///Scan handle of a tag token.
-        dstring scanTagHandle(string name, in Mark startMark)
+        dstring scanTagHandle(in string name, in Mark startMark)
         {
             dchar c = reader_.peek();
             enforce(c == '!', 
@@ -1538,7 +1538,7 @@ final class Scanner
         }
 
         ///Scan URI in a tag token.
-        dstring scanTagURI(string name, in Mark startMark)
+        dstring scanTagURI(in string name, in Mark startMark)
         {
             //Note: we do not check if URI is well-formed.
             //Using appender_, so clear it when we're done.
@@ -1570,7 +1570,7 @@ final class Scanner
         }
 
         ///Scan URI escape sequences.
-        dstring scanURIEscapes(string name, in Mark startMark)
+        dstring scanURIEscapes(in string name, in Mark startMark)
         {
             ubyte[] bytes;
             Mark mark = reader_.mark;
@@ -1584,7 +1584,7 @@ final class Scanner
                 //Converting 2 hexadecimal digits to a byte.
                 foreach(k; 0 .. 2)
                 {
-                    dchar c = reader_.peek(k);
+                    const dchar c = reader_.peek(k);
                     enforce(isHexDigit(c),
                             new Error("While scanning a " ~ name, startMark, 
                                       "expected URI escape sequence of "

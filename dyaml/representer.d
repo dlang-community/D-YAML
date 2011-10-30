@@ -54,6 +54,9 @@ final class Representer
         CollectionStyle defaultCollectionStyle_ = CollectionStyle.Invalid;
 
     public:
+        @disable bool opEquals(ref Representer);
+        @disable int opCmp(ref Representer);
+
         /**
          * Construct a Representer.
          * 
@@ -62,8 +65,9 @@ final class Representer
          *                                   disabled to use custom representer
          *                                   functions for default types.
          */
-        this(bool useDefaultRepresenters = true)
+        this(in bool useDefaultRepresenters = true)
         {
+            if(!useDefaultRepresenters){return;}
             addRepresenter!YAMLNull(&representNull);
             addRepresenter!string(&representString);
             addRepresenter!(ubyte[])(&representBytes);
@@ -83,13 +87,13 @@ final class Representer
         }
 
         ///Set default _style for scalars. Invalid means the _style is chosen automatically.
-        @property void defaultScalarStyle(ScalarStyle style)
+        @property void defaultScalarStyle(in ScalarStyle style)
         {
             defaultScalarStyle_ = style;
         }
 
         ///Set default _style for collections. Invalid means the _style is chosen automatically. 
-        @property void defaultCollectionStyle(CollectionStyle style)
+        @property void defaultCollectionStyle(in CollectionStyle style)
         {
             defaultCollectionStyle_ = style;
         }

@@ -746,7 +746,7 @@ struct Node
             }
             else if(isMapping())
             {
-                auto idx = findPair(index);
+                const idx = findPair(index);
                 if(idx < 0){add(index, value);}
                 else
                 {
@@ -1033,7 +1033,7 @@ struct Node
             }
             else if(isMapping())
             {
-                auto idx = findPair!(T, true)(value);
+                const idx = findPair!(T, true)(value);
                 if(idx >= 0)
                 {
                     auto pairs = as!(Node.Pair[])();
@@ -1099,7 +1099,7 @@ struct Node
             }
             else if(isMapping())
             {
-                auto idx = findPair(index);
+                const idx = findPair(index);
                 if(idx >= 0)
                 {
                     auto pairs = get!(Node.Pair[])();
@@ -1185,9 +1185,9 @@ struct Node
                     const c2 = rhs.value_.get!(const T);
                     if(c1 is c2){return true;}
                     if(c1.length != c2.length){return false;}
-                    foreach(ref i1, ref i2; lockstep(c1, c2))
+                    foreach(i; 0 .. c1.length)
                     {
-                        if(!i1.equals!useTag(i2)){return false;}
+                        if(!c1[i].equals!useTag(c2[i])){return false;}
                     }
                     return true;
                 }

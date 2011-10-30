@@ -135,9 +135,7 @@ final class Composer
             //Drop the DOCUMENT-END event.
             parser_.getEvent();
 
-            //Clear anchors.
-            Node[Anchor] empty;
-            anchors_ = empty;
+            clear(anchors_);
             return node;
         }
 

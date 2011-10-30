@@ -19,8 +19,11 @@ struct Tag
         immutable(char)* tag_ = null;
 
     public:
+        @disable int opCmp(ref Tag);
+
+
         ///Construct a tag from a string representation.
-        this(string tag)
+        this(in string tag)
         {
             if(tag is null || tag == "")
             {

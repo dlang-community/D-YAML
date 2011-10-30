@@ -35,6 +35,8 @@ package:
 struct Flags(names ...) if(names.length <= 8)
 {
     private:
+        @disable int opCmp(ref Flags);
+
         ///Byte storing the flags.
         ubyte flags_;
 

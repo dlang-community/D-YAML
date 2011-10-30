@@ -63,12 +63,9 @@ template SharedObject(T, MixedIn)
                 ///Add an object and return its index.
                 uint add(ref T object)
                 {
-                    foreach(uint index, ref T known; objects_)
+                    foreach(index, ref known; objects_) if(object == known)
                     {
-                        if(object == known)
-                        {
-                            return index;
-                        }
+                        return cast(uint)index;
                     }
                     objects_ ~= object;
                     return cast(uint)objects_.length - 1;

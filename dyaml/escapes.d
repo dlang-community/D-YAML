@@ -11,11 +11,11 @@ module dyaml.escapes;
 package:
 
 ///Translation table from YAML escapes to dchars.
-dchar[dchar] fromEscapes;
+immutable dchar[dchar] fromEscapes;
 ///Translation table from dchars to YAML escapes.
-dchar[dchar] toEscapes;
+immutable dchar[dchar] toEscapes;
 ///Translation table from prefixes of escaped hexadecimal format characters to their lengths.
-uint[dchar]  escapeHexCodes;
+immutable uint[dchar]  escapeHexCodes;
 
 
 static this()

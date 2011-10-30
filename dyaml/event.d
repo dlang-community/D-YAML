@@ -47,6 +47,8 @@ enum EventID : ubyte
  */
 struct Event
 {
+    @disable int opCmp(ref Event);
+
     ///Value of the event, if any.
     string value;
     ///Start position of the event in file/stream.
@@ -108,7 +110,7 @@ Event event(EventID id)(in Mark start, in Mark end, in Anchor anchor = Anchor())
  */
 Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anchor, 
                                        in Tag tag, in bool implicit, 
-                                       in CollectionStyle style)
+                                       in CollectionStyle style) pure
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
@@ -123,7 +125,7 @@ Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anc
  *          end      = End position of the event in the file/stream.
  *          encoding = Encoding of the stream.
  */
-Event streamStartEvent(in Mark start, in Mark end, Encoding encoding) 
+Event streamStartEvent(in Mark start, in Mark end, in Encoding encoding) pure
 {
     return Event(null, start, end, Anchor(), Tag(), EventID.StreamStart, 
                  ScalarStyle.Invalid, false, false, TagDirectives(), encoding);
@@ -148,8 +150,8 @@ alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
  *          YAMLVersion   = YAML version string of the document.
  *          tagDirectives = Tag directives of the document.
  */
-Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion,
-                         TagDirectives tagDirectives)
+Event documentStartEvent(in Mark start, in Mark end, bool explicit, string YAMLVersion,
+                         in TagDirectives tagDirectives) pure
 {
     return Event(YAMLVersion, start, end, Anchor(), Tag(), EventID.DocumentStart, 
                  ScalarStyle.Invalid, explicit, false, tagDirectives);
@@ -162,7 +164,7 @@ Event documentStartEvent(Mark start, Mark end, bool explicit, string YAMLVersion
  *          end      = End position of the event in the file/stream.
  *          explicit = Is this an explicit document end?
  */
-Event documentEndEvent(Mark start, Mark end, bool explicit)
+Event documentEndEvent(in Mark start, in Mark end, bool explicit) pure
 {
     return Event(null, start, end, Anchor(), Tag(), EventID.DocumentEnd,
                  ScalarStyle.Invalid, explicit);
@@ -181,7 +183,7 @@ Event documentEndEvent(Mark start, Mark end, bool explicit)
  */
 Event scalarEvent(in Mark start, in Mark end, in Anchor anchor, in Tag tag, 
                   in Tuple!(bool, bool) implicit, in string value, 
-                  in ScalarStyle style = ScalarStyle.Invalid) 
+                  in ScalarStyle style = ScalarStyle.Invalid) pure
 {
     return Event(value, start, end, anchor, tag, EventID.Scalar, style, implicit[0],
                  implicit[1]);

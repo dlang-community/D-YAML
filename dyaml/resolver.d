@@ -50,6 +50,9 @@ final class Resolver
         Tuple!(Tag, Regex!char)[][dchar] yamlImplicitResolvers_;
 
     public:
+        @disable bool opEquals(ref Resolver);
+        @disable int opCmp(ref Resolver);
+
         /**
          * Construct a Resolver.
          *
@@ -138,7 +141,7 @@ final class Resolver
          *
          * Returns: Resolved tag.
          */
-        Tag resolve(NodeID kind, Tag tag, string value, in bool implicit)
+        Tag resolve(in NodeID kind, Tag tag, string value, in bool implicit)
         {
             if(!tag.isNull() && tag.get() != "!"){return tag;}
 

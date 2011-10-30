@@ -148,8 +148,8 @@ struct Emitter
         ScalarStyle style_ = ScalarStyle.Invalid;
 
     public:
-        @disable int opCmp(ref Emitter e);
-        @disable bool opEquals(ref Emitter e);
+        @disable int opCmp(ref Emitter);
+        @disable bool opEquals(ref Emitter);
 
         /**
          * Construct an emitter.
@@ -159,7 +159,8 @@ struct Emitter
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(Stream stream, bool canonical, int indent, int width, LineBreak lineBreak)
+        this(Stream stream, in bool canonical, in int indent, in int width, 
+             in LineBreak lineBreak)
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
         {
@@ -226,7 +227,7 @@ struct Emitter
         }
 
         ///Write a string to the file/stream.
-        void writeString(string str)
+        void writeString(in string str)
         {
             try final switch(encoding_)
             {
@@ -276,8 +277,8 @@ struct Emitter
                 immutable event = events_.next();
                 static starts = [EventID.DocumentStart, EventID.SequenceStart, EventID.MappingStart];
                 static ends   = [EventID.DocumentEnd, EventID.SequenceEnd, EventID.MappingEnd];
-                if(starts.canFind(event.id))            {++level;}
-                else if(ends.canFind(event.id))         {--level;}
+                if(starts.canFind(event.id))   {++level;}
+                else if(ends.canFind(event.id)){--level;}
                 else if(event.id == EventID.StreamStart){level = -1;}
 
                 if(level < 0)
@@ -329,7 +330,7 @@ struct Emitter
         }
 
         ///Expect nothing, throwing if we still have something.
-        void expectNothing()
+        void expectNothing() const
         {
             throw new Error("Expected nothing, but got " ~ event_.idString);
         }
@@ -684,8 +685,8 @@ struct Emitter
             }
 
             immutable event = events_.peek();
-            bool emptyScalar = event.id == EventID.Scalar && event.anchor.isNull() &&
-                               event.tag.isNull() && event.implicit && event.value == "";
+            const emptyScalar = event.id == EventID.Scalar && event.anchor.isNull() &&
+                                event.tag.isNull() && event.implicit && event.value == "";
             return emptyScalar;
         }
 
@@ -867,7 +868,7 @@ struct Emitter
         static void encodeChar(Writer)(ref Writer writer, in dchar c)
         {
             char[4] data;
-            auto bytes = encode(data, c);
+            const bytes = encode(data, c);
             //For each byte add string in format %AB , where AB are hex digits of the byte.
             foreach(const char b; data[0 .. bytes])
             {
@@ -1261,6 +1262,9 @@ struct ScalarWriter
     }
 
     private:
+        @disable int opCmp(ref Emitter);
+        @disable bool opEquals(ref Emitter);
+
         ///Used as "null" UTF-32 character.
         immutable dcharNone = dchar.max;
 
@@ -1286,7 +1290,7 @@ struct ScalarWriter
 
     public:
         ///Construct a ScalarWriter using emitter to output text.
-        this(ref Emitter emitter, string text, bool split = true)
+        this(ref Emitter emitter, string text, in bool split = true)
         {
             emitter_ = &emitter;
             text_ = text;
@@ -1562,7 +1566,7 @@ struct ScalarWriter
         }
 
         ///Determine hints (indicators) for block scalar.
-        size_t determineBlockHints(ref char[] hints, uint bestIndent)
+        size_t determineBlockHints(ref char[] hints, uint bestIndent) const
         {
             size_t hintsIdx = 0;
             if(text_.length == 0){return hintsIdx;}
@@ -1597,7 +1601,7 @@ struct ScalarWriter
         {
             char[4] hints;
             hints[0] = indicator;
-            auto hintsLength = 1 + determineBlockHints(hints[1 .. $], emitter_.bestIndent_);
+            const hintsLength = 1 + determineBlockHints(hints[1 .. $], emitter_.bestIndent_);
             emitter_.writeIndicator(cast(string)hints[0 .. hintsLength], true);
             if(hints.length > 0 && hints[$ - 1] == '+')
             {

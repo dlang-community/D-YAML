@@ -157,6 +157,8 @@ struct Dumper
 
     public:
         @disable this();
+        @disable bool opEquals(ref Dumper);
+        @disable int opCmp(ref Dumper);
 
         /**
          * Construct a Dumper writing to a file.
@@ -165,7 +167,7 @@ struct Dumper
          *
          * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(string filename)
+        this(in string filename)
         {
             name_ = filename;
             try{this(new File(filename, FileMode.OutNew));}
@@ -195,33 +197,33 @@ struct Dumper
         }
 
         ///Set stream _name. Used in debugging messages.
-        @property void name(string name)
+        @property void name(in string name)
         {
             name_ = name;
         }
 
         ///Specify custom Resolver to use.
-        void resolver(Resolver resolver)
+        @property void resolver(Resolver resolver)
         {
             clear(resolver_);
             resolver_ = resolver;
         }
 
         ///Specify custom Representer to use.
-        void representer(Representer representer)
+        @property void representer(Representer representer)
         {
             clear(representer_);
             representer_ = representer;
         }
 
         ///Write scalars in _canonical form?
-        void canonical(in bool canonical)
+        @property void canonical(in bool canonical)
         {
             canonical_ = canonical;
         }
 
         ///Set indentation width. 2 by default. Must not be zero.
-        void indent(in uint indent)
+        @property void indent(in uint indent)
         in
         {   
             assert(indent != 0, "Can't use zero YAML indent width");
@@ -232,37 +234,37 @@ struct Dumper
         }
 
         ///Set preferred text _width.
-        void textWidth(in uint width)
+        @property void textWidth(in uint width)
         {
             textWidth_ = width;
         }
 
         ///Set line break to use. Unix by default.
-        void lineBreak(in LineBreak lineBreak)
+        @property void lineBreak(in LineBreak lineBreak)
         {
             lineBreak_ = lineBreak;
         }
 
         ///Set character _encoding to use. UTF-8 by default.
-        void encoding(in Encoding encoding)
+        @property void encoding(in Encoding encoding)
         {
             encoding_ = encoding;
         }    
 
         ///Always explicitly write document start?
-        void explicitStart(in bool explicit)
+        @property void explicitStart(in bool explicit)
         {
             explicitStart_ = explicit;
         }
 
         ///Always explicitly write document end?
-        void explicitEnd(in bool explicit)
+        @property void explicitEnd(in bool explicit)
         {
             explicitEnd_ = explicit;
         }
 
         ///Specify YAML version string. "1.1" by default.
-        void YAMLVersion(in string YAMLVersion)
+        @property void YAMLVersion(in string YAMLVersion)
         {
             YAMLVersion_ = YAMLVersion;
         }
@@ -297,7 +299,7 @@ struct Dumper
          * dumper.dump(Node("foo"));
          * --------------------
          */
-        void tagDirectives(string[string] tags)
+        @property void tagDirectives(string[string] tags)
         {
             tagDirective[] t;
             foreach(handle, prefix; tags)
