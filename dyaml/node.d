@@ -55,7 +55,11 @@ package enum NodeID : ubyte
 }
 
 ///Null YAML type. Used in nodes with _null values.
-struct YAMLNull{}
+struct YAMLNull
+{
+    ///Used for string conversion.
+    string toString() const {return "null";}
+}
 
 //Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
@@ -609,10 +613,10 @@ struct Node
          *
          * Throws: NodeException if this is not a sequence nor a mapping.
          */
-        @property size_t length()
+        @property size_t length() const
         {
-            if(isSequence)    {return as!(Node[]).length;}
-            else if(isMapping){return as!(Pair[]).length;}
+            if(isSequence)    {return value_.get!(const Node[]).length;}
+            else if(isMapping){return value_.get!(const Pair[]).length;}
             throw new Error("Trying to get length of a scalar node", startMark_);
         }
 
@@ -1277,19 +1281,12 @@ struct Node
         }
 
         //Determine if the value can be converted to specified type.
-        bool convertsTo(T)()
+        bool convertsTo(T)() const
         {
             if(isType!T){return true;}
 
-            static if(isSomeString!T)
-            {
-                try
-                {
-                    auto dummy = value_.coerce!T();
-                    return true;
-                }
-                catch(VariantException e){return false;}
-            }
+            //Every type allowed in Value should be convertible to string.
+            static if(isSomeString!T)        {return true;}
             else static if(isFloatingPoint!T){return isInt() || isFloat();}
             else static if(isIntegral!T)     {return isInt();}
             else                             {return false;}
@@ -1320,10 +1317,7 @@ struct Node
                 }
                 else 
                 {  
-                    try
-                    {
-                        if(node.as!T == index){return idx;}
-                    }
+                    try if(node.as!T == index){return idx;}
                     catch(NodeException e)
                     {
                         continue;
@@ -1334,7 +1328,7 @@ struct Node
         }
 
         //Check if index is integral and in range.
-        void checkSequenceIndex(T)(T index)
+        void checkSequenceIndex(T)(T index) const
         {
             static if(!isIntegral!T)
             {
@@ -1342,7 +1336,7 @@ struct Node
             }
             else
             {
-                enforce(index >= 0 && index < value_.get!(Node[]).length,
+                enforce(index >= 0 && index < value_.get!(const Node[]).length,
                         new Error("Sequence index out of range: " ~ to!string(index), 
                                   startMark_));
             }
