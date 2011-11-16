@@ -24,7 +24,7 @@ import dyaml.scanner;
 import dyaml.style;
 import dyaml.token;
 import dyaml.tag;
-import dyaml.tagdirectives;
+import dyaml.tagdirective;
 
 
 package:
@@ -108,10 +108,10 @@ final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
-        static tagDirective[] defaultTagDirectives_;
+        static TagDirective[] defaultTagDirectives_;
         static this()
         {
-            defaultTagDirectives_ = [tagDirective("!", "!"), tagDirective("!!", "tag:yaml.org,2002:")];
+            defaultTagDirectives_ = [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
         }
 
         ///Scanner providing YAML tokens.
@@ -123,7 +123,7 @@ final class Parser
         ///YAML version string.
         string YAMLVersion_ = null;
         ///Tag handle shortcuts and replacements.
-        tagDirective[] tagDirectives_;
+        TagDirective[] tagDirectives_;
 
         ///Stack of states.
         Array!(Event delegate()) states_;
@@ -193,13 +193,13 @@ final class Parser
          *
          * Must not be called if there are no events left.
          */
-        Event peekEvent()
+        immutable(Event) peekEvent()
         {
             if(currentEvent_.isNull && state_ !is null)
             {
                 currentEvent_ = state_();
             }
-            if(!currentEvent_.isNull){return currentEvent_;}
+            if(!currentEvent_.isNull){return cast(immutable Event)currentEvent_;}
             assert(false, "No event left to peek");
         }
 
@@ -208,7 +208,7 @@ final class Parser
          *
          * Must not be called if there are no events left.
          */
-        Event getEvent()
+        immutable(Event) getEvent()
         {
             //Get the next event and proceed further.
             if(currentEvent_.isNull && state_ !is null)
@@ -218,7 +218,7 @@ final class Parser
 
             if(!currentEvent_.isNull)
             {
-                immutable Event result = currentEvent_;
+                immutable Event result = cast(immutable Event)currentEvent_;
                 currentEvent_.id = EventID.Invalid;
                 return result;
             }
@@ -273,7 +273,7 @@ final class Parser
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseBlockNode;
                 
-                return documentStartEvent(token.startMark, token.endMark, false, null, TagDirectives());
+                return documentStartEvent(token.startMark, token.endMark, false, null, null);
             }
             return parseDocumentStart();
         }
@@ -336,7 +336,7 @@ final class Parser
         }
 
         ///Process directives at the beginning of a document.
-        TagDirectives processDirectives()
+        TagDirective[] processDirectives()
         {
             //Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
@@ -367,21 +367,21 @@ final class Parser
                     foreach(ref pair; tagDirectives_)
                     {
                         //handle
-                        const h = pair[0];
+                        const h = pair.handle;
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagDirectives_ ~= tagDirective(handle, parts[2]);
+                    tagDirectives_ ~= TagDirective(handle, parts[2]);
                 }
             }
 
-            TagDirectives value = tagDirectives_.length == 0 ? TagDirectives() : TagDirectives(tagDirectives_);
+            TagDirective[] value = tagDirectives_;
 
             //Add any default tag handles that haven't been overridden.
             foreach(ref defaultPair; defaultTagDirectives_)
             {
                 bool found = false;
-                foreach(ref pair; tagDirectives_) if(defaultPair[0] == pair[0])
+                foreach(ref pair; tagDirectives_) if(defaultPair.handle == pair.handle)
                 {
                     found = true;
                     break;
@@ -540,10 +540,9 @@ final class Parser
                 string replacement = null;
                 foreach(ref pair; tagDirectives_)
                 {
-                    //pair[0] is handle, pair[1] replacement.
-                    if(pair[0] == handle)
+                    if(pair.handle == handle)
                     {
-                        replacement = pair[1];
+                        replacement = pair.prefix;
                         break;
                     }
                 }

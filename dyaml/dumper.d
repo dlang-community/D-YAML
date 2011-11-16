@@ -25,7 +25,7 @@ import dyaml.node;
 import dyaml.representer;
 import dyaml.resolver;
 import dyaml.serializer;
-import dyaml.tagdirectives;
+import dyaml.tagdirective;
 
 
 /**
@@ -146,7 +146,7 @@ struct Dumper
         ///YAML version string.
         string YAMLVersion_ = "1.1";
         ///Tag directives to use.
-        TagDirectives tags_ = TagDirectives();
+        TagDirective[] tags_ = null;
         ///Always write document start?
         bool explicitStart_ = false;
         ///Always write document end?
@@ -167,7 +167,7 @@ struct Dumper
          *
          * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(in string filename)
+        this(string filename)
         {
             name_ = filename;
             try{this(new File(filename, FileMode.OutNew));}
@@ -184,20 +184,16 @@ struct Dumper
             resolver_ = defaultResolver_;
             representer_ = defaultRepresenter_;
             stream_ = stream;
-            Anchor.addReference();
-            TagDirectives.addReference();
         }
 
         ///Destroy the Dumper.
         ~this()
         {
-            Anchor.removeReference();
-            TagDirectives.removeReference();
             YAMLVersion_ = null;
         }
 
         ///Set stream _name. Used in debugging messages.
-        @property void name(in string name)
+        @property void name(string name)
         {
             name_ = name;
         }
@@ -217,13 +213,13 @@ struct Dumper
         }
 
         ///Write scalars in _canonical form?
-        @property void canonical(in bool canonical)
+        @property void canonical(bool canonical)
         {
             canonical_ = canonical;
         }
 
         ///Set indentation width. 2 by default. Must not be zero.
-        @property void indent(in uint indent)
+        @property void indent(uint indent)
         in
         {   
             assert(indent != 0, "Can't use zero YAML indent width");
@@ -234,37 +230,37 @@ struct Dumper
         }
 
         ///Set preferred text _width.
-        @property void textWidth(in uint width)
+        @property void textWidth(uint width)
         {
             textWidth_ = width;
         }
 
         ///Set line break to use. Unix by default.
-        @property void lineBreak(in LineBreak lineBreak)
+        @property void lineBreak(LineBreak lineBreak)
         {
             lineBreak_ = lineBreak;
         }
 
         ///Set character _encoding to use. UTF-8 by default.
-        @property void encoding(in Encoding encoding)
+        @property void encoding(Encoding encoding)
         {
             encoding_ = encoding;
         }    
 
         ///Always explicitly write document start?
-        @property void explicitStart(in bool explicit)
+        @property void explicitStart(bool explicit)
         {
             explicitStart_ = explicit;
         }
 
         ///Always explicitly write document end?
-        @property void explicitEnd(in bool explicit)
+        @property void explicitEnd(bool explicit)
         {
             explicitEnd_ = explicit;
         }
 
         ///Specify YAML version string. "1.1" by default.
-        @property void YAMLVersion(in string YAMLVersion)
+        @property void YAMLVersion(string YAMLVersion)
         {
             YAMLVersion_ = YAMLVersion;
         }
@@ -301,16 +297,16 @@ struct Dumper
          */
         @property void tagDirectives(string[string] tags)
         {
-            tagDirective[] t;
+            TagDirective[] t;
             foreach(handle, prefix; tags)
             {
                 assert(handle.length >= 1 && handle[0] == '!' && handle[$ - 1] == '!',
                        "A tag handle is empty or does not start and end with a "
                        "'!' character : " ~ handle);
                 assert(prefix.length >= 1, "A tag prefix is empty");
-                t ~= tagDirective(handle, prefix);
+                t ~= TagDirective(handle, prefix);
             }
-            tags_ = TagDirectives(t);
+            tags_ = t;
         }
 
         /**
@@ -352,7 +348,7 @@ struct Dumper
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(in Event[] events)
+        void emit(Event[] events)
         {
             try
             {

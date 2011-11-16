@@ -98,11 +98,11 @@
 </pre>
 </div>
 
-<dl><dt class="d_decl">this(in const(immutable(char)[]) <b>filename</b>);
+<dl><dt class="d_decl">this(string <b>filename</b>);
 </dt>
 <dd><p>Construct a Loader to load YAML from a file.
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>const(immutable(char)[]) <b>filename</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>filename</b></td>
 <td valign=top>Name of the file to load from.</td></tr>
 </table></div>
 <b>Throws:</b><div class="pbr">YAMLException if the file could not be opened or read.</div>
@@ -138,6 +138,9 @@
 <dd><p>Load single YAML document.
 </p>
 <p>If none or more than one YAML document is found, this throws a YAMLException.
+<br>
+
+ This can only be called once; this is enforced by contract.
 
 </p>
 <b>Returns:</b><div class="pbr">Root node of the document.
@@ -155,6 +158,9 @@
  them all at once. Calling <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span> after iterating over the node or
  vice versa will not return any documents, as they have all been parsed
  already.
+<br>
+
+ This can only be called once; this is enforced by contract.
 
 </p>
 <b>Returns:</b><div class="pbr">Array of root nodes of all documents in the file/stream.
@@ -168,6 +174,9 @@
 <dd><p>Foreach over YAML documents.
 </p>
 <p>Parses documents lazily, when they are needed.
+<br>
+
+ Foreach over a Loader can only be used once; this is enforced by contract.
 
 </p>
 <b>Throws:</b><div class="pbr">YAMLException on a parsing error.</div>

@@ -7,7 +7,9 @@
 module dyaml.reader;
 
 
+import core.stdc.stdlib;
 import core.stdc.string;
+import core.thread;
 
 import std.algorithm;
 import std.conv;
@@ -34,47 +36,30 @@ class ReaderException : YAMLException
     }
 }
 
-///Reads data from a stream and converts it to UTF-32 (dchar) data.
+///Lazily reads and decodes data from stream, only storing as much as needed at any moment.
 final class Reader
 {
     private:
-        ///Input stream.
+        //Input stream.
         EndianStream stream_;
-        ///Allocated space for buffer_.
-        dchar[] bufferAllocated_;
-        ///Buffer of currently loaded characters.
-        dchar[] buffer_;
-        ///Current position within buffer. Only data after this position can be read.
+        //Allocated space for buffer_.
+        dchar[] bufferAllocated_ = null;
+        //Buffer of currently loaded characters.
+        dchar[] buffer_ = null;
+        //Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
-        ///Index of the current character in the stream.
+        //Index of the current character in the stream.
         size_t charIndex_ = 0;
-        ///Encoding of the input stream.
-        Encoding encoding_;
-        ///Current line in file.
+        //Current line in file.
         uint line_;
-        ///Current column in file.
+        //Current column in file.
         uint column_;
-        ///Number of bytes still available (not read) in the stream.
-        size_t available_;
-
-        ///Capacity of raw buffers.
-        static immutable bufferLength8_ = 8;
-        ///Capacity of raw buffers.
-        static immutable bufferLength16_ = bufferLength8_ / 2;
-
-        union
-        {
-            ///Buffer to hold UTF-8 data before decoding.
-            char[bufferLength8_ + 1] rawBuffer8_;
-            ///Buffer to hold UTF-16 data before decoding.
-            wchar[bufferLength16_ + 1] rawBuffer16_;
-        }
-        ///Number of elements held in the used raw buffer.
-        uint rawUsed_ = 0;
+        //Decoder reading data from file and decoding it to UTF-32.
+        UTFFastDecoder decoder_;
 
     public:
-        /**
-         * Construct a Reader.
+        /*
+         * Construct an AbstractReader.
          *
          * Params:  stream = Input stream. Must be readable and seekable.
          *
@@ -89,51 +74,14 @@ final class Reader
         body
         {
             stream_ = new EndianStream(stream);
-            available_ = stream_.available;
-
-            //handle files short enough not to have a BOM
-            if(available_ < 2)
-            {
-                encoding_ = Encoding.UTF_8;
-                return;
-            }
-
-            //readBOM will determine and set stream endianness
-            switch(stream_.readBOM(2))
-            {
-                case -1: 
-                    //readBOM() eats two more bytes in this case so get them back
-                    const wchar bytes = stream_.getcw();
-                    rawBuffer8_[0] = cast(char)(bytes % 256);
-                    rawBuffer8_[1] = cast(char)(bytes / 256);
-                    rawUsed_ = 2;
-                    goto case 0;
-                case 0:  encoding_ = Encoding.UTF_8; break;
-                case 1, 2: 
-                    //readBOM() eats two more bytes in this case so get them back
-                    encoding_ = Encoding.UTF_16; 
-                    rawBuffer16_[0] = stream_.getcw();
-                    rawUsed_ = 1;
-                    enforce(available_ % 2 == 0, 
-                            new ReaderException("Odd byte count in an UTF-16 stream"));
-                    break;
-                case 3, 4: 
-                    enforce(available_ % 4 == 0, 
-                            new ReaderException("Byte count in an UTF-32 stream not divisible by 4"));
-                    encoding_ = Encoding.UTF_32;
-                    break;
-                default: assert(false, "Unknown UTF BOM");
-            }
-            available_ = stream_.available;
-
-            auto ptr = cast(dchar*)core.stdc.stdlib.malloc(dchar.sizeof * 256);
-            bufferAllocated_ = ptr[0 .. 256];
+            decoder_ = UTFFastDecoder(stream_);
         }
 
-        ///Destroy the Reader.
         ~this()
         {
-            core.stdc.stdlib.free(bufferAllocated_.ptr);
+            //Delete the buffer, if allocated.
+            if(bufferAllocated_ is null){return;}
+            free(bufferAllocated_.ptr);
             buffer_ = bufferAllocated_ = null;
         }
 
@@ -148,12 +96,13 @@ final class Reader
          * Throws:  ReaderException if trying to read past the end of the stream
          *          or if invalid data is read.
          */
-        dchar peek(in size_t index = 0)
+        dchar peek(size_t index = 0)
         {
-            if(buffer_.length <= bufferOffset_ + index + 1)
+            if(buffer_.length < bufferOffset_ + index + 1)
             {
                 updateBuffer(index + 1);
             }
+
             if(buffer_.length <= bufferOffset_ + index)
             {
                 throw new ReaderException("Trying to read past the end of the stream");
@@ -172,7 +121,7 @@ final class Reader
          *
          * Returns: Characters starting at current position or an empty slice if out of bounds.
          */
-        const(dstring) prefix(in size_t length)
+        const(dstring) prefix(size_t length)
         {
             return slice(0, length);
         }
@@ -194,12 +143,12 @@ final class Reader
             {
                 updateBuffer(end);
             }
+
             end += bufferOffset_;
             start += bufferOffset_;
             end = min(buffer_.length, end);
-            if(end <= start){return "";}
 
-            return cast(dstring)buffer_[start .. end];
+            return end > start ? cast(dstring)buffer_[start .. end] : "";
         }
 
         /**
@@ -227,7 +176,7 @@ final class Reader
          * Throws:  ReaderException if trying to read past the end of the stream
          *          or if invalid data is read.
          */
-        dstring get(in size_t length)
+        dstring get(size_t length)
         {
             auto result = prefix(length).dup;
             forward(length);
@@ -244,12 +193,12 @@ final class Reader
          */
         void forward(size_t length = 1)
         {
-            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
-
             if(buffer_.length <= bufferOffset_ + length + 1)
             {
                 updateBuffer(length + 1);
             }
+
+            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
             while(length > 0)
             {
@@ -268,19 +217,19 @@ final class Reader
         }
 
         ///Get a string describing current stream position, used for error messages.
-        @property Mark mark() const {return Mark(line_, column_);}
+        @property final Mark mark() const {return Mark(line_, column_);}
 
         ///Get current line number.
-        @property uint line() const {return line_;}
+        @property final uint line() const {return line_;}
 
-        ///Get current line number.
-        @property uint column() const {return column_;}
+        ///Get current column number.
+        @property final uint column() const {return column_;}
 
         ///Get index of the current character in the stream.
-        @property size_t charIndex() const {return charIndex_;}
+        @property final size_t charIndex() const {return charIndex_;}
 
         ///Get encoding of the input stream.
-        @property Encoding encoding() const {return encoding_;}
+        @property final Encoding encoding() const {return decoder_.encoding;}
 
     private:
         /**
@@ -296,7 +245,7 @@ final class Reader
          */
         void updateBuffer(in size_t length)
         {
-            //get rid of unneeded data in the buffer
+            //Get rid of unneeded data in the buffer.
             if(bufferOffset_ > 0)
             {
                 size_t bufferLength = buffer_.length - bufferOffset_;
@@ -306,12 +255,12 @@ final class Reader
                 bufferOffset_ = 0;
             }
 
-            ////Load chars in batches of at most 1024 bytes (256 chars)
+            //Load chars in batches of at most 1024 bytes (256 chars)
             while(buffer_.length <= bufferOffset_ + length)
             {
-                loadChars(256);
+                loadChars(512);
 
-                if(done)
+                if(decoder_.done)
                 {
                     if(buffer_.length == 0 || buffer_[$ - 1] != '\0')
                     {
@@ -325,9 +274,11 @@ final class Reader
         }
 
         /**
-         * Load at most specified number of characters.
+         * Load more characters to the buffer.
          *
-         * Params:  chars = Maximum number of characters to load.
+         * Params:  chars = Recommended number of characters to load. 
+         *                  More characters might be loaded.
+         *                  Less will be loaded if not enough available.
          *
          * Throws:  ReaderException on Unicode decoding error,
          *          if nonprintable characters are detected, or
@@ -335,96 +286,35 @@ final class Reader
          */
         void loadChars(size_t chars)
         {
-            ///Get next character from the stream.
-            dchar getDChar()
-            {
-                final switch(encoding_)
-                {
-                    case Encoding.UTF_8:
-                        //Temp buffer for moving data in rawBuffer8_.
-                        char[bufferLength8_] temp;
-                        //Shortcut for ASCII.
-                        if(rawUsed_ > 0 && rawBuffer8_[0] < 128)
-                        {
-                            //Get the first byte (one char in ASCII).
-                            const dchar result = rawBuffer8_[0];
-                            --rawUsed_;
-                            //Move the data.
-                            *(cast(ulong*)temp.ptr) = *(cast(ulong*)(rawBuffer8_.ptr + 1));
-                            *(cast(ulong*)rawBuffer8_.ptr) = *(cast(ulong*)temp.ptr);
-                            return result;
-                        }
-
-                        //Bytes to read.
-                        const readBytes = min(available_, bufferLength8_ - rawUsed_);
-                        available_ -= readBytes;
-                        //Length of data in rawBuffer8_ after reading.
-                        const len = rawUsed_ + readBytes;
-                        //Read the data.
-                        stream_.readExact(rawBuffer8_.ptr + rawUsed_, readBytes);
-
-                        //After decoding, this will point to the first byte not decoded.
-                        size_t idx = 0;
-                        const dchar result = decode(rawBuffer8_, idx);
-                        rawUsed_ = cast(uint)(len - idx);
-
-                        //Move the data.
-                        temp[0 .. rawUsed_] = rawBuffer8_[idx .. len];
-                        rawBuffer8_[0 .. rawUsed_] = temp[0 .. rawUsed_];
-                        return result;
-                    case Encoding.UTF_16: 
-                        //Temp buffer for moving data in rawBuffer8_.
-                        wchar[bufferLength16_] temp;
-                        //Words to read.
-                        size_t readWords = min(available_ / 2, bufferLength16_ - rawUsed_);
-                        available_ -= readWords * 2;
-                        //Length of data in rawBuffer16_ after reading.
-                        size_t len = rawUsed_;
-                        //Read the data.
-                        while(readWords > 0)
-                        {
-                            //Due to a bug in std.stream, we have to use getcw here.
-                            rawBuffer16_[len] = stream_.getcw(); 
-                            --readWords;
-                            ++len;
-                        }
-
-                        //After decoding, this will point to the first word not decoded.
-                        size_t idx = 0;
-                        const dchar result = decode(rawBuffer16_, idx);
-                        rawUsed_ = cast(uint)(len - idx);
-
-                        //Move the data.
-                        temp[0 .. rawUsed_] = rawBuffer16_[idx .. len];
-                        rawBuffer16_[0 .. rawUsed_] = temp[0 .. rawUsed_];
-                        return result;
-                    case Encoding.UTF_32:
-                        dchar result;
-                        available_ -= 4;
-                        stream_.read(result);
-                        return result;
-                }
-            }
-
             const oldLength = buffer_.length;
             const oldPosition = stream_.position;
 
-            //Preallocating memory to limit GC reallocations.
-
             bufferReserve(buffer_.length + chars);
             buffer_ = bufferAllocated_[0 .. buffer_.length + chars];
-            scope(exit)
+            scope(success)
             {
                 buffer_ = buffer_[0 .. $ - chars];
                 enforce(printable(buffer_[oldLength .. $]), 
                         new ReaderException("Special unicode characters are not allowed"));
             }
 
-            try for(uint c = 0; chars; --chars, ++c)
+            try for(size_t c = 0; chars && !decoder_.done;)
             {
-                if(done){break;}
-                buffer_[oldLength + c] = getDChar();
+                const slice = decoder_.getDChars(chars);
+                buffer_[oldLength + c .. oldLength + c + slice.length] = slice;
+                c += slice.length;
+                chars -= slice.length;
             }
+            catch(Exception e)
+            {
+                handleLoadCharsException(e, oldPosition);
+            }
+        }
+
+        //Handle an exception thrown in loadChars method of any Reader.
+        void handleLoadCharsException(Exception e, size_t oldPosition)
+        {
+            try{throw e;}
             catch(UtfException e)
             {
                 const position = stream_.position;
@@ -437,94 +327,376 @@ final class Reader
             }
         }
 
-        /**
-         * Determine if all characters in an array are printable.
-         *
-         * Params:  chars = Characters to check.
-         *
-         * Returns: True if all the characters are printable, false otherwise.
-         */
-        static bool printable(const ref dchar[] chars) pure
+        //Code shared by loadEntireFile methods.
+        void loadEntireFile_()
         {
-            foreach(c; chars)
+            const maxChars = decoder_.maxChars;
+            bufferReserve(maxChars + 1);
+            loadChars(maxChars);
+
+            if(buffer_.length == 0 || buffer_[$ - 1] != '\0')
             {
-                if(!((c == 0x09 || c == 0x0A || c == 0x0D || c == 0x85) ||
-                     (c >= 0x20 && c <= 0x7E) ||
-                     (c >= 0xA0 && c <= '\uD7FF') ||
-                     (c >= '\uE000' && c <= '\uFFFD')))
-                {
-                    return false;
-                }
+                buffer_ = bufferAllocated_[0 .. buffer_.length + 1];
+                buffer_[$ - 1] = '\0';
             }
-            return true;
         }
 
-        ///Are we done reading?
-        @property bool done() const
-        {   
-            return (available_ == 0 && 
-                    ((encoding_ == Encoding.UTF_8  && rawUsed_ == 0) ||
-                     (encoding_ == Encoding.UTF_16 && rawUsed_ == 0) ||
-                     encoding_ == Encoding.UTF_32));
-        }
-
-        ///Ensure there is space for at least capacity characters in bufferAllocated_.
+        //Ensure there is space for at least capacity characters in bufferAllocated_.
         void bufferReserve(in size_t capacity)
         {
-            if(bufferAllocated_.length >= capacity){return;}
+            if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
 
-            auto newPtr = core.stdc.stdlib.realloc(bufferAllocated_.ptr,  
-                                                   capacity * dchar.sizeof);
-            bufferAllocated_ = (cast(dchar*)newPtr)[0 .. capacity];
+            //Handle first allocation as well as reallocation.
+            auto ptr = bufferAllocated_ !is null 
+                       ? realloc(bufferAllocated_.ptr, capacity * dchar.sizeof)
+                       : malloc(capacity * dchar.sizeof);
+            bufferAllocated_ = (cast(dchar*)ptr)[0 .. capacity];
             buffer_ = bufferAllocated_[0 .. buffer_.length];
         }
+}
 
-    unittest
-    {
-        writeln("D:YAML reader endian unittest");
-        void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
+private:
+
+alias UTFBlockDecoder!512 UTFFastDecoder;
+
+///Decodes streams to UTF-32 in blocks.
+struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
+{
+    private:
+        //UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
+        static immutable ubyte[256] utf8Stride =
+        [
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+            3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+            4,4,4,4,4,4,4,4,5,5,5,5,6,6,0xFF,0xFF,
+        ];
+
+        //Encoding of the input stream.
+        Encoding encoding_;
+        //Maximum number of characters that might be in the stream.
+        size_t maxChars_;
+        //Bytes available in the stream.
+        size_t available_;
+        //Input stream.
+        EndianStream stream_;
+
+        //Buffer used to store raw UTF-8 or UTF-16 code points.
+        union
         {
-            auto reader = new Reader(new MemoryStream(data));
-            assert(reader.encoding_ == encoding_expected);
-            assert(reader.stream_.endian == endian_expected);
+            char[bufferSize_] rawBuffer8_;
+            wchar[bufferSize_ / 2] rawBuffer16_;
         }
-        ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
-        ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
-        endian_test(little_endian_utf_16, Encoding.UTF_16, Endian.littleEndian);
-        endian_test(big_endian_utf_16, Encoding.UTF_16, Endian.bigEndian);
-    }
-    unittest
+        //Used space (in items) in rawBuffer8_/rawBuffer16_.
+        size_t rawUsed_;
+
+        //Space used by buffer_.
+        dchar[bufferSize_] bufferSpace_;
+        //Buffer of decoded, UTF-32 characters. This is a slice into bufferSpace_.
+        dchar[] buffer_;
+
+    public:
+        ///Construct a UTFFastDecoder decoding a stream.
+        this(EndianStream stream)
+        {
+            stream_ = stream;
+            available_ = stream_.available;
+
+            //Handle files short enough not to have a BOM.
+            if(available_ < 2)
+            {
+                encoding_ = Encoding.UTF_8;
+                maxChars_ = 0;
+
+                if(available_ == 1)
+                {
+                    bufferSpace_[0] = stream_.getc();
+                    buffer_ = bufferSpace_[0 .. 1];
+                    maxChars_ = 1;
+                }
+                return;
+            }
+
+            char[] rawBuffer8;
+            wchar[] rawBuffer16;
+            //readBOM will determine and set stream endianness.
+            switch(stream_.readBOM(2))
+            {
+                case -1: 
+                    //readBOM() eats two more bytes in this case so get them back.
+                    const wchar bytes = stream_.getcw();
+                    rawBuffer8_[0 .. 2] = [cast(ubyte)(bytes % 256), cast(ubyte)(bytes / 256)];
+                    rawUsed_ = 2;
+                    goto case 0;
+                case 0:  
+                    maxChars_ = available_;
+                    encoding_ = Encoding.UTF_8; 
+                    break;
+                case 1, 2: 
+                    maxChars_ = available_ / 2;
+                    //readBOM() eats two more bytes in this case so get them back.
+                    encoding_ = Encoding.UTF_16; 
+                    rawBuffer16_[0] = stream_.getcw();
+                    rawUsed_ = 1;
+                    enforce(available_ % 2 == 0, 
+                            new ReaderException("Odd byte count in an UTF-16 stream"));
+                    break;
+                case 3, 4: 
+                    maxChars_ = available_ / 4;
+                    encoding_ = Encoding.UTF_32;
+                    enforce(available_ % 4 == 0, 
+                            new ReaderException("Byte count in an UTF-32 stream not divisible by 4"));
+                    break;
+                default: assert(false, "Unknown UTF BOM");
+            }
+            available_ = stream_.available;
+        }
+
+        ///Get maximum number of characters that might be in the stream.
+        @property size_t maxChars() const {return maxChars_;}
+
+        ///Get encoding we're decoding from.
+        @property Encoding encoding() const {return encoding_;}
+
+        ///Are we done decoding?
+        @property bool done() const
+        {   
+            return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
+        }
+
+        ///Get next character.
+        dchar getDChar()
+        {
+            if(buffer_.length)
+            {
+                const result = buffer_[0];
+                buffer_ = buffer_[1 .. $];
+                return result;
+            }
+
+            assert(available_ > 0 || rawUsed_ > 0);
+            updateBuffer();
+            return getDChar();
+        }
+
+        ///Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
+        const(dchar[]) getDChars(size_t maxChars = size_t.max)
+        {
+            if(buffer_.length)
+            {
+                const slice = min(buffer_.length, maxChars);
+                const result = buffer_[0 .. slice];
+                buffer_ = buffer_[slice .. $];
+                return result;
+            }
+
+            assert(available_ > 0 || rawUsed_ > 0);
+            updateBuffer();
+            return getDChars(maxChars);
+        }
+
+    private:
+        //Read and decode characters from file and store them in the buffer.
+        void updateBuffer()
+        {
+            assert(buffer_.length == 0);
+            final switch(encoding_)
+            {
+                case Encoding.UTF_8:
+                    const bytes = min(bufferSize_ - rawUsed_, available_);
+                    //Current length of valid data in rawBuffer8_.
+                    const rawLength = rawUsed_ + bytes;
+                    stream_.readExact(rawBuffer8_.ptr + rawUsed_, bytes);
+                    available_ -= bytes;
+                    decodeRawBuffer(rawBuffer8_, rawLength);
+                    break;
+
+                case Encoding.UTF_16:
+                    const words = min((bufferSize_ / 2) - rawUsed_, available_ / 2);
+                    //Current length of valid data in rawBuffer16_.
+                    const rawLength = rawUsed_ + words;
+                    foreach(c; rawUsed_ .. rawLength)
+                    {
+                        stream_.read(rawBuffer16_[c]);
+                        available_ -= 2;
+                    }
+                    decodeRawBuffer(rawBuffer16_, rawLength);
+                    break;
+
+                case Encoding.UTF_32:
+                    const chars = min(bufferSize_ / 4, available_ / 4);
+                    foreach(c; 0 .. chars)
+                    {
+                        stream_.read(bufferSpace_[c]);
+                        available_ -= 4;
+                    }
+                    buffer_ = bufferSpace_[0 .. chars];
+                    break;
+            }
+        }
+
+        //Decode contents of a UTF-8 or UTF-16 raw buffer.
+        void decodeRawBuffer(C)(C[] buffer, const size_t length)
+        {
+            //End of part of rawBuffer8_ that contains 
+            //complete characters and can be decoded.
+            const end = endOfLastUTFSequence(buffer, length);
+            //If end is 0, there are no full UTF-8 chars.
+            //This can happen at the end of file if there is an incomplete UTF-8 sequence.
+            enforce(end > 0,
+                    new ReaderException("Invalid UTF-8 character at the end of stream"));
+
+            decodeUTF(buffer[0 .. end]);
+
+            //After decoding, any code points not decoded go to the start of raw buffer.
+            rawUsed_ = length - end;
+            foreach(i; 0 .. rawUsed_){buffer[i] = buffer[i + end];}
+        }
+
+        //Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
+        size_t endOfLastUTFSequence(C)(const C[] buffer, const size_t max)
+        {
+            static if(is(C == char))
+            {
+                for(long end = max - 1; end >= 0; --end)
+                {
+                    const s = utf8Stride[buffer[end]];
+                    if(s != 0xFF)
+                    {
+                        //If stride goes beyond end of the buffer (max), return end.
+                        //Otherwise the last sequence ends at max, so we can return that.
+                        //(Unless there is an invalid code point, which is 
+                        //caught at decoding)
+                        return (s > max - end) ?  cast(size_t)end : max;
+                    }
+                }
+                return 0;
+            }
+            else 
+            {
+                size_t end = 0;
+                while(end < max)
+                {
+                    const s = stride(buffer, end);
+                    if(s + end > max){break;}
+                    end += s;
+                }
+                return end;
+            }
+        }
+
+        //Decode a UTF-8 or UTF-16 buffer (with no incomplete sequences at the end).
+        void decodeUTF(C)(const C[] source)
+        {
+            size_t bufpos = 0;
+            const srclength = source.length;
+            for(size_t srcpos = 0; srcpos < srclength;)
+            {
+                const c = source[srcpos];
+                if(c < 0x80)
+                {
+                    bufferSpace_[bufpos++] = c;
+                    ++srcpos;
+                }
+                else
+                {
+                    bufferSpace_[bufpos++] = decode(source, srcpos);
+                }
+            }
+            buffer_ = bufferSpace_[0 .. bufpos]; 
+        }
+}
+
+/**
+ * Determine if all characters in an array are printable.
+ *
+ * Params:  chars = Characters to check.
+ *
+ * Returns: True if all the characters are printable, false otherwise.
+ */
+bool printable(const ref dchar[] chars) pure
+{
+    foreach(c; chars)
     {
-        writeln("D:YAML reader peek/prefix/forward unittest");
-        ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
-        auto reader = new Reader(new MemoryStream(data));
+        if(!((c == 0x09 || c == 0x0A || c == 0x0D || c == 0x85) ||
+             (c >= 0x20 && c <= 0x7E) ||
+             (c >= 0xA0 && c <= '\uD7FF') ||
+             (c >= '\uE000' && c <= '\uFFFD')))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+//Unittests.
+
+void testEndian(R)()
+{
+    writeln(typeid(R).toString() ~ ": endian unittest");
+    void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
+    {
+        Reader reader = new R(new MemoryStream(data));
+        assert(reader.encoding == encoding_expected);
+        assert(reader.stream_.endian == endian_expected);
+    }
+    ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
+    ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
+    endian_test(little_endian_utf_16, Encoding.UTF_16, Endian.littleEndian);
+    endian_test(big_endian_utf_16, Encoding.UTF_16, Endian.bigEndian);
+}
+
+void testPeekPrefixForward(R)()
+{
+    writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
+    ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
+    Reader reader = new R(new MemoryStream(data));
+    assert(reader.peek() == 'd');
+    assert(reader.peek(1) == 'a');
+    assert(reader.peek(2) == 't');
+    assert(reader.peek(3) == 'a');
+    assert(reader.peek(4) == '\0');
+    assert(reader.prefix(4) == "data");
+    assert(reader.prefix(6) == "data\0");
+    reader.forward(2);
+    assert(reader.peek(1) == 'a');
+    assert(collectException(reader.peek(3)));
+}
+
+void testUTF(R)()
+{
+    writeln(typeid(R).toString() ~ ": UTF formats unittest");
+    dchar[] data = cast(dchar[])"data";
+    void utf_test(T)(T[] data, BOM bom)
+    {
+        ubyte[] bytes = ByteOrderMarks[bom] ~ 
+                        (cast(ubyte*)data.ptr)[0 .. data.length * T.sizeof];
+        Reader reader = new R(new MemoryStream(bytes));
         assert(reader.peek() == 'd');
         assert(reader.peek(1) == 'a');
         assert(reader.peek(2) == 't');
         assert(reader.peek(3) == 'a');
-        assert(reader.peek(4) == '\0');
-        assert(reader.prefix(4) == "data");
-        assert(reader.prefix(6) == "data\0");
-        reader.forward(2);
-        assert(reader.peek(1) == 'a');
-        assert(collectException(reader.peek(3)));
     }
-    unittest
-    {
-        writeln("D:YAML reader UTF formats unittest");
-        dchar[] data = cast(dchar[])"data";
-        void utf_test(T)(T[] data, BOM bom)
-        {
-            ubyte[] bytes = ByteOrderMarks[bom] ~ 
-                            (cast(ubyte*)data.ptr)[0 .. data.length * T.sizeof];
-            auto reader = new Reader(new MemoryStream(bytes));
-            assert(reader.peek() == 'd');
-            assert(reader.peek(1) == 'a');
-            assert(reader.peek(2) == 't');
-            assert(reader.peek(3) == 'a');
-        }
-        utf_test!char(to!(char[])(data), BOM.UTF8);
-        utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.UTF16BE : BOM.UTF16LE);
-        utf_test(data, endian == Endian.bigEndian ? BOM.UTF32BE : BOM.UTF32LE);
-    }
+    utf_test!char(to!(char[])(data), BOM.UTF8);
+    utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.UTF16BE : BOM.UTF16LE);
+    utf_test(data, endian == Endian.bigEndian ? BOM.UTF32BE : BOM.UTF32LE);
+}
+
+unittest
+{
+    testEndian!Reader();
+    testPeekPrefixForward!Reader();
+    testUTF!Reader();
 }

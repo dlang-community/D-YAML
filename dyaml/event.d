@@ -19,7 +19,7 @@ import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
 import dyaml.tag;
-import dyaml.tagdirectives;
+import dyaml.tagdirective;
 import dyaml.style;
 
 
@@ -55,30 +55,40 @@ struct Event
     Mark startMark;
     ///End position of the event in file/stream.
     Mark endMark;
-    ///Anchor of the event, if any.
-    Anchor anchor;
-    ///Tag of the event, if any.
-    Tag tag;
+    union
+    {
+        struct
+        {
+            ///Anchor of the event, if any.
+            Anchor anchor;
+            ///Tag of the event, if any.
+            Tag tag;
+        }
+        ///Tag directives, if this is a DocumentStart.
+        //TagDirectives tagDirectives;
+        TagDirective[] tagDirectives;
+    }
     ///Event type.
     EventID id = EventID.Invalid;
     ///Style of scalar event, if this is a scalar event.
-    ScalarStyle scalarStyle;
-    ///Should the tag be implicitly resolved? 
-    bool implicit;
+    ScalarStyle scalarStyle = ScalarStyle.Invalid;
+    union
+    {
+        ///Should the tag be implicitly resolved? 
+        bool implicit;
+        /**
+         * Is this document event explicit?
+         *
+         * Used if this is a DocumentStart or DocumentEnd.
+         */
+        bool explicitDocument;
+    }
     ///TODO figure this out - Unknown, used by PyYAML with Scalar events.
     bool implicit_2;
-    /**
-     * Is this document event explicit?
-     *
-     * Used if this is a DocumentStart or DocumentEnd.
-     */
-    alias implicit explicitDocument;
-    ///Tag directives, if this is a DocumentStart.
-    TagDirectives tagDirectives;
     ///Encoding of the stream, if this is a StreamStart.
     Encoding encoding;
     ///Collection style, if this is a SequenceStart or MappingStart.
-    CollectionStyle collectionStyle;
+    CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     ///Is this a null (uninitialized) event?
     @property bool isNull() const {return id == EventID.Invalid;}
@@ -96,7 +106,12 @@ struct Event
  */
 Event event(EventID id)(in Mark start, in Mark end, in Anchor anchor = Anchor()) pure
 {
-    return Event(null, start, end, anchor, Tag(), id);
+    Event result;
+    result.startMark = start;
+    result.endMark = end;
+    result.anchor = anchor;
+    result.id = id;
+    return result;
 }
 
 /**
@@ -114,8 +129,15 @@ Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anc
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
-    return Event(null, start, end, anchor, tag, id, ScalarStyle.Invalid, implicit,
-                 false, TagDirectives(), Encoding.UTF_8, style);
+    Event result;
+    result.startMark = start;
+    result.endMark = end;
+    result.anchor = anchor;
+    result.tag = tag;
+    result.id = id;
+    result.implicit = implicit;
+    result.collectionStyle = style;
+    return result;
 }
 
 /**
@@ -127,8 +149,12 @@ Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anc
  */
 Event streamStartEvent(in Mark start, in Mark end, in Encoding encoding) pure
 {
-    return Event(null, start, end, Anchor(), Tag(), EventID.StreamStart, 
-                 ScalarStyle.Invalid, false, false, TagDirectives(), encoding);
+    Event result;
+    result.startMark = start;
+    result.endMark = end;
+    result.id = EventID.StreamStart;
+    result.encoding = encoding;
+    return result;
 }
 
 ///Aliases for simple events.
@@ -151,10 +177,16 @@ alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
  *          tagDirectives = Tag directives of the document.
  */
 Event documentStartEvent(in Mark start, in Mark end, bool explicit, string YAMLVersion,
-                         in TagDirectives tagDirectives) pure
+                         TagDirective[] tagDirectives) pure
 {
-    return Event(YAMLVersion, start, end, Anchor(), Tag(), EventID.DocumentStart, 
-                 ScalarStyle.Invalid, explicit, false, tagDirectives);
+    Event result;
+    result.value = YAMLVersion;
+    result.startMark = start;
+    result.endMark = end;
+    result.id = EventID.DocumentStart;
+    result.explicitDocument = explicit;
+    result.tagDirectives = tagDirectives;
+    return result;
 }
 
 /**
@@ -166,8 +198,12 @@ Event documentStartEvent(in Mark start, in Mark end, bool explicit, string YAMLV
  */
 Event documentEndEvent(in Mark start, in Mark end, bool explicit) pure
 {
-    return Event(null, start, end, Anchor(), Tag(), EventID.DocumentEnd,
-                 ScalarStyle.Invalid, explicit);
+    Event result;
+    result.startMark = start;
+    result.endMark = end;
+    result.id = EventID.DocumentEnd;
+    result.explicitDocument = explicit;
+    return result;
 }
 
 /**
@@ -185,6 +221,15 @@ Event scalarEvent(in Mark start, in Mark end, in Anchor anchor, in Tag tag,
                   in Tuple!(bool, bool) implicit, in string value, 
                   in ScalarStyle style = ScalarStyle.Invalid) pure
 {
-    return Event(value, start, end, anchor, tag, EventID.Scalar, style, implicit[0],
-                 implicit[1]);
+    Event result;
+    result.value = value;
+    result.startMark = start;
+    result.endMark = end;
+    result.anchor = anchor;
+    result.tag = tag;
+    result.id = EventID.Scalar;
+    result.scalarStyle = style;
+    result.implicit = implicit[0];
+    result.implicit_2 = implicit[1];
+    return result;
 }

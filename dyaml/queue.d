@@ -37,7 +37,7 @@ struct Queue(T)
         ///Linked list node containing one element and pointer to the next node.
         struct Node
         {
-            T payload_ = T.init;
+            T payload_;
             Node* next_ = null;
         }
 
@@ -90,7 +90,7 @@ struct Queue(T)
         }
 
         ///Push new item to the queue.
-        void push(in T item)
+        void push(T item)
         {
             Node* newLast = allocate!Node(item, cast(Node*)null);
             if(last_ !is null){last_.next_ = newLast;}
@@ -100,7 +100,7 @@ struct Queue(T)
         }
 
         ///Insert a new item putting it to specified index in the linked list.
-        void insert(in T item, in size_t idx)
+        void insert(T item, in size_t idx)
         in
         {
             assert(idx <= length_);
@@ -155,7 +155,7 @@ struct Queue(T)
         }
 
         ///Return the next element in the queue.
-        ref const(T) peek() const
+        ref inout(T) peek() inout
         in
         {
             assert(!empty, "Trying to peek at an element in an empty queue");

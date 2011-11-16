@@ -83,7 +83,7 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader(dataFilename);
-    auto events = loader.parse();
+    auto events = cast(Event[])loader.parse();
     auto emitStream = new MemoryStream;
     Dumper(emitStream).emit(events);
 
@@ -98,7 +98,7 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
     loader2.name        = "TEST";
     loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
-    auto newEvents = loader2.parse();
+    auto newEvents = cast(Event[])loader2.parse();
     assert(compareEvents(events, newEvents));
 }
 
@@ -114,7 +114,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader(canonicalFilename);
-    auto events = loader.parse();
+    auto events = cast(Event[])loader.parse();
     foreach(canonical; [false, true])
     {
         auto emitStream = new MemoryStream;
@@ -130,7 +130,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
         loader2.name        = "TEST";
         loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
-        auto newEvents = loader2.parse();
+        auto newEvents = cast(Event[])loader2.parse();
         assert(compareEvents(events, newEvents));
     }
 }
@@ -151,7 +151,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
     {
         //must exist due to Anchor, Tags reference counts
         auto loader = Loader(canonicalFilename);
-        auto events = loader.parse();
+        auto events = cast(Event[])loader.parse();
         foreach(flowStyle; [CollectionStyle.Block, CollectionStyle.Flow])
         {
             foreach(style; [ScalarStyle.Literal, ScalarStyle.Folded, 
@@ -191,7 +191,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                 loader2.name        = "TEST";
                 loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;
-                auto newEvents = loader2.parse();
+                auto newEvents = cast(Event[])loader2.parse();
                 assert(compareEvents(events, newEvents));
             }
         }

@@ -72,7 +72,8 @@ void testLoaderErrorFilename(bool verbose, string errorFilename)
         if(verbose){writeln(typeid(e).toString(), "\n", e);}
         return;
     }
-    assert(false, "Expected an exception");
+    assert(false, "testLoaderErrorSingle(" ~ to!string(verbose) ~ 
+                  ", " ~ errorFilename ~ ") Expected an exception");
 }
 
 /**

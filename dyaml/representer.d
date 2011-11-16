@@ -65,7 +65,7 @@ final class Representer
          *                                   disabled to use custom representer
          *                                   functions for default types.
          */
-        this(in bool useDefaultRepresenters = true)
+        this(bool useDefaultRepresenters = true)
         {
             if(!useDefaultRepresenters){return;}
             addRepresenter!YAMLNull(&representNull);
@@ -87,13 +87,13 @@ final class Representer
         }
 
         ///Set default _style for scalars. Invalid means the _style is chosen automatically.
-        @property void defaultScalarStyle(in ScalarStyle style)
+        @property void defaultScalarStyle(ScalarStyle style)
         {
             defaultScalarStyle_ = style;
         }
 
         ///Set default _style for collections. Invalid means the _style is chosen automatically. 
-        @property void defaultCollectionStyle(in CollectionStyle style)
+        @property void defaultCollectionStyle(CollectionStyle style)
         {
             defaultCollectionStyle_ = style;
         }
@@ -237,7 +237,7 @@ final class Representer
          * }
          * --------------------
          */
-        Node representScalar(in string tag, string scalar, 
+        Node representScalar(string tag, string scalar, 
                              ScalarStyle style = ScalarStyle.Invalid)
         {
             if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
@@ -276,7 +276,7 @@ final class Representer
          * }
          * --------------------
          */
-        Node representSequence(in string tag, Node[] sequence, 
+        Node representSequence(string tag, Node[] sequence, 
                                CollectionStyle style = CollectionStyle.Invalid)
         {
             Node[] value;
@@ -335,7 +335,7 @@ final class Representer
          * }
          * --------------------
          */
-        Node representMapping(in string tag, Node.Pair[] pairs,
+        Node representMapping(string tag, Node.Pair[] pairs,
                               CollectionStyle style = CollectionStyle.Invalid)
         {
             Node.Pair[] value;

@@ -23,7 +23,7 @@ import dyaml.exception;
 import dyaml.node;
 import dyaml.resolver;
 import dyaml.tag;
-import dyaml.tagdirectives;
+import dyaml.tagdirective;
 import dyaml.token;
 
 
@@ -46,7 +46,7 @@ struct Serializer
         string YAMLVersion_;
 
         ///Tag directives to emit.
-        TagDirectives tagDirectives_;
+        TagDirective[] tagDirectives_;
 
         //TODO Use something with more deterministic memory usage.
         ///Nodes with assigned anchors.
@@ -70,7 +70,7 @@ struct Serializer
          */
         this(ref Emitter emitter, Resolver resolver, Encoding encoding,
              in bool explicitStart, in bool explicitEnd, string YAMLVersion, 
-             TagDirectives tagDirectives)
+             TagDirective[] tagDirectives)
         {
             emitter_ = &emitter;
             resolver_ = resolver;

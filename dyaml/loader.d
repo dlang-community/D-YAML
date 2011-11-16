@@ -13,7 +13,6 @@ module dyaml.loader;
 import std.exception;
 import std.stream;
 
-import dyaml.anchor;
 import dyaml.composer;
 import dyaml.constructor;
 import dyaml.event;
@@ -23,7 +22,6 @@ import dyaml.parser;
 import dyaml.reader;
 import dyaml.resolver;
 import dyaml.scanner;
-import dyaml.tagdirectives;
 import dyaml.token;
 
 
@@ -114,6 +112,8 @@ struct Loader
         Constructor constructor_;
         ///Name of the input file or stream, used in error messages.
         string name_ = "<unknown>";
+        ///Are we done loading?
+        bool done_ = false;
 
     public:
         @disable this();
@@ -127,7 +127,7 @@ struct Loader
          *
          * Throws:  YAMLException if the file could not be opened or read.
          */
-        this(in string filename)
+        this(string filename)
         {
             name_ = filename;
             try{this(new File(filename));}
@@ -154,8 +154,6 @@ struct Loader
                 parser_      = new Parser(scanner_);
                 resolver_    = defaultResolver_;
                 constructor_ = defaultConstructor_;
-                Anchor.addReference();
-                TagDirectives.addReference();
             }
             catch(YAMLException e)
             {
@@ -167,8 +165,6 @@ struct Loader
         ///Destroy the Loader.
         ~this()
         {
-            Anchor.removeReference();
-            TagDirectives.removeReference();
             clear(reader_);
             clear(scanner_);
             clear(parser_);
@@ -196,6 +192,8 @@ struct Loader
          * Load single YAML document.
          *
          * If none or more than one YAML document is found, this throws a YAMLException.
+         *
+         * This can only be called once; this is enforced by contract.
          *                  
          * Returns: Root node of the document.
          *
@@ -203,9 +201,15 @@ struct Loader
          *          or on a YAML parsing error.
          */
         Node load()
+        in
+        {
+            assert(!done_, "Loader: Trying to load YAML twice");
+        }
+        body
         {
             try
             {
+                scope(exit){done_ = true;}
                 auto composer = new Composer(parser_, resolver_, constructor_);
                 enforce(composer.checkNode(), new YAMLException("No YAML document to load"));
                 return composer.getSingleNode();
@@ -224,6 +228,8 @@ struct Loader
          * them all at once. Calling loadAll after iterating over the node or
          * vice versa will not return any documents, as they have all been parsed
          * already.
+         *
+         * This can only be called once; this is enforced by contract.
          *                  
          * Returns: Array of root nodes of all documents in the file/stream.
          *
@@ -241,10 +247,18 @@ struct Loader
          *
          * Parses documents lazily, when they are needed.
          *
+         * Foreach over a Loader can only be used once; this is enforced by contract.
+         *
          * Throws: YAMLException on a parsing error.
          */
         int opApply(int delegate(ref Node) dg)
+        in
         {
+            assert(!done_, "Loader: Trying to load YAML twice");
+        }
+        body
+        {
+            scope(exit){done_ = true;}
             try
             {
                 auto composer = new Composer(parser_, resolver_, constructor_);
@@ -284,11 +298,11 @@ struct Loader
         }
 
         //Parse and return all events. Used for debugging.
-        Event[] parse()
+        immutable(Event)[] parse()
         {
             try
             {
-                Event[] result;
+                immutable(Event)[] result;
                 while(parser_.checkEvent()){result ~= parser_.getEvent();}
                 return result;
             }

@@ -7,24 +7,7 @@
 ///YAML anchor.
 module dyaml.anchor;
 
-import dyaml.sharedobject;
-
+import dyaml.zerostring;
 
 ///YAML anchor (reference) struct. Encapsulates an anchor to save memory.
-struct Anchor
-{
-    public:
-        mixin SharedObject!(string, Anchor);
-
-        ///Construct an anchor from a string representation.
-        this(string anchor)
-        {
-            if(anchor is null || anchor == "")
-            {
-                index_ = uint.max;
-                return;
-            }
-
-            add(anchor);
-        }
-}
+alias ZeroString!"Anchor" Anchor;

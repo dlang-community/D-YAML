@@ -4,10 +4,12 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-///YAML tag.
-module dyaml.tag;
+///Tag directives.
+module dyaml.tagdirective;
 
-import dyaml.zerostring;
-
-///YAML tag (data type) struct. Encapsulates a tag to save memory and speed up comparison.
-alias ZeroString!"Tag" Tag;
+///Single tag directive. handle is the shortcut, prefix is the prefix that replaces it.
+struct TagDirective
+{
+    string handle;
+    string prefix;
+}

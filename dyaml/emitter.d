@@ -71,11 +71,11 @@ private mixin FastCharSearch!"\n\u0085\u2028\u2029"d newlineSearch_;
 struct Emitter 
 {
     private:
-        alias dyaml.tagdirectives.tagDirective tagDirective;
+        alias dyaml.tagdirective.TagDirective TagDirective;
 
         ///Default tag handle shortcuts and replacements.
-        static tagDirective[] defaultTagDirectives_ = 
-            [tagDirective("!", "!"), tagDirective("!!", "tag:yaml.org,2002:")];
+        static TagDirective[] defaultTagDirectives_ = 
+            [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
         Stream stream_;
@@ -135,7 +135,7 @@ struct Emitter
         LineBreak bestLineBreak_;
 
         ///Tag directive handle - prefix pairs.
-        tagDirective[] tagDirectives_;
+        TagDirective[] tagDirectives_;
 
         ///Anchor/alias to process.
         string preparedAnchor_ = null;
@@ -193,7 +193,7 @@ struct Emitter
         }
 
         ///Emit an event. Throws EmitterException on error.
-        void emit(immutable Event event)
+        void emit(Event event)
         {
             events_.push(event);
             while(!needMoreEvents())
@@ -254,7 +254,7 @@ struct Emitter
         {
             if(events_.length == 0){return true;}
 
-            immutable event = events_.peek();
+            immutable event = cast(immutable Event)events_.peek();
             if(event.id == EventID.DocumentStart){return needEvents(1);}
             if(event.id == EventID.SequenceStart){return needEvents(2);}
             if(event.id == EventID.MappingStart) {return needEvents(3);}
@@ -274,7 +274,7 @@ struct Emitter
             events_.next();
             while(!events_.iterationOver())
             {
-                immutable event = events_.next();
+                immutable event = cast(immutable Event)events_.next();
                 static starts = [EventID.DocumentStart, EventID.SequenceStart, EventID.MappingStart];
                 static ends   = [EventID.DocumentEnd, EventID.SequenceEnd, EventID.MappingEnd];
                 if(starts.canFind(event.id))   {++level;}
@@ -347,8 +347,8 @@ struct Emitter
             if(event_.id == EventID.DocumentStart)
             {
                 const YAMLVersion = event_.value;
-                const tagDirectives = event_.tagDirectives;
-                if(openEnded_ && (YAMLVersion !is null || !tagDirectives.isNull()))
+                auto tagDirectives = event_.tagDirectives;
+                if(openEnded_ && (YAMLVersion !is null || tagDirectives !is null))
                 {
                     writeIndicator("...", true);
                     writeIndent();
@@ -359,10 +359,10 @@ struct Emitter
                     writeVersionDirective(prepareVersion(YAMLVersion));
                 }
 
-                if(!tagDirectives.isNull())
+                if(tagDirectives !is null)
                 {
-                    tagDirectives_ = tagDirectives.get;
-                    sort!"icmp(a[0], b[0]) < 0"(tagDirectives_);
+                    tagDirectives_ = tagDirectives;
+                    sort!"icmp(a.handle, b.handle) < 0"(tagDirectives_);
 
                     foreach(ref pair; tagDirectives_)
                     {
@@ -371,7 +371,7 @@ struct Emitter
                     }
                 }
 
-                bool eq(ref tagDirective a, ref tagDirective b){return a.handle == b.handle;}
+                bool eq(ref TagDirective a, ref TagDirective b){return a.handle == b.handle;}
                 //Add any default tag directives that have not been overriden.
                 foreach(ref def; defaultTagDirectives_) 
                 {
@@ -382,7 +382,7 @@ struct Emitter
                 }
 
                 const implicit = first && !event_.explicitDocument && !canonical_ &&
-                                 YAMLVersion is null && tagDirectives.isNull() && 
+                                 YAMLVersion is null && tagDirectives is null && 
                                  !checkEmptyDocument();
                 if(!implicit)
                 {
@@ -684,7 +684,7 @@ struct Emitter
                 return false;
             }
 
-            immutable event = events_.peek();
+            immutable event = cast(immutable Event)events_.peek();
             const emptyScalar = event.id == EventID.Scalar && event.anchor.isNull() &&
                                 event.tag.isNull() && event.implicit && event.value == "";
             return emptyScalar;
@@ -933,14 +933,14 @@ struct Emitter
             string suffix = tagString;
 
             //Sort lexicographically by prefix.
-            sort!"icmp(a[1], b[1]) < 0"(tagDirectives_);
+            sort!"icmp(a.prefix, b.prefix) < 0"(tagDirectives_);
             foreach(ref pair; tagDirectives_)
             {
-                auto prefix = pair[1];
+                auto prefix = pair.prefix;
                 if(tagString.startsWith(prefix) && 
                    (prefix != "!" || prefix.length < tagString.length))
                 {
-                    handle = pair[0];
+                    handle = pair.handle;
                     suffix = tagString[prefix.length .. $];
                 }
             }
