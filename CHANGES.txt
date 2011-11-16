@@ -1,3 +1,69 @@
+0.3.0:
+
+
+- FEATURES/IMPROVEMENTS:
+
+ - API BREAKING: Removed Node.getToVar as it turned out to be a premature 
+   optimization.
+
+ - API BREAKING: Constructor API for constructing custom YAML data types has 
+   been improved to make it easier to load custom classes/structs. See the 
+   custom types tutorial and Constructor API documentation.
+
+ - Node.opIndex now returns a reference to a node.
+
+ - Added a shortcut alias Node.as for Node.get . Node.as might eventually 
+   replace Node.get (in a 1.0 release).
+
+ - User can now access a string representation of tag of a node.
+
+ - Nodes now remember their scalar and collection styles between loading and
+   dumping. These are not accessible to user. User can set output styles in
+   Representer.
+
+ - Updated API documentation to reflect the new changes, added more examples
+   and overall made the documentation more readable.
+
+ - Improved error messages of exceptions.
+
+ - Drastically optimized scanning and parsing, decreasing parsing time to about
+   10% (no precise benchmark comparison with 0.2 at the moment).
+
+ - Eliminated most GC usage, improving speed and memory usage.
+ 
+ - Optimized Dumper for speed, especially when dumping many small files.
+
+ - Reader has been reimplemented to improve performance.
+
+ - Many other speed and memory optimizations.
+
+ - Added a profiling build target and a parsing/dumping benchmark.
+
+ - Added a random YAML file generator and a YAML file analyzer, as example 
+   applications and for benchmarking.
+
+ - Added a "clean" target to example Makefiles.
+
+ - Got rid of all global state.
+
+
+- BUGFIXES:
+ 
+ - Fixed compatibility issues with DMD 2.056.
+
+ - Fixed an Emitter bug which caused tags to always be emitted in full format.
+
+ - Fixed a bug that caused errors when loading documents with YAML version 
+   directives.
+
+ - Fixed many const-correctness bugs.
+
+ - Minor bugfixes all over the code. 
+
+ - Fixed many documentation bugs.
+
+
+
 0.2.0:
 
 

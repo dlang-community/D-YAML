@@ -1,5 +1,5 @@
 ==========
-D:YAML 0.2
+D:YAML 0.3
 ==========
 
 ------------
@@ -9,18 +9,18 @@ Introduction
 D:YAML is an open source YAML parser and emitter library for the D programming
 language.  It is 
 (`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_) 
-compliant to the YAML 1.1 specification. Much of D:YAML code is based on 
-`PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. D:YAML has no 
-external dependencies, all it needs is a D compiler and Phobos (standard 
-library). It is written in D2 and there are no plans for D1 or Tango support.
+compliant to the YAML 1.1 specification. D:YAML is based on 
+`PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. It has no external
+dependencies, it only needs a D compiler and Phobos (standard library). It is 
+written in D2 and there are no plans for D1 support.
 
-D:YAML is designed to be as easy to use as possible while supporting the full 
-feature set of YAML. To start using it in your project, see the 
+D:YAML is designed to be easy to use while supporting the full feature set of 
+YAML. To start using it in your project, see the 
 `Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
 tutorial.
  
-D:YAML is still a work in progress. Its API is still not stable and there might 
-be compatibility breaking changes. For instance, currently some D:YAML API 
+D:YAML is still a work in progress. Its API is not stable and there might be 
+compatibility breaking changes. For instance, currently some D:YAML API 
 functions depend on the ``std.stream`` module in Phobos. This module is expected 
 to be rewritten in future and D:YAML will change accordingly.
 
@@ -29,12 +29,13 @@ to be rewritten in future and D:YAML will change accordingly.
 Features
 --------
 
-* Easy to use, high-level API and detailed debugging messages.
+* Easy to use, high level API and detailed debugging messages.
 * Detailed API documentation and tutorials.
+* Code examples.
 * No external dependencies.
 * Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
   are parsed correctly.
-* Read and write from/to YAML files as well as memory or user defined streams.
+* Reads from and writes to YAML files as well as memory or user defined streams.
 * UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian 
   (plain ASCII also works as it is a subset of UTF-8).
 * Support for both block (Python-like, based on indentation) and flow 
@@ -46,6 +47,7 @@ Features
 * All tags (data types) described at http://yaml.org/type/ are supported, with 
   the exception of ``tag:yaml.org,2002:yaml``, which is used to represent YAML
   code in YAML.
+* Remembers YAML style information between loading and dumping if possible.
 * There is no support for recursive data structures. 
   There are no plans to implement this at the moment.
 

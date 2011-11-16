@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
-<title>D:YAML 0.2</title>
+<title>D:YAML 0.3</title>
 <style type="text/css">
 
 /*
@@ -310,36 +310,37 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="d-yaml-0-2">
-<h1 class="title">D:YAML 0.2</h1>
+<div class="document" id="d-yaml-0-3">
+<h1 class="title">D:YAML 0.3</h1>
 
 <div class="section" id="introduction">
 <h1>Introduction</h1>
 <p>D:YAML is an open source YAML parser and emitter library for the D programming
 language.  It is
 (<a class="reference external" href="https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification">almost</a>)
-compliant to the YAML 1.1 specification. Much of D:YAML code is based on
-<a class="reference external" href="http://www.pyyaml.org">PyYAML</a> created by Kirill Simonov. D:YAML has no
-external dependencies, all it needs is a D compiler and Phobos (standard
-library). It is written in D2 and there are no plans for D1 or Tango support.</p>
-<p>D:YAML is designed to be as easy to use as possible while supporting the full
-feature set of YAML. To start using it in your project, see the
+compliant to the YAML 1.1 specification. D:YAML is based on
+<a class="reference external" href="http://www.pyyaml.org">PyYAML</a> created by Kirill Simonov. It has no external
+dependencies, it only needs a D compiler and Phobos (standard library). It is
+written in D2 and there are no plans for D1 support.</p>
+<p>D:YAML is designed to be easy to use while supporting the full feature set of
+YAML. To start using it in your project, see the
 <a class="reference external" href="https://github.com/kiith-sa/D-YAML/wiki/Getting-Started">Getting Started</a>
 tutorial.</p>
-<p>D:YAML is still a work in progress. Its API is still not stable and there might
-be compatibility breaking changes. For instance, currently some D:YAML API
+<p>D:YAML is still a work in progress. Its API is not stable and there might be
+compatibility breaking changes. For instance, currently some D:YAML API
 functions depend on the <tt class="docutils literal">std.stream</tt> module in Phobos. This module is expected
 to be rewritten in future and D:YAML will change accordingly.</p>
 </div>
 <div class="section" id="features">
 <h1>Features</h1>
 <ul class="simple">
-<li>Easy to use, high-level API and detailed debugging messages.</li>
+<li>Easy to use, high level API and detailed debugging messages.</li>
 <li>Detailed API documentation and tutorials.</li>
+<li>Code examples.</li>
 <li>No external dependencies.</li>
 <li>Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
 are parsed correctly.</li>
-<li>Read and write from/to YAML files as well as memory or user defined streams.</li>
+<li>Reads from and writes to YAML files as well as memory or user defined streams.</li>
 <li>UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian
 (plain ASCII also works as it is a subset of UTF-8).</li>
 <li>Support for both block (Python-like, based on indentation) and flow
@@ -351,6 +352,7 @@ scalar tags.</li>
 <li>All tags (data types) described at <a class="reference external" href="http://yaml.org/type/">http://yaml.org/type/</a> are supported, with
 the exception of <tt class="docutils literal">tag:yaml.org,2002:yaml</tt>, which is used to represent YAML
 code in YAML.</li>
+<li>Remembers YAML style information between loading and dumping if possible.</li>
 <li>There is no support for recursive data structures.
 There are no plans to implement this at the moment.</li>
 </ul>
