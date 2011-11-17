@@ -337,17 +337,9 @@ struct TestStruct
 }
 
 ///Constructor function for TestClass.
-TestClass constructClass(Mark start, Mark end, ref Node node)
+TestClass constructClass(ref Node node)
 {
-    try
-    {
-        return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-    }
-    catch(NodeException e)
-    {
-        throw new ConstructorException("Error constructing TestClass (missing data members?) " 
-                                       ~ e.msg, start, end);
-    }
+    return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
 Node representClass(ref Node node, Representer representer)
@@ -362,7 +354,7 @@ Node representClass(ref Node node, Representer representer)
 }
           
 ///Constructor function for TestStruct.
-TestStruct constructStruct(Mark start, Mark end, ref Node node)
+TestStruct constructStruct(ref Node node)
 {
     return TestStruct(to!int(node.as!string));
 }

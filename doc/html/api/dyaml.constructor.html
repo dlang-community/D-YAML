@@ -95,14 +95,20 @@
 </table></div>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorScalar"></a><span class="ddoc_psymbol">addConstructorScalar</span>(T)(in string <b>tag</b>, T function(Mark, Mark, ref Node) <b>ctor</b>);
+<dt class="d_decl">void <a name="addConstructorScalar"></a><span class="ddoc_psymbol">addConstructorScalar</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from scalar.
 </p>
-<p>The function must take two Marks (start and end positions of
- the node in file) and a reference to Node to construct from.
+<p>The function must take a reference to Node to construct from.
  The node contains a string for scalars, Node[] for sequences and
  Node.Pair[] for mappings.
+<br>
+
+ Any exception thrown by this function will be caught by D:YAML and
+ its message will be added to a YAMLException that will also tell the
+ user which type failed to construct, and position in the file.
+<br>
+
  The value returned by this function will be stored in the resulting node.
 <br>
 
@@ -124,20 +130,13 @@
      <span class="d_keyword">int</span> x, y, z;
  }
 
- MyStruct constructMyStructScalar(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ MyStruct constructMyStructScalar(<span class="d_keyword">ref</span> Node node)
  {
      <span class="d_comment">//Guaranteed to be string as we construct from scalar.
 </span>     <span class="d_comment">//!mystruct x:y:z
 </span>     <span class="d_keyword">auto</span> parts = node.as!string().split(<span class="d_string">":"</span>);
-     <span class="d_keyword">try</span>
-     {
-         <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
-     }
-     <span class="d_keyword">catch</span>(Exception e)
-     {
-         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
-                                        start, end);
-     }
+     <span class="d_comment">//If this throws, the D:YAML will handle it and throw a YAMLException.
+</span>     <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
  }
 
  <span class="d_keyword">void</span> main()
@@ -152,7 +151,7 @@
 </p>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorSequence"></a><span class="ddoc_psymbol">addConstructorSequence</span>(T)(in string <b>tag</b>, T function(Mark, Mark, ref Node) <b>ctor</b>);
+<dt class="d_decl">void <a name="addConstructorSequence"></a><span class="ddoc_psymbol">addConstructorSequence</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from sequence.
 </p>
@@ -169,19 +168,11 @@
      <span class="d_keyword">int</span> x, y, z;
  }
 
- MyStruct constructMyStructSequence(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ MyStruct constructMyStructSequence(<span class="d_keyword">ref</span> Node node)
  {
      <span class="d_comment">//node is guaranteed to be sequence.
 </span>     <span class="d_comment">//!mystruct [x, y, z]
-</span>     <span class="d_keyword">try</span>
-     {
-         <span class="d_keyword">return</span> MyStruct(node[0].as!<span class="d_keyword">int</span>, node[1].as!<span class="d_keyword">int</span>, node[2].as!<span class="d_keyword">int</span>);
-     }
-     <span class="d_keyword">catch</span>(NodeException e)
-     {
-         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
-                                        start, end);
-     }
+</span>     <span class="d_keyword">return</span> MyStruct(node[0].as!<span class="d_keyword">int</span>, node[1].as!<span class="d_keyword">int</span>, node[2].as!<span class="d_keyword">int</span>);
  }
 
  <span class="d_keyword">void</span> main()
@@ -196,7 +187,7 @@
 </p>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorMapping"></a><span class="ddoc_psymbol">addConstructorMapping</span>(T)(in string <b>tag</b>, T function(Mark, Mark, ref Node) <b>ctor</b>);
+<dt class="d_decl">void <a name="addConstructorMapping"></a><span class="ddoc_psymbol">addConstructorMapping</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from a mapping.
 </p>
@@ -213,19 +204,11 @@
      <span class="d_keyword">int</span> x, y, z;
  }
 
- MyStruct constructMyStructMapping(Mark start, Mark end, <span class="d_keyword">ref</span> Node node)
+ MyStruct constructMyStructMapping(<span class="d_keyword">ref</span> Node node)
  {
      <span class="d_comment">//node is guaranteed to be mapping.
 </span>     <span class="d_comment">//!mystruct {"x": x, "y": y, "z": z}
-</span>     <span class="d_keyword">try</span>
-     {
-         <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].as!<span class="d_keyword">int</span>);
-     }
-     <span class="d_keyword">catch</span>(NodeException e)
-     {
-         <span class="d_keyword">throw</span> <span class="d_keyword">new</span> ConstructorException(<span class="d_string">"Could not construct MyStruct: "</span> ~ e.msg,
-                                        start, end);
-     }
+</span>     <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].as!<span class="d_keyword">int</span>);
  }
 
  <span class="d_keyword">void</span> main()
@@ -242,72 +225,72 @@
 </dd>
 </dl>
 </dd>
-<dt class="d_decl">YAMLNull <a name="constructNull"></a><span class="ddoc_psymbol">constructNull</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">YAMLNull <a name="constructNull"></a><span class="ddoc_psymbol">constructNull</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a <b>null</b> <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">YAMLMerge <a name="constructMerge"></a><span class="ddoc_psymbol">constructMerge</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">YAMLMerge <a name="constructMerge"></a><span class="ddoc_psymbol">constructMerge</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a merge <b>node</b> - a <b>node</b> that merges another <b>node</b> into a mapping.</p>
 
 </dd>
-<dt class="d_decl">bool <a name="constructBool"></a><span class="ddoc_psymbol">constructBool</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">bool <a name="constructBool"></a><span class="ddoc_psymbol">constructBool</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a boolean <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">long <a name="constructLong"></a><span class="ddoc_psymbol">constructLong</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">long <a name="constructLong"></a><span class="ddoc_psymbol">constructLong</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an integer (long) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">real <a name="constructReal"></a><span class="ddoc_psymbol">constructReal</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">real <a name="constructReal"></a><span class="ddoc_psymbol">constructReal</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a floating point (real) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">ubyte[] <a name="constructBinary"></a><span class="ddoc_psymbol">constructBinary</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">ubyte[] <a name="constructBinary"></a><span class="ddoc_psymbol">constructBinary</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a binary (base64) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">SysTime <a name="constructTimestamp"></a><span class="ddoc_psymbol">constructTimestamp</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">SysTime <a name="constructTimestamp"></a><span class="ddoc_psymbol">constructTimestamp</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a timestamp (SysTime) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">string <a name="constructString"></a><span class="ddoc_psymbol">constructString</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">string <a name="constructString"></a><span class="ddoc_psymbol">constructString</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a string <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="getPairs"></a><span class="ddoc_psymbol">getPairs</span>(string <b>type</b>, Mark <b>start</b>, Mark <b>end</b>, Node[] <b>nodes</b>);
+<dt class="d_decl">Pair[] <a name="getPairs"></a><span class="ddoc_psymbol">getPairs</span>(string <b>type</b>, Node[] <b>nodes</b>);
 </dt>
 <dd><p>Convert a sequence of single-element mappings into a sequence of pairs.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructOrderedMap"></a><span class="ddoc_psymbol">constructOrderedMap</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">Pair[] <a name="constructOrderedMap"></a><span class="ddoc_psymbol">constructOrderedMap</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructPairs"></a><span class="ddoc_psymbol">constructPairs</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">Pair[] <a name="constructPairs"></a><span class="ddoc_psymbol">constructPairs</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">Node[] <a name="constructSet"></a><span class="ddoc_psymbol">constructSet</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">Node[] <a name="constructSet"></a><span class="ddoc_psymbol">constructSet</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a set <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">Node[] <a name="constructSequence"></a><span class="ddoc_psymbol">constructSequence</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">Node[] <a name="constructSequence"></a><span class="ddoc_psymbol">constructSequence</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a sequence (array) <b>node</b>.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructMap"></a><span class="ddoc_psymbol">constructMap</span>(Mark <b>start</b>, Mark <b>end</b>, ref Node <b>node</b>);
+<dt class="d_decl">Pair[] <a name="constructMap"></a><span class="ddoc_psymbol">constructMap</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an unordered map (unordered set of key: value pairs without duplicates) <b>node</b>.</p>
 

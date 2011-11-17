@@ -34,7 +34,7 @@ import dyaml.style;
  *
  * Can be thrown by custom constructor functions.
  */
-class ConstructorException : YAMLException
+package class ConstructorException : YAMLException
 {
     /**
      * Construct a ConstructorException.
@@ -70,11 +70,11 @@ final class Constructor
 {
     private:
         ///Constructor functions from scalars.
-        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromScalar_;
+        Node.Value delegate(ref Node)[Tag] fromScalar_;
         ///Constructor functions from sequences.
-        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromSequence_;
+        Node.Value delegate(ref Node)[Tag] fromSequence_;
         ///Constructor functions from mappings.
-        Node.Value delegate(Mark, Mark, ref Node)[Tag] fromMapping_;
+        Node.Value delegate(ref Node)[Tag] fromMapping_;
 
     public:
         /**
@@ -122,10 +122,14 @@ final class Constructor
         /**
          * Add a constructor function from scalar.
          *
-         * The function must take two Marks (start and end positions of
-         * the node in file) and a reference to Node to construct from.
+         * The function must take a reference to Node to construct from.
          * The node contains a string for scalars, Node[] for sequences and 
-         * Node.Pair[] for mappings.
+         * Node.Pair[] for mappings. 
+         *
+         * Any exception thrown by this function will be caught by D:YAML and
+         * its message will be added to a YAMLException that will also tell the
+         * user which type failed to construct, and position in the file.
+         *
          * The value returned by this function will be stored in the resulting node.
          *
          * Only one constructor function can be set for one tag.
@@ -145,20 +149,13 @@ final class Constructor
          *     int x, y, z;
          * }
          *
-         * MyStruct constructMyStructScalar(Mark start, Mark end, ref Node node)
+         * MyStruct constructMyStructScalar(ref Node node)
          * { 
          *     //Guaranteed to be string as we construct from scalar.
          *     //!mystruct x:y:z
          *     auto parts = node.as!string().split(":");
-         *     try
-         *     {
-         *         return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-         *     }
-         *     catch(Exception e)
-         *     {
-         *         throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-         *                                        start, end);
-         *     }
+         *     //If this throws, the D:YAML will handle it and throw a YAMLException.
+         *     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
          * }
          *
          * void main()
@@ -171,7 +168,7 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorScalar(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
+        void addConstructorScalar(T)(in string tag, T function(ref Node) ctor)
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -195,19 +192,11 @@ final class Constructor
          *     int x, y, z;
          * }
          *
-         * MyStruct constructMyStructSequence(Mark start, Mark end, ref Node node)
+         * MyStruct constructMyStructSequence(ref Node node)
          * { 
          *     //node is guaranteed to be sequence.
          *     //!mystruct [x, y, z]
-         *     try
-         *     {
-         *         return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-         *     }
-         *     catch(NodeException e)
-         *     {
-         *         throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-         *                                        start, end);
-         *     }
+         *     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
          * }
          *
          * void main()
@@ -220,7 +209,7 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorSequence(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
+        void addConstructorSequence(T)(in string tag, T function(ref Node) ctor)
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -244,19 +233,11 @@ final class Constructor
          *     int x, y, z;
          * }
          *
-         * MyStruct constructMyStructMapping(Mark start, Mark end, ref Node node)
+         * MyStruct constructMyStructMapping(ref Node node)
          * { 
          *     //node is guaranteed to be mapping.
          *     //!mystruct {"x": x, "y": y, "z": z}
-         *     try
-         *     {
-         *         return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-         *     }
-         *     catch(NodeException e)
-         *     {
-         *         throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-         *                                        start, end);
-         *     }
+         *     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
          * }
          *
          * void main()
@@ -269,7 +250,7 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorMapping(T)(in string tag, T function(Mark, Mark, ref Node) ctor)
+        void addConstructorMapping(T)(in string tag, T function(ref Node) ctor)
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -295,17 +276,25 @@ final class Constructor
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function for tag " ~ tag.get(), start, end));
             Node node = Node(value);
-            static if(is(U : ScalarStyle))
+            try
             {
-                return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag,
-                                    style, CollectionStyle.Invalid);
+                static if(is(U : ScalarStyle))
+                {
+                    return Node.rawNode((*delegates!T)[tag](node), start, tag,
+                                        style, CollectionStyle.Invalid);
+                }
+                else static if(is(U : CollectionStyle))
+                {
+                    return Node.rawNode((*delegates!T)[tag](node), start, tag,
+                                        ScalarStyle.Invalid, style);
+                }
+                else static assert(false);
             }
-            else static if(is(U : CollectionStyle))
+            catch(Exception e)
             {
-                return Node.rawNode((*delegates!T)[tag](start, end, node), start, tag,
-                                    ScalarStyle.Invalid, style);
+                throw new Error("Error constructing " ~ typeid(T).toString() 
+                                ~ ":\n" ~ e.msg, start, end);
             }
-            else static assert(false);
         }
 
     private:
@@ -315,7 +304,7 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(in Tag tag, T function(Mark, Mark, ref Node) ctor)
+        auto addConstructor(T)(in Tag tag, T function(ref Node) ctor)
         {
             assert((tag in fromScalar_) is null && 
                    (tag in fromSequence_) is null &&
@@ -323,10 +312,10 @@ final class Constructor
                    "Constructor function for tag " ~ tag.get ~ " is already "
                    "specified. Can't specify another one.");
 
-            return (Mark s, Mark e, ref Node n)
+            return (ref Node n)
             {
-                static if(Node.Value.allowed!T){return Node.Value(ctor(s,e,n));}
-                else                           {return Node.userValue(ctor(s,e,n));}
+                static if(Node.Value.allowed!T){return Node.Value(ctor(n));}
+                else                           {return Node.userValue(ctor(n));}
             }; 
         }
 
@@ -342,30 +331,30 @@ final class Constructor
 
 
 ///Construct a null node.
-YAMLNull constructNull(Mark start, Mark end, ref Node node)
+YAMLNull constructNull(ref Node node)
 {
     return YAMLNull();
 }
 
 ///Construct a merge node - a node that merges another node into a mapping.
-YAMLMerge constructMerge(Mark start, Mark end, ref Node node)
+YAMLMerge constructMerge(ref Node node)
 {
     return YAMLMerge();
 }
 
 ///Construct a boolean node.
-bool constructBool(Mark start, Mark end, ref Node node)
+bool constructBool(ref Node node)
 {
     static yes = ["yes", "true", "on"];
     static no = ["no", "false", "off"];
     string value = node.as!string().toLower();
     if(yes.canFind(value)){return true;}
     if(no.canFind(value)) {return false;}
-    throw new Error("Unable to parse boolean value: " ~ value, start, end);
+    throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
 ///Construct an integer (long) node.
-long constructLong(Mark start, Mark end, ref Node node)
+long constructLong(ref Node node)
 {
     string value = node.as!string().replace("_", "");
     const char c = value[0];
@@ -375,7 +364,7 @@ long constructLong(Mark start, Mark end, ref Node node)
         value = value[1 .. $];
     }
 
-    enforce(value != "", new Error("Unable to parse float value: " ~ value, start, end));
+    enforce(value != "", new Exception("Unable to parse float value: " ~ value));
 
     long result;
     try
@@ -405,7 +394,7 @@ long constructLong(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new Error("Unable to parse integer value: " ~ value, start, end);
+        throw new Exception("Unable to parse integer value: " ~ value);
     }
 
     return result;
@@ -414,7 +403,7 @@ unittest
 {
     long getLong(string str)
     {
-        return constructLong(Mark(), Mark(), Node(str));
+        return constructLong(Node(str));
     }
 
     string canonical   = "685230";
@@ -433,7 +422,7 @@ unittest
 }
 
 ///Construct a floating point (real) node.
-real constructReal(Mark start, Mark end, ref Node node)
+real constructReal(ref Node node)
 {
     string value = node.as!string().replace("_", "").toLower();
     const char c = value[0];
@@ -444,7 +433,7 @@ real constructReal(Mark start, Mark end, ref Node node)
     }
 
     enforce(value != "" && value != "nan" && value != "inf" && value != "-inf",
-            new Error("Unable to parse float value: " ~ value, start, end));
+            new Exception("Unable to parse float value: " ~ value));
 
     real result;
     try
@@ -470,7 +459,7 @@ real constructReal(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new Error("Unable to parse float value: " ~ value, start, end);
+        throw new Exception("Unable to parse float value: " ~ value);
     }
 
     return result;
@@ -484,7 +473,7 @@ unittest
 
     real getReal(string str)
     {
-        return constructReal(Mark(), Mark(), Node(str));
+        return constructReal(Node(str));
     }
 
     string canonical   = "6.8523015e+5";
@@ -503,7 +492,7 @@ unittest
 }
 
 ///Construct a binary (base64) node.
-ubyte[] constructBinary(Mark start, Mark end, ref Node node)
+ubyte[] constructBinary(ref Node node)
 {
     string value = node.as!string;
     //For an unknown reason, this must be nested to work (compiler bug?).
@@ -512,12 +501,12 @@ ubyte[] constructBinary(Mark start, Mark end, ref Node node)
         try{return Base64.decode(value.removechars("\n"));}
         catch(Exception e)
         {
-            throw new Error("Unable to decode base64 value: " ~ e.msg, start, end);
+            throw new Exception("Unable to decode base64 value: " ~ e.msg);
         }
     }
     catch(UtfException e)
     {
-        throw new Error("Unable to decode base64 value: " ~ e.msg, start, end);
+        throw new Exception("Unable to decode base64 value: " ~ e.msg);
     }
 }
 unittest
@@ -526,12 +515,12 @@ unittest
     char[] buffer;
     buffer.length = 256;
     string input = cast(string)Base64.encode(test, buffer);
-    auto value = constructBinary(Mark(), Mark(), Node(input));
+    auto value = constructBinary(Node(input));
     assert(value == test);
 }
 
 ///Construct a timestamp (SysTime) node.
-SysTime constructTimestamp(Mark start, Mark end, ref Node node)
+SysTime constructTimestamp(ref Node node)
 {
     string value = node.as!string;
 
@@ -545,7 +534,7 @@ SysTime constructTimestamp(Mark start, Mark end, ref Node node)
         auto matches = match(value, YMDRegexp);
 
         enforce(!matches.empty, 
-                new Error("Unable to parse timestamp value: " ~ value, start, end));
+                new Exception("Unable to parse timestamp value: " ~ value));
 
         auto captures = matches.front.captures;
         const year  = to!int(captures[1]);
@@ -592,11 +581,11 @@ SysTime constructTimestamp(Mark start, Mark end, ref Node node)
     }
     catch(ConvException e)
     {
-        throw new Error("Unable to parse timestamp value " ~ value ~ " : " ~ e.msg, start, end);
+        throw new Exception("Unable to parse timestamp value " ~ value ~ " : " ~ e.msg);
     }
     catch(DateTimeException e)
     {
-        throw new Error("Invalid timestamp value " ~ value ~ " : " ~ e.msg, start, end);
+        throw new Exception("Invalid timestamp value " ~ value ~ " : " ~ e.msg);
     }
 
     assert(false, "This code should never be reached");
@@ -607,7 +596,7 @@ unittest
 
     string timestamp(string value)
     {
-        return constructTimestamp(Mark(), Mark(), Node(value)).toISOString();
+        return constructTimestamp(Node(value)).toISOString();
     }
 
     string canonical      = "2001-12-15T02:59:43.1Z";
@@ -630,21 +619,21 @@ unittest
 }
 
 ///Construct a string node.
-string constructString(Mark start, Mark end, ref Node node)
+string constructString(ref Node node)
 {
     return node.as!string;
 }
 
 ///Convert a sequence of single-element mappings into a sequence of pairs.
-Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes) 
+Node.Pair[] getPairs(string type, Node[] nodes) 
 {
     Node.Pair[] pairs;
 
     foreach(ref node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
-                new Error("While constructing " ~ type ~ 
-                          ", expected a mapping with single element", start, end));
+                new Exception("While constructing " ~ type ~ 
+                          ", expected a mapping with single element"));
 
         pairs ~= node.as!(Node.Pair[]);
     }
@@ -653,9 +642,9 @@ Node.Pair[] getPairs(string type, Mark start, Mark end, Node[] nodes)
 }
 
 ///Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.
-Node.Pair[] constructOrderedMap(Mark start, Mark end, ref Node node)
+Node.Pair[] constructOrderedMap(ref Node node)
 {
-    auto pairs = getPairs("ordered map", start, end, node.as!(Node[]));
+    auto pairs = getPairs("ordered map", node.as!(Node[]));
 
     //TODO: the map here should be replaced with something with deterministic
     //memory allocation if possible.
@@ -664,7 +653,7 @@ Node.Pair[] constructOrderedMap(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new Error("Duplicate entry in an ordered map", start, end));
+                new Exception("Duplicate entry in an ordered map"));
         map[pair.key] = true;
     }
     clear(map);
@@ -701,7 +690,7 @@ unittest
 
     bool hasDuplicates(Node[] nodes)
     {
-        return null !is collectException(constructOrderedMap(Mark(), Mark(), Node(nodes)));
+        return null !is collectException(constructOrderedMap(Node(nodes)));
     }
 
     assert(hasDuplicates(alternateTypes(8) ~ alternateTypes(2)));
@@ -713,13 +702,13 @@ unittest
 }
 
 ///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.
-Node.Pair[] constructPairs(Mark start, Mark end, ref Node node)
+Node.Pair[] constructPairs(ref Node node)
 {
-    return getPairs("pairs", start, end, node.as!(Node[]));
+    return getPairs("pairs", node.as!(Node[]));
 }
 
 ///Construct a set node.
-Node[] constructSet(Mark start, Mark end, ref Node node)
+Node[] constructSet(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
 
@@ -732,7 +721,7 @@ Node[] constructSet(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new Error("Duplicate entry in a set", start, end));
+                new Exception("Duplicate entry in a set"));
         map[pair.key] = 0;
         nodes ~= pair.key;
     }
@@ -773,23 +762,23 @@ unittest
     }
 
     assert(null !is collectException
-           (constructSet(Mark(), Mark(), Node(DuplicatesShort.dup))));
+           (constructSet(Node(DuplicatesShort.dup))));
     assert(null is collectException
-           (constructSet(Mark(), Mark(), Node(noDuplicatesShort.dup))));
+           (constructSet(Node(noDuplicatesShort.dup))));
     assert(null !is collectException
-           (constructSet(Mark(), Mark(), Node(DuplicatesLong.dup))));
+           (constructSet(Node(DuplicatesLong.dup))));
     assert(null is collectException
-           (constructSet(Mark(), Mark(), Node(noDuplicatesLong.dup))));
+           (constructSet(Node(noDuplicatesLong.dup))));
 }
 
 ///Construct a sequence (array) node.
-Node[] constructSequence(Mark start, Mark end, ref Node node)
+Node[] constructSequence(ref Node node)
 {
     return node.as!(Node[]);
 }
 
 ///Construct an unordered map (unordered set of key: value _pairs without duplicates) node.
-Node.Pair[] constructMap(Mark start, Mark end, ref Node node)
+Node.Pair[] constructMap(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
     //TODO: the map here should be replaced with something with deterministic
@@ -800,7 +789,7 @@ Node.Pair[] constructMap(Mark start, Mark end, ref Node node)
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null,
-                new Error("Duplicate entry in a map", start, end));
+                new Exception("Duplicate entry in a map"));
         map[pair.key] = true;
     }
     return pairs;
@@ -818,47 +807,23 @@ struct MyStruct
     int x, y, z;
 }
 
-MyStruct constructMyStructScalar(Mark start, Mark end, ref Node node)
+MyStruct constructMyStructScalar(ref Node node)
 { 
     //Guaranteed to be string as we construct from scalar.
     auto parts = node.as!string().split(":");
-    try
-    {
-        return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-    }
-    catch(Exception e)
-    {
-        throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-                                       start, end);
-    }
+    return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
 }
 
-MyStruct constructMyStructSequence(Mark start, Mark end, ref Node node)
+MyStruct constructMyStructSequence(ref Node node)
 { 
     //node is guaranteed to be sequence.
-    try
-    {
-        return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-    }
-    catch(NodeException e)
-    {
-        throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-                                       start, end);
-    }
+    return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
 }
 
-MyStruct constructMyStructMapping(Mark start, Mark end, ref Node node)
+MyStruct constructMyStructMapping(ref Node node)
 { 
     //node is guaranteed to be mapping.
-    try
-    {
-        return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-    }
-    catch(NodeException e)
-    {
-        throw new ConstructorException("Could not construct MyStruct: " ~ e.msg, 
-                                       start, end);
-    }
+    return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
 unittest

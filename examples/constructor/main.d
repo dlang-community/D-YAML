@@ -10,13 +10,13 @@ struct Color
    ubyte blue;
 }
 
-Color constructColorScalar(Mark start, Mark end, ref Node node)
+Color constructColorScalar(ref Node node)
 {
     string value = node.as!string;
 
     if(value.length != 6)
     {
-        throw new ConstructorException("Invalid color: " ~ value, start, end);
+        throw new Exception("Invalid color: " ~ value);
     }
     //We don't need to check for uppercase chars this way.
     value = value.toLower();
@@ -26,7 +26,7 @@ Color constructColorScalar(Mark start, Mark end, ref Node node)
     {
         if(!std.ascii.isHexDigit(c))
         {
-            throw new ConstructorException("Invalid color: " ~ value, start, end);
+            throw new Exception("Invalid color: " ~ value);
         }
 
         if(std.ascii.isDigit(c))
@@ -44,21 +44,16 @@ Color constructColorScalar(Mark start, Mark end, ref Node node)
     return result;
 }
 
-Color constructColorMapping(Mark start, Mark end, ref Node node)
+Color constructColorMapping(ref Node node)
 {
     ubyte r,g,b;
 
     //Might throw if a value is missing is not an integer, or is out of range.
-    try
-    {
-        r = node["r"].as!ubyte;
-        g = node["g"].as!ubyte;
-        b = node["b"].as!ubyte;
-    }
-    catch(NodeException e)
-    {
-        throw new ConstructorException("Invalid color: " ~ e.msg, start, end);
-    }
+    //If this happens, D:YAML will handle the exception and use its message
+    //in a YAMLException thrown when loading.
+    r = node["r"].as!ubyte;
+    g = node["g"].as!ubyte;
+    b = node["b"].as!ubyte;
 
     return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);
 }

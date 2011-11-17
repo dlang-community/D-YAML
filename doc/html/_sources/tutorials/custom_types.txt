@@ -3,13 +3,13 @@ Custom YAML data types
 ======================
 
 Sometimes you need to serialize complex data types such as classes. To do this
-you could use plain nodes such as mappings with class data members. However, 
-YAML supports custom types with identifiers called *tags*. That is the topic of
-this tutorial.
+you could use plain nodes such as mappings with class data members. YAML also 
+supports custom types with identifiers called *tags*. That is the topic of this 
+tutorial.
 
 Each YAML node has a tag specifying its type. For instance: strings use the tag 
 ``tag:yaml.org,2002:str``. Tags of most default types are *implicitly resolved* 
-during parsing, so you don't need to specify tag for each float, integer, etc.
+during parsing - you don't need to specify tag for each float, integer, etc.
 D:YAML can also implicitly resolve custom tags, as we will show later.
 
 
@@ -24,7 +24,7 @@ the *addConstructorXXX()* methods, where *XXX* is *Scalar*, *Sequence* or
 *Mapping*. *Constructor* is then passed to *Loader*, which parses YAML input.
 
 Struct types have no specific requirements for YAML support. Class types should
-define the *opEquals()* operator, as this is used in equality comparisons of 
+define the *opEquals()* operator - this is used in equality comparisons of 
 nodes. Default class *opEquals()* compares references, which means two identical 
 objects might be considered unequal. (Default struct *opEquals()* compares 
 byte-by-byte, sometimes you might want to override that as well.)
@@ -41,24 +41,26 @@ following struct:
        ubyte blue;
    }
 
-First, we need a function to construct our data type. It must take two *Mark* 
-structs, which store position of the node in the file, and a reference to *Node* 
-to construct from. The node is guaranteed to contain either a *string*, an array
-of *Node* or of *Node.Pair*, depending on whether we're constructing our value 
-from a scalar, sequence, or mapping, respectively. In this tutorial, we have 
-functions to construct a color from a scalar, using CSS-like format, RRGGBB, or 
-from a mapping, where we use the following format: {r:RRR, g:GGG, b:BBB} . Code 
-of these functions:
+First, we need a function to construct our data type. The function will take a 
+reference to *Node* to construct from. The node is guaranteed to contain either 
+a *string*, an array of *Node* or of *Node.Pair*, depending on whether we're 
+constructing our value from a scalar, sequence, or mapping, respectively. 
+If this function throws any exception, D:YAML handles it and adds its message 
+to a *YAMLException* that will be thrown when loading the file. 
+
+In this tutorial, we have functions to construct a color from a scalar, using 
+CSS-like format, RRGGBB, or from a mapping, where we use the following format:
+{r:RRR, g:GGG, b:BBB} . Code of these functions:
 
 .. code-block:: d
 
-   Color constructColorScalar(Mark start, Mark end, ref Node node)
+   Color constructColorScalar(ref Node node)
    {
        string value = node.as!string;
 
        if(value.length != 6)
        {
-           throw new ConstructorException("Invalid color: " ~ value, start, end);
+           throw new Exception("Invalid color: " ~ value);
        }
        //We don't need to check for uppercase chars this way.
        value = value.toLower();
@@ -68,7 +70,7 @@ of these functions:
        {
            if(!std.ascii.isHexDigit(c))
            {
-               throw new ConstructorException("Invalid color: " ~ value, start, end);
+               throw new Exception("Invalid color: " ~ value);
            }
 
            if(std.ascii.isDigit(c))
@@ -86,21 +88,16 @@ of these functions:
        return result;
    }
 
-   Color constructColorMapping(Mark start, Mark end, ref Node node)
+   Color constructColorMapping(ref Node node)
    {
        ubyte r,g,b;
    
        //Might throw if a value is missing is not an integer, or is out of range.
-       try
-       {
-           r = node["r"].as!ubyte;
-           g = node["g"].as!ubyte;
-           b = node["b"].as!ubyte;
-       }
-       catch(NodeException e)
-       {
-           throw new ConstructorException("Invalid color: " ~ e.msg, start, end);
-       }
+       //If this happens, D:YAML will handle the exception and use its message
+       //in a YAMLException thrown when loading.
+       r = node["r"].as!ubyte;
+       g = node["g"].as!ubyte;
+       b = node["b"].as!ubyte;
    
        return Color(cast(ubyte)r, cast(ubyte)g, cast(ubyte)b);
    }
