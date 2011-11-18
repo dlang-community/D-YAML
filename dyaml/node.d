@@ -180,9 +180,9 @@ struct Node
     package:
         //Tag of the node. 
         Tag tag_;
-        ///Node scalar style. Used to remember style this node was loaded with.
+        //Node scalar style. Used to remember style this node was loaded with.
         ScalarStyle scalarStyle = ScalarStyle.Invalid;
-        ///Node collection style. Used to remember style this node was loaded with.
+        //Node collection style. Used to remember style this node was loaded with.
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     public:

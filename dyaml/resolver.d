@@ -61,7 +61,7 @@ final class Resolver
          *
          * Params:  defaultImplicitResolvers = Use default YAML implicit resolvers?
          */
-        this(in bool defaultImplicitResolvers = true)
+        this(bool defaultImplicitResolvers = true)
         {
             defaultScalarTag_   = Tag("tag:yaml.org,2002:str");
             defaultSequenceTag_ = Tag("tag:yaml.org,2002:seq");
@@ -104,7 +104,7 @@ final class Resolver
          * {
          *     auto loader = Loader("file.txt");
          *     auto resolver = new Resolver();
-         *     resolver.addImplicitResolver("!tag", std.regex.regex("A*"), "A");
+         *     resolver.addImplicitResolver("!tag", std.regex.regex("A.*"), "A");
          *     loader.resolver = resolver;
          *     
          *     //Note that we have no constructor from tag "!tag", so we can't
@@ -115,7 +115,7 @@ final class Resolver
          * }
          * --------------------
          */
-        void addImplicitResolver(string tag, Regex!char regexp, in string first)
+        void addImplicitResolver(string tag, Regex!char regexp, string first)
         {
             foreach(const dchar c; first)
             {
@@ -141,7 +141,7 @@ final class Resolver
          *
          * Returns: Resolved tag.
          */
-        Tag resolve(in NodeID kind, Tag tag, string value, in bool implicit)
+        Tag resolve(NodeID kind, Tag tag, string value, bool implicit)
         {
             if(!tag.isNull() && tag.get() != "!"){return tag;}
 
