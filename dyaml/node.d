@@ -1323,7 +1323,7 @@ struct Node
         }
 
         //Get index of pair with key (or value, if value is true) matching index.
-        size_t findPair(T, bool value = false)(const ref T index) const
+        sizediff_t findPair(T, bool value = false)(const ref T index) const
         {
             const pairs = value_.get!(const Pair[])();
             const(Node)* node;
