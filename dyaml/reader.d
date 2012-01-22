@@ -312,7 +312,7 @@ final class Reader
         }
 
         //Handle an exception thrown in loadChars method of any Reader.
-        void handleLoadCharsException(Exception e, size_t oldPosition)
+        void handleLoadCharsException(Exception e, ulong oldPosition)
         {
             try{throw e;}
             catch(UtfException e)
@@ -572,7 +572,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             {
                 for(long end = max - 1; end >= 0; --end)
                 {
-                    const s = utf8Stride[buffer[end]];
+                    const s = utf8Stride[buffer[cast(size_t)end]];
                     if(s != 0xFF)
                     {
                         //If stride goes beyond end of the buffer (max), return end.
