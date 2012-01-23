@@ -1,3 +1,34 @@
+0.4.0:
+
+
+- FEATURES/IMPROVEMENTS:
+
+ - API BREAKING: All structs and classes stored directly in YAML nodes
+   (aka custom YAML data types) now need to define the opCmp operator.
+   This is used for duplicate detection instead of AAs (which are broken) 
+   and will allow efficient access to data in unordered maps.
+
+ - API BREAKING: Simplified the Constructor API. Constructor functions now 
+   don't need to get Marks through parameters - any exceptions thrown by 
+   the constructor functions are caught and wrapped along with Mark info.
+
+ - Various small improvements in the API documentation.
+
+ - Updated API documentation, tutorials and examples to match the changes.
+
+ - Small CDC (build script) improvements.
+
+
+- BUGFIXES:
+  
+  - Fixed compilation with DMD 2.057.
+
+  - Fixed a bug caused by std.regex changes that broke null value parsing.
+
+  - Fixed compilation on 32bit.
+
+
+
 0.3.0:
 
 
