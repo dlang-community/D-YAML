@@ -3,7 +3,7 @@ Custom YAML data types
 ======================
 
 Sometimes you need to serialize complex data types such as classes. To do this
-you could use plain nodes such as mappings with class data members. YAML also 
+you could use plain nodes such as mappings with classes' fields. YAML also 
 supports custom types with identifiers called *tags*. That is the topic of this 
 tutorial.
 
@@ -23,11 +23,13 @@ functions to process each supported tag. These are supplied by the user using
 the *addConstructorXXX()* methods, where *XXX* is *Scalar*, *Sequence* or 
 *Mapping*. *Constructor* is then passed to *Loader*, which parses YAML input.
 
-Struct types have no specific requirements for YAML support. Class types should
-define the *opEquals()* operator - this is used in equality comparisons of 
-nodes. Default class *opEquals()* compares references, which means two identical 
-objects might be considered unequal. (Default struct *opEquals()* compares 
-byte-by-byte, sometimes you might want to override that as well.)
+Structs and classes must implement the *opCmp()* operator for YAML support. This 
+is used for duplicate detection in mappings, sorting and equality comparisons of
+nodes. The signature of the operator that must be implemented is 
+``const int opCmp(ref const MyStruct s)`` for structs where *MyStruct* is the 
+struct type, and ``int opCmp(Object o)`` for classes. Note that the class 
+*opCmp()* should not alter the compared values - it is not const for compatibility 
+reasons. 
 
 We will implement support for an RGB color type. It is implemented as the 
 following struct:
@@ -39,6 +41,14 @@ following struct:
        ubyte red;
        ubyte green;
        ubyte blue;
+
+       const int opCmp(ref const Color c)
+       {
+           if(red   != c.red)  {return red   - c.red;}
+           if(green != c.green){return green - c.green;}
+           if(blue  != c.blue) {return blue  - c.blue;}
+           return 0;
+       }
    }
 
 First, we need a function to construct our data type. The function will take a 

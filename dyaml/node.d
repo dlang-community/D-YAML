@@ -69,16 +69,16 @@ package struct YAMLMerge{}
 package abstract class YAMLObject
 {
     public:
-        ///Get type of the stored value.
+        //Get type of the stored value.
         @property TypeInfo type() const {assert(false);}
 
     protected:
-        ///Test for equality with another YAMLObject.
-        bool equals(const YAMLObject rhs) const {assert(false);} 
+        //Compare with another YAMLObject.
+        int cmp(const YAMLObject rhs) const {assert(false);};
 }
 
 //Stores a user defined YAML data type.
-package class YAMLContainer(T) if (!Node.Value.allowed!T): YAMLObject
+package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 {
     private:
         //Stored value.
@@ -102,11 +102,16 @@ package class YAMLContainer(T) if (!Node.Value.allowed!T): YAMLObject
         }
 
     protected:
-        //Test for equality with another YAMLObject.
-        override bool equals(const YAMLObject rhs) const
+        //Compare with another YAMLObject.
+        override int cmp(const YAMLObject rhs) const
         {
-            if(rhs.type !is typeid(T)){return false;}
-            return cast(T)value_ == (cast(const YAMLContainer)rhs).value_;
+            const typeCmp = type.opCmp(rhs.type);
+            if(typeCmp != 0){return typeCmp;}
+
+            //Const-casting here as Object opCmp is not const.
+            T* v1 = cast(T*)&value_;
+            T* v2 = cast(T*)&((cast(YAMLContainer)rhs).value_);
+            return (*v1).opCmp(*v2);
         }
 
     private:
@@ -149,20 +154,21 @@ struct Node
                 ///Equality test with another Pair.
                 bool opEquals(const ref Pair rhs) const
                 {
-                    return equals!true(rhs);
+                    return cmp!true(rhs) == 0;
                 } 
 
             private:
-                /* 
-                 * Equality test with another Pair.
+                /*
+                 * Comparison with another Pair.
                  *
                  * useTag determines whether or not we consider node tags 
-                 * in the test.
+                 * in the comparison.
                  */
-                bool equals(bool useTag)(ref const(Pair) rhs) const
+                int cmp(bool useTag)(ref const(Pair) rhs) const 
                 {
-                    return key.equals!(useTag)(rhs.key) && 
-                           value.equals!(useTag)(rhs.value);
+                    const keyCmp = key.cmp!useTag(rhs.key);
+                    return keyCmp != 0 ? keyCmp
+                                       : value.cmp!useTag(rhs.value);
                 }
         }
 
@@ -170,6 +176,15 @@ struct Node
         //YAML value type.
         alias Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
                          Node.Pair[], Node[], YAMLObject) Value;
+
+        //Can Value hold this type without wrapping it in a YAMLObject?
+        template allowed(T)
+        {
+            enum allowed = isIntegral!T || 
+                           isFloatingPoint!T ||
+                           isSomeString!T ||
+                           Value.allowed!T;
+        }
 
     private:
         ///Stored value.
@@ -186,8 +201,6 @@ struct Node
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     public:
-        @disable int opCmp(ref Node);
-
         /**
          * Construct a Node from a value.
          *
@@ -518,7 +531,7 @@ struct Node
             if(isType!T){return value_.get!T;}
 
             ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!Value.allowed!T) if(isUserType)
+            static if(!allowed!T) if(isUserType)
             {
                 auto object = as!YAMLObject;
                 if(object.type is typeid(T))
@@ -569,15 +582,15 @@ struct Node
         //Const version of get.
         @property T get(T)() const if(is(T == const))
         {
-            if(isType!T){return value_.get!T;}
+            if(isType!(Unqual!T)){return value_.get!T;}
 
             ///Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!Value.allowed!T) if(isUserType)
+            static if(!allowed!(Unqual!T)) if(isUserType)
             {
                 auto object = as!(const YAMLObject);
                 if(object.type is typeid(T))
                 {
-                    return (cast(const YAMLContainer!T)object).value_;
+                    return (cast(const YAMLContainer!(Unqual!T))object).value_;
                 }
                 throw new Error("Node has unexpected type: " ~ object.type.toString ~ 
                                 ". Expected: " ~ typeid(T).toString, startMark_);
@@ -781,7 +794,7 @@ struct Node
         }
 
         /**
-         * Iterate over a sequence, getting each element as T.
+         * Foreach over a sequence, getting each element as T.
          *
          * If T is Node, simply iterate over the nodes in the sequence.
          * Otherwise, convert each node to T during iteration.
@@ -838,7 +851,7 @@ struct Node
         }
 
         /**
-         * Iterate over a mapping, getting each key/value as K/V.
+         * Foreach over a mapping, getting each key/value as K/V.
          *
          * If the K and/or V is Node, simply iterate over the nodes in the mapping.
          * Otherwise, convert each key/value to T during iteration.
@@ -1127,6 +1140,20 @@ struct Node
             }
         }
 
+        ///Compare with another _node.
+        const int opCmp(ref const Node node)
+        {
+            return cmp!true(node);
+        }
+
+        //Compute hash of the node.
+        const hash_t toHash() 
+        {
+            const tagHash = tag_.isNull ? 0 : tag_.toHash();
+            //Variant toHash is not const at the moment, so we need to const-cast.
+            return tagHash + (cast(Value)value_).toHash();
+        }
+
     package:
         /*
          * Construct a node from raw data.
@@ -1168,66 +1195,136 @@ struct Node
         {
             static if(is(Unqual!T == Node))
             {
-                static if(useTag)
-                {
-                    if(tag_ != rhs.tag_){return false;}
-                }
-
-                if(!isValid){return !rhs.isValid;}
-                if(!rhs.isValid || !hasEqualType(rhs))
-                {
-                    return false;
-                }
-
-                static bool compareCollection(T)(const ref Node lhs, const ref Node rhs)
-                {
-                    const c1 = lhs.value_.get!(const T);
-                    const c2 = rhs.value_.get!(const T);
-                    if(c1 is c2){return true;}
-                    if(c1.length != c2.length){return false;}
-                    foreach(i; 0 .. c1.length)
-                    {
-                        if(!c1[i].equals!useTag(c2[i])){return false;}
-                    }
-                    return true;
-                }
-
-                static bool compare(T)(const ref Node lhs, const ref Node rhs) 
-                {
-                    return lhs.value_.get!(const T) == rhs.value_.get!(const T);
-                }
-
-                if(isSequence)    {return compareCollection!(Node[])(this, rhs);}
-                else if(isMapping){return compareCollection!(Pair[])(this, rhs);}
-                else if(isString) {return compare!string(this, rhs);}
-                else if(isInt)    {return compare!long(this, rhs);}
-                else if(isBool)   {return compare!bool(this, rhs);}
-                else if(isBinary) {return compare!(ubyte[])(this, rhs);}
-                else if(isNull)   {return true;}
-                else if(isFloat)
-                {
-                    const r1 = value_.get!(const real);
-                    const r2 = rhs.value_.get!(const real);
-                    return isNaN(r1) ? isNaN(r2) 
-                                     : (r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon);
-                }
-                else if(isTime)
-                {
-                    const t1 = value_.get!(const SysTime);
-                    const t2 = rhs.value_.get!(const SysTime);
-                    return t1 == t2;
-                }
-                else if(isUserType)
-                {
-                    return value_.get!(const YAMLObject).equals(rhs.value_.get!(const YAMLObject));
-                }
-                assert(false, "Unknown kind of node (equality comparison) : " ~ type.toString);
+                return cmp!useTag(rhs) == 0;
             }
             else
             {
-                try{return rhs == get!T;}
+                try
+                {
+                    static if(is(T == const))
+                    {
+                        return rhs == get!T;
+                    }
+                    else
+                    {
+                        return rhs == get!(const(Unqual!T));
+                    }
+                }
                 catch(NodeException e){return false;}
             }
+        }
+
+        /*
+         * Comparison with another node.
+         *
+         * Used for ordering in mappings and for opEquals. 
+         *
+         * useTag determines whether or not to consider tags in the comparison.
+         */
+        int cmp(bool useTag)(const ref Node rhs) const
+        {
+            //Compare tags - if equal or both null, we need to compare further.
+            static if(useTag)
+            {
+                const tagCmp = tag_.isNull ? rhs.tag_.isNull ? 0 : -1 
+                                           : rhs.tag_.isNull ? 1 : tag_.opCmp(rhs.tag_);
+                if(tagCmp != 0){return tagCmp;}
+            }
+
+            static int cmp(T1, T2)(T1 a, T2 b)
+            {
+                return a > b ? 1  :
+                       a < b ? -1 :
+                               0;
+            }
+
+            //Compare validity: if both valid, we have to compare further.
+            const v1 = isValid;
+            const v2 = rhs.isValid;
+            if(!v1){return v2 ? -1 : 0;}
+            if(!v2){return 1;}
+            
+            const typeCmp = type.opCmp(rhs.type);
+            if(typeCmp != 0){return typeCmp;}
+
+            static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
+            {
+                const c1 = lhs.value_.get!(const T);
+                const c2 = rhs.value_.get!(const T);
+                if(c1 is c2){return 0;}
+                if(c1.length != c2.length)
+                {
+                    return cmp(c1.length, c2.length);
+                }
+                //Equal lengths, compare items.
+                foreach(i; 0 .. c1.length)
+                {
+                    const itemCmp = c1[i].cmp!useTag(c2[i]);
+                    if(itemCmp != 0){return itemCmp;}
+                }
+                return 0;
+            }
+
+            if(isSequence){return compareCollections!(Node[])(this, rhs);}
+            if(isMapping) {return compareCollections!(Pair[])(this, rhs);}
+            if(isString)  
+            {
+                return std.algorithm.cmp(value_.get!(const string), 
+                                         rhs.value_.get!(const string));
+            }
+            if(isInt)     
+            {
+                return cmp(value_.get!(const long), rhs.value_.get!(const long));
+            }
+            if(isBool)    
+            {
+                const b1 = value_.get!(const bool);
+                const b2 = rhs.value_.get!(const bool);
+                return b1 ? b2 ? 0 : 1
+                          : b2 ? -1 : 0;
+            }
+            if(isBinary)  
+            {
+                const b1 = value_.get!(const ubyte[]); 
+                const b2 = rhs.value_.get!(const ubyte[]); 
+                return std.algorithm.cmp(b1, b2);
+            }
+            if(isNull)    
+            {
+                return 0;
+            }
+            //Floats need special handling for NaNs .
+            //We consider NaN to be lower than any float.
+            if(isFloat)
+            {
+                const r1 = value_.get!(const real);
+                const r2 = rhs.value_.get!(const real);
+                if(isNaN(r1))
+                {
+                    return isNaN(r2) ? 0 : -1;
+                }
+                if(isNaN(r2))
+                {
+                    return 1;
+                }
+                //Fuzzy equality.
+                if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
+                {
+                    return 0;
+                }
+                return cmp(r1, r2);
+            }
+            else if(isTime)
+            {
+                const t1 = value_.get!(const SysTime);
+                const t2 = rhs.value_.get!(const SysTime);
+                return cmp(t1, t2);
+            }
+            else if(isUserType)
+            {
+                return value_.get!(const YAMLObject).cmp(rhs.value_.get!(const YAMLObject));
+            }
+            assert(false, "Unknown type of node for comparison : " ~ type.toString);
         }
 
         /*

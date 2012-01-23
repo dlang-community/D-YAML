@@ -312,11 +312,16 @@ class TestClass
         this.z = z;
     }
 
-    override bool opEquals(Object rhs)
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    override int opCmp(Object o)
     {
-        if(typeid(rhs) != typeid(TestClass)){return false;}
-        auto t = cast(TestClass)rhs;
-        return x == t.x && y == t.y && z == t.z;
+        TestClass s = cast(TestClass)o;
+        if(s is null){return -1;}
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
     }
 
     override string toString()
@@ -330,10 +335,12 @@ struct TestStruct
 {
     int value;
 
-    bool opEquals(const ref TestStruct rhs) const
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    const int opCmp(ref const TestStruct s)
     {
-        return value == rhs.value;
-    }
+        return value - s.value;
+    }        
 }
 
 ///Constructor function for TestClass.

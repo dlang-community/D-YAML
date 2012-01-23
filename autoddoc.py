@@ -294,7 +294,7 @@ default_css =\
  "    border: 0.6em solid #cccccc;\n"
  "    background-color: #f6f6f6;\n"
  "    font-size: 0.875em;\n"
- "    line-height: 1.4em;\n"
+ "    line-height: 1.3em;\n"
  "}\n"
  "\n"
  "div#content li{padding-bottom: .7ex;}\n"

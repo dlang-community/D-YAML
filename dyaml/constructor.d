@@ -15,6 +15,7 @@ module dyaml.constructor;
 import std.array;
 import std.algorithm;
 import std.base64;
+import std.container;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -58,6 +59,7 @@ private alias ConstructorException Error;
  * Each YAML scalar, sequence or mapping has a tag specifying its data type.
  * Constructor uses user-specifyable functions to create a node of desired
  * data type from a scalar, sequence or mapping.
+ *
  *
  * Each of these functions is associated with a tag, and can process either
  * a scalar, a sequence, or a mapping. The constructor passes each value to 
@@ -130,9 +132,18 @@ final class Constructor
          * its message will be added to a YAMLException that will also tell the
          * user which type failed to construct, and position in the file.
          *
+         *
          * The value returned by this function will be stored in the resulting node.
          *
          * Only one constructor function can be set for one tag.
+         *
+         *
+         * Structs and classes must implement the $(D opCmp()) operator for D:YAML 
+         * support. The signature of the operator that must be implemented 
+         * is $(D const int opCmp(ref const MyStruct s)) for structs where 
+         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for 
+         * classes. Note that the class $(D opCmp()) should not alter the compared
+         * values - it is not const for compatibility reasons.
          *
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
@@ -147,6 +158,16 @@ final class Constructor
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * MyStruct constructMyStructScalar(ref Node node)
@@ -190,6 +211,16 @@ final class Constructor
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * MyStruct constructMyStructSequence(ref Node node)
@@ -231,6 +262,16 @@ final class Constructor
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * MyStruct constructMyStructMapping(ref Node node)
@@ -330,19 +371,19 @@ final class Constructor
 }
 
 
-///Construct a null node.
+///Construct a _null _node.
 YAMLNull constructNull(ref Node node)
 {
     return YAMLNull();
 }
 
-///Construct a merge node - a node that merges another node into a mapping.
+///Construct a merge _node - a _node that merges another _node into a mapping.
 YAMLMerge constructMerge(ref Node node)
 {
     return YAMLMerge();
 }
 
-///Construct a boolean node.
+///Construct a boolean _node.
 bool constructBool(ref Node node)
 {
     static yes = ["yes", "true", "on"];
@@ -353,7 +394,7 @@ bool constructBool(ref Node node)
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
-///Construct an integer (long) node.
+///Construct an integer (long) _node.
 long constructLong(ref Node node)
 {
     string value = node.as!string().replace("_", "");
@@ -421,7 +462,7 @@ unittest
     assert(685230 == getLong(sexagesimal));
 }
 
-///Construct a floating point (real) node.
+///Construct a floating point (real) _node.
 real constructReal(ref Node node)
 {
     string value = node.as!string().replace("_", "").toLower();
@@ -491,7 +532,7 @@ unittest
     assert(to!string(getReal(NaN)) == "nan");
 }
 
-///Construct a binary (base64) node.
+///Construct a binary (base64) _node.
 ubyte[] constructBinary(ref Node node)
 {
     string value = node.as!string;
@@ -519,7 +560,7 @@ unittest
     assert(value == test);
 }
 
-///Construct a timestamp (SysTime) node.
+///Construct a timestamp (SysTime) _node.
 SysTime constructTimestamp(ref Node node)
 {
     string value = node.as!string;
@@ -618,7 +659,7 @@ unittest
     assert(timestamp(ymd)            == "20021214T000000Z");
 }
 
-///Construct a string node.
+///Construct a string _node.
 string constructString(ref Node node)
 {
     return node.as!string;
@@ -641,22 +682,22 @@ Node.Pair[] getPairs(string type, Node[] nodes)
     return pairs;
 }
 
-///Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.
+///Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
 Node.Pair[] constructOrderedMap(ref Node node)
 {
     auto pairs = getPairs("ordered map", node.as!(Node[]));
 
-    //TODO: the map here should be replaced with something with deterministic
-    //memory allocation if possible.
-    //Detect duplicates.
-    bool[Node] map;
+    //Detect duplicates. 
+    //TODO this should be replaced by something with deterministic memory allocation.
+    auto keys = redBlackTree!Node();
+    scope(exit){clear(keys);}
     foreach(ref pair; pairs)
     {
-        enforce((pair.key in map) is null,
-                new Exception("Duplicate entry in an ordered map"));
-        map[pair.key] = true;
+        enforce(!(pair.key in keys),
+                new Exception("Duplicate entry in an ordered map: " 
+                              ~ pair.key.debugString()));
+        keys.insert(pair.key);
     }
-    clear(map);
     return pairs;
 }
 unittest
@@ -701,13 +742,13 @@ unittest
     assert(!hasDuplicates(alternateTypes(64)));
 }
 
-///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.
+///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
 Node.Pair[] constructPairs(ref Node node)
 {
     return getPairs("pairs", node.as!(Node[]));
 }
 
-///Construct a set node.
+///Construct a set _node.
 Node[] constructSet(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
@@ -771,26 +812,26 @@ unittest
            (constructSet(Node(noDuplicatesLong.dup))));
 }
 
-///Construct a sequence (array) node.
+///Construct a sequence (array) _node.
 Node[] constructSequence(ref Node node)
 {
     return node.as!(Node[]);
 }
 
-///Construct an unordered map (unordered set of key: value _pairs without duplicates) node.
+///Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
 Node.Pair[] constructMap(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
-    //TODO: the map here should be replaced with something with deterministic
-    //memory allocation if possible.
-    //Detect duplicates.
-    bool[Node] map;
-    scope(exit){clear(map);}
+    //Detect duplicates. 
+    //TODO this should be replaced by something with deterministic memory allocation.
+    auto keys = redBlackTree!Node();
+    scope(exit){clear(keys);}
     foreach(ref pair; pairs)
     {
-        enforce((pair.key in map) is null,
-                new Exception("Duplicate entry in a map"));
-        map[pair.key] = true;
+        enforce(!(pair.key in keys),
+                new Exception("Duplicate entry in a map: " 
+                              ~ pair.key.debugString()));
+        keys.insert(pair.key);
     }
     return pairs;
 }
@@ -805,6 +846,14 @@ import dyaml.loader;
 struct MyStruct
 {
     int x, y, z;
+
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }        
 }
 
 MyStruct constructMyStructScalar(ref Node node)

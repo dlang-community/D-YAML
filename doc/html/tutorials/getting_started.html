@@ -78,7 +78,7 @@ script for compilation. To compile D:YAML, you first need to build CDC.
 Do this by typing the following command into the console:</p>
 <div class="highlight-python"><pre>dmd cdc.d</pre>
 </div>
-<p>Now you can use CDC to compile D:YAML.
+<p>Now compile D:YAML with CDC.
 To do this on Unix/Linux, use the following command:</p>
 <div class="highlight-python"><pre>./cdc</pre>
 </div>
@@ -125,8 +125,8 @@ into the file:</p>
 </div>
 <div class="section" id="explanation-of-the-code">
 <h3>Explanation of the code<a class="headerlink" href="#explanation-of-the-code" title="Permalink to this headline">¶</a></h3>
-<p>First, we import the <em>yaml</em> module. This is the only module you need to import
-to use D:YAML - it automatically imports all needed modules.</p>
+<p>First, we import the <em>yaml</em> module. This is the only D:YAML module you need to
+import - it automatically imports all needed modules.</p>
 <p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is a struct
 used for parsing YAML documents. The <em>load()</em> method loads the file as
 <strong>one</strong> YAML document, or throws <em>YAMLException</em>, D:YAML exception type, if the
@@ -160,17 +160,17 @@ formatted differently. Comments are not preserved, either.</p>
 </div>
 <div class="section" id="compiling">
 <h3>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h3>
-<p>To compile your project, you must give DMD the directories containing import
-modules and the library. You also need to tell it to link with D:YAML. The import
-directory should be the D:YAML package directory. You can specify it using the
-<tt class="docutils literal"><span class="pre">-I</span></tt> option of DMD. The library directory should be where you put the compiled
-D:YAML library. On Unix/Linux you can specify it using the <tt class="docutils literal"><span class="pre">-L-L</span></tt> option, and
-link with D:YAML using the <tt class="docutils literal"><span class="pre">-L-l</span></tt> option. On Windows, the import directory is
-used as the library directory. To link with the library on Windows, just add the
-path to it relative to the current directory.</p>
+<p>To compile your project, DMD needs to know which directories contain the
+imported modules and the library. You also need to tell it to link with D:YAML.
+The import directory should be the D:YAML package directory. You can specify it
+using the <tt class="docutils literal"><span class="pre">-I</span></tt> option of DMD. The library directory should point to the
+compiled library. On Unix/Linux you can specify it using the <tt class="docutils literal"><span class="pre">-L-L</span></tt> option,
+and link with D:YAML using the <tt class="docutils literal"><span class="pre">-L-l</span></tt> option. On Windows, the import directory
+is used as the library directory. To link with the library on Windows, just add
+the path to it relative to the current directory.</p>
 <p>For example, if you extracted and compiled D:YAML in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml</span></tt>, your
 project is in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml-project</span></tt>, and you are currently in that
-directory, you can compile the project with the following command on Unix/Linux:</p>
+directory, compile the project with the following command on Unix/Linux:</p>
 <div class="highlight-python"><pre>dmd -I../dyaml -L-L../dyaml -L-ldyaml main.d</pre>
 </div>
 <p>And the following on Windows:</p>
@@ -237,7 +237,7 @@ example in the <tt class="docutils literal"><span class="pre">example/getting_st
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Nov 18, 2011.
+      Last updated on Jan 23, 2012.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>

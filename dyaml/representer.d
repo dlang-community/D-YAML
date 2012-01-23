@@ -16,6 +16,7 @@ module dyaml.representer;
 import std.algorithm;
 import std.array;
 import std.base64;
+import std.container;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -37,7 +38,7 @@ class RepresenterException : YAMLException
 }
 
 /**
- * Represents YAML nodes of various data types as scalar, sequence and mapping nodes ready for output.
+ * Represents YAML nodes as scalar, sequence and mapping nodes ready for output.
  *
  * This class is used to add support for dumping of custom data types.
  *
@@ -86,13 +87,13 @@ final class Representer
             representers_ = null;
         }
 
-        ///Set default _style for scalars. Invalid means the _style is chosen automatically.
+        ///Set default _style for scalars. If style is $(D ScalarStyle.Invalid), the _style is chosen automatically.
         @property void defaultScalarStyle(ScalarStyle style)
         {
             defaultScalarStyle_ = style;
         }
 
-        ///Set default _style for collections. Invalid means the _style is chosen automatically. 
+        ///Set default _style for collections. If style is $(D CollectionStyle.Invalid), the _style is chosen automatically. 
         @property void defaultCollectionStyle(CollectionStyle style)
         {
             defaultCollectionStyle_ = style;
@@ -101,13 +102,22 @@ final class Representer
         /**
          * Add a function to represent nodes with a specific data type.
          *
-         * The representer function takes references to a Node storing the data
-         * type and to the Representer. It returns the represented node and may
-         * throw a RepresenterException. See the example for more information.
+         * The representer function takes references to a $(D Node) storing the data
+         * type and to the $(D Representer). It returns the represented node and may
+         * throw a $(D RepresenterException). See the example for more information.
          * 
+         *
          * Only one function may be specified for one data type. Default data 
          * types already have representer functions unless disabled in the
-         * Representer constructor.
+         * $(D Representer) constructor.
+         *
+         *
+         * Structs and classes must implement the $(D opCmp()) operator for D:YAML 
+         * support. The signature of the operator that must be implemented 
+         * is $(D const int opCmp(ref const MyStruct s)) for structs where 
+         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for 
+         * classes. Note that the class $(D opCmp()) should not alter the compared
+         * values - it is not const for compatibility reasons.
          *
          * Params:  representer = Representer function to add.
          *
@@ -122,6 +132,16 @@ final class Representer
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }
          * }
          *
          * Node representMyStruct(ref Node node, Representer representer)
@@ -161,12 +181,16 @@ final class Representer
          *         this.z = z;
          *     }
          *
-         *     ///We need custom opEquals for node equality, as default opEquals compares references.
-         *     override bool opEquals(Object rhs)
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     override int opCmp(Object o)
          *     {
-         *         if(typeid(rhs) != typeid(MyClass)){return false;}
-         *         auto t = cast(MyClass)rhs;
-         *         return x == t.x && y == t.y && z == t.z;
+         *         MyClass s = cast(MyClass)o;
+         *         if(s is null){return -1;}
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
          *     }
          *
          *     ///Useful for Node.as!string .
@@ -226,6 +250,16 @@ final class Representer
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * Node representMyStruct(ref Node node, Representer representer)
@@ -233,7 +267,6 @@ final class Representer
          *     auto value = node.as!MyStruct;
          *     auto scalar = format(value.x, ":", value.y, ":", value.z);
          *     return representer.representScalar("!mystruct.tag", scalar);
-         *
          * }
          * --------------------
          */
@@ -250,20 +283,30 @@ final class Representer
          *
          * This is used by representer functions that produce sequences.
          *
-         * Params:  tag      = Tag of the sequence.
+         * Params:  tag      = Tag of the _sequence.
          *          sequence = Sequence of nodes.
          *          style    = Style of the _sequence. If invalid, default _style will be used.
          *                     If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
          *
-         * Throws:  RepresenterException if a child could not be represented.
+         * Throws:  $(D RepresenterException) if a child could not be represented.
          *
          * Example:
          * --------------------
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * Node representMyStruct(ref Node node, Representer representer)
@@ -311,18 +354,28 @@ final class Representer
          *
          * Params:  tag   = Tag of the mapping.
          *          pairs = Key-value _pairs of the mapping.
-         *          style = Style of the _mapping. If invalid, default _style will be used.
+         *          style = Style of the mapping. If invalid, default _style will be used.
          *                  If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
          *
-         * Throws:  RepresenterException if a child could not be represented.
+         * Throws:  $(D RepresenterException) if a child could not be represented.
          *
          * Example:
          * --------------------
          * struct MyStruct
          * {
          *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }        
          * }
          *
          * Node representMyStruct(ref Node node, Representer representer)
@@ -496,14 +549,13 @@ Node representPairs(ref Node node, Representer representer)
 
     bool hasDuplicates(Node.Pair[] pairs)
     {
-        //TODO The map here should be replaced with something with deterministic.
-        //memory allocation if possible.
-        bool[Node] map;
-        scope(exit){clear(map);}
+        //TODO this should be replaced by something with deterministic memory allocation.
+        auto keys = redBlackTree!Node();
+        scope(exit){clear(keys);}
         foreach(ref pair; pairs)
         {
-            if((pair.key in map) !is null){return true;}
-            map[pair.key] = true;
+            if(pair.key in keys){return true;}
+            keys.insert(pair.key);
         }
         return false;
     }
@@ -547,6 +599,14 @@ import dyaml.dumper;
 struct MyStruct
 {
     int x, y, z;
+
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }        
 }
 
 Node representMyStruct(ref Node node, Representer representer)
@@ -585,13 +645,15 @@ class MyClass
         this.y = y; 
         this.z = z;
     }
-
-    ///We need custom opEquals for node equality, as default opEquals compares references.
-    override bool opEquals(Object rhs)
+    
+    override int opCmp(Object o)
     {
-        if(typeid(rhs) != typeid(MyClass)){return false;}
-        auto t = cast(MyClass)rhs;
-        return x == t.x && y == t.y && z == t.z;
+        MyClass s = cast(MyClass)o;
+        if(s is null){return -1;}
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
     }
 
     ///Useful for Node.as!string .

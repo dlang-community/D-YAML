@@ -74,6 +74,8 @@
  data type from a scalar, sequence or mapping.
 <br>
 
+<br>
+
  Each of these functions is associated with a tag, and can process either
  a scalar, a sequence, or a mapping. The constructor passes each value to
  the function with corresponding tag, which then returns the resulting value
@@ -82,7 +84,7 @@
 
  If a tag is detected with no known constructor function, it is considered an error.</p>
 
-<dl><dt class="d_decl">this(in const(bool) <b>defaultConstructors</b> = true);
+<dl><dt class="d_decl">this(const(bool) <b>defaultConstructors</b> = true);
 </dt>
 <dd><p>Construct a Constructor.
 </p>
@@ -109,10 +111,22 @@
  user which type failed to construct, and position in the file.
 <br>
 
+<br>
+
  The value returned by this function will be stored in the resulting node.
 <br>
 
  Only one constructor function can be set for one tag.
+<br>
+
+<br>
+
+ Structs and classes must implement the <span class="d_inlinecode">opCmp()</span> operator for D:YAML
+ support. The signature of the operator that must be implemented
+ is <span class="d_inlinecode">const int opCmp(ref const MyStruct s)</span> for structs where
+ <i>MyStruct</i> is the struct type, and <span class="d_inlinecode">int opCmp(Object o)</span> for
+ classes. Note that the class <span class="d_inlinecode">opCmp()</span> should not alter the compared
+ values - it is not const for compatibility reasons.
 
 </p>
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>tag</td>
@@ -128,6 +142,16 @@
  <span class="d_keyword">struct</span> MyStruct
  {
      <span class="d_keyword">int</span> x, y, z;
+
+     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>     <span class="d_comment">//This is used for ordering in mappings.
+</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+     {
+         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+         <span class="d_keyword">return</span> 0;
+     }
  }
 
  MyStruct constructMyStructScalar(<span class="d_keyword">ref</span> Node node)
@@ -166,6 +190,16 @@
  <span class="d_keyword">struct</span> MyStruct
  {
      <span class="d_keyword">int</span> x, y, z;
+
+     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>     <span class="d_comment">//This is used for ordering in mappings.
+</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+     {
+         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+         <span class="d_keyword">return</span> 0;
+     }
  }
 
  MyStruct constructMyStructSequence(<span class="d_keyword">ref</span> Node node)
@@ -202,6 +236,16 @@
  <span class="d_keyword">struct</span> MyStruct
  {
      <span class="d_keyword">int</span> x, y, z;
+
+     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>     <span class="d_comment">//This is used for ordering in mappings.
+</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+     {
+         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+         <span class="d_keyword">return</span> 0;
+     }
  }
 
  MyStruct constructMyStructMapping(<span class="d_keyword">ref</span> Node node)
@@ -227,42 +271,42 @@
 </dd>
 <dt class="d_decl">YAMLNull <a name="constructNull"></a><span class="ddoc_psymbol">constructNull</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a <b>null</b> <b>node</b>.</p>
+<dd><p>Construct a null node.</p>
 
 </dd>
 <dt class="d_decl">YAMLMerge <a name="constructMerge"></a><span class="ddoc_psymbol">constructMerge</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a merge <b>node</b> - a <b>node</b> that merges another <b>node</b> into a mapping.</p>
+<dd><p>Construct a merge node - a node that merges another node into a mapping.</p>
 
 </dd>
 <dt class="d_decl">bool <a name="constructBool"></a><span class="ddoc_psymbol">constructBool</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a boolean <b>node</b>.</p>
+<dd><p>Construct a boolean node.</p>
 
 </dd>
 <dt class="d_decl">long <a name="constructLong"></a><span class="ddoc_psymbol">constructLong</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct an integer (long) <b>node</b>.</p>
+<dd><p>Construct an integer (long) node.</p>
 
 </dd>
 <dt class="d_decl">real <a name="constructReal"></a><span class="ddoc_psymbol">constructReal</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a floating point (real) <b>node</b>.</p>
+<dd><p>Construct a floating point (real) node.</p>
 
 </dd>
 <dt class="d_decl">ubyte[] <a name="constructBinary"></a><span class="ddoc_psymbol">constructBinary</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a binary (base64) <b>node</b>.</p>
+<dd><p>Construct a binary (base64) node.</p>
 
 </dd>
 <dt class="d_decl">SysTime <a name="constructTimestamp"></a><span class="ddoc_psymbol">constructTimestamp</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a timestamp (SysTime) <b>node</b>.</p>
+<dd><p>Construct a timestamp (SysTime) node.</p>
 
 </dd>
 <dt class="d_decl">string <a name="constructString"></a><span class="ddoc_psymbol">constructString</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a string <b>node</b>.</p>
+<dd><p>Construct a string node.</p>
 
 </dd>
 <dt class="d_decl">Pair[] <a name="getPairs"></a><span class="ddoc_psymbol">getPairs</span>(string <b>type</b>, Node[] <b>nodes</b>);
@@ -272,27 +316,27 @@
 </dd>
 <dt class="d_decl">Pair[] <a name="constructOrderedMap"></a><span class="ddoc_psymbol">constructOrderedMap</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) <b>node</b>.</p>
+<dd><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.</p>
 
 </dd>
 <dt class="d_decl">Pair[] <a name="constructPairs"></a><span class="ddoc_psymbol">constructPairs</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) <b>node</b>.</p>
+<dd><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.</p>
 
 </dd>
 <dt class="d_decl">Node[] <a name="constructSet"></a><span class="ddoc_psymbol">constructSet</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a set <b>node</b>.</p>
+<dd><p>Construct a set node.</p>
 
 </dd>
 <dt class="d_decl">Node[] <a name="constructSequence"></a><span class="ddoc_psymbol">constructSequence</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct a sequence (array) <b>node</b>.</p>
+<dd><p>Construct a sequence (array) node.</p>
 
 </dd>
 <dt class="d_decl">Pair[] <a name="constructMap"></a><span class="ddoc_psymbol">constructMap</span>(ref Node <b>node</b>);
 </dt>
-<dd><p>Construct an unordered map (unordered set of key: value pairs without duplicates) <b>node</b>.</p>
+<dd><p>Construct an unordered map (unordered set of key:value pairs without duplicates) node.</p>
 
 </dd>
 </dl>
@@ -301,7 +345,7 @@
 
 <div id="copyright">
 Copyright &copy; Ferdinand Majerech 2011. Based on <a href="http://www.pyyaml.org">PyYAML</a> by Kirill Simonov. |
-Page generated by Autodoc and <a href="http://www.digitalmars.com/d/2.0/ddoc.html">Ddoc</a>.
+Page generated by AutoDDoc and <a href="http://www.digitalmars.com/d/2.0/ddoc.html">Ddoc</a>.
 </div>
 
 </body>

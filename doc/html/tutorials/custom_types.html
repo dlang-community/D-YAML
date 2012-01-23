@@ -48,7 +48,7 @@
   <div class="section" id="custom-yaml-data-types">
 <h1>Custom YAML data types<a class="headerlink" href="#custom-yaml-data-types" title="Permalink to this headline">¶</a></h1>
 <p>Sometimes you need to serialize complex data types such as classes. To do this
-you could use plain nodes such as mappings with class data members. YAML also
+you could use plain nodes such as mappings with classes&#8217; fields. YAML also
 supports custom types with identifiers called <em>tags</em>. That is the topic of this
 tutorial.</p>
 <p>Each YAML node has a tag specifying its type. For instance: strings use the tag
@@ -62,11 +62,13 @@ each node to hold data type corresponding to its tag. <em>Constructor</em> store
 functions to process each supported tag. These are supplied by the user using
 the <em>addConstructorXXX()</em> methods, where <em>XXX</em> is <em>Scalar</em>, <em>Sequence</em> or
 <em>Mapping</em>. <em>Constructor</em> is then passed to <em>Loader</em>, which parses YAML input.</p>
-<p>Struct types have no specific requirements for YAML support. Class types should
-define the <em>opEquals()</em> operator - this is used in equality comparisons of
-nodes. Default class <em>opEquals()</em> compares references, which means two identical
-objects might be considered unequal. (Default struct <em>opEquals()</em> compares
-byte-by-byte, sometimes you might want to override that as well.)</p>
+<p>Structs and classes must implement the <em>opCmp()</em> operator for YAML support. This
+is used for duplicate detection in mappings, sorting and equality comparisons of
+nodes. The signature of the operator that must be implemented is
+<tt class="docutils literal"><span class="pre">const</span> <span class="pre">int</span> <span class="pre">opCmp(ref</span> <span class="pre">const</span> <span class="pre">MyStruct</span> <span class="pre">s)</span></tt> for structs where <em>MyStruct</em> is the
+struct type, and <tt class="docutils literal"><span class="pre">int</span> <span class="pre">opCmp(Object</span> <span class="pre">o)</span></tt> for classes. Note that the class
+<em>opCmp()</em> should not alter the compared values - it is not const for compatibility
+reasons.</p>
 <p>We will implement support for an RGB color type. It is implemented as the
 following struct:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">struct</span> <span class="n">Color</span>
@@ -74,6 +76,14 @@ following struct:</p>
     <span class="kt">ubyte</span> <span class="n">red</span><span class="p">;</span>
     <span class="kt">ubyte</span> <span class="n">green</span><span class="p">;</span>
     <span class="kt">ubyte</span> <span class="n">blue</span><span class="p">;</span>
+
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">opCmp</span><span class="p">(</span><span class="k">ref</span> <span class="k">const</span> <span class="n">Color</span> <span class="n">c</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">red</span>   <span class="p">!=</span> <span class="n">c</span><span class="p">.</span><span class="n">red</span><span class="p">)</span>  <span class="p">{</span><span class="k">return</span> <span class="n">red</span>   <span class="p">-</span> <span class="n">c</span><span class="p">.</span><span class="n">red</span><span class="p">;}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">green</span> <span class="p">!=</span> <span class="n">c</span><span class="p">.</span><span class="n">green</span><span class="p">){</span><span class="k">return</span> <span class="n">green</span> <span class="p">-</span> <span class="n">c</span><span class="p">.</span><span class="n">green</span><span class="p">;}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">blue</span>  <span class="p">!=</span> <span class="n">c</span><span class="p">.</span><span class="n">blue</span><span class="p">)</span> <span class="p">{</span><span class="k">return</span> <span class="n">blue</span>  <span class="p">-</span> <span class="n">c</span><span class="p">.</span><span class="n">blue</span><span class="p">;}</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -364,7 +374,7 @@ directory of the D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Nov 18, 2011.
+      Last updated on Jan 23, 2012.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
