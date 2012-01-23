@@ -27,6 +27,8 @@
 
   - Fixed compilation on 32bit.
 
+  - Various small bugfixes.
+
 
 
 0.3.0:

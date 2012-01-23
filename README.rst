@@ -130,4 +130,4 @@ D:YAML uses a modified version of the
 `CDC build script <http://www.dsource.org/projects/cdc>`_.
 
 D:YAML was created using Vim and DMD on Debian and Ubuntu Linux as a YAML parsing
-library for the `D programming language <http://www.d-programming-language.org>`_.
+library for the `D programming language <http://www.dlang.org>`_.

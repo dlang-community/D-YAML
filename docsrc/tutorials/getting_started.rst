@@ -3,9 +3,8 @@ Getting started
 ===============
 
 Welcome to D:YAML! D:YAML is a `YAML <http://en.wikipedia.org/wiki/YAML>`_ 
-parser library for the 
-`D programming language <http://d-programming-language.org>`_. This tutorial 
-will explain how to set D:YAML up and use it in your projects. 
+parser library for the `D programming language <http://dlang.org>`_. 
+This tutorial will explain how to set D:YAML up and use it in your projects. 
 
 This is meant to be the **simplest possible** introduction to D:YAML. Some of 
 this information might already be known to you. Only basic usage is covered. 
@@ -20,7 +19,7 @@ Install the DMD compiler
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Digital Mars D compiler, or DMD, is the most commonly used D compiler. You can
-find its newest version `here <http://www.digitalmars.com/d/download.html>`_. 
+find its newest version `here <http://dlang.org/download.html>`_. 
 Download the version of DMD for your operating system and install it.
 
 .. note:: 
