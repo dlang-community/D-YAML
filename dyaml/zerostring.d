@@ -55,9 +55,8 @@ struct ZeroString(string TypeName)
         in{assert(!isNull);}
         body
         {
-            static type = typeid(string);
             auto str = get();
-            return type.getHash(&str);
+            return typeid(string).getHash(&str);
         }
 
         ///Compare with another string.

@@ -242,9 +242,8 @@ final class Resolver
                                        "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
                                 "-+0123456789");
             addImplicitResolver("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
-
             addImplicitResolver("tag:yaml.org,2002:null", 
-                                regex(r"^(?:~|null|Null|NULL|\0)?$"), "~nN\0");
+                                regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
             addImplicitResolver("tag:yaml.org,2002:timestamp", 
                                 regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-"
                                        "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]"
