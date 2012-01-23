@@ -134,10 +134,9 @@ else
 
 void main(string[] args)
 {
-    string target = "release";
-
     scope(failure){help(); core.stdc.stdlib.exit(-1);}
 
+    string[] targets;
     string[] extra_args = ["-w", "-wi"];
 
     args = args[1 .. $];
@@ -151,17 +150,22 @@ void main(string[] args)
             case "--ldc": compiler = "ldmd"; break;
             default: extra_args ~= arg;
         }
+        else
+        {
+            targets ~= arg;
+        }
     }
-    if(args.length > 0 && args[$ - 1][0] != '-'){target = args[$ - 1];}
 
-    string[] dbg      = ["-debug", "-gc"];
-    string[] optimize = ["-O", "-inline", "-release", "-noboundscheck"];
-    string[] profile  = ["-O", "-release", "-noboundscheck", "-gc"];
-    string[] lib_src  = ["dyaml/", "yaml.d"];
+    if(targets.length == 0){targets = ["release"];}
+
+    auto dbg      = ["-debug", "-gc"];
+    auto optimize = ["-O", "-inline", "-release", "-noboundscheck"];
+    auto profile  = ["-O", "-release", "-noboundscheck", "-gc"];
+    auto lib_src  = ["dyaml/", "yaml.d"];
 
     void compile_(string[] args, string[] files)
     {
-        compile(files, args ~ extra_args);
+        compile(args ~ extra_args, files);
     }
 
     void build_unittest()
@@ -211,7 +215,7 @@ void main(string[] args)
             writeln("Error creating a zip package");
         }
     }
-
+ 
     void build(string[] targets ...)
     {
         foreach(target; targets) switch(target)
@@ -230,7 +234,7 @@ void main(string[] args)
         }
     }
 
-    try{build(target);}
+    try{build(targets);}
     catch(CompileException e){writeln("Could not compile: " ~ e.msg);}
     catch(ProcessException e){writeln("Compilation failed: " ~ e.msg);}
 }
@@ -242,7 +246,7 @@ void help()
         "D:YAML build script\n"
         "Changes Copyright (C) 2011 Ferdinand Majerech\n"
         "Based on CDC script Copyright (C) 2009-2010 Eric Poggel\n"
-        "Usage: cdc [OPTION ...] [EXTRA COMPILER OPTION ...] [TARGET]\n"
+        "Usage: cdc [OPTION ...] [EXTRA COMPILER OPTION ...] [TARGET ...]\n"
         "By default, cdc uses the compiler it was built with to compile the project.\n"
         "\n"
         "Any options starting with '-' not parsed by the script will be\n"
@@ -274,8 +278,8 @@ void help()
 /**
  * Compile D code using the current compiler.
  *
- * Params:  paths = Source and library files/directories. Directories are recursively searched.
- *          options = Compiler options.
+ * Params:  options = Compiler options.
+ *          paths   = Source and library files/directories. Directories are recursively searched. 
  *
  * Example:
  * --------
@@ -287,7 +291,7 @@ void help()
  *
  * TODO Add a dry run option to just return an array of commands to execute. 
  */
-static void compile(string[] paths, string[] options = null)
+void compile(string[] options, string[] paths)
 {    
     //Convert src and lib paths to files
     string[] sources, libs, ddocs;
@@ -299,8 +303,8 @@ static void compile(string[] paths, string[] options = null)
         if(isDir(src))
         {    
             sources ~= scan(src, ".d");
-            ddocs ~= scan(src, ".ddoc");
-            libs ~= scan(src, lib_ext);
+            ddocs   ~= scan(src, ".ddoc");
+            libs    ~= scan(src, lib_ext);
         } 
         //File
         else if(isFile(src))
@@ -329,14 +333,14 @@ static void compile(string[] paths, string[] options = null)
     //Create modules.ddoc and add it to array of ddocs
     if(co.generate_doc)
     {    
-        string modules = "MODULES = \r\n";
+        string modules = "MODULES = \n";
         sources.sort;
         foreach(src; sources)
         {    
             //get filename 
             src = split(src, "\\.")[0];
-            src = replace(replace(src, "/", "."), "\\", ".");
-            modules ~= "\t$(MODULE " ~ src ~ ")\r\n";
+            src = src.replace("/", ".").replace("\\", ".");
+            modules ~= "\t$(MODULE " ~ src ~ ")\n";
         }
         scope(failure){remove("modules.ddoc");}
         write("modules.ddoc", modules);
@@ -353,20 +357,14 @@ static void compile(string[] paths, string[] options = null)
         if(co.generate_lib || co.generate_doc || co.no_linking)
         {
             //Remove options we don't want to pass to gdc when building incrementally.
-            string[] incremental_options;
-            foreach(option; options)
-            {
-                if(option != "-lib" && !startsWith(option, "-o"))
-                {
-                    incremental_options ~= option;
-                }
-            }
+            auto incremental_options = 
+                 array(filter!`a != "-lib" && !startsWith(a, "-o")`(options));
 
             //Compile files individually, outputting full path names
             string[] obj_files;
             foreach(source; sources)
             {    
-                string obj = replace(source, "/", ".")[0 .. $ - 2] ~ ".o";
+                string obj = source.replace("/", ".")[0 .. $ - 2] ~ ".o";
                 string ddoc = obj[0 .. $ - 2];
                 if(co.obj_directory !is null)
                 {
@@ -392,20 +390,15 @@ static void compile(string[] paths, string[] options = null)
             //Remove obj files if -c or -od not were supplied.
             if(!co.obj_directory && !co.no_linking)
             {
-                foreach (o; obj_files){remove(o);}
+                foreach(o; obj_files){remove(o);}
             }
         }
 
-        if (!co.generate_lib && !co.no_linking)
+        if(!co.generate_lib && !co.no_linking)
         {
             //Remove documentation arguments since they were handled above
-            string[] nondoc_args;
-            foreach(arg; arguments)
-            {
-                if(!startsWith(arg, "-fdoc", "-od")){nondoc_args ~= arg;}
-            }
-
-            execute_compiler(compiler, nondoc_args);
+            execute_compiler(compiler, 
+                             array(filter!`!startsWith(a, "-fdoc", "-od")`(arguments)));
         }
     }
     //Compilers other than gdc 
@@ -414,27 +407,24 @@ static void compile(string[] paths, string[] options = null)
         execute_compiler(compiler, arguments);        
         //Move all html files in doc_path to the doc output folder 
         //and rename them with the "package.module" naming convention.
-        if(co.generate_doc)
+        if(co.generate_doc) foreach(src; sources)
         {    
-            foreach(src; sources)
-            {    
-                if(src.extension != ".d"){continue;}
+            if(src.extension != ".d"){continue;}
 
-                string html = src[0 .. $ - 2] ~ ".html";
-                string dest = replace(replace(html, "/", "."), "\\", ".");
-                if(co.doc_directory.length > 0)
-                {    
-                    dest = co.doc_directory ~ file_separator ~ dest;
-                    html = co.doc_directory ~ file_separator ~ html;
-                }
-                //TODO: Delete remaining folders where source files were placed.
-                if(html != dest)
-                {    
-                    copy(html, dest);
-                    remove(html);
-                }    
+            string html = src[0 .. $ - 2] ~ ".html";
+            string dest = html.replace("/", ".").replace("\\", ".");
+            if(co.doc_directory.length > 0)
+            {    
+                dest = co.doc_directory ~ file_separator ~ dest;
+                html = co.doc_directory ~ file_separator ~ html;
+            }
+            //TODO: Delete remaining folders where source files were placed.
+            if(html != dest)
+            {    
+                copy(html, dest);
+                remove(html);
             }    
-        }
+        }    
     }
 
     //Remove extra files
@@ -490,20 +480,20 @@ struct CompileOptions
          */
         this(string[] options, in string[] sources)
         {   
-            foreach (i, option; options)
+            foreach(i, opt; options)
             {
-                if(option == "-c"){no_linking = true;}
-                else if(option == "-D" || option == "-fdoc"){generate_doc = true;}
-                else if(startsWith(option, "-Dd")){doc_directory = option[3..$];}
-                else if(startsWith(option, "-fdoc-dir=")){doc_directory = option[10..$];}
-                else if(startsWith(option, "-Df")){doc_file = option[3..$];}
-                else if(startsWith(option, "-fdoc-file=")){doc_file = option[11..$];}
-                else if(option == "-lib"){generate_lib = true;}
-                else if(option == "-o-" || option=="-fsyntax-only"){no_objects = true;}
-                else if(startsWith(option, "-of")){out_file = option[3..$];}
-                else if(startsWith(option, "-od")){obj_directory = option[3..$];}
-                else if(startsWith(option, "-o") && option != "-op"){out_file = option[2..$];}
-                options_ ~= option;
+                if(opt == "-c")                               {no_linking = true;}
+                else if(["-D", "-fdoc"].canFind(opt))         {generate_doc = true;}
+                else if(opt.startsWith("-Dd"))                {doc_directory = opt[3..$];}
+                else if(opt.startsWith("-fdoc-dir="))         {doc_directory = opt[10..$];}
+                else if(opt.startsWith("-Df"))                {doc_file = opt[3..$];}
+                else if(opt.startsWith("-fdoc-file="))        {doc_file = opt[11..$];}
+                else if(opt == "-lib")                        {generate_lib = true;}
+                else if(["-o-", "-fsyntax-only"].canFind(opt)){no_objects = true;}
+                else if(opt.startsWith("-of"))                {out_file = opt[3..$];}
+                else if(opt.startsWith("-od"))                {obj_directory = opt[3..$];}
+                else if(opt.startsWith("-o") && opt != "-op") {out_file = opt[2..$];}
+                options_ ~= opt;
             }
 
             //Set the -o (output filename) flag to the first source file if not already set.
@@ -511,14 +501,14 @@ struct CompileOptions
             string ext = generate_lib ? lib_ext : bin_ext; 
             if(out_file.length == 0 && !no_linking && !no_objects && sources.length > 0)
             {    
-                out_file = split(split(sources[0], "/")[$ - 1], "\\.")[0] ~ ext;
-                options_ ~= ("-of" ~ out_file);
+                out_file = sources[0].split("/").back.split("\\.")[0] ~ ext;
+                options_ ~= "-of" ~ out_file;
             }
             version (Windows)
             {    
                 //TODO needs testing
                 //{    if (find(this.out_file, ".") <= rfind(this.out_file, "/"))
-                if(find(out_file, '.') <= retro(find(retro(out_file), '/')))
+                if(out_file.find('.') <= out_file.retro().find('/').retro())
                 {
                    out_file ~= bin_ext;
                 }
@@ -540,53 +530,46 @@ struct CompileOptions
 
             if(compiler != "gdc")
             {
-                version(Windows)
+                version(Windows) foreach(ref option; result)
                 {
-                    foreach(ref option; result)
-                    {
-                        option = startsWith(option, "-of") ? replace(option, "/", "\\") : option;
-                    }
+                    option = option.startsWith("-of") ? option.replace("/", "\\") : option;
                 }
 
                 //ensure ddocs don't overwrite one another.
-                return canFind(result, "-op") ? result : result ~ "-op";
+                return result.canFind("-op") ? result : result ~ "-op";
             }
 
             //is gdc
-            string[string] translate;
-            translate["-Dd"]       = "-fdoc-dir=";
-            translate["-Df"]       = "-fdoc-file=";
-            translate["-debug="]   = "-fdebug=";
-            translate["-debug"]    = "-fdebug"; // will this still get selected?
-            translate["-inline"]   = "-finline-functions";
-            translate["-L"]        = "-Wl";
-            translate["-lib"]      = "";
-            translate["-O"]        = "-O3";
-            translate["-o-"]       = "-fsyntax-only";
-            translate["-of"]       = "-o ";
-            translate["-unittest"] = "-funittest";
-            translate["-version"]  = "-fversion=";
-            translate["-version="] = "-fversion=";
-            translate["-wi"]       = "-Wextra";
-            translate["-w"]        = "-Wall";
-            translate["-gc"]       = "-g";
+            auto translate = ["-Dd"       : "-fdoc-dir=",
+                              "-Df"       : "-fdoc-file=",
+                              "-debug="   : "-fdebug=",
+                              "-debug"    : "-fdebug", // will this still get selected?
+                              "-inline"   : "-finline-functions",
+                              "-L"        : "-Wl",
+                              "-lib"      : "",
+                              "-O"        : "-O3",
+                              "-o-"       : "-fsyntax-only",
+                              "-of"       : "-o ",
+                              "-unittest" : "-funittest",
+                              "-version"  : "-fversion=",
+                              "-version=" : "-fversion=",
+                              "-wi"       : "-Wextra",
+                              "-w"        : "-Wall",
+                              "-gc"       : "-g"];
 
             //Perform option translation
             foreach(ref option; result)
             {    
                 //remove unsupported -od
-                if(startsWith(option, "-od")){option = "";}
-                if(option =="-D"){option = "-fdoc";}
-                else
+                if(option.startsWith("-od")){option = "";}
+                if(option == "-D"){option = "-fdoc";}
+                //Options with a direct translation 
+                else foreach(before, after; translate) 
                 {
-                    //Options with a direct translation 
-                    foreach(before, after; translate) 
-                    {
-                        if(startsWith(option, before))
-                        {    
-                            option = after ~ option[before.length..$];
-                            break;
-                        }
+                    if(option.startsWith(before))
+                    {    
+                        option = after ~ option[before.length..$];
+                        break;
                     }
                 }
             }
@@ -619,7 +602,7 @@ void execute_compiler(in string compiler, string[] arguments)
     {
         version(Windows)
         {    
-            write("compile", join(arguments, " "));
+            write("compile", arguments.join(" "));
             scope(exit){remove("compile");}
             execute(compiler ~ " ", ["@compile"]);
         } 
@@ -646,10 +629,10 @@ void execute(string command, string[] args)
 {    
     version(Windows)
     {
-        if(startsWith(command, "./")){command = command[2 .. $];}
+        if(command.startsWith("./")){command = command[2 .. $];}
     }
 
-    string full = command ~ " " ~ join(args, " ");
+    string full = command ~ " " ~ args.join(" ");
     writeln("CDC:  " ~ full);
     if(int status = system(full) != 0)
     {
@@ -673,7 +656,7 @@ string[] scan(in string directory, string extensions ...)
     string[] result;
     foreach(string name; dirEntries(directory, SpanMode.depth))
     {
-        if(isFile(name) && endsWith(name, extensions)){result ~= name;}
+        if(isFile(name) && name.endsWith(extensions)){result ~= name;}
     }
     return result;
 }
