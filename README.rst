@@ -1,5 +1,5 @@
 ==========
-D:YAML 0.3
+D:YAML 0.4
 ==========
 
 ------------
@@ -64,7 +64,7 @@ Directory        Contents
 ``./docsrc``     Documentation sources.
 ``./dyaml``      D:YAML source code.
 ``./examples/``  Example D:YAML code.
-``./test``       Unittest code and inputs.
+``./test``       Unittest code and data.
 ===============  =======================================================================
 
 
