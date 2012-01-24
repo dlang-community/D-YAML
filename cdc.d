@@ -92,6 +92,8 @@
  */
 
 
+import core.stdc.stdlib;
+
 import std.algorithm;
 import std.array;
 import std.exception;
@@ -102,6 +104,8 @@ import std.process;
 import std.range;
 import std.string;
 import std.stdio : writeln;
+
+alias std.process.system system;
 
 
 ///Name of the default compiler, which is the compiler used to build cdc.
