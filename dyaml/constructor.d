@@ -124,13 +124,13 @@ final class Constructor
         /**
          * Add a constructor function from scalar.
          *
-         * The function must take a reference to Node to construct from.
-         * The node contains a string for scalars, Node[] for sequences and 
-         * Node.Pair[] for mappings. 
+         * The function must take a reference to $(D Node) to construct from.
+         * The node contains a string for scalars, $(Node[]) for sequences and 
+         * $(Node.Pair[]) for mappings. 
          *
          * Any exception thrown by this function will be caught by D:YAML and
-         * its message will be added to a YAMLException that will also tell the
-         * user which type failed to construct, and position in the file.
+         * its message will be added to a $(YAMLException) that will also tell 
+         * the user which type failed to construct, and position in the file.
          *
          *
          * The value returned by this function will be stored in the resulting node.

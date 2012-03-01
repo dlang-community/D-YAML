@@ -204,9 +204,10 @@ struct Node
         /**
          * Construct a Node from a value.
          *
-         * Any type except of Node can be stored in a Node, but default YAML 
+         * Any type except for Node can be stored in a Node, but default YAML 
          * types (integers, floats, strings, timestamps, etc.) will be stored
-         * more efficiently. 
+         * more efficiently. To create a node representing a null value,
+         * construct it from YAMLNull.
          *
          *
          * Note that to emit any non-default types you store 
@@ -464,14 +465,17 @@ struct Node
          * If T is Node, recursively compare all subnodes. 
          * This might be quite expensive if testing entire documents.
          *
-         * If T is not Node, convert the node to T and test equality with that.
+         * If T is not Node, get a value if type T from the node and test 
+         * equality with that.
+         *
+         * To test equality with a null YAML value, use YAMLNull.
          *
          * Examples:
          * --------------------
          * auto node = Node(42);
          *
          * assert(node == 42);
-         * assert(node == "42");
+         * assert(node != "42");
          * assert(node != "43");
          * --------------------
          *
@@ -479,9 +483,20 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
-        bool opEquals(T)(const ref T rhs) const
+        bool opEquals(T)(const auto ref T rhs) const
         {
             return equals!true(rhs);
+        }
+        unittest
+        {
+            auto node = Node(42);
+            
+            assert(node == 42);
+            assert(node != "42");
+            assert(node != "43");
+
+            auto node2 = Node(YAMLNull());
+            assert(node2 == YAMLNull());
         }
 
         ///Shortcut for get().
@@ -491,13 +506,18 @@ struct Node
          * Get the value of the node as specified type.
          *
          * If the specifed type does not match type in the node,
-         * conversion is attempted.
+         * conversion is attempted. The stringConversion template
+         * parameter can be used to disable conversion from non-string 
+         * types to strings.
          *
          * Numeric values are range checked, throwing if out of range of 
          * requested type.
          *
          * Timestamps are stored as std.datetime.SysTime.
          * Binary values are decoded and stored as ubyte[]. 
+         *
+         * To get a null value, use get!YAMLNull . This is to
+         * prevent getting null values for types such as strings or classes.
          *
          * $(BR)$(B Mapping default values:)
          * 
@@ -526,7 +546,8 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        @property T get(T)() if(!is(T == const))
+        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() 
+            if(!is(T == const))
         {
             if(isType!T){return value_.get!T;}
 
@@ -544,18 +565,27 @@ struct Node
 
             //If we're getting from a mapping and we're not getting Node.Pair[],
             //we're getting the default value.
-            if(isMapping){return this["="].as!T;}
+            if(isMapping){return this["="].as!(T, stringConversion);}
 
             static if(isSomeString!T)
             {
-                //Try to convert to string.
-                try
+                static if(!stringConversion) 
                 {
-                    return value_.coerce!T();
+                    if(isString){return to!T(value_.get!string);}
+                    throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                                    ". Expected: " ~ typeid(T).toString, startMark_);
                 }
-                catch(VariantException e)
+                else
                 {
-                    throw new Error("Unable to convert node value to string", startMark_);
+                    //Try to convert to string.
+                    try
+                    {
+                        return value_.coerce!T();
+                    }
+                    catch(VariantException e)
+                    {
+                        throw new Error("Unable to convert node value to string", startMark_);
+                    }
                 }
             }
             else 
@@ -577,10 +607,17 @@ struct Node
                 throw new Error("Node has unexpected type: " ~ type.toString ~ 
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
+            assert(false, "This code should never be reached");
+        }
+        unittest
+        {
+            assertThrown!NodeException(Node("42").get!int);
+            Node(YAMLNull()).get!YAMLNull;
         }
 
-        //Const version of get.
-        @property T get(T)() const if(is(T == const))
+        ///Ditto.
+        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() const
+            if(is(T == const))
         {
             if(isType!(Unqual!T)){return value_.get!T;}
 
@@ -598,19 +635,28 @@ struct Node
 
             //If we're getting from a mapping and we're not getting Node.Pair[],
             //we're getting the default value.
-            if(isMapping){return indexConst("=").as!T;}
+            if(isMapping){return indexConst("=").as!( T, stringConversion);}
 
             static if(isSomeString!T)
             {
-                //Try to convert to string.
-                try
+                static if(!stringConversion) 
                 {
-                    //NOTE: We are casting away const here
-                    return (cast(Value)value_).coerce!T();
+                    if(isString){return to!T(value_.get!(const string));}
+                    throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                                    ". Expected: " ~ typeid(T).toString, startMark_);
                 }
-                catch(VariantException e)
+                else
                 {
-                    throw new Error("Unable to convert node value to string", startMark_);
+                    //Try to convert to string.
+                    try
+                    {
+                        //NOTE: We are casting away const here
+                        return (cast(Value)value_).coerce!T();
+                    }
+                    catch(VariantException e)
+                    {
+                        throw new Error("Unable to convert node value to string", startMark_);
+                    }
                 }
             }
             else 
@@ -657,8 +703,9 @@ struct Node
          *
          *
          * If the node is a mapping, return the value corresponding to the first 
-         * key equal to index, even after conversion. I.e; node["12"] will 
-         * return value of the first key that equals "12", even if it's an integer.
+         * key equal to index.
+         *
+         * To get element at a null index, use YAMLNull for index.
          *
          * Params:  index = Index to use.
          *
@@ -709,16 +756,91 @@ struct Node
             Node k4 = Node("14");
 
             Node narray = Node([n1, n2, n3, n4]);
-            Node nmap   = Node([Pair(k1, n1),
-                                Pair(k2, n2),  
-                                Pair(k3, n3),  
-                                Pair(k4, n4)]);
+            Node nmap   = Node([k1, k2, k3, k4], 
+                               [n1, n2, n3, n4]);
 
             assert(narray[0].as!int == 11);
             assert(null !is collectException(narray[42]));
             assert(nmap["11"].as!int == 11);
             assert(nmap["14"].as!int == 14);
             assert(null !is collectException(nmap["42"]));
+
+            narray.add(YAMLNull());
+            nmap.add(YAMLNull(), "Nothing");
+            assert(narray[4].as!YAMLNull == YAMLNull());
+            assert(nmap[YAMLNull()].as!string == "Nothing");
+
+            assertThrown!NodeException(nmap[11]);
+            assertThrown!NodeException(nmap[14]);
+        }
+
+        /**
+         * Determine if a collection contains specified item.
+         *
+         * If the node is a sequence, check if it contains the specified item.
+         * If it's a mapping, check if it has a value that matches specified item.
+         *
+         * To check for a null item, use YAMLNull for rhs.
+         *
+         * Params:  rhs = Item to look for.
+         *
+         * Returns: true if rhs can was found, false otherwise.
+         *
+         * Throws:  NodeException if the node is not a collection.
+         */
+        bool contains(T)(T rhs) const
+        {
+            if(isSequence)
+            {
+                foreach(ref node; value_.get!(const Node[]))
+                {
+                    if(node == rhs){return true;}
+                } 
+                return false;
+            }
+            else if(isMapping)
+            {
+                return findPair!(T, true)(rhs) >= 0;
+            }
+            throw new Error("Trying to use the in operator on a node that is not a collection", 
+                            startMark_);
+        }
+        unittest
+        {
+            auto seq = Node([1, 2, 3, 4, 5]);
+            assert(seq.contains(3));
+            assert(seq.contains(5));
+            assert(!seq.contains("5"));
+            assert(!seq.contains(6));
+            assert(!seq.contains(float.nan));
+
+            auto seq2 = Node(["1", "2"]);
+            assert(seq2.contains("1"));
+            assert(!seq2.contains(1));
+
+            auto map = Node(["1", "2", "3", "4"], [1, 2, 3, 4]);
+            assert(map.contains(1));
+            assert(!map.contains("1"));
+            assert(!map.contains(5));
+            assert(!map.contains(float.nan));
+
+            assert(!seq.contains(YAMLNull()));
+            assert(!map.contains(YAMLNull()));
+            seq.add(YAMLNull());
+            map.add("Nothing", YAMLNull());
+            assert(seq.contains(YAMLNull()));
+            assert(map.contains(YAMLNull()));
+
+            auto map2 = Node([1, 2, 3, 4], [1, 2, 3, 4]);
+            assert(!map2.contains("1"));
+            assert(map2.contains(1));
+
+            //scalar
+            assertThrown!NodeException(Node(1).contains(4));
+
+            auto mapNan = Node([1.0, 2], [1, double.nan]);
+
+            assert(mapNan.contains(double.nan));
         }
 
         /**
@@ -735,6 +857,8 @@ struct Node
          * pair is added to the mapping. In sequences the index must be in 
          * range. This ensures behavior siilar to D arrays and associative 
          * arrays.
+         *
+         * To set element at a null index, use YAMLNull for index.
          *
          * Params:  index = Index of the value to set.
          *
@@ -782,6 +906,9 @@ struct Node
                 opIndexAssign(42, 3);
                 assert(length == 5);
                 assert(opIndex(3).as!int == 42);
+
+                opIndexAssign(YAMLNull(), 0);
+                assert(opIndex(0) == YAMLNull());
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
@@ -790,6 +917,15 @@ struct Node
                 assert(length == 4);
                 assert(opIndex("3").as!int == 42);
                 assert(opIndex(456).as!int == 123);
+
+                opIndexAssign(43, 3);
+                //3 and "3" should be different
+                assert(length == 5);
+                assert(opIndex("3").as!int == 42);
+                assert(opIndex(3).as!int == 43);
+
+                opIndexAssign(YAMLNull(), "2");
+                assert(opIndex("2") == YAMLNull());
             }
         }
 
@@ -1021,8 +1157,7 @@ struct Node
          *
          * This method can only be called on collection nodes.
          *
-         * If the node is a sequence, the first node matching value (including
-         * conversion, so e.g. "42" matches 42) is removed.
+         * If the node is a sequence, the first node matching value is removed.
          * If the node is a mapping, the first key-value pair where _value 
          * matches specified value is removed.
          * 
@@ -1036,7 +1171,8 @@ struct Node
             {
                 foreach(idx, ref elem; get!(Node[]))
                 {
-                    if(elem.convertsTo!T && elem.as!T == value)
+                    if(elem.convertsTo!T && 
+                       elem.as!(T, No.stringConversion) == value)
                     {
                         removeAt(idx);
                         return;
@@ -1067,10 +1203,19 @@ struct Node
                 assert(length == 4);
                 assert(opIndex(2).as!int == 4);
                 assert(opIndex(3).as!int == 3);
+
+                add(YAMLNull());
+                assert(length == 5);
+                remove(YAMLNull());
+                assert(length == 4);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
                 remove(4);
+                assert(length == 2);
+                add("nullkey", YAMLNull());
+                assert(length == 3);
+                remove(YAMLNull());
                 assert(length == 2);
             }
         }
@@ -1083,7 +1228,7 @@ struct Node
          * If the node is a sequence, index must be integral.
          *
          * If the node is a mapping, remove the first key-value pair where 
-         * key matches index (including conversion, so e.g. "42" matches 42).
+         * key matches index.
          * 
          * If the node is a mapping and no key matches index, nothing is removed
          * and no exception is thrown. This ensures behavior siilar to D arrays 
@@ -1130,12 +1275,20 @@ struct Node
             with(Node([1, 2, 3, 4, 3]))
             {
                 removeAt(3);
+                assertThrown!NodeException(removeAt("3"));
                 assert(length == 4);
                 assert(opIndex(3).as!int == 3);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
+                //no integer 2 key, so don't remove anything
+                removeAt(2);
+                assert(length == 3);
                 removeAt("2");
+                assert(length == 2);
+                add(YAMLNull(), "nullval");
+                assert(length == 3);
+                removeAt(YAMLNull());
                 assert(length == 2);
             }
         }
@@ -1201,9 +1354,11 @@ struct Node
             {
                 try
                 {
-                    static if(is(T == const))
+                    auto stored = get!(const(Unqual!T), No.stringConversion); 
+                    //Need to handle NaNs separately.
+                    static if(isFloatingPoint!T)
                     {
-                        return rhs == get!T;
+                        return rhs == stored || (isNaN(rhs) && isNaN(stored));
                     }
                     else
                     {
@@ -1429,26 +1584,14 @@ struct Node
                 static if(value){node = &pair.value;}
                 else{node = &pair.key;}
 
-                static if(is(Unqual!T == Node))
+
+                bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) || 
+                                 (isIntegral!T && node.isInt) ||
+                                 (isSomeString!T && node.isString) ||
+                                 (node.isType!T);
+                if(typeMatch && *node == index)
                 {
-                    if(*node == index){return idx;}
-                }
-                else static if(isFloatingPoint!T)
-                {
-                    //Need to handle NaNs separately.
-                    if((node.as!T == index) ||
-                       (isFloat && isNaN(index) && isNaN(node.as!real)))
-                    {
-                        return idx;
-                    }
-                }
-                else 
-                {  
-                    try if(node.as!(const T) == index){return idx;}
-                    catch(NodeException e)
-                    {
-                        continue;
-                    }
+                    return idx;
                 }
             }
             return -1;
