@@ -817,6 +817,7 @@ struct Node
         //Unittest for contains() and containsKey().
         unittest
         {
+            writeln("D:YAML Node contains/containsKey unittest");
             auto seq = Node([1, 2, 3, 4, 5]);
             assert(seq.contains(3));
             assert(seq.contains(5));
@@ -1185,39 +1186,13 @@ struct Node
          * If the node is a mapping, the first key-value pair where _value 
          * matches specified value is removed.
          * 
-         * Params:  value = Value to _remove.
+         * Params:  rhs = Value to _remove.
          *
          * Throws:  NodeException if the node is not a collection.
          */
-        void remove(T)(T value)
+        void remove(T)(T rhs)
         {
-            if(isSequence())
-            {
-                foreach(idx, ref elem; get!(Node[]))
-                {
-                    if(elem.convertsTo!T && 
-                       elem.as!(T, No.stringConversion) == value)
-                    {
-                        removeAt(idx);
-                        return;
-                    }
-                }
-                return;
-            }
-            else if(isMapping())
-            {
-                const idx = findPair!(T, true)(value);
-                if(idx >= 0)
-                {
-                    auto pairs = as!(Node.Pair[])();
-                    moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
-                    pairs.length = pairs.length - 1;
-                    value_ = Value(pairs);
-                }
-                return;
-            }
-            throw new Error("Trying to remove an element from a " ~ nodeTypeString ~ " node", 
-                            startMark_);
+            remove_!(T, No.key, "remove")(rhs);
         }
         unittest
         {
@@ -1266,34 +1241,7 @@ struct Node
          */
         void removeAt(T)(T index)
         {
-            if(isSequence())
-            {
-                //This ensures T is integral.
-                checkSequenceIndex(index);
-                static if(isIntegral!T)
-                {
-                    auto nodes = value_.get!(Node[]);
-                    moveAll(nodes[index + 1 .. $], nodes[index .. $ - 1]);
-                    nodes.length = nodes.length - 1;
-                    value_ = Value(nodes);
-                    return;
-                }
-                assert(false);
-            }
-            else if(isMapping())
-            {
-                const idx = findPair(index);
-                if(idx >= 0)
-                {
-                    auto pairs = get!(Node.Pair[])();
-                    moveAll(pairs[idx + 1 .. $], pairs[idx .. $ - 1]);
-                    pairs.length = pairs.length - 1;
-                    value_ = Value(pairs);
-                }
-                return;
-            }
-            throw new Error("Trying to remove an element from a " ~ nodeTypeString ~ " node",
-                            startMark_);
+            remove_!(T, Yes.key, "removeAt")(index);
         }
         unittest
         {
@@ -1628,6 +1576,50 @@ struct Node
 
             throw new Error("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
                             startMark_);
+        }
+
+        //Implementation of remove() and removeAt()
+        void remove_(T, Flag!"key" key, string func)(T rhs)
+        {
+            enforce(isSequence || isMapping,
+                    new Error("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node", 
+                              startMark_));
+
+            static void removeElem(E, I)(ref Node node, I index)
+            {
+                auto elems = node.value_.get!(E[]);
+                moveAll(elems[index + 1 .. $], elems[index .. $ - 1]);
+                elems.length = elems.length - 1;
+                node.value_ = Value(elems);
+            }
+
+            if(isSequence())
+            {
+                static long getIndex(ref Node node, ref T rhs)
+                {
+                    foreach(idx, ref elem; node.get!(Node[])) with(elem)
+                    {
+                        if(convertsTo!T && as!(T, No.stringConversion) == rhs)
+                        {
+                            return idx;
+                        }
+                    }
+                    return -1;
+                }
+
+                const index = select!key(rhs, getIndex(this, rhs));
+
+                //This throws if the index is not integral.
+                checkSequenceIndex(index);
+
+                static if(isIntegral!(typeof(index))){removeElem!Node(this, index);}
+                else                                 {assert(false, "Non-integral sequence index");}
+            }
+            else if(isMapping())
+            {
+                const index = findPair!(T, !key)(rhs);
+                if(index >= 0){removeElem!Pair(this, index);}
+            }
         }
 
         //Get index of pair with key (or value, if value is true) matching index.
