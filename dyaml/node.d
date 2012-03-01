@@ -559,7 +559,7 @@ struct Node
                 {
                     return (cast(YAMLContainer!T)object).value_;
                 }
-                throw new Error("Node has unexpected type: " ~ object.type.toString ~ 
+                throw new Error("Node stores unexpected type: " ~ object.type.toString ~ 
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -572,7 +572,7 @@ struct Node
                 static if(!stringConversion) 
                 {
                     if(isString){return to!T(value_.get!string);}
-                    throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                    throw new Error("Node stores unexpected type: " ~ type.toString ~ 
                                     ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else
@@ -604,7 +604,7 @@ struct Node
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                throw new Error("Node stores unexpected type: " ~ type.toString ~ 
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
             assert(false, "This code should never be reached");
@@ -642,7 +642,7 @@ struct Node
                 static if(!stringConversion) 
                 {
                     if(isString){return to!T(value_.get!(const string));}
-                    throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                    throw new Error("Node stores unexpected type: " ~ type.toString ~ 
                                     ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else
@@ -675,7 +675,7 @@ struct Node
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node has unexpected type: " ~ type.toString ~ 
+                throw new Error("Node stores unexpected type: " ~ type.toString ~ 
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
@@ -693,7 +693,8 @@ struct Node
         {
             if(isSequence)    {return value_.get!(const Node[]).length;}
             else if(isMapping){return value_.get!(const Pair[]).length;}
-            throw new Error("Trying to get length of a scalar node", startMark_);
+            throw new Error("Trying to get length of a " ~ nodeTypeString ~ " node", 
+                            startMark_);
         }
 
         /**
@@ -737,7 +738,7 @@ struct Node
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
                 throw new Error(msg, startMark_);
             }
-            throw new Error("Trying to index node that does not support indexing", startMark_);
+            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         unittest
         {
@@ -917,7 +918,7 @@ struct Node
                 return;
             }
 
-            throw new Error("Trying to index a scalar node.", startMark_);
+            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         unittest
         {
@@ -963,7 +964,7 @@ struct Node
         int opApply(T)(int delegate(ref T) dg)
         {
             enforce(isSequence, 
-                    new Error("Trying to iterate over a node that is not a sequence",
+                    new Error("Trying to sequence-foreach over a " ~ nodeTypeString ~ "node",
                               startMark_));
 
             int result = 0;
@@ -1020,7 +1021,7 @@ struct Node
         int opApply(K, V)(int delegate(ref K, ref V) dg)
         {
             enforce(isMapping,
-                    new Error("Trying to iterate over a node that is not a mapping",
+                    new Error("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             int result = 0;
@@ -1120,7 +1121,7 @@ struct Node
         void add(T)(T value)
         {
             enforce(isSequence(), 
-                    new Error("Trying to add an element to a non-sequence node", startMark_));
+                    new Error("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
 
             auto nodes = get!(Node[])();
             static if(is(Unqual!T == Node)){nodes ~= value;}
@@ -1157,7 +1158,8 @@ struct Node
         void add(K, V)(K key, V value)
         {
             enforce(isMapping(), 
-                    new Error("Trying to add a key-value pair to a non-mapping node", 
+                    new Error("Trying to add a key-value pair to a " ~ 
+                              nodeTypeString ~ " node", 
                               startMark_));
 
             auto pairs = get!(Node.Pair[])();
@@ -1214,7 +1216,8 @@ struct Node
                 }
                 return;
             }
-            throw new Error("Trying to remove an element from a scalar node", startMark_);
+            throw new Error("Trying to remove an element from a " ~ nodeTypeString ~ " node", 
+                            startMark_);
         }
         unittest
         {
@@ -1289,7 +1292,8 @@ struct Node
                 }
                 return;
             }
-            throw new Error("Trying to remove an element from a scalar node", startMark_);
+            throw new Error("Trying to remove an element from a " ~ nodeTypeString ~ " node",
+                            startMark_);
         }
         unittest
         {
@@ -1652,6 +1656,9 @@ struct Node
         //Check if index is integral and in range.
         void checkSequenceIndex(T)(T index) const
         {
+            assert(isSequence, 
+                   "checkSequenceIndex() called on a " ~ nodeTypeString ~ " node");
+
             static if(!isIntegral!T)
             {
                 throw new Error("Indexing a sequence with a non-integral type.", startMark_);
@@ -1687,7 +1694,7 @@ struct Node
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
                 throw new Error(msg, startMark_);
             }
-            throw new Error("Trying to index node that does not support indexing", startMark_);
+            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
 }
 
