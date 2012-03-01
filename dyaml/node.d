@@ -775,36 +775,45 @@ struct Node
         }
 
         /**
-         * Determine if a collection contains specified item.
+         * Determine if a collection contains specified value.
          *
-         * If the node is a sequence, check if it contains the specified item.
-         * If it's a mapping, check if it has a value that matches specified item.
+         * If the node is a sequence, check if it contains the specified value.
+         * If it's a mapping, check if it has a value that matches specified value.
          *
-         * To check for a null item, use YAMLNull for rhs.
+         * To check for a null value, use YAMLNull for rhs.
          *
          * Params:  rhs = Item to look for.
          *
-         * Returns: true if rhs can was found, false otherwise.
+         * Returns: true if rhs was found, false otherwise.
          *
          * Throws:  NodeException if the node is not a collection.
          */
         bool contains(T)(T rhs) const
         {
-            if(isSequence)
-            {
-                foreach(ref node; value_.get!(const Node[]))
-                {
-                    if(node == rhs){return true;}
-                } 
-                return false;
-            }
-            else if(isMapping)
-            {
-                return findPair!(T, true)(rhs) >= 0;
-            }
-            throw new Error("Trying to use the in operator on a node that is not a collection", 
-                            startMark_);
+            return contains_!(T, No.key, "contains")(rhs);
         }
+
+
+        /**
+         * Determine if a collection contains specified key.
+         *
+         * If the node is a mapping, check if it has a key
+         * that matches specified key.
+         *
+         * To check for a null key, use YAMLNull for rhs.
+         *
+         * Params:  rhs = Item to look for.
+         *
+         * Returns: true if rhs was found, false otherwise.
+         *
+         * Throws:  NodeException if the node is not a mapping.
+         */
+        bool containsKey(T)(T rhs) const
+        {
+            return contains_!(T, Yes.key, "containsKey")(rhs);
+        }
+
+        //Unittest for contains() and containsKey().
         unittest
         {
             auto seq = Node([1, 2, 3, 4, 5]);
@@ -813,6 +822,7 @@ struct Node
             assert(!seq.contains("5"));
             assert(!seq.contains(6));
             assert(!seq.contains(float.nan));
+            assertThrown!NodeException(seq.containsKey(5));
 
             auto seq2 = Node(["1", "2"]);
             assert(seq2.contains("1"));
@@ -823,24 +833,36 @@ struct Node
             assert(!map.contains("1"));
             assert(!map.contains(5));
             assert(!map.contains(float.nan));
+            assert(map.containsKey("1"));
+            assert(map.containsKey("4"));
+            assert(!map.containsKey(1));
+            assert(!map.containsKey("5"));
 
             assert(!seq.contains(YAMLNull()));
             assert(!map.contains(YAMLNull()));
+            assert(!map.containsKey(YAMLNull()));
             seq.add(YAMLNull());
             map.add("Nothing", YAMLNull());
             assert(seq.contains(YAMLNull()));
             assert(map.contains(YAMLNull()));
+            assert(!map.containsKey(YAMLNull()));
+            map.add(YAMLNull(), "Nothing");
+            assert(map.containsKey(YAMLNull()));
 
             auto map2 = Node([1, 2, 3, 4], [1, 2, 3, 4]);
             assert(!map2.contains("1"));
             assert(map2.contains(1));
+            assert(!map2.containsKey("1"));
+            assert(map2.containsKey(1));
 
             //scalar
             assertThrown!NodeException(Node(1).contains(4));
+            assertThrown!NodeException(Node(1).containsKey(4));
 
-            auto mapNan = Node([1.0, 2], [1, double.nan]);
+            auto mapNan = Node([1.0, 2, double.nan], [1, double.nan, 5]);
 
             assert(mapNan.contains(double.nan));
+            assert(mapNan.containsKey(double.nan));
         }
 
         /**
@@ -1562,6 +1584,15 @@ struct Node
             return value_.type is node.value_.type;
         }
 
+        //Return a string describing node type (sequence, mapping or scalar)
+        @property string nodeTypeString() const
+        {
+            assert(isScalar || isSequence || isMapping, "Unknown node type");
+            return isScalar   ? "scalar"   :
+                   isSequence ? "sequence" :
+                   isMapping  ? "mapping" : "";
+        }
+
         //Determine if the value can be converted to specified type.
         bool convertsTo(T)() const
         {
@@ -1572,6 +1603,27 @@ struct Node
             else static if(isFloatingPoint!T){return isInt() || isFloat();}
             else static if(isIntegral!T)     {return isInt();}
             else                             {return false;}
+        }
+
+        //Implementation of contains() and containsKey().
+        bool contains_(T, Flag!"key" key, string func)(T rhs) const
+        {
+            static if(!key) if(isSequence)
+            {
+                foreach(ref node; value_.get!(const Node[]))
+                {
+                    if(node == rhs){return true;}
+                } 
+                return false;
+            }
+
+            if(isMapping)
+            {
+                return findPair!(T, !key)(rhs) >= 0;
+            }
+
+            throw new Error("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
+                            startMark_);
         }
 
         //Get index of pair with key (or value, if value is true) matching index.
