@@ -1588,7 +1588,7 @@ struct Node
             static void removeElem(E, I)(ref Node node, I index)
             {
                 auto elems = node.value_.get!(E[]);
-                moveAll(elems[index + 1 .. $], elems[index .. $ - 1]);
+                moveAll(elems[cast(size_t)index + 1 .. $], elems[cast(size_t)index .. $ - 1]);
                 elems.length = elems.length - 1;
                 node.value_ = Value(elems);
             }
