@@ -241,6 +241,8 @@ void main(string[] args)
     try{build(targets);}
     catch(CompileException e){writeln("Could not compile: " ~ e.msg);}
     catch(ProcessException e){writeln("Compilation failed: " ~ e.msg);}
+
+    writeln("DONE");
 }
 
 ///Print help information.
@@ -510,11 +512,11 @@ struct CompileOptions
             }
             version (Windows)
             {    
-                //TODO needs testing
-                //{    if (find(this.out_file, ".") <= rfind(this.out_file, "/"))
-                if(out_file.find('.') <= out_file.retro().find('/').retro())
+                auto dot = find(out_file, '.');
+                auto backslash = retro(find(retro(out_file), '/'));
+                if(dot <= backslash)
                 {
-                   out_file ~= bin_ext;
+                    out_file ~= bin_ext;
                 }
             }
         }
@@ -638,7 +640,7 @@ void execute(string command, string[] args)
 
     string full = command ~ " " ~ args.join(" ");
     writeln("CDC:  " ~ full);
-    if(int status = system(full) != 0)
+    if(int status = system(full ~ "\0") != 0)
     {
         throw new ProcessException("Process " ~ command ~ " exited with status " ~ 
                                    to!string(status));
