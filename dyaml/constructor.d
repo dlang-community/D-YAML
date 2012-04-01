@@ -314,8 +314,13 @@ final class Constructor
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
+            static type = is(T : string)       ? "scalar"   :
+                          is(T == Node[])      ? "sequence" :
+                          is(T == Node.Pair[]) ? "mapping"  :
+                                                 "ERROR";
             enforce((tag in *delegates!T) !is null,
-                    new Error("No constructor function for tag " ~ tag.get(), start, end));
+                    new Error("No constructor function from " ~ type ~
+                              " for tag " ~ tag.get(), start, end));
             Node node = Node(value);
             try
             {
