@@ -456,6 +456,9 @@ struct Node
         ///Is this node a user defined type?
         @property bool isUserType() const {return isType!YAMLObject;}
 
+        ///Is this node null?
+        @property bool isNull()     const {return isType!YAMLNull;}
+
         ///Return tag of the node.
         @property string tag()      const {return tag_.get;}
 
@@ -1526,9 +1529,6 @@ struct Node
 
         //Is the value a timestamp?
         alias isType!SysTime isTime;
-
-        //Is the value a null value?
-        alias isType!YAMLNull isNull;
 
         //Does given node have the same type as this node?
         bool hasEqualType(const ref Node node) const
