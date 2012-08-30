@@ -200,6 +200,9 @@ struct Node
         //Node collection style. Used to remember style this node was loaded with.
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
+        static assert(Value.sizeof <= 24, "Unexpected YAML value size");
+        static assert(Node.sizeof <= 48, "Unexpected YAML node size");
+
     public:
         /**
          * Construct a Node from a value.
@@ -1271,17 +1274,32 @@ struct Node
         }
 
         ///Compare with another _node.
-        const int opCmp(ref const Node node)
+        int opCmp(ref const Node node) const
         {
             return cmp!true(node);
         }
 
         //Compute hash of the node.
-        const hash_t toHash() 
+        hash_t toHash() const nothrow @safe
         {
-            const tagHash = tag_.isNull ? 0 : tag_.toHash();
-            //Variant toHash is not const at the moment, so we need to const-cast.
-            return tagHash + (cast(Value)value_).toHash();
+            // Hack to allow const nothrow @safe. 
+            // Should be rewritten once std.variant is fixed.
+            hash_t unsafeHash() nothrow @trusted
+            {
+                const tagHash = tag_.isNull ? 0 : tag_.toHash();
+                //Variant toHash is not nothrow at the moment, so we need to catch 
+                //an exception that is never thrown.
+                try
+                {
+                    //Variant toHash is not const at the moment, so we need to const-cast.
+                    return tagHash + (cast(Value)value_).toHash();
+                }
+                catch(Exception e)
+                {
+                    assert(false, "Unexpected exception caught");
+                }
+            }
+            return unsafeHash();
         }
 
     package:

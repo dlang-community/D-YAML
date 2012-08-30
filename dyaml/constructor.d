@@ -550,7 +550,7 @@ ubyte[] constructBinary(ref Node node)
             throw new Exception("Unable to decode base64 value: " ~ e.msg);
         }
     }
-    catch(UtfException e)
+    catch(UTFException e)
     {
         throw new Exception("Unable to decode base64 value: " ~ e.msg);
     }

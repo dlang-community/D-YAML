@@ -315,7 +315,7 @@ final class Reader
         void handleLoadCharsException(Exception e, ulong oldPosition)
         {
             try{throw e;}
-            catch(UtfException e)
+            catch(UTFException e)
             {
                 const position = stream_.position;
                 throw new ReaderException(format("Unicode decoding error between bytes ",

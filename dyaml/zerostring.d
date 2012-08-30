@@ -36,7 +36,7 @@ struct ZeroString(string TypeName)
         }
 
         ///Get the string.
-        @property string get() const
+        @property string get() const nothrow @trusted
         in{assert(!isNull());}
         body
         {
@@ -51,12 +51,12 @@ struct ZeroString(string TypeName)
         }
 
         ///Compute a hash.
-        hash_t toHash() const
+        hash_t toHash() const nothrow @safe
         in{assert(!isNull);}
         body
         {
             auto str = get();
-            return typeid(string).getHash(&str);
+            return getHash(str);
         }
 
         ///Compare with another string.
@@ -68,5 +68,14 @@ struct ZeroString(string TypeName)
         }
 
         ///Is this string null (invalid)?
-        @property bool isNull() const {return str_ is null;}
+        @property bool isNull() const nothrow @safe {return str_ is null;}
+
+    private:
+        ///Hack to allow toHash to be @safe.
+        //
+        //To remove this hack, need a typeid(string).getHash() replacement that does not take a pointer.
+        hash_t getHash(ref string str) const nothrow @trusted
+        {
+            return typeid(string).getHash(&str);
+        }
 }

@@ -24,7 +24,7 @@ class YAMLException : Exception
 }
 
 ///Position in a YAML stream, used for error messages.
-align(1) struct Mark
+struct Mark
 {
     private:
         ///Line number.
@@ -48,6 +48,8 @@ align(1) struct Mark
             return format("line ", clamped(line_), ",column ", clamped(column_));
         }
 }
+
+static assert(Mark.sizeof == 4, "Unexpected Mark size");
 
 package:
 //Base class of YAML exceptions with marked positions of the problem.
