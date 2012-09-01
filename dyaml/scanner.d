@@ -1609,7 +1609,7 @@ final class Scanner
             {
                 throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
             }
-            catch(UtfException e)
+            catch(UTFException e)
             {
                 throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
             }
