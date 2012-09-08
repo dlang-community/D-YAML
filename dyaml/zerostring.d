@@ -24,7 +24,7 @@ struct ZeroString(string TypeName)
         @disable int opCmp(ref ZeroString);
 
         ///Construct a string.
-        this(in string str)
+        this(in string str) pure nothrow @safe
         {
             if(str is null || str == "")
             {
@@ -44,7 +44,7 @@ struct ZeroString(string TypeName)
         }
 
         ///Test for equality with another string.
-        bool opEquals(const ref ZeroString str) const
+        bool opEquals(const ref ZeroString str) const nothrow @trusted
         {
             return isNull ? str.isNull : 
                    str.isNull ? false : (0 == strcmp(str_, str.str_));
@@ -60,7 +60,7 @@ struct ZeroString(string TypeName)
         }
 
         ///Compare with another string.
-        int opCmp(const ref ZeroString str) const 
+        int opCmp(const ref ZeroString str) const nothrow @trusted
         in{assert(!isNull && !str.isNull);}
         body
         {
@@ -68,7 +68,7 @@ struct ZeroString(string TypeName)
         }
 
         ///Is this string null (invalid)?
-        @property bool isNull() const nothrow @safe {return str_ is null;}
+        @property bool isNull() pure const nothrow @safe {return str_ is null;}
 
     private:
         ///Hack to allow toHash to be @safe.

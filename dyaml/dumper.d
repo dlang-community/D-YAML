@@ -155,7 +155,7 @@ struct Dumper
          *
          * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(string filename)
+        this(string filename) @safe
         {
             name_ = filename;
             try{this(new File(filename, FileMode.OutNew));}
@@ -167,7 +167,7 @@ struct Dumper
         }
 
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
-        this(Stream stream)
+        this(Stream stream) pure @safe nothrow
         {
             resolver_    = new Resolver();
             representer_ = new Representer();
@@ -175,39 +175,39 @@ struct Dumper
         }
 
         ///Destroy the Dumper.
-        ~this()
+        pure @safe nothrow ~this()
         {
             YAMLVersion_ = null;
         }
 
         ///Set stream _name. Used in debugging messages.
-        @property void name(string name)
+        @property void name(string name) pure @safe nothrow
         {
             name_ = name;
         }
 
         ///Specify custom Resolver to use.
-        @property void resolver(Resolver resolver)
+        @property void resolver(Resolver resolver) @trusted
         {
             clear(resolver_);
             resolver_ = resolver;
         }
 
         ///Specify custom Representer to use.
-        @property void representer(Representer representer)
+        @property void representer(Representer representer) @trusted
         {
             clear(representer_);
             representer_ = representer;
         }
 
         ///Write scalars in _canonical form?
-        @property void canonical(bool canonical)
+        @property void canonical(bool canonical) pure @safe nothrow
         {
             canonical_ = canonical;
         }
 
         ///Set indentation width. 2 by default. Must not be zero.
-        @property void indent(uint indent)
+        @property void indent(uint indent) pure @safe nothrow
         in
         {   
             assert(indent != 0, "Can't use zero YAML indent width");
@@ -218,37 +218,37 @@ struct Dumper
         }
 
         ///Set preferred text _width.
-        @property void textWidth(uint width)
+        @property void textWidth(uint width) pure @safe nothrow
         {
             textWidth_ = width;
         }
 
         ///Set line break to use. Unix by default.
-        @property void lineBreak(LineBreak lineBreak)
+        @property void lineBreak(LineBreak lineBreak) pure @safe nothrow
         {
             lineBreak_ = lineBreak;
         }
 
         ///Set character _encoding to use. UTF-8 by default.
-        @property void encoding(Encoding encoding)
+        @property void encoding(Encoding encoding) pure @safe nothrow
         {
             encoding_ = encoding;
         }    
 
         ///Always explicitly write document start?
-        @property void explicitStart(bool explicit)
+        @property void explicitStart(bool explicit) pure @safe nothrow
         {
             explicitStart_ = explicit;
         }
 
         ///Always explicitly write document end?
-        @property void explicitEnd(bool explicit)
+        @property void explicitEnd(bool explicit) pure @safe nothrow
         {
             explicitEnd_ = explicit;
         }
 
         ///Specify YAML version string. "1.1" by default.
-        @property void YAMLVersion(string YAMLVersion)
+        @property void YAMLVersion(string YAMLVersion) pure @safe nothrow
         {
             YAMLVersion_ = YAMLVersion;
         }
@@ -283,7 +283,7 @@ struct Dumper
          * dumper.dump(Node("foo"));
          * --------------------
          */
-        @property void tagDirectives(string[string] tags)
+        @property void tagDirectives(string[string] tags) pure @trusted
         {
             TagDirective[] t;
             foreach(handle, prefix; tags)
@@ -309,7 +309,7 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes, 
          *          unable to write to file/stream).
          */
-        void dump(Node[] documents ...)
+        void dump(Node[] documents ...) @trusted
         {
             try
             {
@@ -336,7 +336,7 @@ struct Dumper
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(Event[] events)
+        void emit(Event[] events) @system
         {
             try
             {

@@ -41,7 +41,7 @@ struct Flags(names ...) if(names.length <= 8)
         ubyte flags_;
 
         ///Generate a setter and a getter for each flag.
-        static string flags(string[] names ...)
+        static string flags(string[] names ...) @trusted
         in
         {
             assert(names.length <= 8, "Flags struct can only hold 8 flags");
@@ -53,14 +53,14 @@ struct Flags(names ...) if(names.length <= 8)
             {
                 string istr = to!string(index);
                 result ~= "\n"
-                          "@property bool " ~ name ~ "(bool value)\n"
+                          "@property bool " ~ name ~ "(bool value) pure @safe nothrow\n"
                           "{\n"
                           "    flags_ = value ? flags_ | (1 <<" ~ istr ~  ")\n"
                           "                   : flags_ & (0xFF ^ (1 << " ~ istr ~"));\n"
                           "    return value;\n"
                           "}\n"
                           "\n"
-                          "@property bool " ~ name ~ "() const pure\n"
+                          "@property bool " ~ name ~ "() const pure @safe nothrow\n"
                           "{\n"
                           "    return (flags_ >> " ~ istr ~ ") & 1;\n"
                           "}\n";

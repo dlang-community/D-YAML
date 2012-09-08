@@ -91,10 +91,10 @@ struct Event
     CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     ///Is this a null (uninitialized) event?
-    @property bool isNull() const {return id == EventID.Invalid;}
+    @property bool isNull() const pure @system nothrow {return id == EventID.Invalid;}
 
     ///Get string representation of the token ID.
-    @property string idString() const {return to!string(id);}
+    @property string idString() const @system {return to!string(id);}
 }
 
 /**
@@ -104,13 +104,14 @@ struct Event
  *          end      = End position of the event in the file/stream.
  *          anchor   = Anchor, if this is an alias event.
  */
-Event event(EventID id)(in Mark start, in Mark end, in Anchor anchor = Anchor()) pure
+Event event(EventID id)(const Mark start, const Mark end, const Anchor anchor = Anchor()) 
+    pure @trusted nothrow
 {
     Event result;
     result.startMark = start;
-    result.endMark = end;
-    result.anchor = anchor;
-    result.id = id;
+    result.endMark   = end;
+    result.anchor    = anchor;
+    result.id        = id;
     return result;
 }
 
@@ -123,19 +124,19 @@ Event event(EventID id)(in Mark start, in Mark end, in Anchor anchor = Anchor())
  *          tag      = Tag of the sequence, if specified.
  *          implicit = Should the tag be implicitly resolved?
  */
-Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anchor, 
-                                       in Tag tag, in bool implicit, 
-                                       in CollectionStyle style) pure
+Event collectionStartEvent(EventID id)
+    (const Mark start, const Mark end, const Anchor anchor, const Tag tag,
+     const bool implicit, const CollectionStyle style) pure @trusted nothrow
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
     Event result;
-    result.startMark = start;
-    result.endMark = end;
-    result.anchor = anchor;
-    result.tag = tag;
-    result.id = id;
-    result.implicit = implicit;
+    result.startMark       = start;
+    result.endMark         = end;
+    result.anchor          = anchor;
+    result.tag             = tag;
+    result.id              = id;
+    result.implicit        = implicit;
     result.collectionStyle = style;
     return result;
 }
@@ -147,13 +148,14 @@ Event collectionStartEvent(EventID id)(in Mark start, in Mark end, in Anchor anc
  *          end      = End position of the event in the file/stream.
  *          encoding = Encoding of the stream.
  */
-Event streamStartEvent(in Mark start, in Mark end, in Encoding encoding) pure
+Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding) 
+    pure @trusted nothrow
 {
     Event result;
     result.startMark = start;
-    result.endMark = end;
-    result.id = EventID.StreamStart;
-    result.encoding = encoding;
+    result.endMark   = end;
+    result.id        = EventID.StreamStart;
+    result.encoding  = encoding;
     return result;
 }
 
@@ -165,7 +167,7 @@ alias event!(EventID.MappingEnd)  mappingEndEvent;
 
 ///Aliases for collection start events.
 alias collectionStartEvent!(EventID.SequenceStart) sequenceStartEvent;
-alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
+alias collectionStartEvent!(EventID.MappingStart)  mappingStartEvent;
 
 /**
  * Construct a document start event.
@@ -176,16 +178,16 @@ alias collectionStartEvent!(EventID.MappingStart) mappingStartEvent;
  *          YAMLVersion   = YAML version string of the document.
  *          tagDirectives = Tag directives of the document.
  */
-Event documentStartEvent(in Mark start, in Mark end, bool explicit, string YAMLVersion,
-                         TagDirective[] tagDirectives) pure
+Event documentStartEvent(const Mark start, const Mark end, bool explicit, string YAMLVersion,
+                         TagDirective[] tagDirectives) pure @trusted nothrow
 {
     Event result;
-    result.value = YAMLVersion;
-    result.startMark = start;
-    result.endMark = end;
-    result.id = EventID.DocumentStart;
+    result.value            = YAMLVersion;
+    result.startMark        = start;
+    result.endMark          = end;
+    result.id               = EventID.DocumentStart;
     result.explicitDocument = explicit;
-    result.tagDirectives = tagDirectives;
+    result.tagDirectives    = tagDirectives;
     return result;
 }
 
@@ -196,12 +198,12 @@ Event documentStartEvent(in Mark start, in Mark end, bool explicit, string YAMLV
  *          end      = End position of the event in the file/stream.
  *          explicit = Is this an explicit document end?
  */
-Event documentEndEvent(in Mark start, in Mark end, bool explicit) pure
+Event documentEndEvent(const Mark start, const Mark end, bool explicit) pure @trusted nothrow
 {
     Event result;
-    result.startMark = start;
-    result.endMark = end;
-    result.id = EventID.DocumentEnd;
+    result.startMark        = start;
+    result.endMark          = end;
+    result.id               = EventID.DocumentEnd;
     result.explicitDocument = explicit;
     return result;
 }
@@ -217,19 +219,19 @@ Event documentEndEvent(in Mark start, in Mark end, bool explicit) pure
  *          value    = String value of the scalar.
  *          style    = Scalar style.
  */
-Event scalarEvent(in Mark start, in Mark end, in Anchor anchor, in Tag tag, 
-                  in Tuple!(bool, bool) implicit, in string value, 
-                  in ScalarStyle style = ScalarStyle.Invalid) pure
+Event scalarEvent(const Mark start, const Mark end, const Anchor anchor, const Tag tag, 
+                  const Tuple!(bool, bool) implicit, const string value, 
+                  const ScalarStyle style = ScalarStyle.Invalid) pure @trusted nothrow
 {
     Event result;
-    result.value = value;
-    result.startMark = start;
-    result.endMark = end;
-    result.anchor = anchor;
-    result.tag = tag;
-    result.id = EventID.Scalar;
+    result.value       = value;
+    result.startMark   = start;
+    result.endMark     = end;
+    result.anchor      = anchor;
+    result.tag         = tag;
+    result.id          = EventID.Scalar;
     result.scalarStyle = style;
-    result.implicit = implicit[0];
-    result.implicit_2 = implicit[1];
+    result.implicit    = implicit[0];
+    result.implicit_2  = implicit[1];
     return result;
 }

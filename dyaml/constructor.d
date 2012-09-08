@@ -45,6 +45,7 @@ package class ConstructorException : YAMLException
      *          end   = End position of the error context.
      */
     this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
+        @safe nothrow
     {
         super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
               file, line);
@@ -87,7 +88,7 @@ final class Constructor
          *
          * Params:  defaultConstructors = Use constructors for default YAML tags?
          */
-        this(in bool defaultConstructors = true)
+        this(in bool defaultConstructors = true) @safe nothrow
         {
             if(!defaultConstructors){return;}
 
@@ -111,7 +112,7 @@ final class Constructor
         }
 
         ///Destroy the constructor.
-        ~this()
+        pure @safe nothrow ~this()
         {
             clear(fromScalar_);
             fromScalar_ = null;
@@ -189,7 +190,8 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorScalar(T)(in string tag, T function(ref Node) ctor)
+        void addConstructorScalar(T)(const string tag, T function(ref Node) ctor)
+            @safe nothrow
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -240,7 +242,8 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorSequence(T)(in string tag, T function(ref Node) ctor)
+        void addConstructorSequence(T)(const string tag, T function(ref Node) ctor)
+            @safe nothrow
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -291,7 +294,8 @@ final class Constructor
          * }
          * --------------------
          */
-        void addConstructorMapping(T)(in string tag, T function(ref Node) ctor)
+        void addConstructorMapping(T)(const string tag, T function(ref Node) ctor)
+            @safe nothrow
         {
             const t = Tag(tag);
             auto deleg = addConstructor!T(t, ctor);
@@ -310,7 +314,8 @@ final class Constructor
          *
          * Returns: Constructed node.
          */ 
-        Node node(T, U)(in Mark start, in Mark end, in Tag tag, T value, U style) 
+        Node node(T, U)(const Mark start, const Mark end, const Tag tag, 
+                        T value, U style) @trusted
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
@@ -350,7 +355,8 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(in Tag tag, T function(ref Node) ctor)
+        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor) 
+            @trusted nothrow
         {
             assert((tag in fromScalar_) is null && 
                    (tag in fromSequence_) is null &&
@@ -366,7 +372,7 @@ final class Constructor
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
-        auto delegates(T)() 
+        auto delegates(T)() pure @safe nothrow
         {
             static if(is(T : string))          {return &fromScalar_;}
             else static if(is(T : Node[]))     {return &fromSequence_;}
@@ -852,7 +858,7 @@ struct MyStruct
 {
     int x, y, z;
 
-    const int opCmp(ref const MyStruct s)
+    const int opCmp(ref const MyStruct s) const pure @safe nothrow
     {
         if(x != s.x){return x - s.x;}
         if(y != s.y){return y - s.y;}

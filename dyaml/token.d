@@ -69,7 +69,7 @@ struct Token
     Encoding encoding;
 
     ///Get string representation of the token ID.
-    @property string idString() const {return to!string(id);}
+    @property string idString() const @trusted {return to!string(id);}
 }
 
 /**
@@ -79,7 +79,7 @@ struct Token
  *          end   = End position of the token. 
  *          value = Value of the token.
  */
-Token directiveToken(in Mark start, in Mark end, in string value) pure
+Token directiveToken(in Mark start, in Mark end, in string value) pure @safe nothrow
 {
     return Token(value, start, end, TokenID.Directive);
 }
@@ -91,7 +91,7 @@ Token directiveToken(in Mark start, in Mark end, in string value) pure
  *          start = Start position of the token.
  *          end   = End position of the token.
  */
-Token simpleToken(TokenID id)(in Mark start, in Mark end) pure
+Token simpleToken(TokenID id)(in Mark start, in Mark end) pure @safe nothrow
 {
     return Token(null, start, end, id);
 }
@@ -103,7 +103,7 @@ Token simpleToken(TokenID id)(in Mark start, in Mark end) pure
  *          end      = End position of the token.
  *          encoding = Encoding of the stream.
  */
-Token streamStartToken(in Mark start, in Mark end, in Encoding encoding) pure
+Token streamStartToken(in Mark start, in Mark end, in Encoding encoding) pure @safe nothrow
 {
     return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
 }
@@ -126,7 +126,7 @@ alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
  *          end   = End position of the token.
  *          value = Value of the token.
  */
-Token simpleValueToken(TokenID id)(in Mark start, in Mark end, string value) pure
+Token simpleValueToken(TokenID id)(in Mark start, in Mark end, string value) pure @safe nothrow
 {
     return Token(value, start, end, id);
 }
@@ -144,7 +144,7 @@ alias simpleValueToken!(TokenID.Anchor) anchorToken;
  *          value = Value of the token.
  *          style = Style of the token.
  */
-Token scalarToken(in Mark start, in Mark end, in string value, in ScalarStyle style) pure
+Token scalarToken(in Mark start, in Mark end, in string value, in ScalarStyle style) pure @safe nothrow
 {
     return Token(value, start, end, TokenID.Scalar, style);
 }

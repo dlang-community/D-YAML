@@ -21,7 +21,7 @@ enum LineBreak
 package:
 
 //Get line break string for specified line break.
-string lineBreak(in LineBreak b) pure
+string lineBreak(in LineBreak b) pure @safe nothrow
 {
     final switch(b)
     {
