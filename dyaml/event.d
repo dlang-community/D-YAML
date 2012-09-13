@@ -95,6 +95,8 @@ struct Event
 
     ///Get string representation of the token ID.
     @property string idString() const @system {return to!string(id);}
+
+    static assert(Event.sizeof <= 48, "Event struct larger than expected");
 }
 
 /**
@@ -178,7 +180,7 @@ alias collectionStartEvent!(EventID.MappingStart)  mappingStartEvent;
  *          YAMLVersion   = YAML version string of the document.
  *          tagDirectives = Tag directives of the document.
  */
-Event documentStartEvent(const Mark start, const Mark end, bool explicit, string YAMLVersion,
+Event documentStartEvent(const Mark start, const Mark end, const bool explicit, string YAMLVersion,
                          TagDirective[] tagDirectives) pure @trusted nothrow
 {
     Event result;
@@ -198,7 +200,7 @@ Event documentStartEvent(const Mark start, const Mark end, bool explicit, string
  *          end      = End position of the event in the file/stream.
  *          explicit = Is this an explicit document end?
  */
-Event documentEndEvent(const Mark start, const Mark end, bool explicit) pure @trusted nothrow
+Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pure @trusted nothrow
 {
     Event result;
     result.startMark        = start;

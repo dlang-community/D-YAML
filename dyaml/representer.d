@@ -23,6 +23,7 @@ import std.exception;
 import std.format;
 import std.math;
 import std.stream;
+import std.typecons;
 
 import dyaml.exception;
 import dyaml.node;
@@ -66,7 +67,8 @@ final class Representer
          *                                   disabled to use custom representer
          *                                   functions for default types.
          */
-        this(bool useDefaultRepresenters = true) @safe
+        this(const Flag!"useDefaultRepresenters" useDefaultRepresenters = Yes.useDefaultRepresenters) 
+            @safe
         {
             if(!useDefaultRepresenters){return;}
             addRepresenter!YAMLNull(&representNull);

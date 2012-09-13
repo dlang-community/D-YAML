@@ -39,9 +39,9 @@ struct Serializer
         Resolver resolver_;
 
         ///Do all document starts have to be specified explicitly?
-        bool explicitStart_;
+        Flag!"explicitStart" explicitStart_;
         ///Do all document ends have to be specified explicitly?
-        bool explicitEnd_;
+        Flag!"explicitEnd" explicitEnd_;
         ///YAML version string.
         string YAMLVersion_;
 
@@ -69,14 +69,15 @@ struct Serializer
          *          tagDirectives = Tag directives to emit. 
          */
         this(ref Emitter emitter, Resolver resolver, Encoding encoding,
-             in bool explicitStart, in bool explicitEnd, string YAMLVersion, 
+             const Flag!"explicitStart" explicitStart, 
+             const Flag!"explicitEnd" explicitEnd, string YAMLVersion, 
              TagDirective[] tagDirectives) @trusted
         {
-            emitter_ = &emitter;
-            resolver_ = resolver;
+            emitter_       = &emitter;
+            resolver_      = resolver;
             explicitStart_ = explicitStart;
-            explicitEnd_ = explicitEnd;
-            YAMLVersion_ = YAMLVersion;
+            explicitEnd_   = explicitEnd;
+            YAMLVersion_   = YAMLVersion;
             tagDirectives_ = tagDirectives;
 
             emitter_.emit(streamStartEvent(Mark(), Mark(), encoding));

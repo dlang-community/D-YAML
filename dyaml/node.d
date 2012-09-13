@@ -155,7 +155,7 @@ struct Node
                 ///Equality test with another Pair.
                 bool opEquals(const ref Pair rhs) const @safe
                 {
-                    return cmp!true(rhs) == 0;
+                    return cmp!(Yes.useTag)(rhs) == 0;
                 } 
 
             private:
@@ -165,7 +165,7 @@ struct Node
                  * useTag determines whether or not we consider node tags 
                  * in the comparison.
                  */
-                int cmp(bool useTag)(ref const(Pair) rhs) const @safe
+                int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
                 {
                     const keyCmp = key.cmp!useTag(rhs.key);
                     return keyCmp != 0 ? keyCmp
@@ -493,7 +493,7 @@ struct Node
          */
         bool opEquals(T)(const auto ref T rhs) const @safe
         {
-            return equals!true(rhs);
+            return equals!(Yes.useTag)(rhs);
         }
         unittest
         {
@@ -605,7 +605,7 @@ struct Node
                     else if(isFloat()){return to!T(value_.get!(const real));}
                 }
                 else static if(isIntegral!T) if(isInt())
-                {                
+                {
                     const temp = value_.get!(const long);
                     enforce(temp >= T.min && temp <= T.max,
                             new Error("Integer value of type " ~ typeid(T).toString ~ 
@@ -676,7 +676,7 @@ struct Node
                     else if(isFloat()){return to!T(value_.get!(const real));}
                 }
                 else static if(isIntegral!T) if(isInt())
-                {                
+                {
                     const temp = value_.get!(const long);
                     enforce(temp >= T.min && temp <= T.max,
                             new Error("Integer value of type " ~ typeid(T).toString ~ 
@@ -1056,7 +1056,7 @@ struct Node
                     V tempValue = pair.value.as!V;
                     result = dg(tempKey, tempValue);
                 }
-                    
+
                 if(result){break;}
             }
             return result;
@@ -1134,7 +1134,7 @@ struct Node
 
             auto nodes = get!(Node[])();
             static if(is(Unqual!T == Node)){nodes ~= value;}
-            else                    {nodes ~= Node(value);}
+            else                           {nodes ~= Node(value);}
             value_ = Value(nodes);
         }
         unittest
@@ -1278,7 +1278,7 @@ struct Node
         ///Compare with another _node.
         int opCmp(ref const Node node) const @safe
         {
-            return cmp!true(node);
+            return cmp!(Yes.useTag)(node);
         }
 
         //Compute hash of the node.
@@ -1341,7 +1341,7 @@ struct Node
          *
          * useTag determines whether or not to consider tags in node-node comparisons.
          */
-        bool equals(bool useTag, T)(ref T rhs) const @safe
+        bool equals(Flag!"useTag" useTag, T)(ref T rhs) const @safe
         {
             static if(is(Unqual!T == Node))
             {
@@ -1373,7 +1373,7 @@ struct Node
          *
          * useTag determines whether or not to consider tags in the comparison.
          */
-        int cmp(bool useTag)(const ref Node rhs) const @trusted
+        int cmp(Flag!"useTag" useTag)(const ref Node rhs) const @trusted
         {
             //Compare tags - if equal or both null, we need to compare further.
             static if(useTag)
@@ -1591,7 +1591,7 @@ struct Node
 
             if(isMapping)
             {
-                return findPair!(T, !key)(rhs) >= 0;
+                return findPair!(T, key)(rhs) >= 0;
             }
 
             throw new Error("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
@@ -1637,20 +1637,20 @@ struct Node
             }
             else if(isMapping())
             {
-                const index = findPair!(T, !key)(rhs);
+                const index = findPair!(T, key)(rhs);
                 if(index >= 0){removeElem!Pair(this, index);}
             }
         }
 
-        //Get index of pair with key (or value, if value is true) matching index.
-        sizediff_t findPair(T, bool value = false)(const ref T index) const @safe
+        //Get index of pair with key (or value, if key is false) matching index.
+        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @safe
         {
             const pairs = value_.get!(const Pair[])();
             const(Node)* node;
             foreach(idx, ref const(Pair) pair; pairs)
             {
-                static if(value){node = &pair.value;}
-                else{node = &pair.key;}
+                static if(key){node = &pair.key;}
+                else          {node = &pair.value;}
 
 
                 bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) || 

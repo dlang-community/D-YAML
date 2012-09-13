@@ -22,6 +22,7 @@ import std.exception;
 import std.stdio; 
 import std.regex;
 import std.string;
+import std.typecons;
 import std.utf;
 
 import dyaml.node;
@@ -88,7 +89,8 @@ final class Constructor
          *
          * Params:  defaultConstructors = Use constructors for default YAML tags?
          */
-        this(in bool defaultConstructors = true) @safe nothrow
+        this(const Flag!"useDefaultConstructors" defaultConstructors = Yes.useDefaultConstructors)
+            @safe nothrow
         {
             if(!defaultConstructors){return;}
 
@@ -363,6 +365,7 @@ final class Constructor
                    (tag in fromMapping_) is null,
                    "Constructor function for tag " ~ tag.get ~ " is already "
                    "specified. Can't specify another one.");
+
 
             return (ref Node n)
             {

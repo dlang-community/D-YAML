@@ -332,7 +332,7 @@ struct Emitter
 
             encoding_ = event_.encoding;
             writeStreamStart();
-            state_ = &expectDocumentStart!true;
+            state_ = &expectDocumentStart!(Yes.first);
         }
 
         ///Expect nothing, throwing if we still have something.
@@ -344,7 +344,7 @@ struct Emitter
         //Document handlers.
 
         ///Handle start of a document.
-        void expectDocumentStart(bool first)() @trusted
+        void expectDocumentStart(Flag!"first" first)() @trusted
         {
             enforce(eventTypeIs(EventID.DocumentStart) || eventTypeIs(EventID.StreamEnd),
                     new Error("Expected DocumentStart or StreamEnd, but got " 
@@ -423,7 +423,7 @@ struct Emitter
                 writeIndent();
             }
             stream_.flush();
-            state_ = &expectDocumentStart!false;
+            state_ = &expectDocumentStart!(No.first);
         }
 
         ///Handle the root node of a document.
@@ -516,11 +516,11 @@ struct Emitter
             writeIndicator("[", Yes.needWhitespace, Yes.whitespace);
             ++flowLevel_;
             increaseIndent(Yes.flow);
-            state_ = &expectFlowSequenceItem!true;
+            state_ = &expectFlowSequenceItem!(Yes.first);
         }
 
         ///Handle a flow sequence item.
-        void expectFlowSequenceItem(bool first)() @trusted
+        void expectFlowSequenceItem(Flag!"first" first)() @trusted
         {
             if(event_.id == EventID.SequenceEnd)
             {
@@ -537,7 +537,7 @@ struct Emitter
             }
             static if(!first){writeIndicator(",", No.needWhitespace);}
             if(canonical_ || column_ > bestWidth_){writeIndent();}
-            states_ ~= &expectFlowSequenceItem!false;
+            states_ ~= &expectFlowSequenceItem!(No.first);
             expectSequenceNode();
         }
 
@@ -549,11 +549,11 @@ struct Emitter
             writeIndicator("{", Yes.needWhitespace, Yes.whitespace);
             ++flowLevel_;
             increaseIndent(Yes.flow);
-            state_ = &expectFlowMappingKey!true;
+            state_ = &expectFlowMappingKey!(Yes.first);
         }
 
         ///Handle a key in a flow mapping.
-        void expectFlowMappingKey(bool first)() @trusted
+        void expectFlowMappingKey(Flag!"first" first)() @trusted
         {
             if(event_.id == EventID.MappingEnd)
             {
@@ -587,7 +587,7 @@ struct Emitter
         void expectFlowMappingSimpleValue() @trusted
         {
             writeIndicator(":", No.needWhitespace);
-            states_ ~= &expectFlowMappingKey!false;
+            states_ ~= &expectFlowMappingKey!(No.first);
             expectMappingNode();
         }
 
@@ -596,7 +596,7 @@ struct Emitter
         {
             if(canonical_ || column_ > bestWidth_){writeIndent();}
             writeIndicator(":", Yes.needWhitespace);
-            states_ ~= &expectFlowMappingKey!false;
+            states_ ~= &expectFlowMappingKey!(No.first);
             expectMappingNode();
         }
 
@@ -608,11 +608,11 @@ struct Emitter
             const indentless = (context_ == Context.MappingNoSimpleKey ||
                                 context_ == Context.MappingSimpleKey) && !indentation_;
             increaseIndent(No.flow, indentless);
-            state_ = &expectBlockSequenceItem!true;
+            state_ = &expectBlockSequenceItem!(Yes.first);
         }
 
         ///Handle a block sequence item.
-        void expectBlockSequenceItem(bool first)() @trusted
+        void expectBlockSequenceItem(Flag!"first" first)() @trusted
         {
             static if(!first) if(event_.id == EventID.SequenceEnd)
             {
@@ -623,7 +623,7 @@ struct Emitter
 
             writeIndent();
             writeIndicator("-", Yes.needWhitespace, No.whitespace, Yes.indentation);
-            states_ ~= &expectBlockSequenceItem!false;
+            states_ ~= &expectBlockSequenceItem!(No.first);
             expectSequenceNode();
         }
 
@@ -633,11 +633,11 @@ struct Emitter
         void expectBlockMapping() @safe
         {
             increaseIndent(No.flow);
-            state_ = &expectBlockMappingKey!true;
+            state_ = &expectBlockMappingKey!(Yes.first);
         }
 
         ///Handle a key in a block mapping.
-        void expectBlockMappingKey(bool first)() @trusted
+        void expectBlockMappingKey(Flag!"first" first)() @trusted
         {
             static if(!first) if(event_.id == EventID.MappingEnd)
             {
@@ -663,7 +663,7 @@ struct Emitter
         void expectBlockMappingSimpleValue() @trusted
         {
             writeIndicator(":", No.needWhitespace);
-            states_ ~= &expectBlockMappingKey!false;
+            states_ ~= &expectBlockMappingKey!(No.first);
             expectMappingNode();
         }
 
@@ -672,7 +672,7 @@ struct Emitter
         {
             writeIndent();
             writeIndicator(":", Yes.needWhitespace, No.whitespace, Yes.indentation);
-            states_ ~= &expectBlockMappingKey!false;
+            states_ ~= &expectBlockMappingKey!(No.first);
             expectMappingNode();
         }
 

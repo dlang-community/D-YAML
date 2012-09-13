@@ -136,9 +136,9 @@ struct Dumper
         ///Tag directives to use.
         TagDirective[] tags_ = null;
         ///Always write document start?
-        bool explicitStart_ = false;
+        Flag!"explicitStart" explicitStart_ = No.explicitStart;
         ///Always write document end?
-        bool explicitEnd_ = false;
+        Flag!"explicitEnd" explicitEnd_ = No.explicitEnd;
 
         ///Name of the output file or stream, used in error messages.
         string name_ = "<unknown>";
@@ -238,13 +238,13 @@ struct Dumper
         ///Always explicitly write document start?
         @property void explicitStart(bool explicit) pure @safe nothrow
         {
-            explicitStart_ = explicit;
+            explicitStart_ = explicit ? Yes.explicitStart : No.explicitStart;
         }
 
         ///Always explicitly write document end?
         @property void explicitEnd(bool explicit) pure @safe nothrow
         {
-            explicitEnd_ = explicit;
+            explicitEnd_ = explicit ? Yes.explicitEnd : No.explicitEnd;
         }
 
         ///Specify YAML version string. "1.1" by default.

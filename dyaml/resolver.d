@@ -61,7 +61,8 @@ final class Resolver
          *
          * Params:  defaultImplicitResolvers = Use default YAML implicit resolvers?
          */
-        this(bool defaultImplicitResolvers = true) @safe
+        this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers) 
+            @safe
         {
             defaultScalarTag_   = Tag("tag:yaml.org,2002:str");
             defaultSequenceTag_ = Tag("tag:yaml.org,2002:seq");
@@ -142,7 +143,8 @@ final class Resolver
          *
          * Returns: Resolved tag.
          */
-        Tag resolve(NodeID kind, Tag tag, string value, bool implicit) @safe 
+        Tag resolve(const NodeID kind, const Tag tag, const string value, 
+                    const bool implicit) @safe 
         {
             if(!tag.isNull() && tag.get() != "!"){return tag;}
 
