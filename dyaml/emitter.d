@@ -227,7 +227,7 @@ struct Emitter
         }
 
         ///Write a string to the file/stream.
-        void writeString(in string str) @system
+        void writeString(const string str) @system
         {
             try final switch(encoding_)
             {
@@ -759,7 +759,7 @@ struct Emitter
         }
 
         ///Process and write an anchor/alias.
-        void processAnchor(in string indicator) @trusted
+        void processAnchor(const string indicator) @trusted
         {
             if(event_.anchor.isNull())
             {
@@ -857,7 +857,7 @@ struct Emitter
         }
 
         ///Prepare YAML version string for output.
-        static string prepareVersion(in string YAMLVersion) @trusted
+        static string prepareVersion(const string YAMLVersion) @trusted
         {
             enforce(YAMLVersion.split(".")[0] == "1",
                     new Error("Unsupported YAML version: " ~ YAMLVersion));
@@ -877,7 +877,7 @@ struct Emitter
         }
 
         ///Prepare tag directive handle for output.
-        static string prepareTagHandle(in string handle) @trusted
+        static string prepareTagHandle(const string handle) @trusted
         {
             enforce(handle !is null && handle != "",
                     new Error("Tag handle must not be empty"));
@@ -892,7 +892,7 @@ struct Emitter
         }
 
         ///Prepare tag directive prefix for output.
-        static string prepareTagPrefix(in string prefix) @trusted
+        static string prepareTagPrefix(const string prefix) @trusted
         {
             enforce(prefix !is null && prefix != "",
                     new Error("Tag prefix must not be empty"));
@@ -1179,7 +1179,7 @@ struct Emitter
         void writeStreamEnd() @system {stream_.flush();}
 
         ///Write an indicator (e.g. ":", "[", ">", etc.).
-        void writeIndicator(in string indicator, in bool needWhitespace, 
+        void writeIndicator(const string indicator, in bool needWhitespace, 
                             in bool whitespace = false, in bool indentation = false) @system
         {
             const bool prefixSpace = !whitespace_ && needWhitespace;
@@ -1222,7 +1222,7 @@ struct Emitter
         }
 
         ///Start new line.
-        void writeLineBreak(in string data = null) @system
+        void writeLineBreak(const string data = null) @system
         {
             whitespace_ = indentation_ = true;
             ++line_;
@@ -1231,7 +1231,7 @@ struct Emitter
         }
 
         ///Write a YAML version directive.
-        void writeVersionDirective(in string versionText) @system
+        void writeVersionDirective(const string versionText) @system
         {
             writeString("%YAML ");
             writeString(versionText);
@@ -1239,7 +1239,7 @@ struct Emitter
         }
 
         ///Write a tag directive.
-        void writeTagDirective(in string handle, in string prefix) @system
+        void writeTagDirective(const string handle, const string prefix) @system
         {
             writeString("%TAG ");
             writeString(handle);
@@ -1571,7 +1571,7 @@ struct ScalarWriter
             size_t hintsIdx = 0;
             if(text_.length == 0){return hintsIdx;}
 
-            dchar lastChar(in string str, ref size_t end) 
+            dchar lastChar(const string str, ref size_t end) 
             {
                 size_t idx = end = end - strideBack(str, end);
                 return decode(text_, idx);

@@ -226,7 +226,7 @@ struct Node
          *                  be in full form, e.g. "tag:yaml.org,2002:int", not 
          *                  a shortcut, like "!!int".            
          */
-        this(T)(T value, in string tag = null) @trusted
+        this(T)(T value, const string tag = null) @trusted
             if (isSomeString!T || (!isArray!T && !isAssociativeArray!T))
         {
             tag_ = Tag(tag);
@@ -283,7 +283,7 @@ struct Node
          * auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
          * --------------------
          */
-        this(T)(T[] array, in string tag = null) @safe
+        this(T)(T[] array, const string tag = null) @safe
             if (!isSomeString!(T[]))
         {
             tag_ = Tag(tag);
@@ -348,7 +348,7 @@ struct Node
          * auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
          * --------------------
          */
-        this(K, V)(V[K] array, in string tag = null) @safe
+        this(K, V)(V[K] array, const string tag = null) @safe
         {
             tag_ = Tag(tag);
 
@@ -413,7 +413,7 @@ struct Node
          * auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
          * --------------------
          */
-        this(K, V)(K[] keys, V[] values, in string tag = null) @safe
+        this(K, V)(K[] keys, V[] values, const string tag = null) @safe
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
         {

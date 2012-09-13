@@ -24,7 +24,7 @@ struct ZeroString(string TypeName)
         @disable int opCmp(ref ZeroString);
 
         ///Construct a string.
-        this(in string str) pure nothrow @safe
+        this(const string str) pure nothrow @safe
         {
             if(str is null || str == "")
             {

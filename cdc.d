@@ -484,7 +484,7 @@ struct CompileOptions
          * Params:  options = Compiler command line options.
          *          sources = Source files to compile.
          */
-        this(string[] options, in string[] sources)
+        this(string[] options, const string[] sources)
         {   
             foreach(i, opt; options)
             {
@@ -530,7 +530,7 @@ struct CompileOptions
          *
          * Returns: Translated options.
          */
-        string[] get_options(in string compiler)
+        string[] get_options(const string compiler)
         {    
             string[] result = options_.dup;
 
@@ -593,7 +593,7 @@ struct CompileOptions
 ///Thrown at errors in execution of other processes (e.g. compiler commands).
 class CompileException : Exception 
 {
-    this(in string message, in string file, in size_t line){super(message, file, line);}
+    this(const string message, const string file, in size_t line){super(message, file, line);}
 };
 
 /**
@@ -602,7 +602,7 @@ class CompileException : Exception
  * Params:  compiler  = Compiler to execute.
  *          arguments = Compiler arguments.
  */
-void execute_compiler(in string compiler, string[] arguments)
+void execute_compiler(const string compiler, string[] arguments)
 {    
     try
     {
@@ -621,7 +621,7 @@ void execute_compiler(in string compiler, string[] arguments)
 }
 
 ///Thrown at errors in execution of other processes (e.g. compiler commands).
-class ProcessException : Exception {this(in string message){super(message);}};
+class ProcessException : Exception {this(const string message){super(message);}};
 
 /**
  * Execute a command-line program and print its output.
@@ -657,7 +657,7 @@ void execute(string command, string[] args)
  *
  * Bugs:    LDC fails to return any results. 
  */
-string[] scan(in string directory, string extensions ...)
+string[] scan(const string directory, string extensions ...)
 {    
     string[] result;
     foreach(string name; dirEntries(directory, SpanMode.depth))
