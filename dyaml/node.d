@@ -1336,6 +1336,28 @@ struct Node
             return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
+        //Construct Node.Value from a type it can store directly (after casting if needed)
+        static Value value(T)(T value) @trusted if(allowed!T)
+        {
+            static if(Value.allowed!T)
+            {
+                return Value(value);
+            }
+            else static if(isIntegral!T)
+            {
+                return Value(cast(long)(value));
+            }
+            else static if(isFloatingPoint!T)
+            {
+                return Value(cast(real)(value));
+            }
+            else static if(isSomeString!T)
+            {
+                return Value(to!string(value));
+            }
+            else static assert(false, "Unknown value type. Is value() in sync with allowed()?");
+        }
+
         /*
          * Equality test with any value.
          *

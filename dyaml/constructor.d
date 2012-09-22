@@ -369,8 +369,8 @@ final class Constructor
 
             return (ref Node n)
             {
-                static if(Node.Value.allowed!T){return Node.Value(ctor(n));}
-                else                           {return Node.userValue(ctor(n));}
+                static if(Node.allowed!T){return Node.value(ctor(n));}
+                else                     {return Node.userValue(ctor(n));}
             }; 
         }
 
