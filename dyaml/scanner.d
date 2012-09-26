@@ -94,7 +94,7 @@ final class Scanner
             ///Index of the key token from start (first token scanned being 0).
             uint tokenIndex;
             ///Line the key starts at.
-            ushort line;
+            uint line;
             ///Column the key starts at.
             ushort column;
             ///Is this required to be a simple key?
@@ -345,7 +345,7 @@ final class Scanner
             const column = reader_.column;
             const key = SimpleKey(cast(uint)reader_.charIndex, 
                                   tokenCount, 
-                                  line < ushort.max ? cast(ushort)line : ushort.max,
+                                  line,
                                   column < ushort.max ? cast(ushort)column : ushort.max,
                                   required);
 
