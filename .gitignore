@@ -1,3 +1,12 @@
+/examples/yaml_gen/yaml_gen
+/unittest.obj
+/examples/yaml_stats/yaml_stats
+/examples/yaml_bench/yaml_bench
+/examples/representer/output.yaml
+/examples/getting_started/output.yaml
+/examples/getting_started/main.obj
+/cdc.obj
+/unittest
 # Backups #
 ###########
 *~
