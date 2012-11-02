@@ -973,7 +973,7 @@ struct Node
         int opApply(T)(int delegate(ref T) dg) @trusted
         {
             enforce(isSequence, 
-                    new Error("Trying to sequence-foreach over a " ~ nodeTypeString ~ "node",
+                    new Error("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             int result = 0;

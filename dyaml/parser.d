@@ -517,7 +517,7 @@ final class Parser
 
             immutable token = scanner_.peekToken();
             throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
-                            startMark, "expected the node content, but found: " 
+                            startMark, "expected node content, but found: " 
                             ~ token.idString, token.startMark);
         }
 
