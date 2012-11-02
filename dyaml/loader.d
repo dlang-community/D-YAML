@@ -64,7 +64,7 @@ import dyaml.token;
  *                     "green: '#00ff00'\n"
  *                     "blue:  '#0000ff'";
  *
- * auto colors = Loader(new MemoryStream(cast(char[])yaml_input)).load();
+ * auto colors = Loader.fromString(yaml_input).load();
  *
  * foreach(string color, string value; colors)
  * {
@@ -124,6 +124,20 @@ struct Loader
                 throw new YAMLException("Unable to open file " ~ filename ~ 
                                         " for YAML loading: " ~ e.msg);
             }
+        }
+
+        /// Construct a Loader to load YAML from a string.
+        ///
+        /// Params:  data = String to load YAML from.
+        ///
+        /// Returns: Loader loading YAML from given string.
+        static Loader fromString(string data)
+        {
+            return Loader(new MemoryStream(cast(char[])data));
+        }
+        unittest
+        {
+            assert(Loader.fromString("42").load().as!int == 42);
         }
         
         /**
