@@ -523,7 +523,7 @@ Node representSysTime(ref Node node, Representer representer) @system
 }
 
 ///Represent a sequence _node as sequence/set.
-Node representNodes(ref Node node, Representer representer) @safe
+Node representNodes(ref Node node, Representer representer) @trusted
 {
     auto nodes = node.as!(Node[]);
     if(node.tag_ == Tag("tag:yaml.org,2002:set"))

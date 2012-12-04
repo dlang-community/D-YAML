@@ -152,7 +152,7 @@ final class Scanner
 
     public:
         ///Construct a Scanner using specified Reader.
-        this(Reader reader) @trusted nothrow
+        this(Reader reader) @trusted
         {
             //Return the next token, but do not delete it from the queue
             reader_ = reader;

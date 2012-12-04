@@ -58,7 +58,7 @@ abstract class MarkedYAMLException : YAMLException
 {
     //Construct a MarkedYAMLException with specified context and problem.
     this(string context, Mark contextMark, string problem, Mark problemMark,
-         string file = __FILE__, int line = __LINE__) @safe nothrow
+         string file = __FILE__, int line = __LINE__) @safe
     {
         const msg = context ~ '\n' ~
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
@@ -68,7 +68,7 @@ abstract class MarkedYAMLException : YAMLException
 
     //Construct a MarkedYAMLException with specified problem.
     this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
-        @safe nothrow
+        @safe
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
     }
@@ -89,14 +89,14 @@ template MarkedExceptionCtors()
 {
     public:
         this(string context, Mark contextMark, string problem, Mark problemMark,
-             string file = __FILE__, int line = __LINE__) @safe nothrow
+             string file = __FILE__, int line = __LINE__) @safe
         {
             super(context, contextMark, problem, problemMark, 
                   file, line);
         }
 
         this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
-            @safe nothrow
+            @safe
         {
             super(problem, problemMark, file, line);
         }

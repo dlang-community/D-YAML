@@ -40,7 +40,7 @@ class NodeException : YAMLException
          *          start = Start position of the node.
          */
         this(string msg, Mark start, string file = __FILE__, int line = __LINE__)
-            @safe nothrow
+            @safe
         {
             super(msg ~ "\nNode at: " ~ start.toString(), file, line);
         }
@@ -144,7 +144,7 @@ struct Node
                 @disable int opCmp(ref Pair);
 
                 ///Construct a Pair from two values. Will be converted to Nodes if needed.
-                this(K, V)(K key, V value) @safe
+                this(K, V)(K key, V value) @trusted
                 {
                     static if(is(Unqual!K == Node)){this.key = key;}
                     else                           {this.key = Node(key);}
@@ -1742,7 +1742,7 @@ package:
  * Params:  pairs   = Array of pairs to merge into.
  *          toMerge = Pair to merge.
  */ 
-void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge)  @safe
+void merge(ref Node.Pair[] pairs, Node.Pair toMerge)  @safe
 {
     foreach(ref pair; pairs)
     {
@@ -1760,7 +1760,7 @@ void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge)  @safe
  * Params:  pairs   = Array of pairs to merge into.
  *          toMerge = Pairs to merge.
  */
-void merge(ref Node.Pair[] pairs, Node.Pair[] toMerge) @safe
+void merge(ref Node.Pair[] pairs, Node.Pair[] toMerge) @trusted
 {
     bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
 

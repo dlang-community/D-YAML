@@ -135,7 +135,7 @@ final class Parser
 
     public:
         ///Construct a Parser using specified Scanner.
-        this(Scanner scanner) @trusted nothrow
+        this(Scanner scanner) @trusted
         {
             state_ = &parseStreamStart;
             scanner_ = scanner;
