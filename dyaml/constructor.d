@@ -458,7 +458,8 @@ unittest
 {
     long getLong(string str)
     {
-        return constructLong(Node(str));
+		auto nd = Node(str);
+        return constructLong(nd);
     }
 
     string canonical   = "685230";
@@ -514,7 +515,7 @@ real constructReal(ref Node node)
     }
     catch(ConvException e)
     {
-        throw new Exception("Unable to parse float value: " ~ value);
+        throw new Exception("Unable to parse float value: \"" ~ value ~ "\"");
     }
 
     return result;
@@ -528,7 +529,8 @@ unittest
 
     real getReal(string str)
     {
-        return constructReal(Node(str));
+		auto nd = Node(str);
+        return constructReal(nd);
     }
 
     string canonical   = "6.8523015e+5";
@@ -570,7 +572,8 @@ unittest
     char[] buffer;
     buffer.length = 256;
     string input = cast(string)Base64.encode(test, buffer);
-    auto value = constructBinary(Node(input));
+	auto nd = Node(input);
+    auto value = constructBinary(nd);
     assert(value == test);
 }
 
@@ -651,7 +654,8 @@ unittest
 
     string timestamp(string value)
     {
-        return constructTimestamp(Node(value)).toISOString();
+		auto nd = Node(value);
+        return constructTimestamp(nd).toISOString();
     }
 
     string canonical      = "2001-12-15T02:59:43.1Z";
@@ -745,7 +749,8 @@ unittest
 
     bool hasDuplicates(Node[] nodes)
     {
-        return null !is collectException(constructOrderedMap(Node(nodes)));
+		auto nd = Node(nodes);
+        return null !is collectException(constructOrderedMap(nd));
     }
 
     assert(hasDuplicates(alternateTypes(8) ~ alternateTypes(2)));
@@ -815,15 +820,20 @@ unittest
         }
         return true;
     }
+	
+	auto ndDuplicatesShort = Node(DuplicatesShort.dup);
+	auto ndNoDuplicatesShort = Node(noDuplicatesShort.dup);
+	auto ndDuplicatesLong = Node(DuplicatesLong.dup);
+	auto ndNoDuplicatesLong = Node(noDuplicatesLong.dup);
 
     assert(null !is collectException
-           (constructSet(Node(DuplicatesShort.dup))));
+           (constructSet(ndDuplicatesShort)));
     assert(null is collectException
-           (constructSet(Node(noDuplicatesShort.dup))));
+           (constructSet(ndNoDuplicatesShort)));
     assert(null !is collectException
-           (constructSet(Node(DuplicatesLong.dup))));
+           (constructSet(ndDuplicatesLong)));
     assert(null is collectException
-           (constructSet(Node(noDuplicatesLong.dup))));
+           (constructSet(ndNoDuplicatesLong)));
 }
 
 ///Construct a sequence (array) _node.

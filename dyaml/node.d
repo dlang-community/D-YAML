@@ -897,7 +897,7 @@ struct Node
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
          */
-        void opIndexAssign(K, V)(V value, K index) @safe
+        void opIndexAssign(K, V)(V value, K index) @trusted
         {
             if(isSequence())
             {
