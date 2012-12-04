@@ -36,7 +36,7 @@ void run(F ...)(string testName, void function(bool, F) testFunction,
 {
     immutable string dataDir = "test/data";
     auto testFilenames = findTestFilenames(dataDir);
-    bool verbose = true;
+    bool verbose = false;
 
     Result[] results;
     if(unittestExt.length > 0)

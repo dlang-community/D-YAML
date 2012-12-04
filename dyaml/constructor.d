@@ -328,6 +328,11 @@ final class Constructor
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function from " ~ type ~
                               " for tag " ~ tag.get(), start, end));
+
+			static if(is(T : string)) {
+				value = strip(value);
+			}
+
             Node node = Node(value);
             try
             {
