@@ -11,6 +11,7 @@ module dyaml.exception;
 import std.algorithm;
 import std.array;
 import std.string;
+import std.conv;
 
 
 ///Base class for all exceptions thrown by D:YAML.
@@ -45,7 +46,7 @@ struct Mark
         string toString() const @trusted
         {
             //Line/column numbers start at zero internally, make them start at 1.
-            string clamped(ushort v){return format(v + 1, v == ushort.max ? " or higher" : "");}
+            string clamped(ushort v){return to!string(v + 1) ~ (v == ushort.max ? " or higher" : "");}
             return format("line ", clamped(line_), ",column ", clamped(column_));
         }
 }
