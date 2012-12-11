@@ -281,8 +281,8 @@ final class Scanner
             if(checkPlain())               {return fetchPlain();}
 
             throw new Error(format("While scanning for the next token, found "
-                                   "character \'", c, "\', index ",to!int(c), 
-                                   " that cannot start any token"), reader_.mark);
+                                   "character \'%s\', index %s that cannot start any token"
+								   , c, to!int(c)), reader_.mark);
         }
 
 

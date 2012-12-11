@@ -319,8 +319,8 @@ final class Reader
             catch(UTFException e)
             {
                 const position = stream_.position;
-                throw new ReaderException(format("Unicode decoding error between bytes ",
-                                          oldPosition, " and ", position, " : ", e.msg));
+                throw new ReaderException(format("Unicode decoding error between bytes %s and %s : %s",
+                                          oldPosition, position, e.msg));
             }
             catch(ReadException e)
             {

@@ -98,7 +98,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
             }
             else
             {
-                return format("YAMLContainer(", value_.toString(), ")");
+                return format("YAMLContainer(%s)", value_.toString());
             }
         }
 
