@@ -111,7 +111,7 @@ alias std.process.system system;
 ///Name of the default compiler, which is the compiler used to build cdc.
 version(DigitalMars){string compiler = "dmd";}
 version(GNU){string compiler = "gdmd";}
-version(LDC){string compiler = "ldmd";}
+version(LDC){string compiler = "ldmd2";}
 
 version(Windows)
 {   
@@ -151,7 +151,7 @@ void main(string[] args)
             case "--help", "-h": help(); return;
             case "--dmd": compiler = "dmd"; break;
             case "--gdc": compiler = "gdmd"; break;
-            case "--ldc": compiler = "ldmd"; break;
+            case "--ldc": compiler = "ldmd2"; break;
             default: extra_args ~= arg;
         }
         else
