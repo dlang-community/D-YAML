@@ -158,6 +158,19 @@ struct Node
                     return cmp!(Yes.useTag)(rhs) == 0;
                 } 
 
+                /// Assignment (shallow copy) by value.
+                void opAssign(Pair rhs) @safe
+                {
+                    opAssign(rhs);
+                }
+
+                /// Assignment (shallow copy) by reference.
+                void opAssign(ref Pair rhs) @safe
+                {
+                    key   = rhs.key;
+                    value = rhs.value;
+                }
+
             private:
                 /*
                  * Comparison with another Pair.
@@ -873,6 +886,30 @@ struct Node
 
             assert(mapNan.contains(double.nan));
             assert(mapNan.containsKey(double.nan));
+        }
+
+        /// Assignment (shallow copy) by value.
+        void opAssign(Node rhs) @safe
+        {
+            opAssign(rhs);
+        }
+
+        /// Assignment (shallow copy) by reference.
+        void opAssign(ref Node rhs) @safe
+        {
+            value_          = rhs.value_;
+            startMark_      = rhs.startMark_;
+            tag_            = rhs.tag_;
+            scalarStyle     = rhs.scalarStyle;
+            collectionStyle = rhs.collectionStyle;
+        }
+        // Unittest for opAssign().
+        unittest
+        {
+            auto seq = Node([1, 2, 3, 4, 5]);
+            auto assigned = seq;
+            assert(seq == assigned, 
+                   "Node.opAssign() doesn't produce an equivalent copy");
         }
 
         /**
