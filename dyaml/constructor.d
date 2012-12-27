@@ -514,7 +514,7 @@ real constructReal(ref Node node)
     }
     catch(ConvException e)
     {
-        throw new Exception("Unable to parse float value: " ~ value);
+        throw new Exception("Unable to parse float value: \"" ~ value ~ "\"");
     }
 
     return result;
