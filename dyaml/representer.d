@@ -510,7 +510,7 @@ Node representReal(ref Node node, Representer representer) @system
                    f == -1.0 * real.infinity ? "-.inf":
                    {auto a = appender!string;
                     formattedWrite(a, "%12f", f);
-                    return a.data;}();
+                    return a.data.strip();}();
 
     return representer.representScalar("tag:yaml.org,2002:float", value);
 }
