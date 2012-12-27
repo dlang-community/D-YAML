@@ -167,7 +167,7 @@ struct Dumper
         }
 
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
-        this(Stream stream) pure @safe nothrow
+        this(Stream stream) pure @safe
         {
             resolver_    = new Resolver();
             representer_ = new Representer();

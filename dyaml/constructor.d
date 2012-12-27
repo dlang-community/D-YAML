@@ -46,7 +46,7 @@ package class ConstructorException : YAMLException
      *          end   = End position of the error context.
      */
     this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
-        @safe nothrow
+        @safe
     {
         super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
               file, line);
