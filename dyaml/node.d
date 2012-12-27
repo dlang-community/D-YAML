@@ -17,7 +17,7 @@ import std.datetime;
 import std.exception;
 import std.math;
 import std.range;
-import std.stdio;   
+import std.stdio;
 import std.string;
 import std.traits;
 import std.typecons;
@@ -1779,7 +1779,7 @@ package:
  * Params:  pairs   = Array of pairs to merge into.
  *          toMerge = Pair to merge.
  */ 
-void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge)  @safe
+void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge) @safe
 {
     foreach(ref pair; pairs)
     {

@@ -262,7 +262,11 @@ final class Composer
                 foreach(ref Node key, ref Node value; root)
                 {
                     if(key.isType!YAMLMerge){toMerge ~= value;}
-                    else{merge(result, Node.Pair(key, value));}
+                    else
+                    {
+                        auto temp = Node.Pair(key, value);
+                        merge(result, temp);
+                    }
                 }
                 foreach(node; toMerge)
                 {
