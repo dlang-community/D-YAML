@@ -57,16 +57,20 @@ string statistics(ref Node document)
     string tagStats = "\nTag statistics:\n";
     foreach(tag, count; tags)
     {
-        tagStats ~= format("\n", tag, " : ", count);
+        tagStats ~= format("\n%s : %s", tag, count);
     }
 
-    return format(  "\nNodes:                   ", nodes, 
-                  "\n\nScalars:                 ", scalars,
-                    "\nSequences:               ", sequences,
-                    "\nMappings:                ", mappings,
-                  "\n\nAverage sequence length: ", cast(real)seqItems / sequences,
-                    "\nAverage mapping length:  ", cast(real)mapPairs / mappings,
-                  "\n\n", tagStats);
+    return format(  "\nNodes:                   %s" ~
+                  "\n\nScalars:                 %s" ~
+                    "\nSequences:               %s" ~
+                    "\nMappings:                %s" ~
+                  "\n\nAverage sequence length: %s" ~
+                    "\nAverage mapping length:  %s" ~
+                  "\n\n%s", 
+                  nodes, scalars, sequences, mappings, 
+                  sequences == 0.0 ? 0.0 : cast(real)seqItems / sequences,
+                  mappings  == 0.0 ? 0.0 : cast(real)mapPairs / mappings,
+                  tagStats);
 }
 
 void main(string[] args)
