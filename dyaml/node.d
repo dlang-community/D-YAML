@@ -1574,7 +1574,7 @@ struct Node
 
         //Does given node have the same type as this node?
         bool hasEqualType(const ref Node node) const @safe
-        {                 
+        {
             return value_.type is node.value_.type;
         }
 

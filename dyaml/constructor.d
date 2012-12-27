@@ -867,7 +867,7 @@ struct MyStruct
         if(y != s.y){return y - s.y;}
         if(z != s.z){return z - s.z;}
         return 0;
-    }        
+    }
 }
 
 MyStruct constructMyStructScalar(ref Node node)
