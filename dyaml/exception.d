@@ -38,7 +38,7 @@ struct Mark
 
     public:
         ///Construct a Mark with specified line and column in the file.
-        this(in uint line, in uint column) pure @safe nothrow
+        this(const uint line, const uint column) pure @safe nothrow
         {
             line_   = cast(ushort)min(ushort.max, line);
             column_ = cast(ushort)min(ushort.max, column);
