@@ -24,6 +24,7 @@ import std.format;
 import std.math;
 import std.stream;
 import std.typecons;
+import std.string;
 
 import dyaml.exception;
 import dyaml.node;
@@ -151,7 +152,7 @@ final class Representer
          *     //The node is guaranteed to be MyStruct as we add representer for MyStruct.
          *     auto value = node.as!MyStruct;
          *     //Using custom scalar format, x:y:z.
-         *     auto scalar = format(value.x, ":", value.y, ":", value.z);
+         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
          *     //Representing as a scalar, with custom tag to specify this data type.
          *     return representer.representScalar("!mystruct.tag", scalar);
          * }
@@ -198,7 +199,7 @@ final class Representer
          *     ///Useful for Node.as!string .
          *     override string toString()
          *     {
-         *         return format("MyClass(", x, ", ", y, ", ", z, ")");
+         *         return format("MyClass(%s, %s, %s)", x, y, z);
          *     }
          * }
          *
@@ -208,7 +209,7 @@ final class Representer
          *     //The node is guaranteed to be MyClass as we add representer for MyClass.
          *     auto value = node.as!MyClass;
          *     //Using custom scalar format, x:y:z.
-         *     auto scalar = format(value.x, ":", value.y, ":", value.z);
+         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
          *     //Representing as a scalar, with custom tag to specify this data type.
          *     return representer.representScalar("!myclass.tag", scalar);
          * }
@@ -267,7 +268,7 @@ final class Representer
          * Node representMyStruct(ref Node node, Representer representer)
          * { 
          *     auto value = node.as!MyStruct;
-         *     auto scalar = format(value.x, ":", value.y, ":", value.z);
+         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
          *     return representer.representScalar("!mystruct.tag", scalar);
          * }
          * --------------------
@@ -592,9 +593,8 @@ Node representPairs(ref Node node, Representer representer) @system
 }
 
 //Unittests
+//These should really all be encapsulated in unittests.
 private:
-
-import std.string;
 
 import dyaml.dumper;
 
@@ -616,7 +616,7 @@ Node representMyStruct(ref Node node, Representer representer) @system
     //The node is guaranteed to be MyStruct as we add representer for MyStruct.
     auto value = node.as!MyStruct;
     //Using custom scalar format, x:y:z.
-    auto scalar = format(value.x, ":", value.y, ":", value.z);
+    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
     //Representing as a scalar, with custom tag to specify this data type.
     return representer.representScalar("!mystruct.tag", scalar);
 }
@@ -661,7 +661,7 @@ class MyClass
     ///Useful for Node.as!string .
     override string toString() @trusted
     {
-        return format("MyClass(", x, ", ", y, ", ", z, ")");
+        return format("MyClass(%s, %s, %s)", x, y, z);
     }
 }
 
@@ -671,7 +671,7 @@ Node representMyClass(ref Node node, Representer representer) @system
     //The node is guaranteed to be MyClass as we add representer for MyClass.
     auto value = node.as!MyClass;
     //Using custom scalar format, x:y:z.
-    auto scalar = format(value.x, ":", value.y, ":", value.z);
+    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
     //Representing as a scalar, with custom tag to specify this data type.
     return representer.representScalar("!myclass.tag", scalar);
 }
