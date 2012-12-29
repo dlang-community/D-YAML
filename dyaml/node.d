@@ -12,6 +12,7 @@ module dyaml.node;
 
 
 import std.algorithm;
+import std.array;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -1776,16 +1777,16 @@ package:
  * The new pair will only be added if there is not already a pair 
  * with the same key.
  *
- * Params:  pairs   = Array of pairs to merge into.
+ * Params:  pairs   = Appender managing the array of pairs to merge into.
  *          toMerge = Pair to merge.
  */ 
-void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge) @safe
+void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, ref Node.Pair toMerge) @trusted
 {
-    foreach(ref pair; pairs)
+    foreach(ref pair; pairs.data)
     {
         if(pair.key == toMerge.key){return;}
     }
-    pairs ~= toMerge;
+    pairs.put(toMerge);
 }
 
 /*
@@ -1794,19 +1795,15 @@ void merge(ref Node.Pair[] pairs, ref Node.Pair toMerge) @safe
  * Any new pair will only be added if there is not already a pair 
  * with the same key.
  *
- * Params:  pairs   = Array of pairs to merge into.
+ * Params:  pairs   = Appender managing the array of pairs to merge into.
  *          toMerge = Pairs to merge.
  */
-void merge(ref Node.Pair[] pairs, Node.Pair[] toMerge) @safe
+void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, Node.Pair[] toMerge) @trusted
 {
     bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
 
-    //Preallocating to limit GC reallocations.
-    auto len = pairs.length;
-    pairs.length = len + toMerge.length;
-    foreach(ref pair; toMerge) if(!canFind!eq(pairs, pair))
+    foreach(ref pair; toMerge) if(!canFind!eq(pairs.data, pair))
     {
-        pairs[len++] = pair;
+        pairs.put(pair);
     }
-    pairs.length = len;
 }
