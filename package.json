@@ -1,0 +1,9 @@
+{
+	"name": "dyaml",
+	"description": "YAML parser and emitter",
+	"homepage": "http://dyaml.alwaysdata.net/",
+	"copyright": "Copyright © 2011, Ferdinand Majerech",
+	"authors": ["Ferdinand Majerech"],
+	"license": "Boost 1.0",
+	"dependencies": {}
+}
