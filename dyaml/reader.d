@@ -302,7 +302,7 @@ final class Reader
             try for(size_t c = 0; chars && !decoder_.done;)
             {
                 const slice = decoder_.getDChars(chars);
-                buffer_[oldLength + c .. oldLength + c + slice.length] = slice;
+                buffer_[oldLength + c .. oldLength + c + slice.length] = slice[];
                 c += slice.length;
                 chars -= slice.length;
             }
@@ -626,7 +626,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
  *
  * Returns: True if all the characters are printable, false otherwise.
  */
-bool printable(const ref dchar[] chars) pure @safe nothrow
+bool printable(const dchar[] chars) pure @safe nothrow
 {
     foreach(c; chars)
     {

@@ -1,4 +1,3 @@
-
 //          Copyright Ferdinand Majerech 2011.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
@@ -1585,7 +1584,7 @@ struct ScalarWriter
         }
 
         ///Determine hints (indicators) for block scalar.
-        size_t determineBlockHints(ref char[] hints, uint bestIndent) const pure @trusted 
+        size_t determineBlockHints(char[] hints, uint bestIndent) const pure @trusted 
         {
             size_t hintsIdx = 0;
             if(text_.length == 0){return hintsIdx;}
