@@ -428,11 +428,11 @@ long constructLong(ref Node node)
         //Zero.
         if(value == "0")               {result = cast(long)0;}
         //Binary.
-        else if(value.startsWith("0b")){result = sign * parse!int(value[2 .. $], 2);}
+        else if(value.startsWith("0b")){result = sign * to!int(value[2 .. $], 2);}
         //Hexadecimal.
-        else if(value.startsWith("0x")){result = sign * parse!int(value[2 .. $], 16);}
+        else if(value.startsWith("0x")){result = sign * to!int(value[2 .. $], 16);}
         //Octal.
-        else if(value[0] == '0')       {result = sign * parse!int(value, 8);}
+        else if(value[0] == '0')       {result = sign * to!int(value, 8);}
         //Sexagesimal.
         else if(value.canFind(":"))
         {
