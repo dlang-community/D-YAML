@@ -302,7 +302,7 @@ final class Reader
             try for(size_t c = 0; chars && !decoder_.done;)
             {
                 const slice = decoder_.getDChars(chars);
-                buffer_[oldLength + c .. oldLength + c + slice.length] = slice;
+                buffer_[oldLength + c .. oldLength + c + slice.length] = slice[];
                 c += slice.length;
                 chars -= slice.length;
             }
