@@ -165,7 +165,7 @@ void main(string[] args)
     auto dbg      = ["-debug", "-gc"];
     auto optimize = ["-O", "-inline", "-release", "-noboundscheck"];
     auto profile  = ["-O", "-release", "-noboundscheck", "-gc"];
-    auto lib_src  = ["dyaml/", "yaml.d"];
+    auto lib_src  = ["source"];
 
     void compile_(string[] args, string[] files)
     {
