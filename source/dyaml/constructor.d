@@ -376,7 +376,7 @@ final class Constructor
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
-        auto delegates(T)() pure @safe nothrow
+        @property auto delegates(T)() pure @safe nothrow
         {
             static if(is(T : string))          {return &fromScalar_;}
             else static if(is(T : Node[]))     {return &fromSequence_;}

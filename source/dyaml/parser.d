@@ -710,7 +710,7 @@ final class Parser
                     }
                     else
                     {
-                        immutable token = scanner_.peekToken;
+                        immutable token = scanner_.peekToken();
                         throw new Error("While parsing a flow sequence", marks_.back,
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
@@ -818,7 +818,7 @@ final class Parser
                     }
                     else
                     {
-                        immutable token = scanner_.peekToken;
+                        immutable token = scanner_.peekToken();
                         throw new Error("While parsing a flow mapping", marks_.back,
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);

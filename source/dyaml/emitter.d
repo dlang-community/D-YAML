@@ -1554,7 +1554,7 @@ struct ScalarWriter
 
     private:
         ///Get next character and move end of the text range to it.
-        dchar nextChar() pure @safe
+        @property dchar nextChar() pure @safe
         {
             ++endChar_;
             endByte_ = nextEndByte_;
@@ -1570,14 +1570,14 @@ struct ScalarWriter
         }
 
         ///Get character at start of the text range.
-        dchar charAtStart() const pure @safe
+        @property dchar charAtStart() const pure @safe
         {
             size_t idx = startByte_;
             return decode(text_, idx);
         }
 
         ///Is the current line too wide?
-        bool tooWide() const pure @safe nothrow
+        @property bool tooWide() const pure @safe nothrow
         {
             return startChar_ + 1 == endChar_ && 
                    emitter_.column_ > emitter_.bestWidth_;

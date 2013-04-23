@@ -162,7 +162,7 @@ struct Serializer
         Anchor generateAnchor() @trusted
         {
             ++lastAnchorID_;
-            auto appender = appender!string;
+            auto appender = appender!string();
             formattedWrite(appender, "id%03d", lastAnchorID_);
             return Anchor(appender.data);
         }

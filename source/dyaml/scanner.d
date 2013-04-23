@@ -231,7 +231,7 @@ final class Scanner
 
     private:
         ///Determine whether or not we need to fetch more tokens before peeking/getting a token.
-        bool needMoreTokens() pure @safe
+        @property bool needMoreTokens() pure @safe
         {
             if(done_)        {return false;}
             if(tokens_.empty){return true;}
@@ -1188,7 +1188,7 @@ final class Scanner
         void scanBlockScalarIgnoredLine(const Mark startMark) @trusted
         {
             findNextNonSpace();
-            if(reader_.peek == '#'){scanToNextBreak();}
+            if(reader_.peek()== '#'){scanToNextBreak();}
 
             enforce("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a block scalar", startMark,

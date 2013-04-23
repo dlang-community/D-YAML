@@ -509,7 +509,7 @@ Node representReal(ref Node node, Representer representer) @system
     string value = isNaN(f)                  ? ".nan":
                    f == real.infinity        ? ".inf":
                    f == -1.0 * real.infinity ? "-.inf":
-                   {auto a = appender!string;
+                   {auto a = appender!string();
                     formattedWrite(a, "%12f", f);
                     return a.data.strip();}();
 
