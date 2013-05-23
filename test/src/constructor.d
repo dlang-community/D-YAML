@@ -276,8 +276,8 @@ Node[] timestampBugs()
     return [Node([Node(SysTime(DateTime(2001, 12, 15, 3, 29, 43),  FracSec.from!"hnsecs"(1000000), UTC())), 
                   Node(SysTime(DateTime(2001, 12, 14, 16, 29, 43), FracSec.from!"hnsecs"(1000000), UTC())), 
                   Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), FracSec.from!"hnsecs"(10100), UTC())), 
-                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new SimpleTimeZone(60))), 
-                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new SimpleTimeZone(-90))),
+                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(60))), 
+                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(-90))),
                   Node(SysTime(DateTime(2005, 7, 8, 17, 35, 4),    FracSec.from!"hnsecs"(5176000), UTC()))])];
 }
 

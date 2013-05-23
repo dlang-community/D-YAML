@@ -259,15 +259,17 @@ struct Node
         }
         unittest
         {
-            with(Node(42))
             {
-                assert(isScalar() && !isSequence && !isMapping && !isUserType);
-                assert(as!int == 42 && as!float == 42.0f && as!string == "42");
-                assert(!isUserType());
+                auto node = Node(42);
+                assert(node.isScalar && !node.isSequence && 
+                       !node.isMapping && !node.isUserType);
+                assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
+                assert(!node.isUserType);
             }
-            with(Node(new class{int a = 5;}))
+
             {
-                assert(isUserType());
+                auto node = Node(new class{int a = 5;});
+                assert(node.isUserType);
             }
         }
 
@@ -1677,9 +1679,9 @@ struct Node
             {
                 static long getIndex(ref Node node, ref T rhs)
                 {
-                    foreach(idx, ref elem; node.get!(Node[])) with(elem)
+                    foreach(idx, ref elem; node.get!(Node[]))
                     {
-                        if(convertsTo!T && as!(T, No.stringConversion) == rhs)
+                        if(elem.convertsTo!T && elem.as!(T, No.stringConversion) == rhs)
                         {
                             return idx;
                         }

@@ -618,7 +618,7 @@ SysTime constructTimestamp(ref Node node)
         value = matches.front.post;
         matches = match(value, TZRegexp);
         if(matches.empty || matches.front.captures[0] == "Z")
-        {                                                 
+        {
             return SysTime(DateTime(year, month, day, hour, minute, second),
                            FracSec.from!"hnsecs"(hectonanosecond), UTC());
         }
@@ -631,12 +631,12 @@ SysTime constructTimestamp(ref Node node)
             if(captures[1][0] == '-'){sign = -1;}
             tzHours   = to!int(captures[1][1 .. $]);
         }
-        const tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
-        const tzOffset = sign * (60 * tzHours + tzMinutes);
+        auto tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
+        auto tzOffset = sign * (60 * tzHours + tzMinutes);
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
                        FracSec.from!"hnsecs"(hectonanosecond), 
-                       new SimpleTimeZone(tzOffset));
+                       new immutable SimpleTimeZone(tzOffset));
     }
     catch(ConvException e)
     {
