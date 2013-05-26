@@ -1284,7 +1284,7 @@ struct ScalarWriter
         @disable bool opEquals(ref Emitter);
 
         ///Used as "null" UTF-32 character.
-        immutable dcharNone = dchar.max;
+        enum dcharNone = dchar.max;
 
         ///Emitter used to emit the scalar.
         Emitter* emitter_;
