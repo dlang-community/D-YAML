@@ -1226,6 +1226,46 @@ struct Node
         }
 
         /**
+         * Report whether the given key is found.
+         *
+         * This method can only be called on mapping nodes.
+         *
+         * Returns:
+         * A pointer to the value of the given key, or null if not found.
+         *
+         * Be careful! Modifying the mapping with any other function can
+         * invalidate the pointer.
+         *
+         * Params:  key = Key to search for.
+         *
+         */
+        Node* opBinaryRight(string op, K)(K key) @trusted if (op == "in")
+        {
+            enforce(isMapping(),
+                    new Error("Trying to use 'in' on a " ~
+                      nodeTypeString ~ " node",
+                      startMark_));
+
+            auto idx = findPair(key);
+            if (idx < 0) {
+                return null;
+            } else {
+                return &get!(Node.Pair[])[idx].value;
+            }
+        }
+        unittest
+        {
+            writeln(`D:YAML Node opBinaryRight!"in" unittest`);
+            auto nd = Node(["foo", "baz"], ["bar", "qux"]);
+            assert("bad" !in nd && ("bad" in nd) is null);
+            Node* foo = "foo" in nd;
+            assert(foo !is null);
+            assert(*foo == Node("bar"));
+            *foo = Node("newfoo");
+            assert(nd["foo"] == Node("newfoo"));
+        }
+
+        /**
          * Remove first (if any) occurence of a value in a collection.
          *
          * This method can only be called on collection nodes.
