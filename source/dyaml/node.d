@@ -1226,43 +1226,46 @@ struct Node
         }
 
         /**
-         * Report whether the given key is found.
+         * Determine whether a key is in a mapping, and access its value.
          *
          * This method can only be called on mapping nodes.
          *
-         * Returns:
-         * A pointer to the value of the given key, or null if not found.
+         * Params:   key = Key to search for.
          *
-         * Be careful! Modifying the mapping with any other function can
-         * invalidate the pointer.
+         * Returns:  A pointer to the value (as a Node) corresponding to key,
+         *           or null if not found.
          *
-         * Params:  key = Key to search for.
+         * Note:     Any modification to the node can invalidate the returned 
+         *           pointer.
          *
+         * See_Also: contains
          */
         Node* opBinaryRight(string op, K)(K key) @trusted if (op == "in")
         {
-            enforce(isMapping(),
-                    new Error("Trying to use 'in' on a " ~
-                      nodeTypeString ~ " node",
-                      startMark_));
+            enforce(isMapping, new Error("Trying to use 'in' on a " ~ 
+                                         nodeTypeString ~ " node", startMark_));
 
             auto idx = findPair(key);
-            if (idx < 0) {
+            if(idx < 0)
+            {
                 return null;
-            } else {
-                return &get!(Node.Pair[])[idx].value;
+            }
+            else
+            {
+                return &(get!(Node.Pair[])[idx].value);
             }
         }
         unittest
         {
             writeln(`D:YAML Node opBinaryRight!"in" unittest`);
-            auto nd = Node(["foo", "baz"], ["bar", "qux"]);
-            assert("bad" !in nd && ("bad" in nd) is null);
-            Node* foo = "foo" in nd;
+            auto mapping = Node(["foo", "baz"], ["bar", "qux"]);
+            assert("bad" !in mapping && ("bad" in mapping) is null);
+            Node* foo = "foo" in mapping;
             assert(foo !is null);
             assert(*foo == Node("bar"));
+            assert(foo.get!string == "bar");
             *foo = Node("newfoo");
-            assert(nd["foo"] == Node("newfoo"));
+            assert(mapping["foo"] == Node("newfoo"));
         }
 
         /**
