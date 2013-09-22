@@ -11,6 +11,5 @@
 "dependencies": {},
 "homepage": "http://dyaml.alwaysdata.net/",
 "name": "dyaml",
-"copyright": "Copyright © 2011-2013, Ferdinand Majerech",
-"buildRequirements": ["relaxProperties"],
+"copyright": "Copyright © 2011-2013, Ferdinand Majerech"
 }
