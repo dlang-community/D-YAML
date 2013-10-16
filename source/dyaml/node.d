@@ -160,13 +160,13 @@ struct Node
                 } 
 
                 /// Assignment (shallow copy) by value.
-                void opAssign(Pair rhs) @safe
+                void opAssign(Pair rhs) @safe nothrow
                 {
                     opAssign(rhs);
                 }
 
                 /// Assignment (shallow copy) by reference.
-                void opAssign(ref Pair rhs) @safe
+                void opAssign(ref Pair rhs) @safe nothrow
                 {
                     key   = rhs.key;
                     value = rhs.value;
@@ -892,15 +892,17 @@ struct Node
         }
 
         /// Assignment (shallow copy) by value.
-        void opAssign(Node rhs) @safe
+        void opAssign(Node rhs) @safe nothrow
         {
             opAssign(rhs);
         }
 
         /// Assignment (shallow copy) by reference.
-        void opAssign(ref Node rhs) @safe
+        void opAssign(ref Node rhs) @trusted nothrow
         {
-            value_          = rhs.value_;
+            // Value opAssign doesn't really throw, so force it to nothrow.
+            alias Value delegate(Value) nothrow valueAssignNothrow;
+            (cast(valueAssignNothrow)&value_.opAssign!Value)(rhs.value_);
             startMark_      = rhs.startMark_;
             tag_            = rhs.tag_;
             scalarStyle     = rhs.scalarStyle;
