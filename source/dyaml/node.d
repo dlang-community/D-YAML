@@ -1629,14 +1629,21 @@ struct Node
         }
 
         //Get type of the node value (YAMLObject for user types).
-        @property TypeInfo type() const @safe {return value_.type;}
+        @property TypeInfo type() const @trusted nothrow 
+        {
+            alias TypeInfo delegate() const nothrow nothrowType;
+            return (cast(nothrowType)&value_.type)();
+        }
 
         /*
          * Determine if the value stored by the node is of specified type.
          *
          * This only works for default YAML types, not for user defined types.
          */
-        @property bool isType(T)() const @safe {return value_.type is typeid(Unqual!T);}
+        @property bool isType(T)() const @safe nothrow 
+        {
+            return this.type is typeid(Unqual!T);
+        }
 
     private:
         //Is the value a bool?
