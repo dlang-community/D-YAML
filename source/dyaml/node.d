@@ -463,22 +463,40 @@ struct Node
         }
 
         ///Is this node valid (initialized)? 
-        @property bool isValid()    const @safe {return value_.hasValue;}
-                                            
+        @property bool isValid()    const @safe pure nothrow 
+        {
+            return value_.hasValue;
+        }
+
         ///Is this node a scalar value?
-        @property bool isScalar()   const @safe {return !(isMapping || isSequence);}
-                                            
+        @property bool isScalar()   const @safe nothrow 
+        {
+            return !(isMapping || isSequence);
+        }
+
         ///Is this node a sequence?
-        @property bool isSequence() const @safe {return isType!(Node[]);}
-                                            
+        @property bool isSequence() const @safe nothrow 
+        {
+            return isType!(Node[]);
+        }
+
         ///Is this node a mapping?
-        @property bool isMapping()  const @safe {return isType!(Pair[]);}
+        @property bool isMapping()  const @safe nothrow 
+        {
+            return isType!(Pair[]); 
+        }
 
         ///Is this node a user defined type?
-        @property bool isUserType() const @safe {return isType!YAMLObject;}
+        @property bool isUserType() const @safe nothrow 
+        {
+            return isType!YAMLObject;
+        }
 
         ///Is this node null?
-        @property bool isNull()     const @safe {return isType!YAMLNull;}
+        @property bool isNull()     const @safe nothrow 
+        {
+            return isType!YAMLNull;
+        }
 
         ///Return tag of the node.
         @property string tag()      const @safe nothrow {return tag_.get;}
