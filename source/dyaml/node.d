@@ -1667,11 +1667,11 @@ struct Node
         //Does given node have the same type as this node?
         bool hasEqualType(const ref Node node) const @safe
         {
-            return value_.type is node.value_.type;
+            return this.type is node.type;
         }
 
         //Return a string describing node type (sequence, mapping or scalar)
-        @property string nodeTypeString() const @safe
+        @property string nodeTypeString() const @safe nothrow
         {
             assert(isScalar || isSequence || isMapping, "Unknown node type");
             return isScalar   ? "scalar"   :
@@ -1680,7 +1680,7 @@ struct Node
         }
 
         //Determine if the value can be converted to specified type.
-        @property bool convertsTo(T)() const @safe
+        @property bool convertsTo(T)() const @safe nothrow
         {
             if(isType!T){return true;}
 
