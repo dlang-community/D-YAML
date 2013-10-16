@@ -1416,13 +1416,13 @@ struct Node
         }
 
         //Construct Node.Value from user defined type.
-        static Value userValue(T)(T value) @trusted
+        static Value userValue(T)(T value) @trusted nothrow
         {
             return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
         //Construct Node.Value from a type it can store directly (after casting if needed)
-        static Value value(T)(T value) @trusted if(allowed!T)
+        static Value value(T)(T value) @safe nothrow if(allowed!T)
         {
             static if(Value.allowed!T)
             {
