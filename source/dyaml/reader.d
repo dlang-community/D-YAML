@@ -31,7 +31,7 @@ package:
 class ReaderException : YAMLException
 {
     this(string msg, string file = __FILE__, int line = __LINE__)
-        @safe nothrow
+        @safe pure nothrow
     {
         super("Error reading stream: " ~ msg, file, line);
     }
