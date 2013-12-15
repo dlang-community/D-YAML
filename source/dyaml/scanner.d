@@ -231,7 +231,7 @@ final class Scanner
 
     private:
         ///Determine whether or not we need to fetch more tokens before peeking/getting a token.
-        @property bool needMoreTokens() pure @safe
+        @property bool needMoreTokens() @safe
         {
             if(done_)        {return false;}
             if(tokens_.empty){return true;}
@@ -307,7 +307,7 @@ final class Scanner
          * Disabling this will allow simple keys of any length and
          * height (may cause problems if indentation is broken though).
          */
-        void stalePossibleSimpleKeys() pure @safe
+        void stalePossibleSimpleKeys() @safe
         {
             foreach(level, ref key; possibleSimpleKeys_)
             {
@@ -328,7 +328,7 @@ final class Scanner
          *  
          * This function is called for ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
          */
-        void savePossibleSimpleKey() pure @system
+        void savePossibleSimpleKey() @system
         {
             //Check if a simple key is required at the current position.
             const required = (flowLevel_ == 0 && indent_ == reader_.column);
@@ -360,7 +360,7 @@ final class Scanner
         }
 
         ///Remove the saved possible key position at the current flow level.
-        void removePossibleSimpleKey() pure @safe
+        void removePossibleSimpleKey() @safe
         {
             if(possibleSimpleKeys_.length <= flowLevel_){return;}
 

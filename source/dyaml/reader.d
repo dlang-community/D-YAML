@@ -547,7 +547,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         //Decode contents of a UTF-8 or UTF-16 raw buffer.
-        void decodeRawBuffer(C)(C[] buffer, const size_t length) pure @system
+        void decodeRawBuffer(C)(C[] buffer, const size_t length) @system
         {
             //End of part of rawBuffer8_ that contains 
             //complete characters and can be decoded.
