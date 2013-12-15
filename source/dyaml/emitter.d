@@ -310,7 +310,7 @@ struct Emitter
         }
 
         ///Determines if the type of current event is as specified. Throws if no event.
-        bool eventTypeIs(in EventID id) const pure @trusted
+        bool eventTypeIs(in EventID id) const @trusted
         {
             enforce(!event_.isNull,
                     new Error("Expected an event, but no event is available."));
