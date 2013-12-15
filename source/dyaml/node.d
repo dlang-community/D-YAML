@@ -142,7 +142,7 @@ struct Node
                 Node value;
 
             public:
-                @disable int opCmp(ref Pair);
+                //@disable int opCmp(ref Pair);
 
                 ///Construct a Pair from two values. Will be converted to Nodes if needed.
                 this(K, V)(K key, V value) @safe
