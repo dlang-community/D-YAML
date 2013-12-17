@@ -499,7 +499,7 @@ def add_index(index, output_dir):
         return
     shutil.copy(index, index_path)
 
-def generate_ddoc(sources, output_dir, ddoc_template, ddoc_command):
+def generate_ddoc(sources, output_dir, ddoc_command):
     """Generate documentation from sources, writing it to output_dir."""
 
     #Generate index html with ddoc.
@@ -647,7 +647,7 @@ def main():
         add_css(css, output_dir)
         add_index(index, output_dir)
 
-        generate_ddoc(sources, output_dir, ddoc_template, ddoc_line + " " + ddoc_template);
+        generate_ddoc(sources, output_dir, ddoc_line + " " + ddoc_template)
         os.remove(ddoc_template)
     except Exception as error:
         print("Error during documentation generation:", error)
