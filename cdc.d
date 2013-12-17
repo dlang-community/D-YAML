@@ -234,7 +234,7 @@ void main(string[] args)
             case "all":      build("debug", "release", "unittest"); break;
             default:
                 writeln("unknown build target: ", target);
-                writeln("available targets: 'debug', 'release', 'profile', 'all'");
+                writeln("available targets: 'debug', 'release', 'profile', 'unittest', 'all'");
         }
     }
 
