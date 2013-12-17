@@ -69,7 +69,7 @@ final class Representer
          *                                   functions for default types.
          */
         this(const Flag!"useDefaultRepresenters" useDefaultRepresenters = Yes.useDefaultRepresenters) 
-            @safe
+            @safe pure
         {
             if(!useDefaultRepresenters){return;}
             addRepresenter!YAMLNull(&representNull);
