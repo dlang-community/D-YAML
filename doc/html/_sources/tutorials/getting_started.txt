@@ -77,7 +77,7 @@ into the file:
 .. code-block:: d
 
    import std.stdio;
-   import yaml;
+   import dyaml.all;
 
    void main()
    {
@@ -100,8 +100,8 @@ into the file:
 Explanation of the code
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-First, we import the *yaml* module. This is the only D:YAML module you need to
-import - it automatically imports all needed modules.
+First, we import the *dyaml.all* module. This is the only D:YAML module you
+need to import - it automatically imports all needed modules.
 
 Next we load the file using the *Loader.load()* method. *Loader* is a struct 
 used for parsing YAML documents. The *load()* method loads the file as
@@ -145,30 +145,31 @@ formatted differently. Comments are not preserved, either.
 Compiling
 ^^^^^^^^^
 
-To compile your project, DMD needs to know which directories contain the 
-imported modules and the library. You also need to tell it to link with D:YAML. 
-The import directory should be the D:YAML package directory. You can specify it 
-using the ``-I`` option of DMD. The library directory should point to the 
-compiled library. On Unix/Linux you can specify it using the ``-L-L`` option, 
-and link with D:YAML using the ``-L-l`` option. On Windows, the import directory
-is used as the library directory. To link with the library on Windows, just add
-the path to it relative to the current directory.
+To compile your project, DMD needs to know which directories contain the
+imported modules and the library. You also need to tell it to link with D:YAML.
+The import directory should be the ``source`` subdirectory of the D:YAML
+directory. You can specify it using the ``-I`` option of DMD. The library
+directory should point to the compiled library. On Unix/Linux you can specify
+it using the ``-L-L`` option, and link with D:YAML using the ``-L-l`` option.
+On Windows, the import directory is used as the library directory. To link with
+the library on Windows, just add the path to it relative to the current
+directory.
 
 For example, if you extracted and compiled D:YAML in ``/home/xxx/dyaml``, your
 project is in ``/home/xxx/dyaml-project``, and you are currently in that 
 directory, compile the project with the following command on Unix/Linux::
 
-   dmd -I../dyaml -L-L../dyaml -L-ldyaml main.d
+   dmd -I../dyaml/source -L-L../dyaml -L-ldyaml main.d
 
 And the following on Windows::
 
-   dmd -I../dyaml ../dyaml/libdyaml.lib main.d
+   dmd -I../dyaml/source ../dyaml/libdyaml.lib main.d
 
 This will produce an executable called ``main`` or ``main.exe`` in your 
 directory. When you run it, it should produce the following output::
 
    Hello
-   World                                                                                                                                                                                                                                                                          
+   World
    The answer is 42 
 
 

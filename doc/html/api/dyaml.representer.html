@@ -45,12 +45,12 @@
 </p>
 <p>Code based on <a href="http://www.pyyaml.org">PyYAML</a>.</p>
 
-<dl><dt class="d_decl">class <a name="RepresenterException"></a><span class="ddoc_psymbol">RepresenterException</span>: dyaml.exception.YAMLException;
+<dl><dt class="d_decl"><a name="RepresenterException"></a>class <a name="RepresenterException"></a><span class="ddoc_psymbol">RepresenterException</span>: dyaml.exception.YAMLException;
 </dt>
 <dd><p>Exception thrown on Representer errors.</p>
 
 </dd>
-<dt class="d_decl">class <a name="Representer"></a><span class="ddoc_psymbol">Representer</span>;
+<dt class="d_decl"><a name="Representer"></a>class <a name="Representer"></a><span class="ddoc_psymbol">Representer</span>;
 </dt>
 <dd><p>Represents YAML nodes as scalar, sequence and mapping nodes ready for output.
 </p>
@@ -59,11 +59,11 @@
 
  It can also override default node formatting styles for output.</p>
 
-<dl><dt class="d_decl">this(bool <b>useDefaultRepresenters</b> = true);
+<dl><dt class="d_decl"><a name="Representer.this"></a>pure @safe  this(const Flag!"<b>useDefaultRepresenters</b>" <b>useDefaultRepresenters</b> = Yes.<b>useDefaultRepresenters</b>);
 </dt>
 <dd><p>Construct a Representer.
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>bool <b>useDefaultRepresenters</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Flag!"<b>useDefaultRepresenters</b>" <b>useDefaultRepresenters</b></td>
 <td valign=top>Use default representer functions
                                    for default YAML types? This can be
                                    disabled to use custom representer
@@ -71,17 +71,17 @@
 </table></div>
 
 </dd>
-<dt class="d_decl">@property void <a name="defaultScalarStyle"></a><span class="ddoc_psymbol">defaultScalarStyle</span>(ScalarStyle <b>style</b>);
+<dt class="d_decl"><a name="Representer.defaultScalarStyle"></a>pure nothrow @property @safe void <a name="defaultScalarStyle"></a><span class="ddoc_psymbol">defaultScalarStyle</span>(ScalarStyle <b>style</b>);
 </dt>
 <dd><p>Set default style for scalars. If <b>style</b> is <span class="d_inlinecode">ScalarStyle.Invalid</span>, the style is chosen automatically.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="defaultCollectionStyle"></a><span class="ddoc_psymbol">defaultCollectionStyle</span>(CollectionStyle <b>style</b>);
+<dt class="d_decl"><a name="Representer.defaultCollectionStyle"></a>pure nothrow @property @safe void <a name="defaultCollectionStyle"></a><span class="ddoc_psymbol">defaultCollectionStyle</span>(CollectionStyle <b>style</b>);
 </dt>
 <dd><p>Set default style for collections. If <b>style</b> is <span class="d_inlinecode">CollectionStyle.Invalid</span>, the style is chosen automatically. </p>
 
 </dd>
-<dt class="d_decl">void <a name="addRepresenter"></a><span class="ddoc_psymbol">addRepresenter</span>(T)(Node function(ref Node, Representer) <b>representer</b>);
+<dt class="d_decl"><a name="Representer.addRepresenter"></a>pure @trusted void <a name="addRepresenter"></a><span class="ddoc_psymbol">addRepresenter</span>(T)(Node function(ref Node, Representer) <b>representer</b>);
 </dt>
 <dd><p>Add a function to represent nodes with a specific data type.
 </p>
@@ -107,108 +107,109 @@
  values - it is not const for compatibility reasons.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>representer</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Node function(ref Node, Representer) representer</td>
 <td valign=top>Representer function to add.</td></tr>
 </table></div>
 <b>Examples:</b><div class="pbr">Representing a simple struct:
-<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+<pre class="d_code"><span class="d_keyword">import</span> std.string;
 
- <span class="d_keyword">import</span> yaml;
+<span class="d_keyword">import</span> dyaml.all;
 
- <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
- {
-     <span class="d_comment">//The node is guaranteed to be MyStruct as we add representer for MyStruct.
-</span>     <span class="d_keyword">auto</span> value = node.as!MyStruct;
-     <span class="d_comment">//Using custom scalar format, x:y:z.
-</span>     <span class="d_keyword">auto</span> scalar = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
-     <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
-</span>     <span class="d_keyword">return</span> representer.representScalar(<span class="d_string">"!mystruct.tag"</span>, scalar);
- }
+Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
+{
+    <span class="d_comment">//The node is guaranteed to be MyStruct as we add representer for MyStruct.
+</span>    <span class="d_keyword">auto</span> value = node.as!MyStruct;
+    <span class="d_comment">//Using custom scalar format, x:y:z.
+</span>    <span class="d_keyword">auto</span> scalar = format(<span class="d_string">"%s:%s:%s"</span>, value.x, value.y, value.z);
+    <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
+</span>    <span class="d_keyword">return</span> representer.representScalar(<span class="d_string">"!mystruct.tag"</span>, scalar);
+}
 
- <span class="d_keyword">void</span> main()
- {
-     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
-     <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
-     representer.<span class="d_psymbol">addRepresenter</span>!MyStruct(&amp;representMyStruct);
-     dumper.representer = representer;
-     dumper.dump(Node(MyStruct(1,2,3)));
- }
+<span class="d_keyword">void</span> main()
+{
+    <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
+    representer.<span class="d_psymbol">addRepresenter</span>!MyStruct(&amp;representMyStruct);
+    dumper.representer = representer;
+    dumper.dump(Node(MyStruct(1,2,3)));
+}
 </pre>
+<br>
 
  Representing a class:
-<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+<pre class="d_code"><span class="d_keyword">import</span> std.string;
 
- <span class="d_keyword">import</span> yaml;
+<span class="d_keyword">import</span> dyaml.all;
 
- <span class="d_keyword">class</span> MyClass
- {
-     <span class="d_keyword">int</span> x, y, z;
+<span class="d_keyword">class</span> MyClass
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_keyword">this</span>(<span class="d_keyword">int</span> x, <span class="d_keyword">int</span> y, <span class="d_keyword">int</span> z)
-     {
-         <span class="d_keyword">this</span>.x = x;
-         <span class="d_keyword">this</span>.y = y;
-         <span class="d_keyword">this</span>.z = z;
-     }
+    <span class="d_keyword">this</span>(<span class="d_keyword">int</span> x, <span class="d_keyword">int</span> y, <span class="d_keyword">int</span> z)
+    {
+        <span class="d_keyword">this</span>.x = x;
+        <span class="d_keyword">this</span>.y = y;
+        <span class="d_keyword">this</span>.z = z;
+    }
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">override</span> <span class="d_keyword">int</span> opCmp(Object o)
-     {
-         MyClass s = <span class="d_keyword">cast</span>(MyClass)o;
-         <span class="d_keyword">if</span>(s <span class="d_keyword">is</span> <span class="d_keyword">null</span>){<span class="d_keyword">return</span> -1;}
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">override</span> <span class="d_keyword">int</span> opCmp(Object o)
+    {
+        MyClass s = <span class="d_keyword">cast</span>(MyClass)o;
+        <span class="d_keyword">if</span>(s <span class="d_keyword">is</span> <span class="d_keyword">null</span>){<span class="d_keyword">return</span> -1;}
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
 
-     <span class="d_comment">///Useful for Node.as!string .
-</span>     <span class="d_keyword">override</span> string toString()
-     {
-         <span class="d_keyword">return</span> format(<span class="d_string">"MyClass("), x, <span class="d_string">", "</span>, y, <span class="d_string">", "</span>, z, <span class="d_string">"</span>"</span>);
-     }
- }
+    <span class="d_comment">///Useful for Node.as!string .
+</span>    <span class="d_keyword">override</span> string toString()
+    {
+        <span class="d_keyword">return</span> format(<span class="d_string">"MyClass(%s, %s, %s)"</span>, x, y, z);
+    }
+}
 
- <span class="d_comment">//Same as representMyStruct.
-</span> Node representMyClass(<span class="d_keyword">ref</span> Node node, Representer representer)
- {
-     <span class="d_comment">//The node is guaranteed to be MyClass as we add representer for MyClass.
-</span>     <span class="d_keyword">auto</span> value = node.as!MyClass;
-     <span class="d_comment">//Using custom scalar format, x:y:z.
-</span>     <span class="d_keyword">auto</span> scalar = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
-     <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
-</span>     <span class="d_keyword">return</span> representer.representScalar(<span class="d_string">"!myclass.tag"</span>, scalar);
- }
+<span class="d_comment">//Same as representMyStruct.
+</span>Node representMyClass(<span class="d_keyword">ref</span> Node node, Representer representer)
+{
+    <span class="d_comment">//The node is guaranteed to be MyClass as we add representer for MyClass.
+</span>    <span class="d_keyword">auto</span> value = node.as!MyClass;
+    <span class="d_comment">//Using custom scalar format, x:y:z.
+</span>    <span class="d_keyword">auto</span> scalar = format(<span class="d_string">"%s:%s:%s"</span>, value.x, value.y, value.z);
+    <span class="d_comment">//Representing as a scalar, with custom tag to specify this data type.
+</span>    <span class="d_keyword">return</span> representer.representScalar(<span class="d_string">"!myclass.tag"</span>, scalar);
+}
 
- <span class="d_keyword">void</span> main()
- {
-     <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
-     <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
-     representer.<span class="d_psymbol">addRepresenter</span>!MyClass(&amp;representMyClass);
-     dumper.representer = representer;
-     dumper.dump(Node(<span class="d_keyword">new</span> MyClass(1,2,3)));
- }
+<span class="d_keyword">void</span> main()
+{
+    <span class="d_keyword">auto</span> dumper = Dumper(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer;
+    representer.<span class="d_psymbol">addRepresenter</span>!MyClass(&amp;representMyClass);
+    dumper.representer = representer;
+    dumper.dump(Node(<span class="d_keyword">new</span> MyClass(1,2,3)));
+}
 </pre>
 </div>
 
 </dd>
-<dt class="d_decl">Node <a name="representScalar"></a><span class="ddoc_psymbol">representScalar</span>(string <b>tag</b>, string <b>scalar</b>, ScalarStyle <b>style</b> = (ScalarStyle).Invalid);
+<dt class="d_decl"><a name="Representer.representScalar"></a>@safe Node <a name="representScalar"></a><span class="ddoc_psymbol">representScalar</span>(string <b>tag</b>, string <b>scalar</b>, ScalarStyle <b>style</b> = ScalarStyle.Invalid);
 </dt>
 <dd><p>Represent a scalar with specified tag.
 </p>
@@ -227,32 +228,32 @@
 
 </div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<pre class="d_code"><span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
- {
-     <span class="d_keyword">auto</span> value = node.as!MyStruct;
-     <span class="d_keyword">auto</span> <span class="d_param">scalar</span> = format(value.x, <span class="d_string">":"</span>, value.y, <span class="d_string">":"</span>, value.z);
-     <span class="d_keyword">return</span> representer.<span class="d_psymbol">representScalar</span>(<span class="d_string">"!mystruct.tag"</span>, <span class="d_param">scalar</span>);
- }
+Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
+{
+    <span class="d_keyword">auto</span> value = node.as!MyStruct;
+    <span class="d_keyword">auto</span> <span class="d_param">scalar</span> = format(<span class="d_string">"%s:%s:%s"</span>, value.x, value.y, value.z);
+    <span class="d_keyword">return</span> representer.<span class="d_psymbol">representScalar</span>(<span class="d_string">"!mystruct.tag"</span>, <span class="d_param">scalar</span>);
+}
 </pre>
 </p>
 
 </dd>
-<dt class="d_decl">Node <a name="representSequence"></a><span class="ddoc_psymbol">representSequence</span>(string <b>tag</b>, Node[] <b>sequence</b>, CollectionStyle <b>style</b> = (CollectionStyle).Invalid);
+<dt class="d_decl"><a name="Representer.representSequence"></a>@trusted Node <a name="representSequence"></a><span class="ddoc_psymbol">representSequence</span>(string <b>tag</b>, Node[] <b>sequence</b>, CollectionStyle <b>style</b> = CollectionStyle.Invalid);
 </dt>
 <dd><p>Represent a sequence with specified tag, representing children first.
 </p>
@@ -274,34 +275,34 @@
 
 </div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<pre class="d_code"><span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
- {
-     <span class="d_keyword">auto</span> value = node.as!MyStruct;
-     <span class="d_keyword">auto</span> nodes = [Node(value.x), Node(value.y), Node(value.z)];
-     <span class="d_comment">//use flow style
-</span>     <span class="d_keyword">return</span> representer.<span class="d_psymbol">representSequence</span>(<span class="d_string">"!mystruct.tag"</span>, nodes,
-                                          CollectionStyle.Flow);
- }
+Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
+{
+    <span class="d_keyword">auto</span> value = node.as!MyStruct;
+    <span class="d_keyword">auto</span> nodes = [Node(value.x), Node(value.y), Node(value.z)];
+    <span class="d_comment">//use flow style
+</span>    <span class="d_keyword">return</span> representer.<span class="d_psymbol">representSequence</span>(<span class="d_string">"!mystruct.tag"</span>, nodes,
+                                         CollectionStyle.Flow);
+}
 </pre>
 </p>
 
 </dd>
-<dt class="d_decl">Node <a name="representMapping"></a><span class="ddoc_psymbol">representMapping</span>(string <b>tag</b>, Pair[] <b>pairs</b>, CollectionStyle <b>style</b> = (CollectionStyle).Invalid);
+<dt class="d_decl"><a name="Representer.representMapping"></a>@trusted Node <a name="representMapping"></a><span class="ddoc_psymbol">representMapping</span>(string <b>tag</b>, Node.Pair[] <b>pairs</b>, CollectionStyle <b>style</b> = CollectionStyle.Invalid);
 </dt>
 <dd><p>Represent a mapping with specified tag, representing children first.
 </p>
@@ -310,7 +311,7 @@
 </p>
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>tag</b></td>
 <td valign=top>Tag of the mapping.</td></tr>
-<tr><td valign=top>Pair[] <b>pairs</b></td>
+<tr><td valign=top>Node.Pair[] <b>pairs</b></td>
 <td valign=top>Key-value pairs of the mapping.</td></tr>
 <tr><td valign=top>CollectionStyle <b>style</b></td>
 <td valign=top>Style of the mapping. If invalid, default style will be used.
@@ -323,76 +324,76 @@
 
 </div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<pre class="d_code"><span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
- {
-     <span class="d_keyword">auto</span> value = node.as!MyStruct;
-     <span class="d_keyword">auto</span> <span class="d_param">pairs</span> = [Node.Pair(<span class="d_string">"x"</span>, value.x),
-                   Node.Pair(<span class="d_string">"y"</span>, value.y),
-                   Node.Pair(<span class="d_string">"z"</span>, value.z)];
-     <span class="d_keyword">return</span> representer.<span class="d_psymbol">representMapping</span>(<span class="d_string">"!mystruct.tag"</span>, <span class="d_param">pairs</span>);
- }
+Node representMyStruct(<span class="d_keyword">ref</span> Node node, Representer representer)
+{
+    <span class="d_keyword">auto</span> value = node.as!MyStruct;
+    <span class="d_keyword">auto</span> <span class="d_param">pairs</span> = [Node.Pair(<span class="d_string">"x"</span>, value.x),
+                  Node.Pair(<span class="d_string">"y"</span>, value.y),
+                  Node.Pair(<span class="d_string">"z"</span>, value.z)];
+    <span class="d_keyword">return</span> representer.<span class="d_psymbol">representMapping</span>(<span class="d_string">"!mystruct.tag"</span>, <span class="d_param">pairs</span>);
+}
 </pre>
 </p>
 
 </dd>
 </dl>
 </dd>
-<dt class="d_decl">Node <a name="representNull"></a><span class="ddoc_psymbol">representNull</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representNull"></a>@safe Node <a name="representNull"></a><span class="ddoc_psymbol">representNull</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a null node as a null YAML value.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representString"></a><span class="ddoc_psymbol">representString</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representString"></a>@safe Node <a name="representString"></a><span class="ddoc_psymbol">representString</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a string node as a string scalar.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representBytes"></a><span class="ddoc_psymbol">representBytes</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representBytes"></a>@system Node <a name="representBytes"></a><span class="ddoc_psymbol">representBytes</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a bytes node as a binary scalar.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representBool"></a><span class="ddoc_psymbol">representBool</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representBool"></a>@safe Node <a name="representBool"></a><span class="ddoc_psymbol">representBool</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a bool node as a bool scalar.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representLong"></a><span class="ddoc_psymbol">representLong</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representLong"></a>@system Node <a name="representLong"></a><span class="ddoc_psymbol">representLong</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a long node as an integer scalar.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representReal"></a><span class="ddoc_psymbol">representReal</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representReal"></a>@system Node <a name="representReal"></a><span class="ddoc_psymbol">representReal</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a real node as a floating point scalar.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representSysTime"></a><span class="ddoc_psymbol">representSysTime</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representSysTime"></a>@system Node <a name="representSysTime"></a><span class="ddoc_psymbol">representSysTime</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a SysTime node as a timestamp.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representNodes"></a><span class="ddoc_psymbol">representNodes</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representNodes"></a>@safe Node <a name="representNodes"></a><span class="ddoc_psymbol">representNodes</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a sequence node as sequence/set.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="representPairs"></a><span class="ddoc_psymbol">representPairs</span>(ref Node <b>node</b>, Representer <b>representer</b>);
+<dt class="d_decl"><a name="representPairs"></a>@system Node <a name="representPairs"></a><span class="ddoc_psymbol">representPairs</span>(ref Node <b>node</b>, Representer <b>representer</b>);
 </dt>
 <dd><p>Represent a mapping node as map/ordered map/pairs.</p>
 

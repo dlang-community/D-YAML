@@ -44,13 +44,13 @@
  nodes. This can be used to implement custom data types. A tutorial can be
  found <a href="../tutorials/custom_types.html">here</a>.</p>
 
-<dl><dt class="d_decl">class <a name="ConstructorException"></a><span class="ddoc_psymbol">ConstructorException</span>: dyaml.exception.YAMLException;
+<dl><dt class="d_decl"><a name="ConstructorException"></a>class <a name="ConstructorException"></a><span class="ddoc_psymbol">ConstructorException</span>: dyaml.exception.YAMLException;
 </dt>
 <dd><p>Exception thrown at constructor errors.
 </p>
 <p>Can be thrown by custom constructor functions.</p>
 
-<dl><dt class="d_decl">this(string <b>msg</b>, Mark <b>start</b>, Mark <b>end</b>, string <b>file</b> = __FILE__, int <b>line</b> = __LINE__);
+<dl><dt class="d_decl"><a name="ConstructorException.this"></a>@safe  this(string <b>msg</b>, Mark <b>start</b>, Mark <b>end</b>, string <b>file</b> = __FILE__, int <b>line</b> = __LINE__);
 </dt>
 <dd><p>Construct a ConstructorException.
 </p>
@@ -65,7 +65,7 @@
 </dd>
 </dl>
 </dd>
-<dt class="d_decl">class <a name="Constructor"></a><span class="ddoc_psymbol">Constructor</span>;
+<dt class="d_decl"><a name="Constructor"></a>class <a name="Constructor"></a><span class="ddoc_psymbol">Constructor</span>;
 </dt>
 <dd><p>Constructs YAML values.
 </p>
@@ -84,7 +84,7 @@
 
  If a tag is detected with no known constructor function, it is considered an error.</p>
 
-<dl><dt class="d_decl">this(const(bool) <b>defaultConstructors</b> = true);
+<dl><dt class="d_decl"><a name="Constructor.this"></a>nothrow @safe  this(const Flag!"useDefaultConstructors" <b>defaultConstructors</b> = Yes.useDefaultConstructors);
 </dt>
 <dd><p>Construct a Constructor.
 </p>
@@ -92,23 +92,23 @@
  <b>defaultConstructors</b> to disable constructor functions for these.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>const(bool) <b>defaultConstructors</b></td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Flag!"useDefaultConstructors" <b>defaultConstructors</b></td>
 <td valign=top>Use constructors for default YAML tags?</td></tr>
 </table></div>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorScalar"></a><span class="ddoc_psymbol">addConstructorScalar</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
+<dt class="d_decl"><a name="Constructor.addConstructorScalar"></a>nothrow @safe void <a name="addConstructorScalar"></a><span class="ddoc_psymbol">addConstructorScalar</span>(T)(const string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from scalar.
 </p>
-<p>The function must take a reference to Node to construct from.
- The node contains a string for scalars, Node[] for sequences and
- Node.Pair[] for mappings.
+<p>The function must take a reference to <span class="d_inlinecode">Node</span> to construct from.
+ The node contains a string for scalars,  for sequences and
+  for mappings.
 <br>
 
  Any exception thrown by this function will be caught by D:YAML and
- its message will be added to a YAMLException that will also tell the
- user which type failed to construct, and position in the file.
+ its message will be added to a  that will also tell
+ the user which type failed to construct, and position in the file.
 <br>
 
 <br>
@@ -129,53 +129,53 @@
  values - it is not const for compatibility reasons.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>tag</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string tag</td>
 <td valign=top>Tag for the function to handle.</td></tr>
-<tr><td valign=top>ctor</td>
+<tr><td valign=top>T function(ref Node) ctor</td>
 <td valign=top>Constructor function.</td></tr>
 </table></div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+<pre class="d_code"><span class="d_keyword">import</span> std.string;
 
- <span class="d_keyword">import</span> yaml;
+<span class="d_keyword">import</span> dyaml.all;
 
- <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- MyStruct constructMyStructScalar(<span class="d_keyword">ref</span> Node node)
- {
-     <span class="d_comment">//Guaranteed to be string as we construct from scalar.
-</span>     <span class="d_comment">//!mystruct x:y:z
-</span>     <span class="d_keyword">auto</span> parts = node.as!string().split(<span class="d_string">":"</span>);
-     <span class="d_comment">//If this throws, the D:YAML will handle it and throw a YAMLException.
-</span>     <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
- }
+MyStruct constructMyStructScalar(<span class="d_keyword">ref</span> Node node)
+{
+    <span class="d_comment">//Guaranteed to be string as we construct from scalar.
+</span>    <span class="d_comment">//!mystruct x:y:z
+</span>    <span class="d_keyword">auto</span> parts = node.as!string().split(<span class="d_string">":"</span>);
+    <span class="d_comment">//If this throws, the D:YAML will handle it and throw a YAMLException.
+</span>    <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
+}
 
- <span class="d_keyword">void</span> main()
- {
-     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
-     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
-     constructor.<span class="d_psymbol">addConstructorScalar</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructScalar);
-     loader.constructor = constructor;
-     Node node = loader.load();
- }
+<span class="d_keyword">void</span> main()
+{
+    <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+    constructor.<span class="d_psymbol">addConstructorScalar</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructScalar);
+    loader.constructor = constructor;
+    Node node = loader.load();
+}
 </pre>
 </p>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorSequence"></a><span class="ddoc_psymbol">addConstructorSequence</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
+<dt class="d_decl"><a name="Constructor.addConstructorSequence"></a>nothrow @safe void <a name="addConstructorSequence"></a><span class="ddoc_psymbol">addConstructorSequence</span>(T)(const string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from sequence.
 </p>
@@ -183,45 +183,45 @@
 
 </div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+<pre class="d_code"><span class="d_keyword">import</span> std.string;
 
- <span class="d_keyword">import</span> yaml;
+<span class="d_keyword">import</span> dyaml.all;
 
- <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- MyStruct constructMyStructSequence(<span class="d_keyword">ref</span> Node node)
- {
-     <span class="d_comment">//node is guaranteed to be sequence.
-</span>     <span class="d_comment">//!mystruct [x, y, z]
-</span>     <span class="d_keyword">return</span> MyStruct(node[0].as!<span class="d_keyword">int</span>, node[1].as!<span class="d_keyword">int</span>, node[2].as!<span class="d_keyword">int</span>);
- }
+MyStruct constructMyStructSequence(<span class="d_keyword">ref</span> Node node)
+{
+    <span class="d_comment">//node is guaranteed to be sequence.
+</span>    <span class="d_comment">//!mystruct [x, y, z]
+</span>    <span class="d_keyword">return</span> MyStruct(node[0].as!<span class="d_keyword">int</span>, node[1].as!<span class="d_keyword">int</span>, node[2].as!<span class="d_keyword">int</span>);
+}
 
- <span class="d_keyword">void</span> main()
- {
-     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
-     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
-     constructor.<span class="d_psymbol">addConstructorSequence</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructSequence);
-     loader.constructor = constructor;
-     Node node = loader.load();
- }
+<span class="d_keyword">void</span> main()
+{
+    <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+    constructor.<span class="d_psymbol">addConstructorSequence</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructSequence);
+    loader.constructor = constructor;
+    Node node = loader.load();
+}
 </pre>
 </p>
 
 </dd>
-<dt class="d_decl">void <a name="addConstructorMapping"></a><span class="ddoc_psymbol">addConstructorMapping</span>(T)(in string <b>tag</b>, T function(ref Node) <b>ctor</b>);
+<dt class="d_decl"><a name="Constructor.addConstructorMapping"></a>nothrow @safe void <a name="addConstructorMapping"></a><span class="ddoc_psymbol">addConstructorMapping</span>(T)(const string <b>tag</b>, T function(ref Node) <b>ctor</b>);
 </dt>
 <dd><p>Add a constructor function from a mapping.
 </p>
@@ -229,112 +229,112 @@
 
 </div>
 <p><b>Example:</b><br>
-<pre class="d_code"> <span class="d_keyword">import</span> std.string;
+<pre class="d_code"><span class="d_keyword">import</span> std.string;
 
- <span class="d_keyword">import</span> yaml;
+<span class="d_keyword">import</span> dyaml.all;
 
- <span class="d_keyword">struct</span> MyStruct
- {
-     <span class="d_keyword">int</span> x, y, z;
+<span class="d_keyword">struct</span> MyStruct
+{
+    <span class="d_keyword">int</span> x, y, z;
 
-     <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
-</span>     <span class="d_comment">//This is used for ordering in mappings.
-</span>     <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
-     {
-         <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
-         <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
-         <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
-         <span class="d_keyword">return</span> 0;
-     }
- }
+    <span class="d_comment">//Any D:YAML type must have a custom opCmp operator.
+</span>    <span class="d_comment">//This is used for ordering in mappings.
+</span>    <span class="d_keyword">const</span> <span class="d_keyword">int</span> opCmp(<span class="d_keyword">ref</span> <span class="d_keyword">const</span> MyStruct s)
+    {
+        <span class="d_keyword">if</span>(x != s.x){<span class="d_keyword">return</span> x - s.x;}
+        <span class="d_keyword">if</span>(y != s.y){<span class="d_keyword">return</span> y - s.y;}
+        <span class="d_keyword">if</span>(z != s.z){<span class="d_keyword">return</span> z - s.z;}
+        <span class="d_keyword">return</span> 0;
+    }
+}
 
- MyStruct constructMyStructMapping(<span class="d_keyword">ref</span> Node node)
- {
-     <span class="d_comment">//node is guaranteed to be mapping.
-</span>     <span class="d_comment">//!mystruct {"x": x, "y": y, "z": z}
-</span>     <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].as!<span class="d_keyword">int</span>);
- }
+MyStruct constructMyStructMapping(<span class="d_keyword">ref</span> Node node)
+{
+    <span class="d_comment">//node is guaranteed to be mapping.
+</span>    <span class="d_comment">//!mystruct {"x": x, "y": y, "z": z}
+</span>    <span class="d_keyword">return</span> MyStruct(node[<span class="d_string">"x"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"y"</span>].as!<span class="d_keyword">int</span>, node[<span class="d_string">"z"</span>].as!<span class="d_keyword">int</span>);
+}
 
- <span class="d_keyword">void</span> main()
- {
-     <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
-     <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
-     constructor.<span class="d_psymbol">addConstructorMapping</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructMapping);
-     loader.constructor = constructor;
-     Node node = loader.load();
- }
+<span class="d_keyword">void</span> main()
+{
+    <span class="d_keyword">auto</span> loader = Loader(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor;
+    constructor.<span class="d_psymbol">addConstructorMapping</span>(<span class="d_string">"!mystruct"</span>, &amp;constructMyStructMapping);
+    loader.constructor = constructor;
+    Node node = loader.load();
+}
 </pre>
 </p>
 
 </dd>
 </dl>
 </dd>
-<dt class="d_decl">YAMLNull <a name="constructNull"></a><span class="ddoc_psymbol">constructNull</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructNull"></a>YAMLNull <a name="constructNull"></a><span class="ddoc_psymbol">constructNull</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a null node.</p>
 
 </dd>
-<dt class="d_decl">YAMLMerge <a name="constructMerge"></a><span class="ddoc_psymbol">constructMerge</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructMerge"></a>YAMLMerge <a name="constructMerge"></a><span class="ddoc_psymbol">constructMerge</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a merge node - a node that merges another node into a mapping.</p>
 
 </dd>
-<dt class="d_decl">bool <a name="constructBool"></a><span class="ddoc_psymbol">constructBool</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructBool"></a>bool <a name="constructBool"></a><span class="ddoc_psymbol">constructBool</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a boolean node.</p>
 
 </dd>
-<dt class="d_decl">long <a name="constructLong"></a><span class="ddoc_psymbol">constructLong</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructLong"></a>long <a name="constructLong"></a><span class="ddoc_psymbol">constructLong</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an integer (long) node.</p>
 
 </dd>
-<dt class="d_decl">real <a name="constructReal"></a><span class="ddoc_psymbol">constructReal</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructReal"></a>real <a name="constructReal"></a><span class="ddoc_psymbol">constructReal</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a floating point (real) node.</p>
 
 </dd>
-<dt class="d_decl">ubyte[] <a name="constructBinary"></a><span class="ddoc_psymbol">constructBinary</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructBinary"></a>ubyte[] <a name="constructBinary"></a><span class="ddoc_psymbol">constructBinary</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a binary (base64) node.</p>
 
 </dd>
-<dt class="d_decl">SysTime <a name="constructTimestamp"></a><span class="ddoc_psymbol">constructTimestamp</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructTimestamp"></a>SysTime <a name="constructTimestamp"></a><span class="ddoc_psymbol">constructTimestamp</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a timestamp (SysTime) node.</p>
 
 </dd>
-<dt class="d_decl">string <a name="constructString"></a><span class="ddoc_psymbol">constructString</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructString"></a>string <a name="constructString"></a><span class="ddoc_psymbol">constructString</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a string node.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="getPairs"></a><span class="ddoc_psymbol">getPairs</span>(string <b>type</b>, Node[] <b>nodes</b>);
+<dt class="d_decl"><a name="getPairs"></a>Node.Pair[] <a name="getPairs"></a><span class="ddoc_psymbol">getPairs</span>(string <b>type</b>, Node[] <b>nodes</b>);
 </dt>
 <dd><p>Convert a sequence of single-element mappings into a sequence of pairs.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructOrderedMap"></a><span class="ddoc_psymbol">constructOrderedMap</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructOrderedMap"></a>Node.Pair[] <a name="constructOrderedMap"></a><span class="ddoc_psymbol">constructOrderedMap</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) node.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructPairs"></a><span class="ddoc_psymbol">constructPairs</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructPairs"></a>Node.Pair[] <a name="constructPairs"></a><span class="ddoc_psymbol">constructPairs</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) node.</p>
 
 </dd>
-<dt class="d_decl">Node[] <a name="constructSet"></a><span class="ddoc_psymbol">constructSet</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructSet"></a>Node[] <a name="constructSet"></a><span class="ddoc_psymbol">constructSet</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a set node.</p>
 
 </dd>
-<dt class="d_decl">Node[] <a name="constructSequence"></a><span class="ddoc_psymbol">constructSequence</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructSequence"></a>Node[] <a name="constructSequence"></a><span class="ddoc_psymbol">constructSequence</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct a sequence (array) node.</p>
 
 </dd>
-<dt class="d_decl">Pair[] <a name="constructMap"></a><span class="ddoc_psymbol">constructMap</span>(ref Node <b>node</b>);
+<dt class="d_decl"><a name="constructMap"></a>Node.Pair[] <a name="constructMap"></a><span class="ddoc_psymbol">constructMap</span>(ref Node <b>node</b>);
 </dt>
 <dd><p>Construct an unordered map (unordered set of key:value pairs without duplicates) node.</p>
 

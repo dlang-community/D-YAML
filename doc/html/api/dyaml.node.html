@@ -43,23 +43,23 @@
 <p>Node of a YAML document. Used to read YAML data once it's loaded,
  and to prepare data to emit.</p>
 
-<dl><dt class="d_decl">class <a name="NodeException"></a><span class="ddoc_psymbol">NodeException</span>: dyaml.exception.YAMLException;
+<dl><dt class="d_decl"><a name="NodeException"></a>class <a name="NodeException"></a><span class="ddoc_psymbol">NodeException</span>: dyaml.exception.YAMLException;
 </dt>
 <dd><p>Exception thrown at node related errors.</p>
 
 </dd>
-<dt class="d_decl">struct <a name="YAMLNull"></a><span class="ddoc_psymbol">YAMLNull</span>;
+<dt class="d_decl"><a name="YAMLNull"></a>struct <a name="YAMLNull"></a><span class="ddoc_psymbol">YAMLNull</span>;
 </dt>
 <dd><p>Null YAML type. Used in nodes with null values.</p>
 
-<dl><dt class="d_decl">const string <a name="toString"></a><span class="ddoc_psymbol">toString</span>();
+<dl><dt class="d_decl"><a name="YAMLNull.toString"></a>const pure nothrow @safe string <a name="toString"></a><span class="ddoc_psymbol">toString</span>();
 </dt>
 <dd><p>Used for string conversion.</p>
 
 </dd>
 </dl>
 </dd>
-<dt class="d_decl">struct <a name="Node"></a><span class="ddoc_psymbol">Node</span>;
+<dt class="d_decl"><a name="Node"></a>struct <a name="Node"></a><span class="ddoc_psymbol">Node</span>;
 </dt>
 <dd><p>YAML node.
 </p>
@@ -67,39 +67,50 @@
  sequence or mapping of nodes. You can get data from a <a name="Node"></a><span class="ddoc_psymbol">Node</span> directly or
  iterate over it if it's a collection.</p>
 
-<dl><dt class="d_decl">struct <a name="Pair"></a><span class="ddoc_psymbol">Pair</span>;
+<dl><dt class="d_decl"><a name="Node.Pair"></a>struct <a name="Pair"></a><span class="ddoc_psymbol">Pair</span>;
 </dt>
 <dd><p>Key-value pair of YAML nodes, used in mappings.</p>
 
-<dl><dt class="d_decl">Node <a name="key"></a><span class="ddoc_psymbol">key</span>;
+<dl><dt class="d_decl"><a name="Node.Pair.key"></a>Node <a name="key"></a><span class="ddoc_psymbol">key</span>;
 </dt>
 <dd><p>Key node.</p>
 
 </dd>
-<dt class="d_decl">Node <a name="value"></a><span class="ddoc_psymbol">value</span>;
+<dt class="d_decl"><a name="Node.Pair.value"></a>Node <a name="value"></a><span class="ddoc_psymbol">value</span>;
 </dt>
 <dd><p>Value node.</p>
 
 </dd>
-<dt class="d_decl">this(K, V)(K <b>key</b>, V <b>value</b>);
+<dt class="d_decl"><a name="Node.Pair.this"></a>@safe  this(K, V)(K <b>key</b>, V <b>value</b>);
 </dt>
 <dd><p>Construct a Pair from two values. Will be converted to Nodes if needed.</p>
 
 </dd>
-<dt class="d_decl">const bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(ref const Pair <b>rhs</b>);
+<dt class="d_decl"><a name="Node.Pair.opEquals"></a>const @safe bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(ref const Pair <b>rhs</b>);
 </dt>
 <dd><p>Equality test with another Pair.</p>
 
 </dd>
+<dt class="d_decl"><a name="Node.Pair.opAssign"></a>nothrow @safe void <a name="opAssign"></a><span class="ddoc_psymbol">opAssign</span>(Pair <b>rhs</b>);
+</dt>
+<dd><p>Assignment (shallow copy) by value.</p>
+
+</dd>
+<dt class="d_decl"><a name="Node.Pair.opAssign"></a>nothrow @safe void <a name="opAssign"></a><span class="ddoc_psymbol">opAssign</span>(ref Pair <b>rhs</b>);
+</dt>
+<dd><p>Assignment (shallow copy) by reference.</p>
+
+</dd>
 </dl>
 </dd>
-<dt class="d_decl">this(T)(T <b>value</b>, in string <b>tag</b> = null);
+<dt class="d_decl"><a name="Node.this"></a>@trusted  this(T)(T <b>value</b>, const string <b>tag</b> = null) if (isSomeString!T || !isArray!T &amp;&amp; !isAssociativeArray!T);
 </dt>
 <dd><p>Construct a Node from a value.
 </p>
-<p>Any type except of Node can be stored in a Node, but default YAML
+<p>Any type except for Node can be stored in a Node, but default YAML
  types (integers, floats, strings, timestamps, etc.) will be stored
- more efficiently.
+ more efficiently. To create a node representing a <b>null</b> value,
+ construct it from YAMLNull.
 <br>
 
 <br>
@@ -109,9 +120,9 @@
  otherwise emitting will fail.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>value</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T value</td>
 <td valign=top>Value to store in the node.</td></tr>
-<tr><td valign=top>tag</td>
+<tr><td valign=top>string tag</td>
 <td valign=top>Overrides tag of the node when emitted, regardless
                   of tag determined by Representer. Representer uses
                   this to determine YAML data type when a D data type
@@ -121,7 +132,7 @@
 </table></div>
 
 </dd>
-<dt class="d_decl">this(T)(T[] <b>array</b>, in string <b>tag</b> = null);
+<dt class="d_decl"><a name="Node.this"></a>@safe  this(T)(T[] <b>array</b>, const string <b>tag</b> = null) if (!isSomeString!(T[]));
 </dt>
 <dd><p>Construct a node from an array.
 </p>
@@ -130,9 +141,9 @@
  those nodes are stored.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>array</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T[] array</td>
 <td valign=top>Values to store in the node.</td></tr>
-<tr><td valign=top>tag</td>
+<tr><td valign=top>string tag</td>
 <td valign=top>Overrides tag of the node when emitted, regardless
                   of tag determined by Representer. Representer uses
                   this to determine YAML data type when a D data type
@@ -143,15 +154,15 @@
                   must be in full form, e.g. "tag:yaml.org,2002:set",
                   not a shortcut, like "!!set".</td></tr>
 </table></div>
-<b>Examples:</b><div class="pbr"><pre class="d_code"> <span class="d_comment">//Will be emitted as a sequence (default for arrays)
-</span> <span class="d_keyword">auto</span> seq = Node([1, 2, 3, 4, 5]);
- <span class="d_comment">//Will be emitted as a set (overriden tag)
-</span> <span class="d_keyword">auto</span> set = Node([1, 2, 3, 4, 5], <span class="d_string">"tag:yaml.org,2002:set"</span>);
+<b>Examples:</b><div class="pbr"><pre class="d_code"><span class="d_comment">//Will be emitted as a sequence (default for arrays)
+</span><span class="d_keyword">auto</span> seq = Node([1, 2, 3, 4, 5]);
+<span class="d_comment">//Will be emitted as a set (overriden tag)
+</span><span class="d_keyword">auto</span> set = Node([1, 2, 3, 4, 5], <span class="d_string">"tag:yaml.org,2002:set"</span>);
 </pre>
 </div>
 
 </dd>
-<dt class="d_decl">this(K, V)(V[K] <b>array</b>, in string <b>tag</b> = null);
+<dt class="d_decl"><a name="Node.this"></a>@safe  this(K, V)(V[K] <b>array</b>, const string <b>tag</b> = null);
 </dt>
 <dd><p>Construct a node from an associative array.
 </p>
@@ -159,9 +170,9 @@
  Otherwise they are converted to nodes and then stored.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>array</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>V[K] array</td>
 <td valign=top>Values to store in the node.</td></tr>
-<tr><td valign=top>tag</td>
+<tr><td valign=top>string tag</td>
 <td valign=top>Overrides tag of the node when emitted, regardless
                   of tag determined by Representer. Representer uses
                   this to determine YAML data type when a D data type
@@ -173,17 +184,17 @@
                   in full form, e.g. "tag:yaml.org,2002:omap", not a
                   shortcut, like "!!omap".</td></tr>
 </table></div>
-<b>Examples:</b><div class="pbr"><pre class="d_code"> <span class="d_comment">//Will be emitted as an unordered mapping (default for mappings)
-</span> <span class="d_keyword">auto</span> map   = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>]);
- <span class="d_comment">//Will be emitted as an ordered map (overriden tag)
-</span> <span class="d_keyword">auto</span> omap  = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:omap"</span>);
- <span class="d_comment">//Will be emitted as pairs (overriden tag)
-</span> <span class="d_keyword">auto</span> pairs = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:pairs"</span>);
+<b>Examples:</b><div class="pbr"><pre class="d_code"><span class="d_comment">//Will be emitted as an unordered mapping (default for mappings)
+</span><span class="d_keyword">auto</span> map   = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>]);
+<span class="d_comment">//Will be emitted as an ordered map (overriden tag)
+</span><span class="d_keyword">auto</span> omap  = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:omap"</span>);
+<span class="d_comment">//Will be emitted as pairs (overriden tag)
+</span><span class="d_keyword">auto</span> pairs = Node([1 : <span class="d_string">"a"</span>, 2 : <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:pairs"</span>);
 </pre>
 </div>
 
 </dd>
-<dt class="d_decl">this(K, V)(K[] <b>keys</b>, V[] <b>values</b>, in string <b>tag</b> = null);
+<dt class="d_decl"><a name="Node.this"></a>@safe  this(K, V)(K[] <b>keys</b>, V[] <b>values</b>, const string <b>tag</b> = null) if (!(isSomeString!(K[]) || isSomeString!(V[])));
 </dt>
 <dd><p>Construct a node from arrays of keys and values.
 </p>
@@ -203,11 +214,11 @@
  Otherwise they are converted to nodes and then stored.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>keys</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>K[] keys</td>
 <td valign=top>Keys of the mapping, from first to last pair.</td></tr>
-<tr><td valign=top>values</td>
+<tr><td valign=top>V[] values</td>
 <td valign=top>Values of the mapping, from first to last pair.</td></tr>
-<tr><td valign=top>tag</td>
+<tr><td valign=top>string tag</td>
 <td valign=top>Overrides tag of the node when emitted, regardless
                    of tag determined by Representer. Representer uses
                    this to determine YAML data type when a D data type
@@ -219,47 +230,52 @@
                    in full form, e.g. "tag:yaml.org,2002:omap", not a
                    shortcut, like "!!omap".</td></tr>
 </table></div>
-<b>Examples:</b><div class="pbr"><pre class="d_code"> <span class="d_comment">//Will be emitted as an unordered mapping (default for mappings)
-</span> <span class="d_keyword">auto</span> map   = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>]);
- <span class="d_comment">//Will be emitted as an ordered map (overriden tag)
-</span> <span class="d_keyword">auto</span> omap  = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:omap"</span>);
- <span class="d_comment">//Will be emitted as pairs (overriden tag)
-</span> <span class="d_keyword">auto</span> pairs = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:pairs"</span>);
+<b>Examples:</b><div class="pbr"><pre class="d_code"><span class="d_comment">//Will be emitted as an unordered mapping (default for mappings)
+</span><span class="d_keyword">auto</span> map   = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>]);
+<span class="d_comment">//Will be emitted as an ordered map (overriden tag)
+</span><span class="d_keyword">auto</span> omap  = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:omap"</span>);
+<span class="d_comment">//Will be emitted as pairs (overriden tag)
+</span><span class="d_keyword">auto</span> pairs = Node([1, 2], [<span class="d_string">"a"</span>, <span class="d_string">"b"</span>], <span class="d_string">"tag:yaml.org,2002:pairs"</span>);
 </pre>
 </div>
 
 </dd>
-<dt class="d_decl">const @property bool <a name="isValid"></a><span class="ddoc_psymbol">isValid</span>();
+<dt class="d_decl"><a name="Node.isValid"></a>const pure nothrow @property @safe bool <a name="isValid"></a><span class="ddoc_psymbol">isValid</span>();
 </dt>
 <dd><p>Is this node valid (initialized)? </p>
 
 </dd>
-<dt class="d_decl">const @property bool <a name="isScalar"></a><span class="ddoc_psymbol">isScalar</span>();
+<dt class="d_decl"><a name="Node.isScalar"></a>const nothrow @property @safe bool <a name="isScalar"></a><span class="ddoc_psymbol">isScalar</span>();
 </dt>
 <dd><p>Is this node a scalar value?</p>
 
 </dd>
-<dt class="d_decl">const @property bool <a name="isSequence"></a><span class="ddoc_psymbol">isSequence</span>();
+<dt class="d_decl"><a name="Node.isSequence"></a>const nothrow @property @safe bool <a name="isSequence"></a><span class="ddoc_psymbol">isSequence</span>();
 </dt>
 <dd><p>Is this node a sequence?</p>
 
 </dd>
-<dt class="d_decl">const @property bool <a name="isMapping"></a><span class="ddoc_psymbol">isMapping</span>();
+<dt class="d_decl"><a name="Node.isMapping"></a>const nothrow @property @safe bool <a name="isMapping"></a><span class="ddoc_psymbol">isMapping</span>();
 </dt>
 <dd><p>Is this node a mapping?</p>
 
 </dd>
-<dt class="d_decl">const @property bool <a name="isUserType"></a><span class="ddoc_psymbol">isUserType</span>();
+<dt class="d_decl"><a name="Node.isUserType"></a>const nothrow @property @safe bool <a name="isUserType"></a><span class="ddoc_psymbol">isUserType</span>();
 </dt>
 <dd><p>Is this node a user defined type?</p>
 
 </dd>
-<dt class="d_decl">const @property string <a name="tag"></a><span class="ddoc_psymbol">tag</span>();
+<dt class="d_decl"><a name="Node.isNull"></a>const nothrow @property @safe bool <a name="isNull"></a><span class="ddoc_psymbol">isNull</span>();
+</dt>
+<dd><p>Is this node <b>null</b>?</p>
+
+</dd>
+<dt class="d_decl"><a name="Node.tag"></a>const nothrow @property @safe string <a name="tag"></a><span class="ddoc_psymbol">tag</span>();
 </dt>
 <dd><p>Return <a name="tag"></a><span class="ddoc_psymbol">tag</span> of the node.</p>
 
 </dd>
-<dt class="d_decl">const bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(T)(ref const T <b>rhs</b>);
+<dt class="d_decl"><a name="Node.opEquals"></a>const @safe bool <a name="opEquals"></a><span class="ddoc_psymbol">opEquals</span>(T)(auto ref const T <b>rhs</b>);
 </dt>
 <dd><p>Equality test.
 </p>
@@ -267,34 +283,40 @@
  This might be quite expensive if testing entire documents.
 <br>
 
- If T is not Node, convert the node to T and test equality with that.
+ If T is not Node, get a value if type T from the node and test
+ equality with that.
+<br>
+
+ To test equality with a <b>null</b> YAML value, use YAMLNull.
 
 </p>
-<b>Examples:</b><div class="pbr"><pre class="d_code"> <span class="d_keyword">auto</span> node = Node(42);
+<b>Examples:</b><div class="pbr"><pre class="d_code"><span class="d_keyword">auto</span> node = Node(42);
 
- <span class="d_keyword">assert</span>(node == 42);
- <span class="d_keyword">assert</span>(node == <span class="d_string">"42"</span>);
- <span class="d_keyword">assert</span>(node != <span class="d_string">"43"</span>);
+<span class="d_keyword">assert</span>(node == 42);
+<span class="d_keyword">assert</span>(node != <span class="d_string">"42"</span>);
+<span class="d_keyword">assert</span>(node != <span class="d_string">"43"</span>);
 </pre>
 
 </div>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>rhs</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T rhs</td>
 <td valign=top>Variable to test equality with.</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr"><b>true</b> if equal, <b>false</b> otherwise.</div>
 
 </dd>
-<dt class="d_decl">alias <a name="as"></a><span class="ddoc_psymbol">as</span>;
+<dt class="d_decl"><a name="Node.as"></a>alias <a name="as"></a><span class="ddoc_psymbol">as</span> = get(T, Flag stringConversion = Yes.stringConversion)() if (!is(T == const));
 </dt>
 <dd><p>Shortcut for get().</p>
 
 </dd>
-<dt class="d_decl">T <a name="get"></a><span class="ddoc_psymbol">get</span>(T)();
+<dt class="d_decl"><a name="Node.get"></a>@trusted T <a name="get"></a><span class="ddoc_psymbol">get</span>(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() if (!is(T == const));
 </dt>
 <dd><p>Get the value of the node as specified type.
 </p>
 <p>If the specifed type does not match type in the node,
- conversion is attempted.
+ conversion is attempted. The stringConversion template
+ parameter can be used to disable conversion from non-string
+ types to strings.
 <br>
 
  Numeric values are range checked, throwing if out of range of
@@ -303,6 +325,10 @@
 
  Timestamps are stored as std.datetime.SysTime.
  Binary values are decoded and stored as ubyte[].
+<br>
+
+ To <a name="get"></a><span class="ddoc_psymbol">get</span> a <b>null</b> value, use <a name="get"></a><span class="ddoc_psymbol">get</span>!YAMLNull . This is to
+ prevent getting <b>null</b> values for types such as strings or classes.
 <br>
 
  <br><b>Mapping default values:</b>
@@ -318,11 +344,11 @@
 
 </p>
 <b>Examples:</b><div class="pbr">Automatic type conversion:
-<pre class="d_code"> <span class="d_keyword">auto</span> node = Node(42);
+<pre class="d_code"><span class="d_keyword">auto</span> node = Node(42);
 
- <span class="d_keyword">assert</span>(node.as!<span class="d_keyword">int</span> == 42);
- <span class="d_keyword">assert</span>(node.as!string == <span class="d_string">"42"</span>);
- <span class="d_keyword">assert</span>(node.as!<span class="d_keyword">double</span> == 42.0);
+<span class="d_keyword">assert</span>(node.as!<span class="d_keyword">int</span> == 42);
+<span class="d_keyword">assert</span>(node.as!string == <span class="d_string">"42"</span>);
+<span class="d_keyword">assert</span>(node.as!<span class="d_keyword">double</span> == 42.0);
 </pre>
 
 </div>
@@ -333,7 +359,12 @@
           the value is out of range of requested type.</div>
 
 </dd>
-<dt class="d_decl">const @property size_t <a name="length"></a><span class="ddoc_psymbol">length</span>();
+<dt class="d_decl"><a name="Node.get"></a>const @trusted T <a name="get"></a><span class="ddoc_psymbol">get</span>(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() if (is(T == const));
+</dt>
+<dd><p>Ditto.</p>
+
+</dd>
+<dt class="d_decl"><a name="Node.length"></a>const @property @safe size_t <a name="length"></a><span class="ddoc_psymbol">length</span>();
 </dt>
 <dd><p>If this is a collection, return its length.
 </p>
@@ -346,7 +377,7 @@
 <b>Throws:</b><div class="pbr">NodeException if this is not a sequence nor a mapping.</div>
 
 </dd>
-<dt class="d_decl">Node <a name="opIndex"></a><span class="ddoc_psymbol">opIndex</span>(T)(T <b>index</b>);
+<dt class="d_decl"><a name="Node.opIndex"></a>@trusted Node <a name="opIndex"></a><span class="ddoc_psymbol">opIndex</span>(T)(T <b>index</b>);
 </dt>
 <dd><p>Get the element at specified index.
 </p>
@@ -356,11 +387,13 @@
 <br>
 
  If the node is a mapping, return the value corresponding to the first
- key equal to index, even after conversion. I.e; node["12"] will
- return value of the first key that equals "12", even if it's an integer.
+ key equal to index.
+<br>
+
+ To get element at a <b>null</b> index, use YAMLNull for index.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>index</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T index</td>
 <td valign=top>Index to use.</td></tr>
 </table></div>
 <b>Returns:</b><div class="pbr">Value corresponding to the index.
@@ -371,7 +404,57 @@
           not a collection.</div>
 
 </dd>
-<dt class="d_decl">void <a name="opIndexAssign"></a><span class="ddoc_psymbol">opIndexAssign</span>(K, V)(V <b>value</b>, K <b>index</b>);
+<dt class="d_decl"><a name="Node.contains"></a>const @safe bool <a name="contains"></a><span class="ddoc_psymbol">contains</span>(T)(T <b>rhs</b>);
+</dt>
+<dd><p>Determine if a collection <a name="contains"></a><span class="ddoc_psymbol">contains</span> specified value.
+</p>
+<p>If the node is a sequence, check if it <a name="contains"></a><span class="ddoc_psymbol">contains</span> the specified value.
+ If it's a mapping, check if it has a value that matches specified value.
+<br>
+
+ To check for a <b>null</b> value, use YAMLNull for rhs.
+
+</p>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T rhs</td>
+<td valign=top>Item to look for.</td></tr>
+</table></div>
+<b>Returns:</b><div class="pbr"><b>true</b> if rhs was found, <b>false</b> otherwise.
+
+</div>
+<b>Throws:</b><div class="pbr">NodeException if the node is not a collection.</div>
+
+</dd>
+<dt class="d_decl"><a name="Node.containsKey"></a>const @safe bool <a name="containsKey"></a><span class="ddoc_psymbol">containsKey</span>(T)(T <b>rhs</b>);
+</dt>
+<dd><p>Determine if a collection contains specified key.
+</p>
+<p>If the node is a mapping, check if it has a key
+ that matches specified key.
+<br>
+
+ To check for a <b>null</b> key, use YAMLNull for rhs.
+
+</p>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T rhs</td>
+<td valign=top>Item to look for.</td></tr>
+</table></div>
+<b>Returns:</b><div class="pbr"><b>true</b> if rhs was found, <b>false</b> otherwise.
+
+</div>
+<b>Throws:</b><div class="pbr">NodeException if the node is not a mapping.</div>
+
+</dd>
+<dt class="d_decl"><a name="Node.opAssign"></a>nothrow @safe void <a name="opAssign"></a><span class="ddoc_psymbol">opAssign</span>(Node <b>rhs</b>);
+</dt>
+<dd><p>Assignment (shallow copy) by value.</p>
+
+</dd>
+<dt class="d_decl"><a name="Node.opAssign"></a>nothrow @trusted void <a name="opAssign"></a><span class="ddoc_psymbol">opAssign</span>(ref Node <b>rhs</b>);
+</dt>
+<dd><p>Assignment (shallow copy) by reference.</p>
+
+</dd>
+<dt class="d_decl"><a name="Node.opIndexAssign"></a>@safe void <a name="opIndexAssign"></a><span class="ddoc_psymbol">opIndexAssign</span>(K, V)(V <b>value</b>, K <b>index</b>);
 </dt>
 <dd><p>Set element at specified index in a collection.
 </p>
@@ -389,16 +472,19 @@
  pair is added to the mapping. In sequences the index must be in
  range. This ensures behavior siilar to D arrays and associative
  arrays.
+<br>
+
+ To set element at a <b>null</b> index, use YAMLNull for index.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>index</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>K index</td>
 <td valign=top>Index of the value to set.</td></tr>
 </table></div>
 <b>Throws:</b><div class="pbr">NodeException if the node is not a collection, index is out
           of range or if a non-integral index is used on a sequence node.</div>
 
 </dd>
-<dt class="d_decl">int <a name="opApply"></a><span class="ddoc_psymbol">opApply</span>(T)(int delegate(ref T) <b>dg</b>);
+<dt class="d_decl"><a name="Node.opApply"></a>@trusted int <a name="opApply"></a><span class="ddoc_psymbol">opApply</span>(T)(int delegate(ref T) <b>dg</b>);
 </dt>
 <dd><p>Foreach over a sequence, getting each element as T.
 </p>
@@ -410,7 +496,7 @@
           element could not be converted to specified type.</div>
 
 </dd>
-<dt class="d_decl">int <a name="opApply"></a><span class="ddoc_psymbol">opApply</span>(K, V)(int delegate(ref K, ref V) <b>dg</b>);
+<dt class="d_decl"><a name="Node.opApply"></a>@trusted int <a name="opApply"></a><span class="ddoc_psymbol">opApply</span>(K, V)(int delegate(ref K, ref V) <b>dg</b>);
 </dt>
 <dd><p>Foreach over a mapping, getting each key/value as K/V.
 </p>
@@ -422,7 +508,7 @@
           element could not be converted to specified type.</div>
 
 </dd>
-<dt class="d_decl">void <a name="add"></a><span class="ddoc_psymbol">add</span>(T)(T <b>value</b>);
+<dt class="d_decl"><a name="Node.add"></a>@safe void <a name="add"></a><span class="ddoc_psymbol">add</span>(T)(T <b>value</b>);
 </dt>
 <dd><p>Add an element to a sequence.
 </p>
@@ -439,12 +525,12 @@
  emitted.</p>
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>value</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T value</td>
 <td valign=top>Value to add to the sequence.</td></tr>
 </table></div>
 
 </dd>
-<dt class="d_decl">void <a name="add"></a><span class="ddoc_psymbol">add</span>(K, V)(K <b>key</b>, V <b>value</b>);
+<dt class="d_decl"><a name="Node.add"></a>@safe void <a name="add"></a><span class="ddoc_psymbol">add</span>(K, V)(K <b>key</b>, V <b>value</b>);
 </dt>
 <dd><p>Add a key-value pair to a mapping.
 </p>
@@ -461,33 +547,54 @@
  <b>invalid</b> YAML with "!!map" and "!!omap" tags.</p>
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>key</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>K key</td>
 <td valign=top>Key to add.</td></tr>
-<tr><td valign=top>value</td>
+<tr><td valign=top>V value</td>
 <td valign=top>Value to add.</td></tr>
 </table></div>
 
 </dd>
-<dt class="d_decl">void <a name="remove"></a><span class="ddoc_psymbol">remove</span>(T)(T <b>value</b>);
+<dt class="d_decl"><a name="Node.opBinaryRight"></a>@trusted Node* <a name="opBinaryRight"></a><span class="ddoc_psymbol">opBinaryRight</span>(string op, K)(K <b>key</b>) if (op == "in");
+</dt>
+<dd><p>Determine whether a key is in a mapping, and access its value.
+</p>
+<p>This method can only be called on mapping nodes.
+
+</p>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>K key</td>
+<td valign=top>Key to search for.</td></tr>
+</table></div>
+<b>Returns:</b><div class="pbr">A pointer to the value (as a Node) corresponding to key,
+           or <b>null</b> if not found.
+
+</div>
+<p><b>Note:</b><br>
+Any modification to the node can invalidate the returned
+           pointer.
+
+</p>
+<b>See Also:</b><div class="pbr">contains</div>
+
+</dd>
+<dt class="d_decl"><a name="Node.remove"></a>@trusted void <a name="remove"></a><span class="ddoc_psymbol">remove</span>(T)(T <b>rhs</b>);
 </dt>
 <dd><p>Remove first (if any) occurence of a value in a collection.
 </p>
 <p>This method can only be called on collection nodes.
 <br>
 
- If the node is a sequence, the first node matching value (including
- conversion, so e.g. "42" matches 42) is removed.
+ If the node is a sequence, the first node matching value is removed.
  If the node is a mapping, the first key-value pair where value
  matches specified value is removed.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>value</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T rhs</td>
 <td valign=top>Value to remove.</td></tr>
 </table></div>
 <b>Throws:</b><div class="pbr">NodeException if the node is not a collection.</div>
 
 </dd>
-<dt class="d_decl">void <a name="removeAt"></a><span class="ddoc_psymbol">removeAt</span>(T)(T <b>index</b>);
+<dt class="d_decl"><a name="Node.removeAt"></a>@trusted void <a name="removeAt"></a><span class="ddoc_psymbol">removeAt</span>(T)(T <b>index</b>);
 </dt>
 <dd><p>Remove element at the specified index of a collection.
 </p>
@@ -498,7 +605,7 @@
 <br>
 
  If the node is a mapping, remove the first key-value pair where
- key matches index (including conversion, so e.g. "42" matches 42).
+ key matches index.
 <br>
 
  If the node is a mapping and no key matches index, nothing is removed
@@ -506,14 +613,14 @@
  and associative arrays.
 
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>index</td>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>T index</td>
 <td valign=top>Index to remove at.</td></tr>
 </table></div>
 <b>Throws:</b><div class="pbr">NodeException if the node is not a collection, index is out
           of range or if a non-integral index is used on a sequence node.</div>
 
 </dd>
-<dt class="d_decl">const const int <a name="opCmp"></a><span class="ddoc_psymbol">opCmp</span>(ref const Node <b>node</b>);
+<dt class="d_decl"><a name="Node.opCmp"></a>const @safe int <a name="opCmp"></a><span class="ddoc_psymbol">opCmp</span>(ref const Node <b>node</b>);
 </dt>
 <dd><p>Compare with another node.</p>
 

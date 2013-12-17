@@ -44,7 +44,7 @@
 </p>
 <p>Code based on <a href="http://www.pyyaml.org">PyYAML</a>.</p>
 
-<dl><dt class="d_decl">struct <a name="Dumper"></a><span class="ddoc_psymbol">Dumper</span>;
+<dl><dt class="d_decl"><a name="Dumper"></a>struct <a name="Dumper"></a><span class="ddoc_psymbol">Dumper</span>;
 </dt>
 <dd><p>Dumps YAML documents to files or streams.
 </p>
@@ -56,43 +56,46 @@
 
 </p>
 <b>Examples:</b><div class="pbr">Write to a file:
-<pre class="d_code"> <span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
- <span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>).dump(node);
+<pre class="d_code"><span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
+<span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>).dump(node);
 </pre>
+<br>
 
  Write multiple YAML documents to a file:
-<pre class="d_code"> <span class="d_keyword">auto</span> node1 = Node([1, 2, 3, 4, 5]);
- <span class="d_keyword">auto</span> node2 = Node(<span class="d_string">"This document contains only one string"</span>);
- <span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>).dump(node1, node2);
+<pre class="d_code"><span class="d_keyword">auto</span> node1 = Node([1, 2, 3, 4, 5]);
+<span class="d_keyword">auto</span> node2 = Node(<span class="d_string">"This document contains only one string"</span>);
+<span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>).dump(node1, node2);
 
- <span class="d_comment">//Or with an array:
-</span> <span class="d_comment">//Dumper("file.yaml").dump([node1, node2]);
+<span class="d_comment">//Or with an array:
+</span><span class="d_comment">//Dumper("file.yaml").dump([node1, node2]);
 </span>
 
 </pre>
+<br>
 
  Write to memory:
-<pre class="d_code"> <span class="d_keyword">import</span> std.stream;
- <span class="d_keyword">auto</span> stream = <span class="d_keyword">new</span> MemoryStream();
- <span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
- <span class="d_psymbol">Dumper</span>(stream).dump(node);
+<pre class="d_code"><span class="d_keyword">import</span> std.stream;
+<span class="d_keyword">auto</span> stream = <span class="d_keyword">new</span> MemoryStream();
+<span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
+<span class="d_psymbol">Dumper</span>(stream).dump(node);
 </pre>
+<br>
 
  Use a custom representer/resolver to support custom data types and/or implicit tags:
-<pre class="d_code"> <span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
- <span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer();
- <span class="d_keyword">auto</span> resolver = <span class="d_keyword">new</span> Resolver();
+<pre class="d_code"><span class="d_keyword">auto</span> node = Node([1, 2, 3, 4, 5]);
+<span class="d_keyword">auto</span> representer = <span class="d_keyword">new</span> Representer();
+<span class="d_keyword">auto</span> resolver = <span class="d_keyword">new</span> Resolver();
 
- <span class="d_comment">//Add representer functions / resolver expressions here...
+<span class="d_comment">//Add representer functions / resolver expressions here...
 </span>
- <span class="d_keyword">auto</span> dumper = <span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>);
- dumper.representer = representer;
- dumper.resolver = resolver;
- dumper.dump(node);
+<span class="d_keyword">auto</span> dumper = <span class="d_psymbol">Dumper</span>(<span class="d_string">"file.yaml"</span>);
+dumper.representer = representer;
+dumper.resolver = resolver;
+dumper.dump(node);
 </pre>
 </div>
 
-<dl><dt class="d_decl">this(string <b>filename</b>);
+<dl><dt class="d_decl"><a name="Dumper.this"></a>@trusted  this(string <b>filename</b>);
 </dt>
 <dd><p>Construct a Dumper writing to a file.
 </p>
@@ -102,67 +105,67 @@
 <b>Throws:</b><div class="pbr">YAMLException if the file can not be dumped to (e.g. cannot be opened).</div>
 
 </dd>
-<dt class="d_decl">this(Stream <b>stream</b>);
+<dt class="d_decl"><a name="Dumper.this"></a>@safe  this(Stream <b>stream</b>);
 </dt>
 <dd><p>Construct a Dumper writing to a stream. This is useful to e.g. write to memory.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="name"></a><span class="ddoc_psymbol">name</span>(string <a name="name"></a><span class="ddoc_psymbol">name</span>);
+<dt class="d_decl"><a name="Dumper.name"></a>pure nothrow @property @safe void <a name="name"></a><span class="ddoc_psymbol">name</span>(string <a name="name"></a><span class="ddoc_psymbol">name</span>);
 </dt>
 <dd><p>Set stream name. Used in debugging messages.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>(Resolver <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>);
+<dt class="d_decl"><a name="Dumper.resolver"></a>@property @trusted void <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>(Resolver <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>);
 </dt>
 <dd><p>Specify custom Resolver to use.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="representer"></a><span class="ddoc_psymbol">representer</span>(Representer <a name="representer"></a><span class="ddoc_psymbol">representer</span>);
+<dt class="d_decl"><a name="Dumper.representer"></a>@property @trusted void <a name="representer"></a><span class="ddoc_psymbol">representer</span>(Representer <a name="representer"></a><span class="ddoc_psymbol">representer</span>);
 </dt>
 <dd><p>Specify custom Representer to use.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="canonical"></a><span class="ddoc_psymbol">canonical</span>(bool <a name="canonical"></a><span class="ddoc_psymbol">canonical</span>);
+<dt class="d_decl"><a name="Dumper.canonical"></a>pure nothrow @property @safe void <a name="canonical"></a><span class="ddoc_psymbol">canonical</span>(bool <a name="canonical"></a><span class="ddoc_psymbol">canonical</span>);
 </dt>
 <dd><p>Write scalars in canonical form?</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="indent"></a><span class="ddoc_psymbol">indent</span>(uint <a name="indent"></a><span class="ddoc_psymbol">indent</span>);
+<dt class="d_decl"><a name="Dumper.indent"></a>pure nothrow @property @safe void <a name="indent"></a><span class="ddoc_psymbol">indent</span>(uint <a name="indent"></a><span class="ddoc_psymbol">indent</span>);
 </dt>
 <dd><p>Set indentation width. 2 by default. Must not be zero.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="textWidth"></a><span class="ddoc_psymbol">textWidth</span>(uint <b>width</b>);
+<dt class="d_decl"><a name="Dumper.textWidth"></a>pure nothrow @property @safe void <a name="textWidth"></a><span class="ddoc_psymbol">textWidth</span>(uint <b>width</b>);
 </dt>
 <dd><p>Set preferred text width.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="lineBreak"></a><span class="ddoc_psymbol">lineBreak</span>(LineBreak <a name="lineBreak"></a><span class="ddoc_psymbol">lineBreak</span>);
+<dt class="d_decl"><a name="Dumper.lineBreak"></a>pure nothrow @property @safe void <a name="lineBreak"></a><span class="ddoc_psymbol">lineBreak</span>(LineBreak <a name="lineBreak"></a><span class="ddoc_psymbol">lineBreak</span>);
 </dt>
 <dd><p>Set line break to use. Unix by default.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="encoding"></a><span class="ddoc_psymbol">encoding</span>(Encoding <a name="encoding"></a><span class="ddoc_psymbol">encoding</span>);
+<dt class="d_decl"><a name="Dumper.encoding"></a>pure nothrow @property @safe void <a name="encoding"></a><span class="ddoc_psymbol">encoding</span>(Encoding <a name="encoding"></a><span class="ddoc_psymbol">encoding</span>);
 </dt>
 <dd><p>Set character encoding to use. UTF-8 by default.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="explicitStart"></a><span class="ddoc_psymbol">explicitStart</span>(bool <b>explicit</b>);
+<dt class="d_decl"><a name="Dumper.explicitStart"></a>pure nothrow @property @safe void <a name="explicitStart"></a><span class="ddoc_psymbol">explicitStart</span>(bool <b>explicit</b>);
 </dt>
 <dd><p>Always explicitly write document start?</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="explicitEnd"></a><span class="ddoc_psymbol">explicitEnd</span>(bool <b>explicit</b>);
+<dt class="d_decl"><a name="Dumper.explicitEnd"></a>pure nothrow @property @safe void <a name="explicitEnd"></a><span class="ddoc_psymbol">explicitEnd</span>(bool <b>explicit</b>);
 </dt>
 <dd><p>Always explicitly write document end?</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="YAMLVersion"></a><span class="ddoc_psymbol">YAMLVersion</span>(string <a name="YAMLVersion"></a><span class="ddoc_psymbol">YAMLVersion</span>);
+<dt class="d_decl"><a name="Dumper.YAMLVersion"></a>pure nothrow @property @safe void <a name="YAMLVersion"></a><span class="ddoc_psymbol">YAMLVersion</span>(string <a name="YAMLVersion"></a><span class="ddoc_psymbol">YAMLVersion</span>);
 </dt>
 <dd><p>Specify YAML version string. "1.1" by default.</p>
 
 </dd>
-<dt class="d_decl">@property void <a name="tagDirectives"></a><span class="ddoc_psymbol">tagDirectives</span>(string[string] <b>tags</b>);
+<dt class="d_decl"><a name="Dumper.tagDirectives"></a>pure @property @trusted void <a name="tagDirectives"></a><span class="ddoc_psymbol">tagDirectives</span>(string[string] <b>tags</b>);
 </dt>
 <dd><p>Specify tag directives.
 </p>
@@ -189,18 +192,18 @@
 <td valign=top>Tag directives (keys are handles, values are prefixes).</td></tr>
 </table></div>
 <p><b>Example:</b><br>
-<pre class="d_code"> Dumper dumper = Dumper(<span class="d_string">"file.yaml"</span>);
- string[string] directives;
- directives[<span class="d_string">"!short!"</span>] = <span class="d_string">"tag:long.org,2011:"</span>;
- <span class="d_comment">//This will emit tags starting with "tag:long.org,2011"
-</span> <span class="d_comment">//with a "!short!" prefix instead.
-</span> dumper.<span class="d_psymbol">tagDirectives</span>(directives);
- dumper.dump(Node(<span class="d_string">"foo"</span>));
+<pre class="d_code">Dumper dumper = Dumper(<span class="d_string">"file.yaml"</span>);
+string[string] directives;
+directives[<span class="d_string">"!short!"</span>] = <span class="d_string">"tag:long.org,2011:"</span>;
+<span class="d_comment">//This will emit tags starting with "tag:long.org,2011"
+</span><span class="d_comment">//with a "!short!" prefix instead.
+</span>dumper.<span class="d_psymbol">tagDirectives</span>(directives);
+dumper.dump(Node(<span class="d_string">"foo"</span>));
 </pre>
 </p>
 
 </dd>
-<dt class="d_decl">void <a name="dump"></a><span class="ddoc_psymbol">dump</span>(Node[] <b>documents</b>...);
+<dt class="d_decl"><a name="Dumper.dump"></a>@trusted void <a name="dump"></a><span class="ddoc_psymbol">dump</span>(Node[] <b>documents</b>...);
 </dt>
 <dd><p>Dump one or more YAML documents to the file/stream.
 </p>
