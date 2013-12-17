@@ -1,5 +1,5 @@
 main:
-	dmd -w -I../../ -L-L../../ -L-ldyaml main.d
+	dmd -w -I../../source -L-L../../ -L-ldyaml main.d
 
 clean:
 	rm main main.o
