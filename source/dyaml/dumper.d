@@ -155,7 +155,7 @@ struct Dumper
          *
          * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(string filename) @safe
+        this(string filename) @trusted
         {
             name_ = filename;
             try{this(new File(filename, FileMode.OutNew));}
@@ -167,7 +167,7 @@ struct Dumper
         }
 
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
-        this(Stream stream) pure @safe
+        this(Stream stream) @safe
         {
             resolver_    = new Resolver();
             representer_ = new Representer();
