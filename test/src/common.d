@@ -9,7 +9,7 @@ module dyaml.testcommon;
 public import std.conv;
 public import std.stdio;
 public import std.stream;
-public import yaml;
+public import dyaml.all;
 
 import core.exception;
 import std.algorithm;

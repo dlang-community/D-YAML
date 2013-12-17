@@ -77,7 +77,7 @@ into the file:
 .. code-block:: d
 
    import std.stdio;
-   import yaml;
+   import dyaml.all;
 
    void main()
    {
@@ -100,8 +100,8 @@ into the file:
 Explanation of the code
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-First, we import the *yaml* module. This is the only D:YAML module you need to
-import - it automatically imports all needed modules.
+First, we import the *dyaml.all* module. This is the only D:YAML module you
+need to import - it automatically imports all needed modules.
 
 Next we load the file using the *Loader.load()* method. *Loader* is a struct 
 used for parsing YAML documents. The *load()* method loads the file as

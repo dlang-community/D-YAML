@@ -99,7 +99,7 @@ final class Resolver
          * --------------------
          * import std.regex;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * void main()
          * {

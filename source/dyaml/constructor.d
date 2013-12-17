@@ -156,7 +156,7 @@ final class Constructor
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * struct MyStruct
          * {
@@ -210,7 +210,7 @@ final class Constructor
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * struct MyStruct
          * {
@@ -262,7 +262,7 @@ final class Constructor
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * struct MyStruct
          * {

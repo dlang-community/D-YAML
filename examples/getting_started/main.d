@@ -1,5 +1,5 @@
 import std.stdio;
-import yaml;
+import dyaml.all;
 
 void main()
 {

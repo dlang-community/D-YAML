@@ -130,7 +130,7 @@ final class Representer
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * struct MyStruct
          * {
@@ -171,7 +171,7 @@ final class Representer
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * class MyClass
          * {

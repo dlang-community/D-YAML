@@ -3,7 +3,7 @@
 
 import std.stdio;
 import std.string;
-import yaml;
+import dyaml.all;
 
 
 ///Collects statistics about a YAML document and returns them as string.

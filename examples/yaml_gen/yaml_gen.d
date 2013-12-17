@@ -7,7 +7,7 @@ import std.math;
 import std.random;
 import std.stdio;
 import std.string;
-import yaml;
+import dyaml.all;
 
 
 immutable alphabet = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";

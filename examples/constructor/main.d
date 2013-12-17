@@ -1,7 +1,7 @@
 import std.ascii;
 import std.stdio;
 import std.string;
-import yaml;
+import dyaml.all;
 
 struct Color
 {
