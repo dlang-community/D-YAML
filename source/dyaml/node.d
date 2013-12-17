@@ -142,8 +142,6 @@ struct Node
                 Node value;
 
             public:
-                @disable int opCmp(ref Pair);
-
                 ///Construct a Pair from two values. Will be converted to Nodes if needed.
                 this(K, V)(K key, V value) @safe
                 {
@@ -185,7 +183,17 @@ struct Node
                     return keyCmp != 0 ? keyCmp
                                        : value.cmp!useTag(rhs.value);
                 }
+
+                // @disable causes a linker error with DMD 2.054, so we temporarily use
+                // a private opCmp. Apparently this must also match the attributes of 
+                // the Node's opCmp to avoid a linker error.
+                @disable int opCmp(ref Pair);
+                int opCmp(ref const(Pair) pair) const @safe
+                {
+                    assert(false, "This should never be called");
+                }
         }
+
 
     package:
         //YAML value type.
