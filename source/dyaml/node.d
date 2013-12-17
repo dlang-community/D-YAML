@@ -121,7 +121,6 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
         this(T value) @trusted {value_ = value;}
 }
 
-
 /**
  * YAML node.
  *

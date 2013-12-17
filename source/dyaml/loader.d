@@ -115,7 +115,7 @@ struct Loader
          *
          * Throws:  YAMLException if the file could not be opened or read.
          */
-        this(string filename) pure @safe
+        this(string filename) @trusted
         {
             name_ = filename;
             try{this(new File(filename));}
@@ -147,7 +147,7 @@ struct Loader
          *
          * Throws:  YAMLException if stream could not be read.
          */
-        this(Stream stream) pure @safe
+        this(Stream stream) @safe
         {
             try
             {
