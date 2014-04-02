@@ -8,12 +8,12 @@ module dyaml.queue;
 
 
 ///Queue collection.
-import core.stdc.stdlib;
 import core.memory;
+
+import std.c.stdlib;
 
 import std.container;
 import std.traits;
-
 
 package:
 
