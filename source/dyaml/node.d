@@ -124,8 +124,8 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 /**
  * YAML node.
  *
- * This is a pseudo-dynamic type that can store any YAML value, including a 
- * sequence or mapping of nodes. You can get data from a Node directly or 
+ * This is a pseudo-dynamic type that can store any YAML value, including a
+ * sequence or mapping of nodes. You can get data from a Node directly or
  * iterate over it if it's a collection.
  */
 struct Node
@@ -154,7 +154,7 @@ struct Node
                 bool opEquals(const ref Pair rhs) const @safe
                 {
                     return cmp!(Yes.useTag)(rhs) == 0;
-                } 
+                }
 
                 /// Assignment (shallow copy) by value.
                 void opAssign(Pair rhs) @safe nothrow
@@ -173,7 +173,7 @@ struct Node
                 /*
                  * Comparison with another Pair.
                  *
-                 * useTag determines whether or not we consider node tags 
+                 * useTag determines whether or not we consider node tags
                  * in the comparison.
                  */
                 int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
@@ -184,7 +184,7 @@ struct Node
                 }
 
                 // @disable causes a linker error with DMD 2.054, so we temporarily use
-                // a private opCmp. Apparently this must also match the attributes of 
+                // a private opCmp. Apparently this must also match the attributes of
                 // the Node's opCmp to avoid a linker error.
                 @disable int opCmp(ref Pair);
                 int opCmp(ref const(Pair) pair) const @safe
@@ -202,7 +202,7 @@ struct Node
         //Can Value hold this type without wrapping it in a YAMLObject?
         template allowed(T)
         {
-            enum allowed = isIntegral!T || 
+            enum allowed = isIntegral!T ||
                            isFloatingPoint!T ||
                            isSomeString!T ||
                            Value.allowed!T;
@@ -215,7 +215,7 @@ struct Node
         Mark startMark_;
 
     package:
-        //Tag of the node. 
+        //Tag of the node.
         Tag tag_;
         //Node scalar style. Used to remember style this node was loaded with.
         ScalarStyle scalarStyle = ScalarStyle.Invalid;
@@ -229,23 +229,23 @@ struct Node
         /**
          * Construct a Node from a value.
          *
-         * Any type except for Node can be stored in a Node, but default YAML 
+         * Any type except for Node can be stored in a Node, but default YAML
          * types (integers, floats, strings, timestamps, etc.) will be stored
          * more efficiently. To create a node representing a null value,
          * construct it from YAMLNull.
          *
          *
-         * Note that to emit any non-default types you store 
+         * Note that to emit any non-default types you store
          * in a node, you need a Representer to represent them in YAML -
          * otherwise emitting will fail.
          *
          * Params:  value = Value to store in the node.
-         *          tag   = Overrides tag of the node when emitted, regardless 
+         *          tag   = Overrides tag of the node when emitted, regardless
          *                  of tag determined by Representer. Representer uses
-         *                  this to determine YAML data type when a D data type 
-         *                  maps to multiple different YAML data types. Tag must 
-         *                  be in full form, e.g. "tag:yaml.org,2002:int", not 
-         *                  a shortcut, like "!!int".            
+         *                  this to determine YAML data type when a D data type
+         *                  maps to multiple different YAML data types. Tag must
+         *                  be in full form, e.g. "tag:yaml.org,2002:int", not
+         *                  a shortcut, like "!!int".
          */
         this(T)(T value, const string tag = null) @trusted
             if (isSomeString!T || (!isArray!T && !isAssociativeArray!T))
@@ -268,7 +268,7 @@ struct Node
         {
             {
                 auto node = Node(42);
-                assert(node.isScalar && !node.isSequence && 
+                assert(node.isScalar && !node.isSequence &&
                        !node.isMapping && !node.isUserType);
                 assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
                 assert(!node.isUserType);
@@ -283,18 +283,18 @@ struct Node
         /**
          * Construct a node from an _array.
          *
-         * If _array is an _array of nodes or pairs, it is stored directly. 
-         * Otherwise, every value in the array is converted to a node, and 
+         * If _array is an _array of nodes or pairs, it is stored directly.
+         * Otherwise, every value in the array is converted to a node, and
          * those nodes are stored.
          *
          * Params:  array = Values to store in the node.
-         *          tag   = Overrides tag of the node when emitted, regardless 
+         *          tag   = Overrides tag of the node when emitted, regardless
          *                  of tag determined by Representer. Representer uses
-         *                  this to determine YAML data type when a D data type 
+         *                  this to determine YAML data type when a D data type
          *                  maps to multiple different YAML data types.
-         *                  This is used to differentiate between YAML sequences 
-         *                  ("!!seq") and sets ("!!set"), which both are 
-         *                  internally represented as an array_ of nodes. Tag 
+         *                  This is used to differentiate between YAML sequences
+         *                  ("!!seq") and sets ("!!set"), which both are
+         *                  internally represented as an array_ of nodes. Tag
          *                  must be in full form, e.g. "tag:yaml.org,2002:set",
          *                  not a shortcut, like "!!set".
          *
@@ -346,18 +346,18 @@ struct Node
         /**
          * Construct a node from an associative _array.
          *
-         * If keys and/or values of _array are nodes, they stored directly. 
+         * If keys and/or values of _array are nodes, they stored directly.
          * Otherwise they are converted to nodes and then stored.
          *
          * Params:  array = Values to store in the node.
-         *          tag   = Overrides tag of the node when emitted, regardless 
+         *          tag   = Overrides tag of the node when emitted, regardless
          *                  of tag determined by Representer. Representer uses
-         *                  this to determine YAML data type when a D data type 
+         *                  this to determine YAML data type when a D data type
          *                  maps to multiple different YAML data types.
-         *                  This is used to differentiate between YAML unordered 
-         *                  mappings ("!!map"), ordered mappings ("!!omap"), and 
-         *                  pairs ("!!pairs") which are all internally 
-         *                  represented as an _array of node pairs. Tag must be 
+         *                  This is used to differentiate between YAML unordered
+         *                  mappings ("!!map"), ordered mappings ("!!omap"), and
+         *                  pairs ("!!pairs") which are all internally
+         *                  represented as an _array of node pairs. Tag must be
          *                  in full form, e.g. "tag:yaml.org,2002:omap", not a
          *                  shortcut, like "!!omap".
          *
@@ -415,15 +415,15 @@ struct Node
          *
          * Params:  keys   = Keys of the mapping, from first to last pair.
          *          values = Values of the mapping, from first to last pair.
-         *          tag    = Overrides tag of the node when emitted, regardless 
+         *          tag    = Overrides tag of the node when emitted, regardless
          *                   of tag determined by Representer. Representer uses
-         *                   this to determine YAML data type when a D data type 
+         *                   this to determine YAML data type when a D data type
          *                   maps to multiple different YAML data types.
-         *                   This is used to differentiate between YAML unordered 
-         *                   mappings ("!!map"), ordered mappings ("!!omap"), and 
-         *                   pairs ("!!pairs") which are all internally 
-         *                   represented as an array of node pairs. Tag must be 
-         *                   in full form, e.g. "tag:yaml.org,2002:omap", not a 
+         *                   This is used to differentiate between YAML unordered
+         *                   mappings ("!!map"), ordered mappings ("!!omap"), and
+         *                   pairs ("!!pairs") which are all internally
+         *                   represented as an array of node pairs. Tag must be
+         *                   in full form, e.g. "tag:yaml.org,2002:omap", not a
          *                   shortcut, like "!!omap".
          *
          * Examples:
@@ -440,7 +440,7 @@ struct Node
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
         {
-            assert(keys.length == values.length, 
+            assert(keys.length == values.length,
                    "Lengths of keys and values arrays to construct "
                    "a YAML node from don't match");
         }
@@ -469,38 +469,38 @@ struct Node
             auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
         }
 
-        ///Is this node valid (initialized)? 
-        @property bool isValid()    const @safe pure nothrow 
+        ///Is this node valid (initialized)?
+        @property bool isValid()    const @safe pure nothrow
         {
             return value_.hasValue;
         }
 
         ///Is this node a scalar value?
-        @property bool isScalar()   const @safe nothrow 
+        @property bool isScalar()   const @safe nothrow
         {
             return !(isMapping || isSequence);
         }
 
         ///Is this node a sequence?
-        @property bool isSequence() const @safe nothrow 
+        @property bool isSequence() const @safe nothrow
         {
             return isType!(Node[]);
         }
 
         ///Is this node a mapping?
-        @property bool isMapping()  const @safe nothrow 
+        @property bool isMapping()  const @safe nothrow
         {
-            return isType!(Pair[]); 
+            return isType!(Pair[]);
         }
 
         ///Is this node a user defined type?
-        @property bool isUserType() const @safe nothrow 
+        @property bool isUserType() const @safe nothrow
         {
             return isType!YAMLObject;
         }
 
         ///Is this node null?
-        @property bool isNull()     const @safe nothrow 
+        @property bool isNull()     const @safe nothrow
         {
             return isType!YAMLNull;
         }
@@ -511,10 +511,10 @@ struct Node
         /**
          * Equality test.
          *
-         * If T is Node, recursively compare all subnodes. 
+         * If T is Node, recursively compare all subnodes.
          * This might be quite expensive if testing entire documents.
          *
-         * If T is not Node, get a value if type T from the node and test 
+         * If T is not Node, get a value if type T from the node and test
          * equality with that.
          *
          * To test equality with a null YAML value, use YAMLNull.
@@ -539,7 +539,7 @@ struct Node
         unittest
         {
             auto node = Node(42);
-            
+
             assert(node == 42);
             assert(node != "42");
             assert(node != "43");
@@ -556,25 +556,25 @@ struct Node
          *
          * If the specifed type does not match type in the node,
          * conversion is attempted. The stringConversion template
-         * parameter can be used to disable conversion from non-string 
+         * parameter can be used to disable conversion from non-string
          * types to strings.
          *
-         * Numeric values are range checked, throwing if out of range of 
+         * Numeric values are range checked, throwing if out of range of
          * requested type.
          *
          * Timestamps are stored as std.datetime.SysTime.
-         * Binary values are decoded and stored as ubyte[]. 
+         * Binary values are decoded and stored as ubyte[].
          *
          * To get a null value, use get!YAMLNull . This is to
          * prevent getting null values for types such as strings or classes.
          *
          * $(BR)$(B Mapping default values:)
-         * 
+         *
          * $(PBR
          * The '=' key can be used to denote the default value of a mapping.
-         * This can be used when a node is scalar in early versions of a program, 
+         * This can be used when a node is scalar in early versions of a program,
          * but is replaced by a mapping later. Even if the node is a mapping, the
-         * get method can be used as if it was a scalar if it has a default value. 
+         * get method can be used as if it was a scalar if it has a default value.
          * This way, new YAML files where the node is a mapping can still be read
          * by old versions of the program, which expect the node to be a scalar.
          * )
@@ -595,7 +595,7 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() 
+        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)()
 	    @trusted if(!is(T == const))
         {
             if(isType!T){return value_.get!T;}
@@ -608,7 +608,7 @@ struct Node
                 {
                     return (cast(YAMLContainer!T)object).value_;
                 }
-                throw new Error("Node stores unexpected type: " ~ object.type.toString() ~ 
+                throw new Error("Node stores unexpected type: " ~ object.type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -618,10 +618,10 @@ struct Node
 
             static if(isSomeString!T)
             {
-                static if(!stringConversion) 
+                static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!string);}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~ 
+                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
                                     ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else
@@ -637,7 +637,7 @@ struct Node
                     }
                 }
             }
-            else 
+            else
             {
                 static if(isFloatingPoint!T)
                 {
@@ -649,11 +649,11 @@ struct Node
                 {
                     const temp = value_.get!(const long);
                     enforce(temp >= T.min && temp <= T.max,
-                            new Error("Integer value of type " ~ typeid(T).toString() ~ 
+                            new Error("Integer value of type " ~ typeid(T).toString() ~
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node stores unexpected type: " ~ type.toString() ~ 
+                throw new Error("Node stores unexpected type: " ~ type.toString() ~
                                 ". Expected: " ~ typeid(T).toString(), startMark_);
             }
             assert(false, "This code should never be reached");
@@ -678,7 +678,7 @@ struct Node
                 {
                     return (cast(const YAMLContainer!(Unqual!T))object).value_;
                 }
-                throw new Error("Node has unexpected type: " ~ object.type.toString() ~ 
+                throw new Error("Node has unexpected type: " ~ object.type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -688,10 +688,10 @@ struct Node
 
             static if(isSomeString!T)
             {
-                static if(!stringConversion) 
+                static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!(const string));}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~ 
+                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
                                     ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
                 else
@@ -708,7 +708,7 @@ struct Node
                     }
                 }
             }
-            else 
+            else
             {
                 static if(isFloatingPoint!T)
                 {
@@ -720,11 +720,11 @@ struct Node
                 {
                     const temp = value_.get!(const long);
                     enforce(temp >= T.min && temp <= T.max,
-                            new Error("Integer value of type " ~ typeid(T).toString() ~ 
+                            new Error("Integer value of type " ~ typeid(T).toString() ~
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node stores unexpected type: " ~ type.toString() ~ 
+                throw new Error("Node stores unexpected type: " ~ type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
@@ -742,7 +742,7 @@ struct Node
         {
             if(isSequence)    {return value_.get!(const Node[]).length;}
             else if(isMapping){return value_.get!(const Pair[]).length;}
-            throw new Error("Trying to get length of a " ~ nodeTypeString ~ " node", 
+            throw new Error("Trying to get length of a " ~ nodeTypeString ~ " node",
                             startMark_);
         }
 
@@ -752,7 +752,7 @@ struct Node
          * If the node is a sequence, index must be integral.
          *
          *
-         * If the node is a mapping, return the value corresponding to the first 
+         * If the node is a mapping, return the value corresponding to the first
          * key equal to index.
          *
          * To get element at a null index, use YAMLNull for index.
@@ -806,7 +806,7 @@ struct Node
             Node k4 = Node("14");
 
             Node narray = Node([n1, n2, n3, n4]);
-            Node nmap   = Node([k1, k2, k3, k4], 
+            Node nmap   = Node([k1, k2, k3, k4],
                                [n1, n2, n3, n4]);
 
             assert(narray[0].as!int == 11);
@@ -938,7 +938,7 @@ struct Node
         {
             auto seq = Node([1, 2, 3, 4, 5]);
             auto assigned = seq;
-            assert(seq == assigned, 
+            assert(seq == assigned,
                    "Node.opAssign() doesn't produce an equivalent copy");
         }
 
@@ -946,15 +946,15 @@ struct Node
          * Set element at specified index in a collection.
          *
          * This method can only be called on collection nodes.
-         * 
+         *
          * If the node is a sequence, index must be integral.
          *
-         * If the node is a mapping, sets the _value corresponding to the first 
+         * If the node is a mapping, sets the _value corresponding to the first
          * key matching index (including conversion, so e.g. "42" matches 42).
-         * 
+         *
          * If the node is a mapping and no key matches index, a new key-value
-         * pair is added to the mapping. In sequences the index must be in 
-         * range. This ensures behavior siilar to D arrays and associative 
+         * pair is added to the mapping. In sequences the index must be in
+         * range. This ensures behavior siilar to D arrays and associative
          * arrays.
          *
          * To set element at a null index, use YAMLNull for index.
@@ -1039,7 +1039,7 @@ struct Node
          */
         int opApply(T)(int delegate(ref T) dg) @trusted
         {
-            enforce(isSequence, 
+            enforce(isSequence,
                     new Error("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
@@ -1146,8 +1146,8 @@ struct Node
             Node k4 = Node("14");
 
             Node nmap1 = Node([Pair(k1, n1),
-                               Pair(k2, n2),  
-                               Pair(k3, n3),  
+                               Pair(k2, n2),
+                               Pair(k3, n3),
                                Pair(k4, n4)]);
 
             int[string] expected = ["11" : 11,
@@ -1162,8 +1162,8 @@ struct Node
             assert(array == expected);
 
             Node nmap2 = Node([Pair(k1, Node(cast(long)5)),
-                               Pair(k2, Node(true)),  
-                               Pair(k3, Node(cast(real)1.0)),  
+                               Pair(k2, Node(true)),
+                               Pair(k3, Node(cast(real)1.0)),
                                Pair(k4, Node("yarly"))]);
 
             foreach(string key, Node value; nmap2)
@@ -1187,16 +1187,16 @@ struct Node
          * If value is a node, it is copied to the sequence directly. Otherwise
          * value is converted to a node and then stored in the sequence.
          *
-         * $(P When emitting, all values in the sequence will be emitted. When 
-         * using the !!set tag, the user needs to ensure that all elements in 
-         * the sequence are unique, otherwise $(B invalid) YAML code will be 
+         * $(P When emitting, all values in the sequence will be emitted. When
+         * using the !!set tag, the user needs to ensure that all elements in
+         * the sequence are unique, otherwise $(B invalid) YAML code will be
          * emitted.)
          *
          * Params:  value = Value to _add to the sequence.
          */
         void add(T)(T value) @safe
         {
-            enforce(isSequence(), 
+            enforce(isSequence(),
                     new Error("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
 
             auto nodes = get!(Node[])();
@@ -1220,12 +1220,12 @@ struct Node
          *
          * This method can only be called on mapping nodes.
          *
-         * If key and/or value is a node, it is copied to the mapping directly. 
+         * If key and/or value is a node, it is copied to the mapping directly.
          * Otherwise it is converted to a node and then stored in the mapping.
          *
          * $(P It is possible for the same key to be present more than once in a
-         * mapping. When emitting, all key-value pairs will be emitted. 
-         * This is useful with the "!!pairs" tag, but will result in 
+         * mapping. When emitting, all key-value pairs will be emitted.
+         * This is useful with the "!!pairs" tag, but will result in
          * $(B invalid) YAML with "!!map" and "!!omap" tags.)
          *
          * Params:  key   = Key to _add.
@@ -1233,9 +1233,9 @@ struct Node
          */
         void add(K, V)(K key, V value) @safe
         {
-            enforce(isMapping(), 
-                    new Error("Trying to add a key-value pair to a " ~ 
-                              nodeTypeString ~ " node", 
+            enforce(isMapping(),
+                    new Error("Trying to add a key-value pair to a " ~
+                              nodeTypeString ~ " node",
                               startMark_));
 
             auto pairs = get!(Node.Pair[])();
@@ -1262,14 +1262,14 @@ struct Node
          * Returns:  A pointer to the value (as a Node) corresponding to key,
          *           or null if not found.
          *
-         * Note:     Any modification to the node can invalidate the returned 
+         * Note:     Any modification to the node can invalidate the returned
          *           pointer.
          *
          * See_Also: contains
          */
         Node* opBinaryRight(string op, K)(K key) @trusted if (op == "in")
         {
-            enforce(isMapping, new Error("Trying to use 'in' on a " ~ 
+            enforce(isMapping, new Error("Trying to use 'in' on a " ~
                                          nodeTypeString ~ " node", startMark_));
 
             auto idx = findPair(key);
@@ -1301,9 +1301,9 @@ struct Node
          * This method can only be called on collection nodes.
          *
          * If the node is a sequence, the first node matching value is removed.
-         * If the node is a mapping, the first key-value pair where _value 
+         * If the node is a mapping, the first key-value pair where _value
          * matches specified value is removed.
-         * 
+         *
          * Params:  rhs = Value to _remove.
          *
          * Throws:  NodeException if the node is not a collection.
@@ -1342,14 +1342,14 @@ struct Node
          * Remove element at the specified index of a collection.
          *
          * This method can only be called on collection nodes.
-         * 
+         *
          * If the node is a sequence, index must be integral.
          *
-         * If the node is a mapping, remove the first key-value pair where 
+         * If the node is a mapping, remove the first key-value pair where
          * key matches index.
-         * 
+         *
          * If the node is a mapping and no key matches index, nothing is removed
-         * and no exception is thrown. This ensures behavior siilar to D arrays 
+         * and no exception is thrown. This ensures behavior siilar to D arrays
          * and associative arrays.
          *
          * Params:  index = Index to remove at.
@@ -1394,12 +1394,12 @@ struct Node
         //Compute hash of the node.
         hash_t toHash() const nothrow @safe
         {
-            // Hack to allow const nothrow @safe. 
+            // Hack to allow const nothrow @safe.
             // Should be rewritten once std.variant is fixed.
             hash_t unsafeHash() nothrow @trusted
             {
                 const tagHash = tag_.isNull ? 0 : tag_.toHash();
-                //Variant toHash is not nothrow at the moment, so we need to catch 
+                //Variant toHash is not nothrow at the moment, so we need to catch
                 //an exception that is never thrown.
                 try
                 {
@@ -1426,15 +1426,15 @@ struct Node
          *
          * Returns: Constructed node.
          */
-        static Node rawNode(Value value, const Mark startMark, const Tag tag, 
-                            in ScalarStyle scalarStyle, 
-                            in CollectionStyle collectionStyle) @safe
+        static Node rawNode(Value value, const Mark startMark, const Tag tag,
+                            const ScalarStyle scalarStyle,
+                            const CollectionStyle collectionStyle) @safe
         {
             Node node;
-            node.value_ = value;
-            node.startMark_ = startMark;
-            node.tag_ = tag;
-            node.scalarStyle = scalarStyle;
+            node.value_          = value;
+            node.startMark_      = startMark;
+            node.tag_            = tag;
+            node.scalarStyle     = scalarStyle;
             node.collectionStyle = collectionStyle;
 
             return node;
@@ -1483,7 +1483,7 @@ struct Node
             {
                 try
                 {
-                    auto stored = get!(const(Unqual!T), No.stringConversion); 
+                    auto stored = get!(const(Unqual!T), No.stringConversion);
                     //Need to handle NaNs separately.
                     static if(isFloatingPoint!T)
                     {
@@ -1501,7 +1501,7 @@ struct Node
         /*
          * Comparison with another node.
          *
-         * Used for ordering in mappings and for opEquals. 
+         * Used for ordering in mappings and for opEquals.
          *
          * useTag determines whether or not to consider tags in the comparison.
          */
@@ -1510,7 +1510,7 @@ struct Node
             //Compare tags - if equal or both null, we need to compare further.
             static if(useTag)
             {
-                const tagCmp = tag_.isNull ? rhs.tag_.isNull ? 0 : -1 
+                const tagCmp = tag_.isNull ? rhs.tag_.isNull ? 0 : -1
                                            : rhs.tag_.isNull ? 1 : tag_.opCmp(rhs.tag_);
                 if(tagCmp != 0){return tagCmp;}
             }
@@ -1527,7 +1527,7 @@ struct Node
             const v2 = rhs.isValid;
             if(!v1){return v2 ? -1 : 0;}
             if(!v2){return 1;}
-            
+
             const typeCmp = type.opCmp(rhs.type);
             if(typeCmp != 0){return typeCmp;}
 
@@ -1551,29 +1551,29 @@ struct Node
 
             if(isSequence){return compareCollections!(Node[])(this, rhs);}
             if(isMapping) {return compareCollections!(Pair[])(this, rhs);}
-            if(isString)  
+            if(isString)
             {
-                return std.algorithm.cmp(value_.get!(const string), 
+                return std.algorithm.cmp(value_.get!(const string),
                                          rhs.value_.get!(const string));
             }
-            if(isInt)     
+            if(isInt)
             {
                 return cmp(value_.get!(const long), rhs.value_.get!(const long));
             }
-            if(isBool)    
+            if(isBool)
             {
                 const b1 = value_.get!(const bool);
                 const b2 = rhs.value_.get!(const bool);
                 return b1 ? b2 ? 0 : 1
                           : b2 ? -1 : 0;
             }
-            if(isBinary)  
+            if(isBinary)
             {
-                const b1 = value_.get!(const ubyte[]); 
-                const b2 = rhs.value_.get!(const ubyte[]); 
+                const b1 = value_.get!(const ubyte[]);
+                const b2 = rhs.value_.get!(const ubyte[]);
                 return std.algorithm.cmp(b1, b2);
             }
-            if(isNull)    
+            if(isNull)
             {
                 return 0;
             }
@@ -1647,14 +1647,14 @@ struct Node
             }
             if(isScalar)
             {
-                return indent ~ "scalar(" ~ 
+                return indent ~ "scalar(" ~
                        (convertsTo!string ? get!string : type.toString()) ~ ")\n";
             }
             assert(false);
         }
 
         //Get type of the node value (YAMLObject for user types).
-        @property TypeInfo type() const @trusted nothrow 
+        @property TypeInfo type() const @trusted nothrow
         {
             alias TypeInfo delegate() const nothrow nothrowType;
             return (cast(nothrowType)&value_.type)();
@@ -1665,7 +1665,7 @@ struct Node
          *
          * This only works for default YAML types, not for user defined types.
          */
-        @property bool isType(T)() const @safe nothrow 
+        @property bool isType(T)() const @safe nothrow
         {
             return this.type is typeid(Unqual!T);
         }
@@ -1724,7 +1724,7 @@ struct Node
                 foreach(ref node; value_.get!(const Node[]))
                 {
                     if(node == rhs){return true;}
-                } 
+                }
                 return false;
             }
 
@@ -1741,7 +1741,7 @@ struct Node
         void remove_(T, Flag!"key" key, string func)(T rhs) @system
         {
             enforce(isSequence || isMapping,
-                    new Error("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node", 
+                    new Error("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             static void removeElem(E, I)(ref Node node, I index)
@@ -1792,7 +1792,7 @@ struct Node
                 else          {node = &pair.value;}
 
 
-                bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) || 
+                bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) ||
                                  (isIntegral!T && node.isInt) ||
                                  (isSomeString!T && node.isString) ||
                                  (node.isType!T);
@@ -1807,7 +1807,7 @@ struct Node
         //Check if index is integral and in range.
         void checkSequenceIndex(T)(T index) const @trusted
         {
-            assert(isSequence, 
+            assert(isSequence,
                    "checkSequenceIndex() called on a " ~ nodeTypeString ~ " node");
 
             static if(!isIntegral!T)
@@ -1817,7 +1817,7 @@ struct Node
             else
             {
                 enforce(index >= 0 && index < value_.get!(const Node[]).length,
-                        new Error("Sequence index out of range: " ~ to!string(index), 
+                        new Error("Sequence index out of range: " ~ to!string(index),
                                   startMark_));
             }
         }
@@ -1853,12 +1853,12 @@ package:
 /*
  * Merge a pair into an array of pairs based on merge rules in the YAML spec.
  *
- * The new pair will only be added if there is not already a pair 
+ * The new pair will only be added if there is not already a pair
  * with the same key.
  *
  * Params:  pairs   = Appender managing the array of pairs to merge into.
  *          toMerge = Pair to merge.
- */ 
+ */
 void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, ref Node.Pair toMerge) @trusted
 {
     foreach(ref pair; pairs.data)
@@ -1871,7 +1871,7 @@ void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, ref Node.Pair toMerge) @
 /*
  * Merge pairs into an array of pairs based on merge rules in the YAML spec.
  *
- * Any new pair will only be added if there is not already a pair 
+ * Any new pair will only be added if there is not already a pair
  * with the same key.
  *
  * Params:  pairs   = Appender managing the array of pairs to merge into.
