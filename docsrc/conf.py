@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'D:YAML'
-copyright = (u'2011, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org '
+copyright = (u'2011-2014, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org '
               'by Kirill Simonov')
 
 # The version info for the project you're documenting, acts as replacement for
