@@ -222,7 +222,6 @@ struct Node
         //Node collection style. Used to remember style this node was loaded with.
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
-        pragma(msg, "Node is %s bytes long".format(Node.sizeof));
         static assert(Value.sizeof <= 24, "Unexpected YAML value size");
         static assert(Node.sizeof <= 48, "Unexpected YAML node size");
 
@@ -597,7 +596,7 @@ struct Node
          *          the value is out of range of requested type.
          */
         @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)()
-	    @trusted if(!is(T == const))
+            @trusted if(!is(T == const))
         {
             if(isType!T){return value_.get!T;}
 
