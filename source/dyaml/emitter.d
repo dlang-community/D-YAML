@@ -35,6 +35,7 @@ import dyaml.linebreak;
 import dyaml.queue;
 import dyaml.style;
 import dyaml.tag;
+import dyaml.tagdirective;
 
 
 package:
