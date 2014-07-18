@@ -773,9 +773,9 @@ Node[] constructSet(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
 
-    //In future, the map here should be replaced with something with deterministic
-    //memory allocation if possible.
-    //Detect duplicates.
+    // In future, the map here should be replaced with something with deterministic
+    // memory allocation if possible.
+    // Detect duplicates.
     ubyte[Node] map;
     scope(exit){clear(map);}
     Node[] nodes;
