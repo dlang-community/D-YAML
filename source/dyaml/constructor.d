@@ -693,8 +693,9 @@ Node.Pair[] getPairs(string type, Node[] nodes)
     {
         enforce(node.isMapping && node.length == 1,
                 new Exception("While constructing " ~ type ~ 
-                          ", expected a mapping with single element"));
+                              ", expected a mapping with single element"));
 
+        pairs.assumeSafeAppend();
         pairs ~= node.as!(Node.Pair[]);
     }
 
@@ -730,8 +731,8 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = (i % 2) ? Pair(to!string(i), i)
-                                : Pair(i, to!string(i));
+            auto pair = (i % 2) ? Pair(i.to!string, i) : Pair(i, i.to!string);
+            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
@@ -742,7 +743,8 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = Pair(to!string(i), i);
+            auto pair = Pair(i.to!string, i);
+            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
@@ -781,9 +783,9 @@ Node[] constructSet(ref Node node)
     Node[] nodes;
     foreach(ref pair; pairs)
     {
-        enforce((pair.key in map) is null,
-                new Exception("Duplicate entry in a set"));
+        enforce((pair.key in map) is null, new Exception("Duplicate entry in a set"));
         map[pair.key] = 0;
+        nodes.assumeSafeAppend();
         nodes ~= pair.key;
     }
 
@@ -798,7 +800,8 @@ unittest
         Node.Pair[] pairs;
         foreach(long i; 0 .. length)
         {
-            pairs ~= Node.Pair(to!string(i), YAMLNull());
+            pairs.assumeSafeAppend();
+            pairs ~= Node.Pair(i.to!string, YAMLNull());
         }
 
         return pairs;

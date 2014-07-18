@@ -309,7 +309,11 @@ final class Composer
                 Node[] toMerge;
                 foreach(ref Node key, ref Node value; root)
                 {
-                    if(key.isType!YAMLMerge){toMerge ~= value;}
+                    if(key.isType!YAMLMerge)
+                    {
+                        toMerge.assumeSafeAppend();
+                        toMerge ~= value;
+                    }
                     else
                     {
                         auto temp = Node.Pair(key, value);
