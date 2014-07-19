@@ -605,10 +605,12 @@ SysTime constructTimestamp(ref Node node)
         matches = match(value, TZRegexp);
         if(matches.empty || matches.front.captures[0] == "Z")
         {
+            // No timezone.
             return SysTime(DateTime(year, month, day, hour, minute, second),
                            FracSec.from!"hnsecs"(hectonanosecond), UTC());
         }
 
+        // We have a timezone, so parse it.
         captures = matches.front.captures;
         int sign    = 1;
         int tzHours = 0;
@@ -617,7 +619,7 @@ SysTime constructTimestamp(ref Node node)
             if(captures[1][0] == '-') {sign = -1;}
             tzHours   = to!int(captures[1][1 .. $]);
         }
-        auto tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
+        const tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
         const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
