@@ -215,10 +215,9 @@ struct Loader
 
         /// Load all YAML documents.
         ///
-        /// This is just a shortcut that iterates over all documents and returns
-        /// them all at once. Calling loadAll after iterating over the node or
-        /// vice versa will not return any documents, as they have all been parsed
-        /// already.
+        /// This is just a shortcut that iterates over all documents and returns them
+        /// all at once. Calling loadAll after iterating over the node or vice versa
+        /// will not return any documents, as they have all been parsed already.
         ///
         /// This can only be called once; this is enforced by contract.
         ///
