@@ -224,10 +224,14 @@ struct Loader
         /// Returns: Array of root nodes of all documents in the file/stream.
         ///
         /// Throws:  YAMLException on a parsing error.
-        Node[] loadAll() @safe
+        Node[] loadAll() @trusted
         {
             Node[] nodes;
-            foreach(ref node; this) {nodes ~= node;}
+            foreach(ref node; this) 
+            {
+                nodes.assumeSafeAppend();
+                nodes ~= node;
+            }
             return nodes;
         }
 
@@ -269,13 +273,14 @@ struct Loader
 
     package:
         // Scan and return all tokens. Used for debugging.
-        Token[] scan() @safe
+        Token[] scan() @trusted
         {
             try
             {
                 Token[] result;
                 while(scanner_.checkToken())
                 {
+                    result.assumeSafeAppend();
                     result ~= scanner_.getToken();
                 }
                 return result;
