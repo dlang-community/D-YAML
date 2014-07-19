@@ -117,6 +117,67 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
         this(T value) @trusted {value_ = value;}
 }
 
+
+/// Key-value pair of YAML nodes, used in mappings.
+private struct Pair
+{
+    public:
+        /// Key node.
+        Node key;
+        /// Value node.
+        Node value;
+
+    public:
+        /// Construct a Pair from two values. Will be converted to Nodes if needed.
+        this(K, V)(K key, V value) @safe
+        {
+            static if(is(Unqual!K == Node)){this.key = key;}
+            else                           {this.key = Node(key);}
+            static if(is(Unqual!V == Node)){this.value = value;}
+            else                           {this.value = Node(value);}
+        }
+
+        /// Equality test with another Pair.
+        bool opEquals(const ref Pair rhs) const @safe
+        {
+            return cmp!(Yes.useTag)(rhs) == 0;
+        }
+
+        /// Assignment (shallow copy) by value.
+        void opAssign(Pair rhs) @safe nothrow
+        {
+            opAssign(rhs);
+        }
+
+        /// Assignment (shallow copy) by reference.
+        void opAssign(ref Pair rhs) @safe nothrow
+        {
+            key   = rhs.key;
+            value = rhs.value;
+        }
+
+    private:
+        // Comparison with another Pair.
+        //
+        // useTag determines whether or not we consider node tags
+        // in the comparison.
+        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
+        {
+            const keyCmp = key.cmp!useTag(rhs.key);
+            return keyCmp != 0 ? keyCmp
+                                : value.cmp!useTag(rhs.value);
+        }
+
+        // @disable causes a linker error with DMD 2.054, so we temporarily use
+        // a private opCmp. Apparently this must also match the attributes of
+        // the Node's opCmp to avoid a linker error.
+        @disable int opCmp(ref Pair);
+        int opCmp(ref const(Pair) pair) const @safe
+        {
+            assert(false, "This should never be called");
+        }
+}
+
 /// YAML node.
 ///
 /// This is a pseudo-dynamic type that can store any YAML value, including a
@@ -125,66 +186,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 struct Node
 {
     public:
-        /// Key-value pair of YAML nodes, used in mappings.
-        struct Pair
-        {
-            public:
-                /// Key node.
-                Node key;
-                /// Value node.
-                Node value;
-
-            public:
-                /// Construct a Pair from two values. Will be converted to Nodes if needed.
-                this(K, V)(K key, V value) @safe
-                {
-                    static if(is(Unqual!K == Node)){this.key = key;}
-                    else                           {this.key = Node(key);}
-                    static if(is(Unqual!V == Node)){this.value = value;}
-                    else                           {this.value = Node(value);}
-                }
-
-                /// Equality test with another Pair.
-                bool opEquals(const ref Pair rhs) const @safe
-                {
-                    return cmp!(Yes.useTag)(rhs) == 0;
-                }
-
-                /// Assignment (shallow copy) by value.
-                void opAssign(Pair rhs) @safe nothrow
-                {
-                    opAssign(rhs);
-                }
-
-                /// Assignment (shallow copy) by reference.
-                void opAssign(ref Pair rhs) @safe nothrow
-                {
-                    key   = rhs.key;
-                    value = rhs.value;
-                }
-
-            private:
-                // Comparison with another Pair.
-                //
-                // useTag determines whether or not we consider node tags
-                // in the comparison.
-                int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
-                {
-                    const keyCmp = key.cmp!useTag(rhs.key);
-                    return keyCmp != 0 ? keyCmp
-                                       : value.cmp!useTag(rhs.value);
-                }
-
-                // @disable causes a linker error with DMD 2.054, so we temporarily use
-                // a private opCmp. Apparently this must also match the attributes of
-                // the Node's opCmp to avoid a linker error.
-                @disable int opCmp(ref Pair);
-                int opCmp(ref const(Pair) pair) const @safe
-                {
-                    assert(false, "This should never be called");
-                }
-        }
-
+        alias Pair = .Pair;
 
     package:
         // YAML value type.
