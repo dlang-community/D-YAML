@@ -772,19 +772,23 @@ struct Node
             writeln("D:YAML Node opIndex unittest");
             alias Node.Value Value;
             alias Node.Pair Pair;
-            Node n1 = Node(cast(long)11);
-            Node n2 = Node(cast(long)12);
-            Node n3 = Node(cast(long)13);
-            Node n4 = Node(cast(long)14);
 
-            Node k1 = Node("11");
-            Node k2 = Node("12");
-            Node k3 = Node("13");
-            Node k4 = Node("14");
+            Node narray = Node([11, 12, 13, 14]);
+            Node nmap   = Node(["11", "12", "13", "14"], [11, 12, 13, 14]);
 
-            Node narray = Node([n1, n2, n3, n4]);
-            Node nmap   = Node([k1, k2, k3, k4],
-                               [n1, n2, n3, n4]);
+            assert(narray[0].as!int == 11);
+            assert(null !is collectException(narray[42]));
+            assert(nmap["11"].as!int == 11);
+            assert(nmap["14"].as!int == 14);
+        }
+        unittest
+        {
+            writeln("D:YAML Node opIndex unittest");
+            alias Node.Value Value;
+            alias Node.Pair Pair;
+
+            Node narray = Node([11, 12, 13, 14]);
+            Node nmap   = Node(["11", "12", "13", "14"], [11, 12, 13, 14]);
 
             assert(narray[0].as!int == 11);
             assert(null !is collectException(narray[42]));
