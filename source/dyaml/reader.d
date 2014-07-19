@@ -66,7 +66,7 @@ final class Reader
          *
          * Throws:  ReaderException if the stream is invalid.
          */
-        this(Stream stream) @trusted
+        this(Stream stream) @trusted //!nothrow
         in
         {
             assert(stream.readable && stream.seekable, 
@@ -78,7 +78,7 @@ final class Reader
             decoder_ = UTFFastDecoder(stream_);
         }
 
-        @trusted nothrow ~this() 
+        @trusted nothrow @nogc ~this() 
         {
             //Delete the buffer, if allocated.
             if(bufferAllocated_ is null){return;}
@@ -410,7 +410,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
     public:
         ///Construct a UTFBlockDecoder decoding a stream.
-        this(EndianStream stream) @system 
+        this(EndianStream stream) @trusted //!nothrow
         {
             stream_ = stream;
             available_ = stream_.available;
@@ -466,19 +466,19 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         ///Get maximum number of characters that might be in the stream.
-        @property size_t maxChars() const pure @safe nothrow {return maxChars_;}
+        @property size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
 
         ///Get encoding we're decoding from.
-        @property Encoding encoding() const pure @safe nothrow {return encoding_;}
+        @property Encoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
         ///Are we done decoding?
-        @property bool done() const pure @safe nothrow
+        @property bool done() const pure @safe nothrow @nogc
         {   
             return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
         }
 
         ///Get next character.
-        dchar getDChar() @system
+        dchar getDChar() @safe
         {
             if(buffer_.length)
             {
@@ -493,7 +493,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         ///Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
-        const(dchar[]) getDChars(size_t maxChars = size_t.max) @system
+        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe
         {
             if(buffer_.length)
             {
@@ -509,8 +509,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
     private:
-        //Read and decode characters from file and store them in the buffer.
-        void updateBuffer() @system
+        // Read and decode characters from file and store them in the buffer.
+        void updateBuffer() @trusted
         {
             assert(buffer_.length == 0);
             final switch(encoding_)
@@ -546,8 +546,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             }
         }
 
-        //Decode contents of a UTF-8 or UTF-16 raw buffer.
-        void decodeRawBuffer(C)(C[] buffer, const size_t length) pure @system
+        // Decode contents of a UTF-8 or UTF-16 raw buffer.
+        void decodeRawBuffer(C)(C[] buffer, const size_t length)
+            @safe pure
         {
             //End of part of rawBuffer8_ that contains 
             //complete characters and can be decoded.
@@ -564,9 +565,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             foreach(i; 0 .. rawUsed_){buffer[i] = buffer[i + end];}
         }
 
-        //Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
+        // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
         size_t endOfLastUTFSequence(C)(const C[] buffer, const size_t max) 
-            pure @system nothrow
+            @safe pure nothrow const @nogc
         {
             static if(is(C == char))
             {
@@ -597,8 +598,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             }
         }
 
-        //Decode a UTF-8 or UTF-16 buffer (with no incomplete sequences at the end).
-        void decodeUTF(C)(const C[] source) pure @system
+        // Decode a UTF-8 or UTF-16 buffer (with no incomplete sequences at the end).
+        void decodeUTF(C)(const C[] source) @safe pure
         {
             size_t bufpos = 0;
             const srclength = source.length;
@@ -619,14 +620,12 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 }
 
-/**
- * Determine if all characters in an array are printable.
- *
- * Params:  chars = Characters to check.
- *
- * Returns: True if all the characters are printable, false otherwise.
- */
-bool printable(const dchar[] chars) pure @safe nothrow
+/// Determine if all characters in an array are printable.
+/// 
+/// Params:  chars = Characters to check.
+/// 
+/// Returns: True if all the characters are printable, false otherwise.
+bool printable(const dchar[] chars) @safe pure nothrow @nogc 
 {
     foreach(c; chars)
     {
