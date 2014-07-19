@@ -163,11 +163,11 @@ final class Scanner
         ///Destroy the scanner.
         @trusted ~this()
         {
-            clear(tokens_);
-            clear(indents_);
-            clear(possibleSimpleKeys_);
+            tokens_.destroy();
+            indents_.destroy();
+            possibleSimpleKeys_.destroy();
             possibleSimpleKeys_ = null;
-            clear(appender_);
+            appender_.destroy();
             reader_ = null;
         }
 
@@ -438,7 +438,7 @@ final class Scanner
             unwindIndent(-1);
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
-            clear(possibleSimpleKeys_);
+            possibleSimpleKeys_.destroy;
 
             tokens_.push(streamEndToken(reader_.mark, reader_.mark));
             done_ = true;

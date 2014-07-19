@@ -189,14 +189,14 @@ struct Dumper
         ///Specify custom Resolver to use.
         @property void resolver(Resolver resolver) @trusted
         {
-            clear(resolver_);
+            resolver_.destroy();
             resolver_ = resolver;
         }
 
         ///Specify custom Representer to use.
         @property void representer(Representer representer) @trusted
         {
-            clear(representer_);
+            representer_.destroy();
             representer_ = representer;
         }
 

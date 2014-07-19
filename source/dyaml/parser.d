@@ -146,11 +146,11 @@ final class Parser
         ///Destroy the parser.
         @trusted ~this()
         {
-            clear(currentEvent_);
-            clear(tagDirectives_);
+            currentEvent_.destroy();
+            tagDirectives_.destroy();
             tagDirectives_ = null;
-            clear(states_);
-            clear(marks_);
+            states_.destroy();
+            marks_.destroy();
         }
 
         /**

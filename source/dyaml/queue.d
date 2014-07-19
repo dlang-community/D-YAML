@@ -196,7 +196,7 @@ void free(T)(T* ptr) @system nothrow
 {
     //GC doesn't need to care about any references in this struct anymore.
     static if(hasIndirections!T){GC.removeRange(cast(void*)ptr);}
-    static if(hasMember!(T, "__dtor")){clear(*ptr);}
+    static if(hasMember!(T, "__dtor")){(*ptr).destroy;}
     core.stdc.stdlib.free(ptr);
 }
 

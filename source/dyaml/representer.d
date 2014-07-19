@@ -86,7 +86,7 @@ final class Representer
         ///Destroy the Representer.
         pure @safe nothrow ~this()
         {
-            clear(representers_);
+            representers_.destroy();
             representers_ = null;
         }
 
@@ -555,7 +555,7 @@ Node representPairs(ref Node node, Representer representer) @system
     {
         //TODO this should be replaced by something with deterministic memory allocation.
         auto keys = redBlackTree!Node();
-        scope(exit){clear(keys);}
+        scope(exit){keys.destroy();}
         foreach(ref pair; pairs)
         {
             if(pair.key in keys){return true;}

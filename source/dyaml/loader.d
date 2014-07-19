@@ -167,9 +167,9 @@ struct Loader
         ///Destroy the Loader.
         @trusted ~this()
         {
-            clear(reader_);
-            clear(scanner_);
-            clear(parser_);
+            reader_.destroy();
+            scanner_.destroy();
+            parser_.destroy();
         }
 
         ///Set stream _name. Used in debugging messages.

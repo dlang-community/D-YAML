@@ -108,11 +108,11 @@ final class Constructor
         /// Destroy the constructor.
         pure @safe nothrow ~this()
         {
-            clear(fromScalar_);
+            fromScalar_.destroy();
             fromScalar_ = null;
-            clear(fromSequence_);
+            fromSequence_.destroy();
             fromSequence_ = null;
-            clear(fromMapping_);
+            fromMapping_.destroy();
             fromMapping_ = null;
         }
 
@@ -698,7 +698,7 @@ Node.Pair[] constructOrderedMap(ref Node node)
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){clear(keys);}
+    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
@@ -767,7 +767,7 @@ Node[] constructSet(ref Node node)
     // memory allocation if possible.
     // Detect duplicates.
     ubyte[Node] map;
-    scope(exit){clear(map);}
+    scope(exit){map.destroy();}
     Node[] nodes;
     foreach(ref pair; pairs)
     {
@@ -837,7 +837,7 @@ Node.Pair[] constructMap(ref Node node)
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){clear(keys);}
+    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),

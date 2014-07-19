@@ -87,11 +87,11 @@ struct Serializer
         @safe ~this()
         {
             emitter_.emit(streamEndEvent(Mark(), Mark()));
-            clear(YAMLVersion_);
+            YAMLVersion_.destroy();
             YAMLVersion_ = null;
-            clear(serializedNodes_);
+            serializedNodes_.destroy();
             serializedNodes_ = null;
-            clear(anchors_);
+            anchors_.destroy();
             anchors_ = null;
         }
 
@@ -103,8 +103,8 @@ struct Serializer
             anchorNode(node);
             serializeNode(node);
             emitter_.emit(documentEndEvent(Mark(), Mark(), explicitEnd_));
-            clear(serializedNodes_);
-            clear(anchors_);
+            serializedNodes_.destroy();
+            anchors_.destroy();
             Anchor[Node] emptyAnchors;
             anchors_ = emptyAnchors;
             lastAnchorID_ = 0;

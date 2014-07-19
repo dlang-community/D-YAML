@@ -187,14 +187,14 @@ struct Emitter
         @trusted ~this()
         {
             stream_ = null;
-            clear(states_);
-            clear(events_);
-            clear(indents_);
-            clear(tagDirectives_);
+            states_.destroy();
+            events_.destroy();
+            indents_.destroy();
+            tagDirectives_.destroy();
             tagDirectives_ = null;
-            clear(preparedAnchor_);
+            preparedAnchor_.destroy();
             preparedAnchor_ = null;
-            clear(preparedTag_);
+            preparedTag_.destroy();
             preparedTag_ = null;
         }
 
@@ -206,7 +206,7 @@ struct Emitter
             {
                 event_ = events_.pop();
                 state_();
-                clear(event_);
+                event_.destroy();
             }
         }
 

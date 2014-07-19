@@ -73,7 +73,7 @@ final class Resolver
         ///Destroy the Resolver.
         pure @safe nothrow ~this()
         {
-            clear(yamlImplicitResolvers_);
+            yamlImplicitResolvers_.destroy();
             yamlImplicitResolvers_ = null;
         }
 
