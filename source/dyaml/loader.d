@@ -24,58 +24,58 @@ import dyaml.token;
 
 
 /// Loads YAML documents from files or streams.
-/// 
+///
 /// User specified Constructor and/or Resolver can be used to support new
 /// tags / data types.
-/// 
+///
 /// Examples:
-/// 
+///
 /// Load single YAML document from a file:
 /// --------------------
 /// auto rootNode = Loader("file.yaml").load();
 /// ...
 /// --------------------
-/// 
+///
 /// Load all YAML documents from a file:
 /// --------------------
 /// auto nodes = Loader("file.yaml").loadAll();
 /// ...
 /// --------------------
-/// 
+///
 /// Iterate over YAML documents in a file, lazily loading them:
 /// --------------------
 /// auto loader = Loader("file.yaml");
-/// 
+///
 /// foreach(ref node; loader)
 /// {
 ///     ...
 /// }
 /// --------------------
-/// 
+///
 /// Load YAML from memory:
 /// --------------------
 /// import std.stream;
 /// import std.stdio;
-/// 
+///
 /// string yaml_input = "red:   '#ff0000'\n"
 ///                     "green: '#00ff00'\n"
 ///                     "blue:  '#0000ff'";
-/// 
+///
 /// auto colors = Loader.fromString(yaml_input).load();
-/// 
+///
 /// foreach(string color, string value; colors)
 /// {
 ///     writeln(color, " is ", value, " in HTML/CSS");
 /// }
 /// --------------------
-/// 
+///
 /// Use a custom constructor/resolver to support custom data types and/or implicit tags:
 /// --------------------
 /// auto constructor = new Constructor();
 /// auto resolver = new Resolver();
-/// 
+///
 /// //Add constructor functions / resolver expressions here...
-/// 
+///
 /// auto loader = Loader("file.yaml");
 /// loader.constructor = constructor;
 /// loader.resolver = resolver;
@@ -105,17 +105,17 @@ struct Loader
         @disable bool opEquals(ref Loader);
 
         /// Construct a Loader to load YAML from a file.
-        /// 
+        ///
         /// Params:  filename = Name of the file to load from.
-        /// 
+        ///
         /// Throws:  YAMLException if the file could not be opened or read.
         this(string filename) @trusted
         {
             name_ = filename;
-            try{this(new File(filename));}
+            try { this(new File(filename)); }
             catch(StreamException e)
             {
-                throw new YAMLException("Unable to open file " ~ filename ~ 
+                throw new YAMLException("Unable to open file " ~ filename ~
                                         " for YAML loading: " ~ e.msg);
             }
         }
@@ -133,11 +133,11 @@ struct Loader
         {
             assert(Loader.fromString("42").load().as!int == 42);
         }
-        
+
         /// Construct a Loader to load YAML from a _stream.
-        /// 
+        ///
         /// Params:  stream = Stream to read from. Must be readable and seekable.
-        /// 
+        ///
         /// Throws:  YAMLException if stream could not be read.
         this(Stream stream) @safe
         {
@@ -151,7 +151,7 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to open stream " ~ name_ ~ 
+                throw new YAMLException("Unable to open stream " ~ name_ ~
                                         " for YAML loading: " ~ e.msg);
             }
         }
@@ -183,13 +183,13 @@ struct Loader
         }
 
         /// Load single YAML document.
-        /// 
+        ///
         /// If none or more than one YAML document is found, this throws a YAMLException.
-        /// 
+        ///
         /// This can only be called once; this is enforced by contract.
-        ///                  
+        ///
         /// Returns: Root node of the document.
-        /// 
+        ///
         /// Throws:  YAMLException if there wasn't exactly one document
         ///          or on a YAML parsing error.
         Node load() @safe
@@ -201,43 +201,43 @@ struct Loader
         {
             try
             {
-                scope(exit){done_ = true;}
+                scope(exit) { done_ = true; }
                 auto composer = new Composer(parser_, resolver_, constructor_);
                 enforce(composer.checkNode(), new YAMLException("No YAML document to load"));
                 return composer.getSingleNode();
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~ 
+                throw new YAMLException("Unable to load YAML from stream " ~
                                         name_ ~ " : " ~ e.msg);
             }
         }
 
         /// Load all YAML documents.
-        /// 
+        ///
         /// This is just a shortcut that iterates over all documents and returns
         /// them all at once. Calling loadAll after iterating over the node or
         /// vice versa will not return any documents, as they have all been parsed
         /// already.
-        /// 
+        ///
         /// This can only be called once; this is enforced by contract.
-        ///                  
+        ///
         /// Returns: Array of root nodes of all documents in the file/stream.
-        /// 
+        ///
         /// Throws:  YAMLException on a parsing error.
         Node[] loadAll() @safe
         {
             Node[] nodes;
-            foreach(ref node; this){nodes ~= node;}
+            foreach(ref node; this) {nodes ~= node;}
             return nodes;
         }
 
         /// Foreach over YAML documents.
-        /// 
+        ///
         /// Parses documents lazily, when they are needed.
-        /// 
+        ///
         /// Foreach over a Loader can only be used once; this is enforced by contract.
-        /// 
+        ///
         /// Throws: YAMLException on a parsing error.
         int opApply(int delegate(ref Node) dg) @trusted
         in
@@ -246,7 +246,7 @@ struct Loader
         }
         body
         {
-            scope(exit){done_ = true;}
+            scope(exit) { done_ = true; }
             try
             {
                 auto composer = new Composer(parser_, resolver_, constructor_);
@@ -256,14 +256,14 @@ struct Loader
                 {
                     auto node = composer.getNode();
                     result = dg(node);
-                    if(result){break;}
+                    if(result) { break; }
                 }
 
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~ 
+                throw new YAMLException("Unable to load YAML from stream " ~
                                         name_ ~ " : " ~ e.msg);
             }
         }
@@ -275,12 +275,15 @@ struct Loader
             try
             {
                 Token[] result;
-                while(scanner_.checkToken()){result ~= scanner_.getToken();}
+                while(scanner_.checkToken())
+                {
+                    result ~= scanner_.getToken();
+                }
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to scan YAML from stream " ~ 
+                throw new YAMLException("Unable to scan YAML from stream " ~
                                         name_ ~ " : " ~ e.msg);
             }
         }
@@ -291,12 +294,15 @@ struct Loader
             try
             {
                 immutable(Event)[] result;
-                while(parser_.checkEvent()){result ~= parser_.getEvent();}
+                while(parser_.checkEvent())
+                {
+                    result ~= parser_.getEvent();
+                }
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to parse YAML from stream " ~ 
+                throw new YAMLException("Unable to parse YAML from stream " ~
                                         name_ ~ " : " ~ e.msg);
             }
         }
@@ -306,13 +312,13 @@ unittest
 {
     import std.stream;
     import std.stdio;
-    
+
     string yaml_input = "red:   '#ff0000'\n"
                         "green: '#00ff00'\n"
                         "blue:  '#0000ff'";
-    
+
     auto colors = Loader(new MemoryStream(cast(char[])yaml_input)).load();
-    
+
     foreach(string color, string value; colors)
     {
         writeln(color, " is ", value, " in HTML/CSS");
