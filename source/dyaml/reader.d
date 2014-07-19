@@ -424,8 +424,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                 if(available_ == 1)
                 {
                     bufferSpace_[0] = stream_.getc();
-                    buffer_ = bufferSpace_[0 .. 1];
-                    maxChars_ = 1;
+                    buffer_         = bufferSpace_[0 .. 1];
+                    maxChars_       = 1;
                 }
                 return;
             }
@@ -512,7 +512,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Read and decode characters from file and store them in the buffer.
         void updateBuffer() @trusted
         {
-            assert(buffer_.length == 0);
+            assert(buffer_.length == 0, 
+                   "updateBuffer can only be called when the buffer is empty");
             final switch(encoding_)
             {
                 case Encoding.UTF_8:
@@ -550,19 +551,19 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         void decodeRawBuffer(C)(C[] buffer, const size_t length)
             @safe pure
         {
-            //End of part of rawBuffer8_ that contains 
-            //complete characters and can be decoded.
+            // End of part of rawBuffer8_ that contains 
+            // complete characters and can be decoded.
             const end = endOfLastUTFSequence(buffer, length);
-            //If end is 0, there are no full UTF-8 chars.
-            //This can happen at the end of file if there is an incomplete UTF-8 sequence.
+            // If end is 0, there are no full UTF-8 chars.
+            // This can happen at the end of file if there is an incomplete UTF-8 sequence.
             enforce(end > 0,
                     new ReaderException("Invalid UTF-8 character at the end of stream"));
 
             decodeUTF(buffer[0 .. end]);
 
-            //After decoding, any code points not decoded go to the start of raw buffer.
+            // After decoding, any code points not decoded go to the start of raw buffer.
             rawUsed_ = length - end;
-            foreach(i; 0 .. rawUsed_){buffer[i] = buffer[i + end];}
+            foreach(i; 0 .. rawUsed_) { buffer[i] = buffer[i + end]; }
         }
 
         // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
@@ -576,10 +577,10 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     const s = utf8Stride[buffer[cast(size_t)end]];
                     if(s != 0xFF)
                     {
-                        //If stride goes beyond end of the buffer (max), return end.
-                        //Otherwise the last sequence ends at max, so we can return that.
-                        //(Unless there is an invalid code point, which is 
-                        //caught at decoding)
+                        // If stride goes beyond end of the buffer (max), return end.
+                        // Otherwise the last sequence ends at max, so we can return that.
+                        // (Unless there is an invalid code point, which is 
+                        // caught at decoding)
                         return (s > max - end) ?  cast(size_t)end : max;
                     }
                 }
@@ -591,7 +592,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                 while(end < max)
                 {
                     const s = stride(buffer, end);
-                    if(s + end > max){break;}
+                    if(s + end > max) { break; }
                     end += s;
                 }
                 return end;
