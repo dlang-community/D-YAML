@@ -6,7 +6,7 @@
 
 /**
  * Implements a class that processes YAML mappings, sequences and scalars into
- * nodes. This can be used to implement custom data types. A tutorial can be 
+ * nodes. This can be used to implement custom data types. A tutorial can be
  * found $(LINK2 ../tutorials/custom_types.html, here).
  */
 module dyaml.constructor;
@@ -19,7 +19,7 @@ import std.container;
 import std.conv;
 import std.datetime;
 import std.exception;
-import std.stdio; 
+import std.stdio;
 import std.regex;
 import std.string;
 import std.typecons;
@@ -301,8 +301,8 @@ final class Constructor
          *          style = Style of the node (scalar or collection style).
          *
          * Returns: Constructed node.
-         */ 
-        Node node(T, U)(const Mark start, const Mark end, const Tag tag, 
+         */
+        Node node(T, U)(const Mark start, const Mark end, const Tag tag,
                         T value, U style) @trusted
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
@@ -332,22 +332,22 @@ final class Constructor
             }
             catch(Exception e)
             {
-                throw new Error("Error constructing " ~ typeid(T).toString() 
+                throw new Error("Error constructing " ~ typeid(T).toString()
                                 ~ ":\n" ~ e.msg, start, end);
             }
         }
 
     private:
-        /* 
+        /*
          * Add a constructor function.
          *
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor) 
+        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor)
             @trusted nothrow
         {
-            assert((tag in fromScalar_) is null && 
+            assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
                    (tag in fromMapping_) is null,
                    "Constructor function for tag " ~ tag.get ~ " is already "
@@ -358,7 +358,7 @@ final class Constructor
             {
                 static if(Node.allowed!T){return Node.value(ctor(n));}
                 else                     {return Node.userValue(ctor(n));}
-            }; 
+            };
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
@@ -578,7 +578,7 @@ SysTime constructTimestamp(ref Node node)
         // First, get year, month and day.
         auto matches = match(value, YMDRegexp);
 
-        enforce(!matches.empty, 
+        enforce(!matches.empty,
                 new Exception("Unable to parse timestamp value: " ~ value));
 
         auto captures = matches.front.captures;
@@ -614,14 +614,14 @@ SysTime constructTimestamp(ref Node node)
         int tzHours = 0;
         if(!captures[1].empty)
         {
-            if(captures[1][0] == '-'){sign = -1;}
+            if(captures[1][0] == '-') {sign = -1;}
             tzHours   = to!int(captures[1][1 .. $]);
         }
         auto tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
         const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
-                       FracSec.from!"hnsecs"(hectonanosecond), 
+                       FracSec.from!"hnsecs"(hectonanosecond),
                        new immutable SimpleTimeZone(tzOffset));
     }
     catch(ConvException e)
@@ -678,7 +678,7 @@ Node.Pair[] getPairs(string type, Node[] nodes)
     foreach(ref node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
-                new Exception("While constructing " ~ type ~ 
+                new Exception("While constructing " ~ type ~
                               ", expected a mapping with single element"));
 
         pairs.assumeSafeAppend();
@@ -693,14 +693,14 @@ Node.Pair[] constructOrderedMap(ref Node node)
 {
     auto pairs = getPairs("ordered map", node.as!(Node[]));
 
-    //Detect duplicates. 
+    //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
     scope(exit){clear(keys);}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
-                new Exception("Duplicate entry in an ordered map: " 
+                new Exception("Duplicate entry in an ordered map: "
                               ~ pair.key.debugString()));
         keys.insert(pair.key);
     }
@@ -832,14 +832,14 @@ Node[] constructSequence(ref Node node)
 Node.Pair[] constructMap(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
-    //Detect duplicates. 
+    //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
     scope(exit){clear(keys);}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
-                new Exception("Duplicate entry in a map: " 
+                new Exception("Duplicate entry in a map: "
                               ~ pair.key.debugString()));
         keys.insert(pair.key);
     }
@@ -867,20 +867,20 @@ struct MyStruct
 }
 
 MyStruct constructMyStructScalar(ref Node node)
-{ 
+{
     //Guaranteed to be string as we construct from scalar.
     auto parts = node.as!string().split(":");
     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
 }
 
 MyStruct constructMyStructSequence(ref Node node)
-{ 
+{
     //node is guaranteed to be sequence.
     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
 }
 
 MyStruct constructMyStructMapping(ref Node node)
-{ 
+{
     //node is guaranteed to be mapping.
     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
