@@ -618,7 +618,7 @@ SysTime constructTimestamp(ref Node node)
             tzHours   = to!int(captures[1][1 .. $]);
         }
         auto tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
-        auto tzOffset = sign * (60 * tzHours + tzMinutes);
+        const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
                        FracSec.from!"hnsecs"(hectonanosecond), 
