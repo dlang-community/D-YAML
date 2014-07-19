@@ -212,11 +212,13 @@ Node[] constructStrUTF8()
 
 Node[] constructTimestamp()
 {
-    return [Node([pair("canonical",        SysTime(DateTime(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())), 
-                  pair("valid iso8601",    SysTime(DateTime(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
-                  pair("space separated",  SysTime(DateTime(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
-                  pair("no time zone (Z)", SysTime(DateTime(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
-                  pair("date (00:00:00Z)", SysTime(DateTime(2002, 12, 14), UTC()))])];
+    alias DT = DateTime;
+    alias ST = SysTime;
+    return [Node([pair("canonical",        ST(DT(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())), 
+                  pair("valid iso8601",    ST(DT(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
+                  pair("space separated",  ST(DT(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
+                  pair("no time zone (Z)", ST(DT(2001, 12, 15, 2, 59, 43), FracSec.from!"hnsecs"(1000000), UTC())),
+                  pair("date (00:00:00Z)", ST(DT(2002, 12, 14), UTC()))])];
 }
 
 Node[] constructValue()
@@ -273,12 +275,14 @@ Node[] singleDotFloatBug()
 
 Node[] timestampBugs()
 {
-    return [Node([Node(SysTime(DateTime(2001, 12, 15, 3, 29, 43),  FracSec.from!"hnsecs"(1000000), UTC())), 
-                  Node(SysTime(DateTime(2001, 12, 14, 16, 29, 43), FracSec.from!"hnsecs"(1000000), UTC())), 
-                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), FracSec.from!"hnsecs"(10100), UTC())), 
-                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(60))), 
-                  Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(-90))),
-                  Node(SysTime(DateTime(2005, 7, 8, 17, 35, 4),    FracSec.from!"hnsecs"(5176000), UTC()))])];
+    alias DT = DateTime;
+    alias ST = SysTime;
+    return [Node([Node(ST(DT(2001, 12, 15, 3, 29, 43),  FracSec.from!"hnsecs"(1000000), UTC())), 
+                  Node(ST(DT(2001, 12, 14, 16, 29, 43), FracSec.from!"hnsecs"(1000000), UTC())), 
+                  Node(ST(DT(2001, 12, 14, 21, 59, 43), FracSec.from!"hnsecs"(10100), UTC())), 
+                  Node(ST(DT(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(60.dur!"minutes"))), 
+                  Node(ST(DT(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(-90.dur!"minutes"))),
+                  Node(ST(DT(2005, 7, 8, 17, 35, 4),    FracSec.from!"hnsecs"(5176000), UTC()))])];
 }
 
 Node[] utf16be()
