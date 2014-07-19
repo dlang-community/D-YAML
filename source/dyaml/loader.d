@@ -165,19 +165,19 @@ struct Loader
         }
 
         /// Set stream _name. Used in debugging messages.
-        @property void name(string name) pure @safe nothrow
+        void name(string name) pure @safe nothrow
         {
             name_ = name;
         }
 
         /// Specify custom Resolver to use.
-        @property void resolver(Resolver resolver) pure @safe nothrow
+        void resolver(Resolver resolver) pure @safe nothrow
         {
             resolver_ = resolver;
         }
 
         /// Specify custom Constructor to use.
-        @property void constructor(Constructor constructor) pure @safe nothrow
+        void constructor(Constructor constructor) pure @safe nothrow
         {
             constructor_ = constructor;
         }
