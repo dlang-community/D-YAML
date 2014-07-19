@@ -125,6 +125,10 @@ struct Loader
         /// Params:  data = String to load YAML from.
         ///
         /// Returns: Loader loading YAML from given string.
+        ///
+        /// Throws:
+        ///
+        /// YAMLException if data could not be parsed (e.g. a decoding error)
         static Loader fromString(string data)
         {
             return Loader(new MemoryStream(cast(char[])data));
