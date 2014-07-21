@@ -64,9 +64,9 @@ class ReaderException : YAMLException
 final class Reader
 {
     private:
-        //Input stream.
-        EndianStream stream_;
-        //Allocated space for buffer_.
+        // Input stream.
+        MemoryStream memStream_;
+        // Allocated space for buffer_.
         dchar[] bufferAllocated_ = null;
         // Buffer of currently loaded characters.
         dchar[] buffer_ = null;
@@ -81,6 +81,12 @@ final class Reader
         // Decoder reading data from file and decoding it to UTF-32.
         UTFFastDecoder decoder_;
 
+        version(unittest)
+        {
+            // Endianness of the input before it was converted (for testing)
+            Endian endian_;
+        }
+
     public:
         /// Construct a Reader.
         ///
@@ -88,15 +94,18 @@ final class Reader
         ///
         /// Throws:  ReaderException if the stream is invalid.
         this(Stream stream) @trusted //!nothrow
-        in
         {
-            assert(stream.readable && stream.seekable,
-                   "Can't read YAML from a stream that is not readable and seekable");
-        }
-        body
-        {
-            stream_ = new EndianStream(stream);
-            decoder_ = UTFFastDecoder(stream_);
+            auto streamBytes = streamToBytesGC(stream);
+            auto result = fixUTFByteOrder(streamBytes);
+            if(result.bytesStripped > 0)
+            {
+                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
+                                          "to 2 or 4 bytes, respectively");
+            }
+
+            version(unittest) { endian_ = result.endian; }
+            memStream_  = new MemoryStream(result.array);
+            decoder_    = UTFFastDecoder(memStream_, result.encoding);
         }
 
         @trusted nothrow @nogc ~this()
@@ -294,7 +303,7 @@ final class Reader
         void loadChars(size_t chars) @system
         {
             const oldLength = buffer_.length;
-            const oldPosition = stream_.position;
+            const oldPosition = memStream_.position;
 
             bufferReserve(buffer_.length + chars);
             buffer_ = bufferAllocated_[0 .. buffer_.length + chars];
@@ -324,7 +333,7 @@ final class Reader
             try{throw e;}
             catch(UTFException e)
             {
-                const position = stream_.position;
+                const position = memStream_.position;
                 throw new ReaderException(format("Unicode decoding error between bytes %s and %s : %s",
                                           oldPosition, position, e.msg));
             }
@@ -397,8 +406,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         size_t maxChars_;
         // Bytes available in the stream.
         size_t available_;
-        //Input stream.
-        EndianStream stream_;
+        // Input stream.
+        MemoryStream stream_;
 
         // Buffer used to store raw UTF-8 or UTF-16 code points.
         union
@@ -415,60 +424,18 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         dchar[] buffer_;
 
     public:
-        ///Construct a UTFBlockDecoder decoding a stream.
-        this(EndianStream stream) @trusted //!nothrow
+        /// Construct a UTFBlockDecoder decoding a stream.
+        this(MemoryStream stream, UTFEncoding encoding) @trusted
         {
-            stream_ = stream;
+            stream_    = stream;
             available_ = stream_.available;
-
-            //Handle files short enough not to have a BOM.
-            if(available_ < 2)
+            encoding_  = encoding;
+            final switch(encoding_)
             {
-                encoding_ = Encoding.UTF_8;
-                maxChars_ = 0;
-
-                if(available_ == 1)
-                {
-                    bufferSpace_[0] = stream_.getc();
-                    buffer_         = bufferSpace_[0 .. 1];
-                    maxChars_       = 1;
-                }
-                return;
+                case UTFEncoding.UTF_8:  maxChars_ = available_;     break;
+                case UTFEncoding.UTF_16: maxChars_ = available_ / 2; break;
+                case UTFEncoding.UTF_32: maxChars_ = available_ / 2; break;
             }
-
-            char[] rawBuffer8;
-            wchar[] rawBuffer16;
-            //readBOM will determine and set stream endianness.
-            switch(stream_.readBOM(2))
-            {
-                case -1: 
-                    //readBOM() eats two more bytes in this case so get them back.
-                    const wchar bytes = stream_.getcw();
-                    rawBuffer8_[0 .. 2] = [cast(ubyte)(bytes % 256), cast(ubyte)(bytes / 256)];
-                    rawUsed_ = 2;
-                    goto case 0;
-                case 0:  
-                    maxChars_ = available_;
-                    encoding_ = Encoding.UTF_8; 
-                    break;
-                case 1, 2: 
-                    maxChars_ = available_ / 2;
-                    //readBOM() eats two more bytes in this case so get them back.
-                    encoding_ = Encoding.UTF_16; 
-                    rawBuffer16_[0] = stream_.getcw();
-                    rawUsed_ = 1;
-                    enforce(available_ % 2 == 0, 
-                            new ReaderException("Odd byte count in an UTF-16 stream"));
-                    break;
-                case 3, 4: 
-                    maxChars_ = available_ / 4;
-                    encoding_ = Encoding.UTF_32;
-                    enforce(available_ % 4 == 0, 
-                            new ReaderException("Byte count in an UTF-32 stream not divisible by 4"));
-                    break;
-                default: assert(false, "Unknown UTF BOM");
-            }
-            available_ = stream_.available;
         }
 
         /// Get maximum number of characters that might be in the stream.
@@ -658,7 +625,7 @@ void testEndian(R)()
     {
         auto reader = new R(new MemoryStream(data));
         assert(reader.encoding == encoding_expected);
-        assert(reader.stream_.endian == endian_expected);
+        assert(reader.endian_ == endian_expected);
     }
     ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
     ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
