@@ -20,6 +20,8 @@ import std.string;
 import std.system;
 import std.utf;
 
+import tinyendian;
+
 import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
@@ -386,7 +388,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         ];
 
         //Encoding of the input stream.
-        Encoding encoding_;
+        UTFEncoding encoding_;
         //Maximum number of characters that might be in the stream.
         size_t maxChars_;
         //Bytes available in the stream.
@@ -518,7 +520,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                    "updateBuffer can only be called when the buffer is empty");
             final switch(encoding_)
             {
-                case Encoding.UTF_8:
+                case UTFEncoding.UTF_8:
                     const bytes = min(bufferSize_ - rawUsed_, available_);
                     //Current length of valid data in rawBuffer8_.
                     const rawLength = rawUsed_ + bytes;
@@ -526,7 +528,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     available_ -= bytes;
                     decodeRawBuffer(rawBuffer8_, rawLength);
                     break;
-                case Encoding.UTF_16:
+                case UTFEncoding.UTF_16:
                     const words = min((bufferSize_ / 2) - rawUsed_, available_ / 2);
                     //Current length of valid data in rawBuffer16_.
                     const rawLength = rawUsed_ + words;
@@ -537,7 +539,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     }
                     decodeRawBuffer(rawBuffer16_, rawLength);
                     break;
-                case Encoding.UTF_32:
+                case UTFEncoding.UTF_32:
                     const chars = min(bufferSize_ / 4, available_ / 4);
                     foreach(c; 0 .. chars)
                     {
