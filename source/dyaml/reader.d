@@ -117,12 +117,12 @@ final class Reader
         }
 
         /// Get character at specified index relative to current position.
-        /// 
+        ///
         /// Params:  index = Index of the character to get relative to current position
         ///                  in the stream.
-        /// 
+        ///
         /// Returns: Character at specified position.
-        /// 
+        ///
         /// Throws:  ReaderException if trying to read past the end of the stream
         ///          or if invalid data is read.
         dchar peek(size_t index = 0) @trusted
@@ -141,12 +141,12 @@ final class Reader
         }
 
         /// Get specified number of characters starting at current position.
-        /// 
+        ///
         /// Note: This gets only a "view" into the internal buffer,
         ///       which WILL get invalidated after other Reader calls.
-        /// 
+        ///
         /// Params:  length = Number of characters to get.
-        /// 
+        ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
         const(dstring) prefix(size_t length) @safe
         {
@@ -154,13 +154,13 @@ final class Reader
         }
 
         /// Get a slice view of the internal buffer.
-        /// 
+        ///
         /// Note: This gets only a "view" into the internal buffer,
         ///       which WILL get invalidated after other Reader calls.
-        /// 
+        ///
         /// Params:  start = Start of the slice relative to current position.
         ///          end   = End of the slice relative to current position.
-        /// 
+        ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
         const(dstring) slice(size_t start, size_t end) @trusted
         {
@@ -177,9 +177,9 @@ final class Reader
         }
 
         /// Get the next character, moving stream position beyond it.
-        /// 
+        ///
         /// Returns: Next character.
-        /// 
+        ///
         /// Throws:  ReaderException if trying to read past the end of the stream
         ///          or if invalid data is read.
         dchar get() @safe
@@ -190,11 +190,11 @@ final class Reader
         }
 
         /// Get specified number of characters, moving stream position beyond them.
-        /// 
+        ///
         /// Params:  length = Number or characters to get.
-        /// 
+        ///
         /// Returns: Characters starting at current position.
-        /// 
+        ///
         /// Throws:  ReaderException if trying to read past the end of the stream
         ///          or if invalid data is read.
         dstring get(size_t length) @safe
@@ -205,9 +205,9 @@ final class Reader
         }
 
         /// Move current position forward.
-        /// 
+        ///
         /// Params:  length = Number of characters to move position forward.
-        /// 
+        ///
         /// Throws:  ReaderException if trying to read past the end of the stream
         ///          or if invalid data is read.
         void forward(size_t length = 1) @trusted
@@ -252,12 +252,12 @@ final class Reader
 
     private:
         // Update buffer to be able to read length characters after buffer offset.
-        // 
+        //
         // If there are not enough characters in the stream, it will get
         // as many as possible.
-        // 
+        //
         // Params:  length = Number of characters we need to read.
-        // 
+        //
         // Throws:  ReaderException if trying to read past the end of the stream
         //          or if invalid data is read.
         void updateBuffer(const size_t length) @system
@@ -291,15 +291,15 @@ final class Reader
         }
 
         // Load more characters to the buffer.
-        // 
+        //
         // Params:  chars = Recommended number of characters to load.
         //                  More characters might be loaded.
         //                  Less will be loaded if not enough available.
-        // 
+        //
         // Throws:  ReaderException on Unicode decoding error,
         //          if nonprintable characters are detected, or
         //          if there is an error reading from the stream.
-        // 
+        //
         void loadChars(size_t chars) @system
         {
             const oldLength = buffer_.length;
