@@ -69,7 +69,7 @@ final class Reader
         this(Stream stream) @trusted //!nothrow
         in
         {
-            assert(stream.readable && stream.seekable, 
+            assert(stream.readable && stream.seekable,
                    "Can't read YAML from a stream that is not readable and seekable");
         }
         body
@@ -78,7 +78,7 @@ final class Reader
             decoder_ = UTFFastDecoder(stream_);
         }
 
-        @trusted nothrow @nogc ~this() 
+        @trusted nothrow @nogc ~this()
         {
             //Delete the buffer, if allocated.
             if(bufferAllocated_ is null){return;}
@@ -89,7 +89,7 @@ final class Reader
         /**
          * Get character at specified index relative to current position.
          *
-         * Params:  index = Index of the character to get relative to current position 
+         * Params:  index = Index of the character to get relative to current position
          *                  in the stream.
          *
          * Returns: Character at specified position.
@@ -277,7 +277,7 @@ final class Reader
         /**
          * Load more characters to the buffer.
          *
-         * Params:  chars = Recommended number of characters to load. 
+         * Params:  chars = Recommended number of characters to load.
          *                  More characters might be loaded.
          *                  Less will be loaded if not enough available.
          *
@@ -295,7 +295,7 @@ final class Reader
             scope(success)
             {
                 buffer_ = buffer_[0 .. $ - chars];
-                enforce(printable(buffer_[oldLength .. $]), 
+                enforce(printable(buffer_[oldLength .. $]),
                         new ReaderException("Special unicode characters are not allowed"));
             }
 
@@ -348,7 +348,7 @@ final class Reader
             if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
 
             //Handle first allocation as well as reallocation.
-            auto ptr = bufferAllocated_ !is null 
+            auto ptr = bufferAllocated_ !is null
                        ? realloc(bufferAllocated_.ptr, capacity * dchar.sizeof)
                        : malloc(capacity * dchar.sizeof);
             bufferAllocated_ = (cast(dchar*)ptr)[0 .. capacity];
@@ -473,12 +473,13 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
         ///Are we done decoding?
         @property bool done() const pure @safe nothrow @nogc
-        {   
+        {
             return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
         }
 
         ///Get next character.
-        dchar getDChar() @safe
+        dchar getDChar()
+            @safe
         {
             if(buffer_.length)
             {
@@ -493,7 +494,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         ///Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
-        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe
+        const(dchar[]) getDChars(size_t maxChars = size_t.max)
+            @safe
         {
             if(buffer_.length)
             {
@@ -512,7 +514,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Read and decode characters from file and store them in the buffer.
         void updateBuffer() @trusted
         {
-            assert(buffer_.length == 0, 
+            assert(buffer_.length == 0,
                    "updateBuffer can only be called when the buffer is empty");
             final switch(encoding_)
             {
@@ -551,7 +553,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         void decodeRawBuffer(C)(C[] buffer, const size_t length)
             @safe pure
         {
-            // End of part of rawBuffer8_ that contains 
+            // End of part of rawBuffer8_ that contains
             // complete characters and can be decoded.
             const end = endOfLastUTFSequence(buffer, length);
             // If end is 0, there are no full UTF-8 chars.
@@ -567,7 +569,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
-        size_t endOfLastUTFSequence(C)(const C[] buffer, const size_t max) 
+        size_t endOfLastUTFSequence(C)(const C[] buffer, const size_t max)
             @safe pure nothrow const @nogc
         {
             static if(is(C == char))
@@ -579,14 +581,14 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     {
                         // If stride goes beyond end of the buffer (max), return end.
                         // Otherwise the last sequence ends at max, so we can return that.
-                        // (Unless there is an invalid code point, which is 
+                        // (Unless there is an invalid code point, which is
                         // caught at decoding)
                         return (s > max - end) ?  cast(size_t)end : max;
                     }
                 }
                 return 0;
             }
-            else 
+            else
             {
                 size_t end = 0;
                 while(end < max)
@@ -617,16 +619,16 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     bufferSpace_[bufpos++] = decode(source, srcpos);
                 }
             }
-            buffer_ = bufferSpace_[0 .. bufpos]; 
+            buffer_ = bufferSpace_[0 .. bufpos];
         }
 }
 
 /// Determine if all characters in an array are printable.
-/// 
+///
 /// Params:  chars = Characters to check.
-/// 
+///
 /// Returns: True if all the characters are printable, false otherwise.
-bool printable(const dchar[] chars) @safe pure nothrow @nogc 
+bool printable(const dchar[] chars) @safe pure nothrow @nogc
 {
     foreach(c; chars)
     {
@@ -681,7 +683,7 @@ void testUTF(R)()
     dchar[] data = cast(dchar[])"data";
     void utf_test(T)(T[] data, BOM bom)
     {
-        ubyte[] bytes = ByteOrderMarks[bom] ~ 
+        ubyte[] bytes = ByteOrderMarks[bom] ~
                         (cast(ubyte*)data.ptr)[0 .. data.length * T.sizeof];
         auto reader = new R(new MemoryStream(bytes));
         assert(reader.peek() == 'd');
