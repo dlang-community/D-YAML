@@ -99,27 +99,25 @@ final class Reader
         EndianStream stream_;
         //Allocated space for buffer_.
         dchar[] bufferAllocated_ = null;
-        //Buffer of currently loaded characters.
+        // Buffer of currently loaded characters.
         dchar[] buffer_ = null;
-        //Current position within buffer. Only data after this position can be read.
+        // Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
-        //Index of the current character in the stream.
+        // Index of the current character in the stream.
         size_t charIndex_ = 0;
-        //Current line in file.
+        // Current line in file.
         uint line_;
-        //Current column in file.
+        // Current column in file.
         uint column_;
-        //Decoder reading data from file and decoding it to UTF-32.
+        // Decoder reading data from file and decoding it to UTF-32.
         UTFFastDecoder decoder_;
 
     public:
-        /*
-         * Construct a Reader.
-         *
-         * Params:  stream = Input stream. Must be readable and seekable.
-         *
-         * Throws:  ReaderException if the stream is invalid.
-         */
+        /// Construct a Reader.
+        ///
+        /// Params:  stream = Input stream. Must be readable and seekable.
+        ///
+        /// Throws:  ReaderException if the stream is invalid.
         this(Stream stream) @trusted //!nothrow
         in
         {
@@ -140,17 +138,15 @@ final class Reader
             buffer_ = bufferAllocated_ = null;
         }
 
-        /**
-         * Get character at specified index relative to current position.
-         *
-         * Params:  index = Index of the character to get relative to current position
-         *                  in the stream.
-         *
-         * Returns: Character at specified position.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
-         */
+        /// Get character at specified index relative to current position.
+        /// 
+        /// Params:  index = Index of the character to get relative to current position
+        ///                  in the stream.
+        /// 
+        /// Returns: Character at specified position.
+        /// 
+        /// Throws:  ReaderException if trying to read past the end of the stream
+        ///          or if invalid data is read.
         dchar peek(size_t index = 0) @trusted
         {
             if(buffer_.length < bufferOffset_ + index + 1)
@@ -166,32 +162,28 @@ final class Reader
             return buffer_[bufferOffset_ + index];
         }
 
-        /**
-         * Get specified number of characters starting at current position.
-         *
-         * Note: This gets only a "view" into the internal buffer,
-         *       which WILL get invalidated after other Reader calls.
-         *
-         * Params:  length = Number of characters to get.
-         *
-         * Returns: Characters starting at current position or an empty slice if out of bounds.
-         */
+        /// Get specified number of characters starting at current position.
+        /// 
+        /// Note: This gets only a "view" into the internal buffer,
+        ///       which WILL get invalidated after other Reader calls.
+        /// 
+        /// Params:  length = Number of characters to get.
+        /// 
+        /// Returns: Characters starting at current position or an empty slice if out of bounds.
         const(dstring) prefix(size_t length) @safe
         {
             return slice(0, length);
         }
 
-        /**
-         * Get a slice view of the internal buffer.
-         *
-         * Note: This gets only a "view" into the internal buffer,
-         *       which WILL get invalidated after other Reader calls.
-         *
-         * Params:  start = Start of the slice relative to current position.
-         *          end   = End of the slice relative to current position.
-         *
-         * Returns: Slice into the internal buffer or an empty slice if out of bounds.
-         */
+        /// Get a slice view of the internal buffer.
+        /// 
+        /// Note: This gets only a "view" into the internal buffer,
+        ///       which WILL get invalidated after other Reader calls.
+        /// 
+        /// Params:  start = Start of the slice relative to current position.
+        ///          end   = End of the slice relative to current position.
+        /// 
+        /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
         const(dstring) slice(size_t start, size_t end) @trusted
         {
             if(buffer_.length <= bufferOffset_ + end)
@@ -206,14 +198,12 @@ final class Reader
             return end > start ? cast(dstring)buffer_[start .. end] : "";
         }
 
-        /**
-         * Get the next character, moving stream position beyond it.
-         *
-         * Returns: Next character.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
-         */
+        /// Get the next character, moving stream position beyond it.
+        /// 
+        /// Returns: Next character.
+        /// 
+        /// Throws:  ReaderException if trying to read past the end of the stream
+        ///          or if invalid data is read.
         dchar get() @safe
         {
             const result = peek();
@@ -221,16 +211,14 @@ final class Reader
             return result;
         }
 
-        /**
-         * Get specified number of characters, moving stream position beyond them.
-         *
-         * Params:  length = Number or characters to get.
-         *
-         * Returns: Characters starting at current position.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
-         */
+        /// Get specified number of characters, moving stream position beyond them.
+        /// 
+        /// Params:  length = Number or characters to get.
+        /// 
+        /// Returns: Characters starting at current position.
+        /// 
+        /// Throws:  ReaderException if trying to read past the end of the stream
+        ///          or if invalid data is read.
         dstring get(size_t length) @safe
         {
             auto result = prefix(length).idup;
@@ -238,14 +226,12 @@ final class Reader
             return result;
         }
 
-        /**
-         * Move current position forward.
-         *
-         * Params:  length = Number of characters to move position forward.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
-         */
+        /// Move current position forward.
+        /// 
+        /// Params:  length = Number of characters to move position forward.
+        /// 
+        /// Throws:  ReaderException if trying to read past the end of the stream
+        ///          or if invalid data is read.
         void forward(size_t length = 1) @trusted
         {
             if(buffer_.length <= bufferOffset_ + length + 1)
@@ -271,36 +257,34 @@ final class Reader
             }
         }
 
-        ///Get a string describing current stream position, used for error messages.
+        /// Get a string describing current stream position, used for error messages.
         @property final Mark mark() const pure @safe nothrow {return Mark(line_, column_);}
 
-        ///Get current line number.
+        /// Get current line number.
         @property final uint line() const pure @safe nothrow {return line_;}
 
-        ///Get current column number.
+        /// Get current column number.
         @property final uint column() const pure @safe nothrow {return column_;}
 
-        ///Get index of the current character in the stream.
+        /// Get index of the current character in the stream.
         @property final size_t charIndex() const pure @safe nothrow {return charIndex_;}
 
-        ///Get encoding of the input stream.
+        /// Get encoding of the input stream.
         @property final Encoding encoding() const pure @safe nothrow {return decoder_.encoding;}
 
     private:
-        /**
-         * Update buffer to be able to read length characters after buffer offset.
-         *
-         * If there are not enough characters in the stream, it will get
-         * as many as possible.
-         *
-         * Params:  length = Number of characters we need to read.
-         *
-         * Throws:  ReaderException if trying to read past the end of the stream
-         *          or if invalid data is read.
-         */
+        // Update buffer to be able to read length characters after buffer offset.
+        // 
+        // If there are not enough characters in the stream, it will get
+        // as many as possible.
+        // 
+        // Params:  length = Number of characters we need to read.
+        // 
+        // Throws:  ReaderException if trying to read past the end of the stream
+        //          or if invalid data is read.
         void updateBuffer(const size_t length) @system
         {
-            //Get rid of unneeded data in the buffer.
+            // Get rid of unneeded data in the buffer.
             if(bufferOffset_ > 0)
             {
                 const size_t bufferLength = buffer_.length - bufferOffset_;
@@ -310,7 +294,7 @@ final class Reader
                 bufferOffset_ = 0;
             }
 
-            //Load chars in batches of at most 1024 bytes (256 chars)
+            // Load chars in batches of at most 1024 bytes (256 chars)
             while(buffer_.length <= bufferOffset_ + length)
             {
                 loadChars(512);
@@ -328,17 +312,16 @@ final class Reader
             }
         }
 
-        /**
-         * Load more characters to the buffer.
-         *
-         * Params:  chars = Recommended number of characters to load.
-         *                  More characters might be loaded.
-         *                  Less will be loaded if not enough available.
-         *
-         * Throws:  ReaderException on Unicode decoding error,
-         *          if nonprintable characters are detected, or
-         *          if there is an error reading from the stream.
-         */
+        // Load more characters to the buffer.
+        // 
+        // Params:  chars = Recommended number of characters to load.
+        //                  More characters might be loaded.
+        //                  Less will be loaded if not enough available.
+        // 
+        // Throws:  ReaderException on Unicode decoding error,
+        //          if nonprintable characters are detected, or
+        //          if there is an error reading from the stream.
+        // 
         void loadChars(size_t chars) @system
         {
             const oldLength = buffer_.length;
@@ -366,7 +349,7 @@ final class Reader
             }
         }
 
-        //Handle an exception thrown in loadChars method of any Reader.
+        // Handle an exception thrown in loadChars method of any Reader.
         void handleLoadCharsException(Exception e, ulong oldPosition) @system
         {
             try{throw e;}
@@ -382,7 +365,7 @@ final class Reader
             }
         }
 
-        //Code shared by loadEntireFile methods.
+        // Code shared by loadEntireFile methods.
         void loadEntireFile_() @system
         {
             const maxChars = decoder_.maxChars;
@@ -396,12 +379,12 @@ final class Reader
             }
         }
 
-        //Ensure there is space for at least capacity characters in bufferAllocated_.
+        // Ensure there is space for at least capacity characters in bufferAllocated_.
         void bufferReserve(const size_t capacity) @system nothrow
         {
             if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
 
-            //Handle first allocation as well as reallocation.
+            // Handle first allocation as well as reallocation.
             auto ptr = bufferAllocated_ !is null
                        ? realloc(bufferAllocated_.ptr, capacity * dchar.sizeof)
                        : malloc(capacity * dchar.sizeof);
