@@ -236,19 +236,19 @@ final class Reader
         }
 
         /// Get a string describing current stream position, used for error messages.
-        @property final Mark mark() const pure @safe nothrow {return Mark(line_, column_);}
+        final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
 
         /// Get current line number.
-        @property final uint line() const pure @safe nothrow {return line_;}
+        final uint line() @safe pure nothrow const @nogc { return line_; }
 
         /// Get current column number.
-        @property final uint column() const pure @safe nothrow {return column_;}
+        final uint column() @safe pure nothrow const @nogc { return column_; }
 
         /// Get index of the current character in the stream.
-        @property final size_t charIndex() const pure @safe nothrow {return charIndex_;}
+        final size_t charIndex() @safe pure nothrow const @nogc { return charIndex_; }
 
         /// Get encoding of the input stream.
-        @property final Encoding encoding() const pure @safe nothrow {return decoder_.encoding;}
+        final Encoding encoding() @safe pure nothrow const @nogc { return decoder_.encoding; }
 
     private:
         // Update buffer to be able to read length characters after buffer offset.
