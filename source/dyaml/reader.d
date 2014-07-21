@@ -648,7 +648,7 @@ void testEndian(R)()
     writeln(typeid(R).toString() ~ ": endian unittest");
     void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
     {
-        Reader reader = new R(new MemoryStream(data));
+        auto reader = new R(new MemoryStream(data));
         assert(reader.encoding == encoding_expected);
         assert(reader.stream_.endian == endian_expected);
     }
@@ -662,7 +662,7 @@ void testPeekPrefixForward(R)()
 {
     writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
     ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
-    Reader reader = new R(new MemoryStream(data));
+    auto reader = new R(new MemoryStream(data));
     assert(reader.peek() == 'd');
     assert(reader.peek(1) == 'a');
     assert(reader.peek(2) == 't');
@@ -683,7 +683,7 @@ void testUTF(R)()
     {
         ubyte[] bytes = ByteOrderMarks[bom] ~ 
                         (cast(ubyte*)data.ptr)[0 .. data.length * T.sizeof];
-        Reader reader = new R(new MemoryStream(bytes));
+        auto reader = new R(new MemoryStream(bytes));
         assert(reader.peek() == 'd');
         assert(reader.peek(1) == 'a');
         assert(reader.peek(2) == 't');
