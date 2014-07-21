@@ -29,6 +29,58 @@ import dyaml.exception;
 
 package:
 
+//XXX VIM STUFF:
+//XXX THE f/t COLORING PLUGIN, AND TRY TO REMOVE THE f/t AUTOREPEAT PLUGIN
+// (AND MAYBE DO THE REPEAT WITH ALT-T/ALT-F
+//XXX DDOC snippets such as $D, $BIGOH, anything else
+//    OR MAYBE JUST $ - EXPANDING TO $(${1} ${2})
+//    WHERE DEFAULT ${1} IS 'D' AND SPECIAL SNIPPETS FOR SPECIFIC DDOC MACROS
+//    (E.G. XREF HAS 2 ARGS)
+// XXX DON'T FORGET TO COMMIT DSNIPS CHANGES
+// XXX SNIPPETS: WHY CAN'T WE USE NEW IN NEW? FIX!
+// XXX ALSO WRITELN VISUAL! (print whatever we have selected)
+// XXX AND ``fun`` VISUAL TOO!
+// XXX snippet to print variable along its name AND
+// OR MULTIPLE VARS - USE std.format!
+
+
+// XXX XXX XXX START COMMITTING STUFF HERE
+
+/+5: /// Description+/
+ubyte[] streamToBytesGC(Stream stream) @trusted
+{
+     ubyte[] storage = new ubyte[stream.available];
+     return stream.streamToBytes(storage);
+}
+/+5: /// Description+/
+///
+/// Params:
+///
+/// stream =
+/// memory = Memory to use. Must be long enough to store the entire stream
+///          (memory.length >= stream.available).
+///
+/// Returns: A slice of memory containing all contents of the stream on success.
+///          NULL if unable to read the entire stream.
+ubyte[] streamToBytes(Stream stream, ubyte[] memory) @system
+{
+    assert(memory.length >= stream.available, "Not enough memory passed to streamToBytes");
+    auto buffer = memory[0 .. stream.available];
+    size_t bytesRead = 0;
+    for(; bytesRead < buffer.length;)
+    {
+        // Returns 0 on eof
+        const bytes = stream.readBlock(&buffer[bytesRead], buffer.length - bytesRead);
+        // Reached EOF before reading buffer.length bytes.
+        if(bytes == 0) { return null; }
+        bytesRead += bytes;
+    }
+    return buffer;
+}
+
+
+
+
 ///Exception thrown at Reader errors.
 class ReaderException : YAMLException
 {
@@ -362,11 +414,11 @@ private:
 
 alias UTFBlockDecoder!512 UTFFastDecoder;
 
-///Decodes streams to UTF-32 in blocks.
+/// Decodes streams to UTF-32 in blocks.
 struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 {
     private:
-        //UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
+        // UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
         static immutable ubyte[256] utf8Stride =
         [
             1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -387,27 +439,27 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             4,4,4,4,4,4,4,4,5,5,5,5,6,6,0xFF,0xFF,
         ];
 
-        //Encoding of the input stream.
+        // Encoding of the input stream.
         UTFEncoding encoding_;
-        //Maximum number of characters that might be in the stream.
+        // Maximum number of characters that might be in the stream.
         size_t maxChars_;
-        //Bytes available in the stream.
+        // Bytes available in the stream.
         size_t available_;
         //Input stream.
         EndianStream stream_;
 
-        //Buffer used to store raw UTF-8 or UTF-16 code points.
+        // Buffer used to store raw UTF-8 or UTF-16 code points.
         union
         {
             char[bufferSize_] rawBuffer8_;
             wchar[bufferSize_ / 2] rawBuffer16_;
         }
-        //Used space (in items) in rawBuffer8_/rawBuffer16_.
+        // Used space (in items) in rawBuffer8_/rawBuffer16_.
         size_t rawUsed_;
 
-        //Space used by buffer_.
+        // Space used by buffer_.
         dchar[bufferSize_] bufferSpace_;
-        //Buffer of decoded, UTF-32 characters. This is a slice into bufferSpace_.
+        // Buffer of decoded, UTF-32 characters. This is a slice into bufferSpace_.
         dchar[] buffer_;
 
     public:
@@ -467,19 +519,19 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             available_ = stream_.available;
         }
 
-        ///Get maximum number of characters that might be in the stream.
+        /// Get maximum number of characters that might be in the stream.
         @property size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
 
-        ///Get encoding we're decoding from.
-        @property Encoding encoding() const pure @safe nothrow @nogc { return encoding_; }
+        /// Get encoding we're decoding from.
+        @property UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
-        ///Are we done decoding?
+        /// Are we done decoding?
         @property bool done() const pure @safe nothrow @nogc
         {
             return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
         }
 
-        ///Get next character.
+        /// Get next character.
         dchar getDChar()
             @safe
         {
@@ -495,7 +547,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             return getDChar();
         }
 
-        ///Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
+        /// Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
         const(dchar[]) getDChars(size_t maxChars = size_t.max)
             @safe
         {
@@ -522,7 +574,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             {
                 case UTFEncoding.UTF_8:
                     const bytes = min(bufferSize_ - rawUsed_, available_);
-                    //Current length of valid data in rawBuffer8_.
+                    // Current length of valid data in rawBuffer8_.
                     const rawLength = rawUsed_ + bytes;
                     stream_.readExact(rawBuffer8_.ptr + rawUsed_, bytes);
                     available_ -= bytes;
@@ -530,7 +582,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     break;
                 case UTFEncoding.UTF_16:
                     const words = min((bufferSize_ / 2) - rawUsed_, available_ / 2);
-                    //Current length of valid data in rawBuffer16_.
+                    // Current length of valid data in rawBuffer16_.
                     const rawLength = rawUsed_ + words;
                     foreach(c; rawUsed_ .. rawLength)
                     {
