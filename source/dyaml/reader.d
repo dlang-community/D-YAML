@@ -44,39 +44,7 @@ package:
 // OR MULTIPLE VARS - USE std.format!
 
 
-// XXX XXX XXX START COMMITTING STUFF HERE
 
-/+5: /// Description+/
-ubyte[] streamToBytesGC(Stream stream) @trusted
-{
-     ubyte[] storage = new ubyte[stream.available];
-     return stream.streamToBytes(storage);
-}
-/+5: /// Description+/
-///
-/// Params:
-///
-/// stream =
-/// memory = Memory to use. Must be long enough to store the entire stream
-///          (memory.length >= stream.available).
-///
-/// Returns: A slice of memory containing all contents of the stream on success.
-///          NULL if unable to read the entire stream.
-ubyte[] streamToBytes(Stream stream, ubyte[] memory) @system
-{
-    assert(memory.length >= stream.available, "Not enough memory passed to streamToBytes");
-    auto buffer = memory[0 .. stream.available];
-    size_t bytesRead = 0;
-    for(; bytesRead < buffer.length;)
-    {
-        // Returns 0 on eof
-        const bytes = stream.readBlock(&buffer[bytesRead], buffer.length - bytesRead);
-        // Reached EOF before reading buffer.length bytes.
-        if(bytes == 0) { return null; }
-        bytesRead += bytes;
-    }
-    return buffer;
-}
 
 
 
@@ -132,7 +100,7 @@ final class Reader
 
         @trusted nothrow @nogc ~this()
         {
-            //Delete the buffer, if allocated.
+            // Delete the buffer, if allocated.
             if(bufferAllocated_ is null){return;}
             free(bufferAllocated_.ptr);
             buffer_ = bufferAllocated_ = null;
