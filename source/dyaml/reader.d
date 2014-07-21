@@ -694,9 +694,21 @@ void testUTF(R)()
     utf_test(data, endian == Endian.bigEndian ? BOM.UTF32BE : BOM.UTF32LE);
 }
 
+void test1Byte(R)()
+{
+    writeln(typeid(R).toString() ~ ": 1 byte file unittest");
+    ubyte[] data = [97];
+
+    auto reader = new R(new MemoryStream(data));
+    assert(reader.peek() == 'a');
+    assert(reader.peek(1) == '\0');
+    assert(collectException(reader.peek(2)));
+}
+
 unittest
 {
     testEndian!Reader();
     testPeekPrefixForward!Reader();
     testUTF!Reader();
+    test1Byte!Reader();
 }
