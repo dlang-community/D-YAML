@@ -25,6 +25,8 @@ import tinyendian;
 import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
+import dyaml.streamcompat;
+
 
 
 package:
@@ -46,9 +48,6 @@ package:
 
 
 
-
-
-
 ///Exception thrown at Reader errors.
 class ReaderException : YAMLException
 {
@@ -59,7 +58,9 @@ class ReaderException : YAMLException
     }
 }
 
-///Lazily reads and decodes data from stream, only storing as much as needed at any moment.
+/// Lazily reads and decodes data from stream, only storing as much as needed at any moment.
+///
+/// Adds a '\0' to the end of the stream.
 final class Reader
 {
     private:
