@@ -60,7 +60,7 @@ final class Reader
 
     public:
         /*
-         * Construct an AbstractReader.
+         * Construct a Reader.
          *
          * Params:  stream = Input stream. Must be readable and seekable.
          *
