@@ -244,12 +244,12 @@ final class Reader
          * Throws:  ReaderException if trying to read past the end of the stream
          *          or if invalid data is read.
          */
-        void updateBuffer(in size_t length) @system
+        void updateBuffer(const size_t length) @system
         {
             //Get rid of unneeded data in the buffer.
             if(bufferOffset_ > 0)
             {
-                size_t bufferLength = buffer_.length - bufferOffset_;
+                const size_t bufferLength = buffer_.length - bufferOffset_;
                 memmove(buffer_.ptr, buffer_.ptr + bufferOffset_,
                         bufferLength * dchar.sizeof);
                 buffer_ = buffer_[0 .. bufferLength];
@@ -343,7 +343,7 @@ final class Reader
         }
 
         //Ensure there is space for at least capacity characters in bufferAllocated_.
-        void bufferReserve(in size_t capacity) @system nothrow
+        void bufferReserve(const size_t capacity) @system nothrow
         {
             if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
 
