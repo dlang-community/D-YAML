@@ -27,28 +27,31 @@ class YAMLException : Exception
     }
 }
 
-///Position in a YAML stream, used for error messages.
+/// Position in a YAML stream, used for error messages.
 struct Mark
 {
     private:
-        ///Line number.
+        /// Line number.
         ushort line_;
-        ///Column number.
+        /// Column number.
         ushort column_;
 
     public:
-        ///Construct a Mark with specified line and column in the file.
-        this(const uint line, const uint column) pure @safe nothrow
+        /// Construct a Mark with specified line and column in the file.
+        this(const uint line, const uint column) @safe pure nothrow @nogc
         {
             line_   = cast(ushort)min(ushort.max, line);
             column_ = cast(ushort)min(ushort.max, column);
         }
 
-        ///Get a string representation of the mark.
-        string toString() const @trusted pure
+        /// Get a string representation of the mark.
+        string toString() @safe pure nothrow const
         {
-            //Line/column numbers start at zero internally, make them start at 1.
-            string clamped(ushort v){return str(v + 1) ~ (v == ushort.max ? " or higher" : "");}
+            /// Line/column numbers start at zero internally, make them start at 1.
+            static string clamped(ushort v) @safe pure nothrow
+            { 
+                return str(v + 1) ~ (v == ushort.max ? " or higher" : ""); 
+            }
             return "line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
         }
 }
