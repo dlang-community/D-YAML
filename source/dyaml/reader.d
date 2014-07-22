@@ -494,30 +494,26 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             {
                 case UTFEncoding.UTF_8:
                     const bytes = min(bufferSize_ - rawUsed_, input_.length);
-                    // Current length of valid data in rawBuffer8_.
-                    const rawLength = rawUsed_ + bytes;
                     rawBuffer8_[rawUsed_ .. rawUsed_ + bytes] = cast(char[])input_[0 .. bytes];
                     input_ = input_[bytes .. $];
+                    // Current length of valid data in rawBuffer8_.
+                    const rawLength = rawUsed_ + bytes;
                     decodeRawBuffer(rawBuffer8_, rawLength);
                     break;
                 case UTFEncoding.UTF_16:
                     const words = min((bufferSize_ / 2) - rawUsed_, input_.length / 2);
+                    const bytes = 2 * words;
+                    rawBuffer16_[rawUsed_ .. rawUsed_ + words] = cast(wchar[])input_[0 .. bytes];
+                    input_ = input_[bytes .. $];
                     // Current length of valid data in rawBuffer16_.
                     const rawLength = rawUsed_ + words;
-                    foreach(c; rawUsed_ .. rawLength)
-                    {
-                        rawBuffer16_[c] = *cast(wchar*)input_.ptr;
-                        input_ = input_[2 .. $];
-                    }
                     decodeRawBuffer(rawBuffer16_, rawLength);
                     break;
                 case UTFEncoding.UTF_32:
                     const chars = min(bufferSize_ / 4, input_.length / 4);
-                    foreach(c; 0 .. chars)
-                    {
-                        decodedSpace_[c] = *cast(dchar*)input_.ptr;
-                        input_ = input_[4 .. $];
-                    }
+                    const bytes = 4 * chars;
+                    decodedSpace_[0 .. chars] = cast(dchar[])input_[0 .. bytes];
+                    input_ = input_[bytes .. $];
                     decoded_ = decodedSpace_[0 .. chars];
                     break;
             }
