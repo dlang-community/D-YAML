@@ -416,7 +416,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
     public:
         /// Construct a UTFBlockDecoder decoding data from a buffer.
-        this(ubyte[] buffer, UTFEncoding encoding) @trusted
+        this(ubyte[] buffer, UTFEncoding encoding) @safe pure nothrow @nogc
         {
             inputAll_ = buffer;
             input_    = inputAll_[];
@@ -436,7 +436,11 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
         /// Get the current position in buffer.
-        size_t position() @trusted { return inputAll_.length - input_.length; }
+        size_t position() @safe pure nothrow const @nogc
+        {
+            return inputAll_.length - input_.length;
+        }
+
         /// Get the error message and clear it.
         ///
         /// Can only be used in case of an error return from e.g. getDChars().
@@ -455,10 +459,12 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             return rawUsed_ == 0 && decoded_.length == 0 && input_.length == 0;
         }
 
-
-        /// Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
-        const(dchar[]) getDChars(size_t maxChars = size_t.max)
-            @safe
+        /// Get as many characters as possible, but at most maxChars.
+        ///
+        /// Returns: A slice with decoded characters or NULL on failure (in that case,
+        ///          check getAndClearErrorMessage(). The slice $(B will) be invalidated
+        ///          in further calls.
+        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe pure nothrow
         {
             if(decoded_.length)
             {
@@ -478,7 +484,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
     private:
         // Read and decode characters from file and store them in the buffer.
-        void updateBuffer() @trusted
+        //
+        // On error, errorMessage_ will be set.
+        void updateBuffer() @trusted pure nothrow
         {
             assert(decoded_.length == 0,
                    "updateBuffer can only be called when the buffer is empty");
@@ -519,7 +527,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         //
         // On error, errorMessage_ will be set.
         void decodeRawBuffer(C)(C[] buffer, const size_t length)
-            @safe pure
+            @safe pure nothrow
         {
             // End of part of rawBuffer8_ that contains
             // complete characters and can be decoded.
@@ -574,7 +582,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         // Decode a UTF-8 or UTF-16 buffer (with no incomplete sequences at the end).
-        void decodeUTF(C)(const C[] source) @safe pure
+        //
+        // On error, sets errorMessage_.
+        void decodeUTF(C)(const C[] source) @safe pure nothrow
         {
             size_t bufpos = 0;
             const srclength = source.length;
