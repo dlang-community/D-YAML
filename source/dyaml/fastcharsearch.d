@@ -35,7 +35,7 @@ template FastCharSearch(dstring chars, uint tableSize = 256)
 }
 
 ///Generate the search table and the canFind method.
-string searchCode(dstring chars, uint tableSize)() @trusted
+string searchCode(dstring chars, uint tableSize)() @safe pure nothrow
 {
     const tableSizeStr = to!string(tableSize);
     ubyte[tableSize] table;
@@ -76,7 +76,7 @@ string searchCode(dstring chars, uint tableSize)() @trusted
 
     string code = tableSize ? tableCode() : "";
 
-    code ~= "bool canFind(in dchar c) pure @safe nothrow\n"
+    code ~= "bool canFind(in dchar c) pure @safe nothrow @nogc\n"
             "{\n";
 
     if(tableSize)
