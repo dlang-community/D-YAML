@@ -415,10 +415,10 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Used space (in items) in rawBuffer8_/rawBuffer16_.
         size_t rawUsed_;
 
-        // Space used by buffer_.
-        dchar[bufferSize_] bufferSpace_;
-        // Buffer of decoded, UTF-32 characters. This is a slice into bufferSpace_.
-        dchar[] buffer_;
+        // Space used by decodedBuffer_.
+        dchar[bufferSize_] decodedBufferSpace_;
+        // Buffer of decoded, UTF-32 characters. This is a slice into decodedBufferSpace_.
+        dchar[] decodedBuffer_;
 
     public:
         /// Construct a UTFBlockDecoder decoding data from a buffer.
@@ -447,17 +447,17 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         /// Are we done decoding?
         bool done() const pure @safe nothrow @nogc
         {
-            return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
+            return rawUsed_ == 0 && decodedBuffer_.length == 0 && available_ == 0;
         }
 
         /// Get next character.
         dchar getDChar()
             @safe
         {
-            if(buffer_.length)
+            if(decodedBuffer_.length)
             {
-                const result = buffer_[0];
-                buffer_ = buffer_[1 .. $];
+                const result = decodedBuffer_[0];
+                decodedBuffer_ = decodedBuffer_[1 .. $];
                 return result;
             }
 
@@ -470,11 +470,11 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         const(dchar[]) getDChars(size_t maxChars = size_t.max)
             @safe
         {
-            if(buffer_.length)
+            if(decodedBuffer_.length)
             {
-                const slice = min(buffer_.length, maxChars);
-                const result = buffer_[0 .. slice];
-                buffer_ = buffer_[slice .. $];
+                const slice = min(decodedBuffer_.length, maxChars);
+                const result = decodedBuffer_[0 .. slice];
+                decodedBuffer_ = decodedBuffer_[slice .. $];
                 return result;
             }
 
@@ -487,7 +487,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Read and decode characters from file and store them in the buffer.
         void updateBuffer() @trusted
         {
-            assert(buffer_.length == 0,
+            assert(decodedBuffer_.length == 0,
                    "updateBuffer can only be called when the buffer is empty");
             final switch(encoding_)
             {
@@ -514,10 +514,10 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     const chars = min(bufferSize_ / 4, available_ / 4);
                     foreach(c; 0 .. chars)
                     {
-                        stream_.read(bufferSpace_[c]);
+                        stream_.read(decodedBufferSpace_[c]);
                         available_ -= 4;
                     }
-                    buffer_ = bufferSpace_[0 .. chars];
+                    decodedBuffer_ = decodedBufferSpace_[0 .. chars];
                     break;
             }
         }
@@ -584,15 +584,15 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                 const c = source[srcpos];
                 if(c < 0x80)
                 {
-                    bufferSpace_[bufpos++] = c;
+                    decodedBufferSpace_[bufpos++] = c;
                     ++srcpos;
                 }
                 else
                 {
-                    bufferSpace_[bufpos++] = decode(source, srcpos);
+                    decodedBufferSpace_[bufpos++] = decode(source, srcpos);
                 }
             }
-            buffer_ = bufferSpace_[0 .. bufpos];
+            decodedBuffer_ = decodedBufferSpace_[0 .. bufpos];
         }
 }
 
