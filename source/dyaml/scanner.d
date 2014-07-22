@@ -109,9 +109,9 @@ final class Scanner
             ///Strip all trailing line breaks. '-' indicator.
             Strip,
             ///Line break of the last line is preserved, others discarded. Default.
-            Clip,  
+            Clip,
             ///All trailing line breaks are preserved. '+' indicator.
-            Keep 
+            Keep
         }
 
         ///Reader used to read from a file/stream.
@@ -132,7 +132,7 @@ final class Scanner
         ///Number of tokens emitted through the getToken method.
         uint tokensTaken_;
 
-        /** 
+        /**
          * Can a simple key start at the current position? A simple key may
          * start:
          * - at the beginning of the line, not counting indentation spaces
@@ -202,7 +202,7 @@ final class Scanner
         }
 
         /**
-         * Return the next token, but keep it in the queue. 
+         * Return the next token, but keep it in the queue.
          *
          * Must not be called if there are no tokens left.
          */
@@ -235,7 +235,7 @@ final class Scanner
         {
             if(done_)        {return false;}
             if(tokens_.empty){return true;}
-            
+
             ///The current token may be a potential simple key, so we need to look further.
             stalePossibleSimpleKeys();
             return nextPossibleSimpleKey() == tokensTaken_;
@@ -314,9 +314,9 @@ final class Scanner
                 if(key.isNull){continue;}
                 if(key.line != reader_.line || reader_.charIndex - key.charIndex > 1024)
                 {
-                    enforce(!key.required, 
-                            new Error("While scanning a simple key", 
-                                      Mark(key.line, key.column), 
+                    enforce(!key.required,
+                            new Error("While scanning a simple key",
+                                      Mark(key.line, key.column),
                                       "could not find expected ':'", reader_.mark));
                     key.isNull = true;
                 }
@@ -324,8 +324,8 @@ final class Scanner
         }
 
         /**
-         * Check if the next token starts a possible simple key and if so, save its position. 
-         *  
+         * Check if the next token starts a possible simple key and if so, save its position.
+         *
          * This function is called for ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
          */
         void savePossibleSimpleKey() pure @system
@@ -343,8 +343,8 @@ final class Scanner
 
             const line = reader_.line;
             const column = reader_.column;
-            const key = SimpleKey(cast(uint)reader_.charIndex, 
-                                  tokenCount, 
+            const key = SimpleKey(cast(uint)reader_.charIndex,
+                                  tokenCount,
                                   line,
                                   column < ushort.max ? cast(ushort)column : ushort.max,
                                   required);
@@ -367,8 +367,8 @@ final class Scanner
             if(!possibleSimpleKeys_[flowLevel_].isNull)
             {
                 const key = possibleSimpleKeys_[flowLevel_];
-                enforce(!key.required, 
-                        new Error("While scanning a simple key", Mark(key.line, key.column), 
+                enforce(!key.required,
+                        new Error("While scanning a simple key", Mark(key.line, key.column),
                                   "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
@@ -384,7 +384,7 @@ final class Scanner
             if(flowLevel_ > 0)
             {
                 //In flow context, tokens should respect indentation.
-                //The condition should be `indent >= column` according to the spec. 
+                //The condition should be `indent >= column` according to the spec.
                 //But this condition will prohibit intuitively correct
                 //constructions such as
                 //key : {
@@ -527,13 +527,13 @@ final class Scanner
         /**
          * Additional checks used in block context in fetchBlockEntry and fetchKey.
          *
-         * Params:  type = String representing the token type we might need to add. 
+         * Params:  type = String representing the token type we might need to add.
          *          id   = Token type we might need to add.
          */
         void blockChecks(string type, TokenID id)() @safe
         {
             //Are we allowed to start a key (not neccesarily a simple one)?
-            enforce(allowSimpleKey_, new Error(type ~ " keys are not allowed here", 
+            enforce(allowSimpleKey_, new Error(type ~ " keys are not allowed here",
                                                reader_.mark));
 
             if(addIndent(reader_.column))
@@ -546,7 +546,7 @@ final class Scanner
         void fetchBlockEntry() @safe
         {
             if(flowLevel_ == 0){blockChecks!("Sequence", TokenID.BlockSequenceStart)();}
-          
+
             //It's an error for the block entry to occur in the flow context,
             //but we let the parser detect this.
 
@@ -579,7 +579,7 @@ final class Scanner
         void fetchValue() @safe
         {
             //Do we determine a simple key?
-            if(possibleSimpleKeys_.length > flowLevel_ && 
+            if(possibleSimpleKeys_.length > flowLevel_ &&
                !possibleSimpleKeys_[flowLevel_].isNull)
             {
                 const key = possibleSimpleKeys_[flowLevel_];
@@ -702,7 +702,7 @@ final class Scanner
 
 
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
-        bool checkDirective() @safe 
+        bool checkDirective() @safe
         {
             return reader_.peek() == '%' && reader_.column == 0;
         }
@@ -711,51 +711,51 @@ final class Scanner
         bool checkDocumentStart() @safe
         {
             //Check one char first, then all 3, to prevent reading outside stream.
-            return reader_.column    == 0     && 
+            return reader_.column    == 0     &&
                    reader_.peek()    == '-'   &&
                    reader_.prefix(3) == "---" &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)); 
+                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
         ///Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
         bool checkDocumentEnd() @safe
         {
             //Check one char first, then all 3, to prevent reading outside stream.
-            return reader_.column    == 0     && 
+            return reader_.column    == 0     &&
                    reader_.peek()    == '.'   &&
                    reader_.prefix(3) == "..." &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)); 
+                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
         ///Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe
         {
-            return reader_.peek() == '-' && 
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)); 
+            return reader_.peek() == '-' &&
+                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
         }
 
         /**
          * Check if the next token is KEY(flow context):    '?'
-         * 
+         *
          * or KEY(block context):   '?' (' '|'\n')
          */
         bool checkKey() @safe
         {
-            return reader_.peek() == '?' && 
-                   (flowLevel_ > 0 || 
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1))); 
+            return reader_.peek() == '?' &&
+                   (flowLevel_ > 0 ||
+                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
         }
 
         /**
          * Check if the next token is VALUE(flow context):  ':'
-         * 
+         *
          * or VALUE(block context): ':' (' '|'\n')
          */
         bool checkValue() @safe
         {
-            return reader_.peek() == ':' && 
-                   (flowLevel_ > 0 || 
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1))); 
+            return reader_.peek() == ':' &&
+                   (flowLevel_ > 0 ||
+                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
         }
 
         /**
@@ -765,11 +765,11 @@ final class Scanner
          *   '-', '?', ':', ',', '[', ']', '{', '}',
          *   '#', '&', '*', '!', '|', '>', '\'', '\"',
          *   '%', '@', '`'.
-         * 
+         *
          * It may also start with
          *   '-', '?', ':'
          * if it is followed by a non-space character.
-         * 
+         *
          * Note that we limit the last rule to the block context (except the
          * '-' character) because we want the flow context to be space
          * independent.
@@ -799,9 +799,9 @@ final class Scanner
                 c = reader_.peek(length);
             }
 
-            enforce(length > 0, 
+            enforce(length > 0,
                     new Error("While scanning " ~ name, startMark,
-                              "expected alphanumeric, - or _, but found " ~ to!string(c), 
+                              "expected alphanumeric, - or _, but found " ~ to!string(c),
                               reader_.mark));
 
             return reader_.get(length);
@@ -844,7 +844,7 @@ final class Scanner
                 findNextNonSpace();
 
                 if(reader_.peek() == '#'){scanToNextBreak();}
-                if(scanLineBreak() != '\0') 
+                if(scanLineBreak() != '\0')
                 {
                     if(flowLevel_ == 0){allowSimpleKey_ = true;}
                 }
@@ -869,7 +869,7 @@ final class Scanner
             scanDirectiveIgnoredLine(startMark);
 
             //Storing directive name and value in a single string, separated by zero.
-            return directiveToken(startMark, endMark, to!string(name ~ '\0' ~ value)); 
+            return directiveToken(startMark, endMark, to!string(name ~ '\0' ~ value));
         }
 
         ///Scan name of a directive token.
@@ -878,9 +878,9 @@ final class Scanner
             //Scan directive name.
             const name = scanAlphaNumeric!"a directive"(startMark);
 
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()), 
+            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
-                              "expected alphanumeric, - or _, but found " 
+                              "expected alphanumeric, - or _, but found "
                               ~ to!string(reader_.peek()), reader_.mark));
             return name;
         }
@@ -892,16 +892,16 @@ final class Scanner
 
             dstring result = scanYAMLDirectiveNumber(startMark);
             enforce(reader_.peek() == '.',
-                    new Error("While scanning a directive", startMark, 
-                              "expected a digit or '.', but found: " 
+                    new Error("While scanning a directive", startMark,
+                              "expected a digit or '.', but found: "
                               ~ to!string(reader_.peek()), reader_.mark));
             //Skip the '.'.
             reader_.forward();
 
             result ~= '.' ~ scanYAMLDirectiveNumber(startMark);
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()), 
+            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
-                              "expected a digit or '.', but found: " 
+                              "expected a digit or '.', but found: "
                               ~ to!string(reader_.peek()), reader_.mark));
             return result;
         }
@@ -910,8 +910,8 @@ final class Scanner
         dstring scanYAMLDirectiveNumber(const Mark startMark) @trusted
         {
             enforce(isDigit(reader_.peek()),
-                    new Error("While scanning a directive", startMark, 
-                              "expected a digit, but found: " ~ 
+                    new Error("While scanning a directive", startMark,
+                              "expected a digit, but found: " ~
                               to!string(reader_.peek()), reader_.mark));
 
             //Already found the first digit in the enforce(), so set length to 1.
@@ -935,8 +935,8 @@ final class Scanner
         {
             const value = scanTagHandle("directive", startMark);
             enforce(reader_.peek() == ' ',
-                    new Error("While scanning a directive handle", startMark, 
-                              "expected ' ', but found: " ~ to!string(reader_.peek()), 
+                    new Error("While scanning a directive handle", startMark,
+                              "expected ' ', but found: " ~ to!string(reader_.peek()),
                               reader_.mark));
             return value;
         }
@@ -953,14 +953,14 @@ final class Scanner
             return value;
         }
 
-        ///Scan (and ignore) ignored line after a directive. 
+        ///Scan (and ignore) ignored line after a directive.
         void scanDirectiveIgnoredLine(const Mark startMark) @trusted
         {
             findNextNonSpace();
             if(reader_.peek() == '#'){scanToNextBreak();}
             enforce("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
-                              "expected comment or a line break, but found" 
+                              "expected comment or a line break, but found"
                               ~ to!string(reader_.peek()), reader_.mark));
             scanLineBreak();
         }
@@ -985,11 +985,11 @@ final class Scanner
             const dchar i = reader_.get();
 
             dstring value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
-                                     : scanAlphaNumeric!("an anchor")(startMark); 
+                                     : scanAlphaNumeric!("an anchor")(startMark);
 
-            enforce((" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) || 
+            enforce((" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) ||
                      ("?:,]}%@").canFind(reader_.peek())),
-                    new Error("While scanning an " ~ (i == '*') ? "alias" : "anchor", 
+                    new Error("While scanning an " ~ (i == '*') ? "alias" : "anchor",
                                          startMark, "expected alphanumeric, - or _, but found "~
                                          to!string(reader_.peek()), reader_.mark));
 
@@ -1018,7 +1018,7 @@ final class Scanner
                 suffix = scanTagURI("tag", startMark);
                 enforce(reader_.peek() == '>',
                         new Error("While scanning a tag", startMark,
-                                  "expected '>' but found" ~ to!string(reader_.peek()), 
+                                  "expected '>' but found" ~ to!string(reader_.peek()),
                                   reader_.mark));
                 reader_.forward();
             }
@@ -1055,7 +1055,7 @@ final class Scanner
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a tag", startMark,
-                              "expected ' ' but found" ~ to!string(reader_.peek()), 
+                              "expected ' ' but found" ~ to!string(reader_.peek()),
                               reader_.mark));
             return tagToken(startMark, reader_.mark, to!string(handle ~ '\0' ~ suffix));
         }
@@ -1112,7 +1112,7 @@ final class Scanner
                 if(reader_.column == indent && reader_.peek() != '\0')
                 {
                     //Unfortunately, folding rules are ambiguous.
-        
+
                     //This is the folding according to the specification:
                     if(style == ScalarStyle.Folded && lineBreak == "\n" &&
                        leadingNonSpace && !" \t"d.canFind(reader_.peek()))
@@ -1163,9 +1163,9 @@ final class Scanner
             {
                 if(!isDigit(c)){return false;}
                 increment = to!int(""d ~ c);
-                enforce(increment != 0, 
+                enforce(increment != 0,
                         new Error("While scanning a block scalar", startMark,
-                                  "expected indentation indicator in range 1-9, but found 0", 
+                                  "expected indentation indicator in range 1-9, but found 0",
                                   reader_.mark));
                 reader_.forward();
                 c = reader_.peek();
@@ -1178,7 +1178,7 @@ final class Scanner
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(c),
                     new Error("While scanning a block scalar", startMark,
-                              "expected chomping or indentation indicator, but found " 
+                              "expected chomping or indentation indicator, but found "
                               ~ to!string(c), reader_.mark));
 
             return tuple(chomping, increment);
@@ -1273,7 +1273,7 @@ final class Scanner
                 outer: for(;;)
                 {
                     const slice = reader_.slice(length, length + 32);
-                    enforce(slice.length > 0, 
+                    enforce(slice.length > 0,
                             new Error("While reading a flow scalar", startMark,
                                       "reached end of file", reader_.mark));
                     foreach(ch; slice)
@@ -1287,13 +1287,13 @@ final class Scanner
                 reader_.forward(length);
 
                 c = reader_.peek();
-                if(quotes == ScalarStyle.SingleQuoted && 
+                if(quotes == ScalarStyle.SingleQuoted &&
                    c == '\'' && reader_.peek(1) == '\'')
                 {
                     appender_.put('\'');
                     reader_.forward(2);
                 }
-                else if((quotes == ScalarStyle.DoubleQuoted && c == '\'') || 
+                else if((quotes == ScalarStyle.DoubleQuoted && c == '\'') ||
                         (quotes == ScalarStyle.SingleQuoted && "\"\\"d.canFind(c)))
                 {
                     appender_.put(c);
@@ -1317,9 +1317,9 @@ final class Scanner
                         {
                             enforce(isHexDigit(reader_.peek(i)),
                                     new Error(
-                                        "While scanning a double qouted scalar", startMark, 
+                                        "While scanning a double qouted scalar", startMark,
                                         "expected escape sequence of " ~ to!string(length) ~
-                                        " hexadecimal numbers, but found " ~ 
+                                        " hexadecimal numbers, but found " ~
                                         to!string(reader_.peek(i)), reader_.mark));
                         }
 
@@ -1333,7 +1333,7 @@ final class Scanner
                     }
                     else
                     {
-                        throw new Error("While scanning a double quoted scalar", startMark, 
+                        throw new Error("While scanning a double quoted scalar", startMark,
                                         "found unknown escape character: " ~ to!string(c),
                                         reader_.mark);
                     }
@@ -1353,7 +1353,7 @@ final class Scanner
             const whitespaces = reader_.prefix(length + 1);
 
             const c = whitespaces[$ - 1];
-            enforce(c != '\0', new Error("While scanning a quoted scalar", startMark, 
+            enforce(c != '\0', new Error("While scanning a quoted scalar", startMark,
                                          "found unexpected end of stream", reader_.mark));
 
             if("\n\r\u0085\u2028\u2029"d.canFind(c))
@@ -1381,7 +1381,7 @@ final class Scanner
             {
                 //Instead of checking indentation, we check for document separators.
                 const prefix = reader_.prefix(3);
-                if((prefix == "---"d || prefix == "..."d) && 
+                if((prefix == "---"d || prefix == "..."d) &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
                 {
                     throw new Error("While scanning a quoted scalar", startMark,
@@ -1426,7 +1426,7 @@ final class Scanner
                 for(;;)
                 {
                     c = reader_.peek(length);
-                    const bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' && 
+                    const bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' &&
                                       search.canFind(reader_.peek(length + 1))) ||
                                       (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
                     if(done){break;}
@@ -1482,7 +1482,7 @@ final class Scanner
 
                 bool end()
                 {
-                    return ["---"d, "..."d].canFind(reader_.prefix(3)) && 
+                    return ["---"d, "..."d].canFind(reader_.prefix(3)) &&
                            " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
                 }
 
@@ -1515,8 +1515,8 @@ final class Scanner
         dstring scanTagHandle(const string name, const Mark startMark) @system
         {
             dchar c = reader_.peek();
-            enforce(c == '!', 
-                    new Error("While scanning a " ~ name, startMark, 
+            enforce(c == '!',
+                    new Error("While scanning a " ~ name, startMark,
                               "expected a '!', but found: " ~ to!string(c), reader_.mark));
 
             uint length = 1;
@@ -1531,7 +1531,7 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    throw new Error("While scanning a " ~ name, startMark, 
+                    throw new Error("While scanning a " ~ name, startMark,
                                     "expected a '!', but found: " ~ to!string(c),
                                     reader_.mark);
                 }
@@ -1566,7 +1566,7 @@ final class Scanner
                 length = 0;
             }
             enforce(appender_.data.length > 0,
-                    new Error("While parsing a " ~ name, startMark, 
+                    new Error("While parsing a " ~ name, startMark,
                               "expected URI, but found: " ~ to!string(c), reader_.mark));
 
             return cast(dstring)appender_.data;
@@ -1589,9 +1589,9 @@ final class Scanner
                 {
                     const dchar c = reader_.peek(k);
                     enforce(isHexDigit(c),
-                            new Error("While scanning a " ~ name, startMark, 
+                            new Error("While scanning a " ~ name, startMark,
                                       "expected URI escape sequence of "
-                                      "2 hexadecimal numbers, but found: " ~ 
+                                      "2 hexadecimal numbers, but found: " ~
                                       to!string(c), reader_.mark));
 
                     uint digit;
