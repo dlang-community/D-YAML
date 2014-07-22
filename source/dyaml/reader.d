@@ -123,7 +123,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar peek(size_t index = 0) @trusted
+        dchar peek(size_t index = 0) @safe
         {
             if(buffer_.length < bufferOffset_ + index + 1)
             {
@@ -208,7 +208,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        void forward(size_t length = 1) @trusted
+        void forward(size_t length = 1) @safe
         {
             if(buffer_.length <= bufferOffset_ + length + 1)
             {
@@ -258,7 +258,7 @@ final class Reader
         //
         // Throws:  ReaderException if trying to read past the end of the buffer
         //          or if invalid data is read.
-        void updateBuffer(const size_t length) @system
+        void updateBuffer(const size_t length) @trusted
         {
             // Get rid of unneeded data in the buffer.
             if(bufferOffset_ > 0)
@@ -298,7 +298,7 @@ final class Reader
         //          if nonprintable characters are detected, or
         //          if there is an error reading from the buffer.
         //
-        void loadChars(size_t chars) @system
+        void loadChars(size_t chars) @safe
         {
             const oldLength = buffer_.length;
             const oldPosition = decoder_.position;
@@ -329,7 +329,7 @@ final class Reader
         }
 
         // Code shared by loadEntireFile methods.
-        void loadEntireFile_() @system
+        void loadEntireFile_() @safe
         {
             const maxChars = decoder_.maxChars;
             bufferReserve(maxChars + 1);
@@ -343,7 +343,7 @@ final class Reader
         }
 
         // Ensure there is space for at least capacity characters in bufferAllocated_.
-        void bufferReserve(const size_t capacity) @system nothrow
+        void bufferReserve(const size_t capacity) @trusted nothrow @nogc
         {
             if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
 
