@@ -401,10 +401,10 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         UTFEncoding encoding_;
         // Maximum number of characters that might be in the stream.
         size_t maxChars_;
-        // Bytes available in the stream.
-        size_t available_;
-        // Input stream.
-        MemoryStream stream_;
+        // The entire input buffer.
+        ubyte[] inputAll_;
+        // Part of the input buffer that has not yet been decoded.
+        ubyte[] input_;
 
         // Buffer used to store raw UTF-8 or UTF-16 code points.
         union
@@ -415,23 +415,23 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Used space (in items) in rawBuffer8_/rawBuffer16_.
         size_t rawUsed_;
 
-        // Space used by decodedBuffer_.
-        dchar[bufferSize_] decodedBufferSpace_;
-        // Buffer of decoded, UTF-32 characters. This is a slice into decodedBufferSpace_.
-        dchar[] decodedBuffer_;
+        // Space used by decoded_.
+        dchar[bufferSize_] decodedSpace_;
+        // Buffer of decoded, UTF-32 characters. This is a slice into decodedSpace_.
+        dchar[] decoded_;
 
     public:
         /// Construct a UTFBlockDecoder decoding data from a buffer.
         this(ubyte[] buffer, UTFEncoding encoding) @trusted
         {
-            stream_    = new MemoryStream(buffer);
-            available_ = stream_.available;
-            encoding_  = encoding;
+            inputAll_ = buffer;
+            input_    = inputAll_[];
+            encoding_ = encoding;
             final switch(encoding_)
             {
-                case UTFEncoding.UTF_8:  maxChars_ = available_;     break;
-                case UTFEncoding.UTF_16: maxChars_ = available_ / 2; break;
-                case UTFEncoding.UTF_32: maxChars_ = available_ / 2; break;
+                case UTFEncoding.UTF_8:  maxChars_ = input_.length;     break;
+                case UTFEncoding.UTF_16: maxChars_ = input_.length / 2; break;
+                case UTFEncoding.UTF_32: maxChars_ = input_.length / 2; break;
             }
         }
 
@@ -441,27 +441,27 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         /// Get encoding we're decoding from.
         UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
-        /// Get the current position in stream.
-        size_t position() @trusted { return stream_.position; }
+        /// Get the current position in buffer.
+        size_t position() @trusted { return inputAll_.length - input_.length; }
 
         /// Are we done decoding?
         bool done() const pure @safe nothrow @nogc
         {
-            return rawUsed_ == 0 && decodedBuffer_.length == 0 && available_ == 0;
+            return rawUsed_ == 0 && decoded_.length == 0 && input_.length == 0;
         }
 
         /// Get next character.
         dchar getDChar()
             @safe
         {
-            if(decodedBuffer_.length)
+            if(decoded_.length)
             {
-                const result = decodedBuffer_[0];
-                decodedBuffer_ = decodedBuffer_[1 .. $];
+                const result = decoded_[0];
+                decoded_ = decoded_[1 .. $];
                 return result;
             }
 
-            assert(available_ > 0 || rawUsed_ > 0);
+            assert(input_.length > 0 || rawUsed_ > 0);
             updateBuffer();
             return getDChar();
         }
@@ -470,15 +470,15 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         const(dchar[]) getDChars(size_t maxChars = size_t.max)
             @safe
         {
-            if(decodedBuffer_.length)
+            if(decoded_.length)
             {
-                const slice = min(decodedBuffer_.length, maxChars);
-                const result = decodedBuffer_[0 .. slice];
-                decodedBuffer_ = decodedBuffer_[slice .. $];
+                const slice = min(decoded_.length, maxChars);
+                const result = decoded_[0 .. slice];
+                decoded_ = decoded_[slice .. $];
                 return result;
             }
 
-            assert(available_ > 0 || rawUsed_ > 0);
+            assert(input_.length > 0 || rawUsed_ > 0);
             updateBuffer();
             return getDChars(maxChars);
         }
@@ -487,37 +487,37 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Read and decode characters from file and store them in the buffer.
         void updateBuffer() @trusted
         {
-            assert(decodedBuffer_.length == 0,
+            assert(decoded_.length == 0,
                    "updateBuffer can only be called when the buffer is empty");
             final switch(encoding_)
             {
                 case UTFEncoding.UTF_8:
-                    const bytes = min(bufferSize_ - rawUsed_, available_);
+                    const bytes = min(bufferSize_ - rawUsed_, input_.length);
                     // Current length of valid data in rawBuffer8_.
                     const rawLength = rawUsed_ + bytes;
-                    stream_.readExact(rawBuffer8_.ptr + rawUsed_, bytes);
-                    available_ -= bytes;
+                    rawBuffer8_[rawUsed_ .. rawUsed_ + bytes] = cast(char[])input_[0 .. bytes];
+                    input_ = input_[bytes .. $];
                     decodeRawBuffer(rawBuffer8_, rawLength);
                     break;
                 case UTFEncoding.UTF_16:
-                    const words = min((bufferSize_ / 2) - rawUsed_, available_ / 2);
+                    const words = min((bufferSize_ / 2) - rawUsed_, input_.length / 2);
                     // Current length of valid data in rawBuffer16_.
                     const rawLength = rawUsed_ + words;
                     foreach(c; rawUsed_ .. rawLength)
                     {
-                        stream_.read(rawBuffer16_[c]);
-                        available_ -= 2;
+                        rawBuffer16_[c] = *cast(wchar*)input_.ptr;
+                        input_ = input_[2 .. $];
                     }
                     decodeRawBuffer(rawBuffer16_, rawLength);
                     break;
                 case UTFEncoding.UTF_32:
-                    const chars = min(bufferSize_ / 4, available_ / 4);
+                    const chars = min(bufferSize_ / 4, input_.length / 4);
                     foreach(c; 0 .. chars)
                     {
-                        stream_.read(decodedBufferSpace_[c]);
-                        available_ -= 4;
+                        decodedSpace_[c] = *cast(dchar*)input_.ptr;
+                        input_ = input_[4 .. $];
                     }
-                    decodedBuffer_ = decodedBufferSpace_[0 .. chars];
+                    decoded_ = decodedSpace_[0 .. chars];
                     break;
             }
         }
@@ -584,15 +584,15 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                 const c = source[srcpos];
                 if(c < 0x80)
                 {
-                    decodedBufferSpace_[bufpos++] = c;
+                    decodedSpace_[bufpos++] = c;
                     ++srcpos;
                 }
                 else
                 {
-                    decodedBufferSpace_[bufpos++] = decode(source, srcpos);
+                    decodedSpace_[bufpos++] = decode(source, srcpos);
                 }
             }
-            decodedBuffer_ = decodedBufferSpace_[0 .. bufpos];
+            decoded_ = decodedSpace_[0 .. bufpos];
         }
 }
 
