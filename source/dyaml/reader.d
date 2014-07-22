@@ -64,8 +64,6 @@ class ReaderException : YAMLException
 final class Reader
 {
     private:
-        // Input stream.
-        MemoryStream memStream_;
         // Allocated space for buffer_.
         dchar[] bufferAllocated_ = null;
         // Buffer of currently loaded characters.
@@ -104,8 +102,7 @@ final class Reader
             }
 
             version(unittest) { endian_ = result.endian; }
-            memStream_  = new MemoryStream(result.array);
-            decoder_    = UTFFastDecoder(memStream_, result.encoding);
+            decoder_ = UTFFastDecoder(new MemoryStream(result.array), result.encoding);
         }
 
         @trusted nothrow @nogc ~this()
@@ -303,7 +300,7 @@ final class Reader
         void loadChars(size_t chars) @system
         {
             const oldLength = buffer_.length;
-            const oldPosition = memStream_.position;
+            const oldPosition = decoder_.position;
 
             bufferReserve(buffer_.length + chars);
             buffer_ = bufferAllocated_[0 .. buffer_.length + chars];
@@ -333,7 +330,7 @@ final class Reader
             try{throw e;}
             catch(UTFException e)
             {
-                const position = memStream_.position;
+                const position = decoder_.position;
                 throw new ReaderException(format("Unicode decoding error between bytes %s and %s : %s",
                                           oldPosition, position, e.msg));
             }
@@ -443,6 +440,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
         /// Get encoding we're decoding from.
         @property UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
+
+        /// Get the current position in stream.
+        size_t position() @trusted { return stream_.position; }
 
         /// Are we done decoding?
         @property bool done() const pure @safe nothrow @nogc
