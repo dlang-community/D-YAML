@@ -130,7 +130,7 @@ final class Reader
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(size_t index = 0) @safe pure const
+        dchar peek(size_t index = 0) @safe pure nothrow const @nogc
         {
             if(buffer_.length <= bufferOffset_ + index)
             {
@@ -184,7 +184,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar get() @safe pure
+        dchar get() @safe pure nothrow @nogc
         {
             const result = peek();
             forward();
@@ -303,7 +303,7 @@ struct UTFDecoder
         /// Decode all data passed to the constructor.
         ///
         /// On error, getAndClearErrorMessage() will return a non-null string.
-        void decodeAll() @safe
+        void decodeAll() @safe pure nothrow
         {
             assert(decoded_ is null, "Calling decodeAll more than once");
 
