@@ -531,7 +531,7 @@ struct UTFDecoder
                     const stride = utf8Stride[buffer[cast(size_t)end]];
                     if(stride != 0xFF)
                     {
-                        // If stride goes beyond end of the buffer, return end. 
+                        // If stride goes beyond end of the buffer, return end.
                         // Otherwise the last sequence ends at buffer.length, so we can
                         // return that. (Unless there is an invalid code point, which is
                         // caught at decoding)
