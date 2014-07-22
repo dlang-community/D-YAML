@@ -312,32 +312,19 @@ final class Reader
                         new ReaderException("Special unicode characters are not allowed"));
             }
 
-            try for(size_t c = 0; chars && !decoder_.done;)
+            for(size_t c = 0; chars && !decoder_.done;)
             {
                 const slice = decoder_.getDChars(chars);
+                if(slice is null)
+                {
+                    const msg = decoder_.getAndClearErrorMessage();
+                    throw new ReaderException(
+                              "Unicode decoding error between bytes %s and %s : %s"
+                              .format(oldPosition, decoder_.position, msg));
+                }
                 buffer_[oldLength + c .. oldLength + c + slice.length] = slice[];
                 c += slice.length;
                 chars -= slice.length;
-            }
-            catch(Exception e)
-            {
-                handleLoadCharsException(e, oldPosition);
-            }
-        }
-
-        // Handle an exception thrown in loadChars method of any Reader.
-        void handleLoadCharsException(Exception e, ulong oldPosition) @system
-        {
-            try{throw e;}
-            catch(UTFException e)
-            {
-                const position = decoder_.position;
-                throw new ReaderException(format("Unicode decoding error between bytes %s and %s : %s",
-                                          oldPosition, position, e.msg));
-            }
-            catch(ReadException e)
-            {
-                throw new ReaderException(e.msg);
             }
         }
 
@@ -421,6 +408,12 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         // Buffer of decoded, UTF-32 characters. This is a slice into decodedSpace_.
         dchar[] decoded_;
 
+        // Current error message.
+        //
+        // To be fully nothrow, we use return values and the user (Reader) can check
+        // for a detailed error message if they get an error return.
+        string errorMessage_;
+
     public:
         /// Construct a UTFBlockDecoder decoding data from a buffer.
         this(ubyte[] buffer, UTFEncoding encoding) @trusted
@@ -444,6 +437,17 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 
         /// Get the current position in buffer.
         size_t position() @trusted { return inputAll_.length - input_.length; }
+        /// Get the error message and clear it.
+        ///
+        /// Can only be used in case of an error return from e.g. getDChars().
+        string getAndClearErrorMessage() @safe pure nothrow @nogc
+        {
+            assert(errorMessage_ !is null,
+                   "Trying to get an error message when there's no error");
+            const result = errorMessage_;
+            errorMessage_ = null;
+            return errorMessage_;
+        }
 
         /// Are we done decoding?
         bool done() const pure @safe nothrow @nogc
@@ -451,21 +455,6 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             return rawUsed_ == 0 && decoded_.length == 0 && input_.length == 0;
         }
 
-        /// Get next character.
-        dchar getDChar()
-            @safe
-        {
-            if(decoded_.length)
-            {
-                const result = decoded_[0];
-                decoded_ = decoded_[1 .. $];
-                return result;
-            }
-
-            assert(input_.length > 0 || rawUsed_ > 0);
-            updateBuffer();
-            return getDChar();
-        }
 
         /// Get as many characters as possible, but at most maxChars. Slice returned will be invalidated in further calls.
         const(dchar[]) getDChars(size_t maxChars = size_t.max)
@@ -476,12 +465,15 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                 const slice = min(decoded_.length, maxChars);
                 const result = decoded_[0 .. slice];
                 decoded_ = decoded_[slice .. $];
+                assert(result !is null,
+                       "NULL error on a getDChars call without an error");
                 return result;
             }
 
             assert(input_.length > 0 || rawUsed_ > 0);
             updateBuffer();
-            return getDChars(maxChars);
+            // updateBuffer may fail
+            return errorMessage_ is null ? getDChars(maxChars) : null;
         }
 
     private:
@@ -524,6 +516,8 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         // Decode contents of a UTF-8 or UTF-16 raw buffer.
+        //
+        // On error, errorMessage_ will be set.
         void decodeRawBuffer(C)(C[] buffer, const size_t length)
             @safe pure
         {
@@ -532,10 +526,14 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             const end = endOfLastUTFSequence(buffer, length);
             // If end is 0, there are no full UTF-8 chars.
             // This can happen at the end of file if there is an incomplete UTF-8 sequence.
-            enforce(end > 0,
-                    new ReaderException("Invalid UTF-8 character at the end of buffer"));
+            if(end <= 0)
+            {
+                errorMessage_ = "Invalid UTF-8 character at the end of buffer";
+                return;
+            }
 
             decodeUTF(buffer[0 .. end]);
+            if(errorMessage_ !is null) { return; }
 
             // After decoding, any code points not decoded go to the start of raw buffer.
             rawUsed_ = length - end;
@@ -588,9 +586,18 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
                     decodedSpace_[bufpos++] = c;
                     ++srcpos;
                 }
-                else
+                else try
                 {
                     decodedSpace_[bufpos++] = decode(source, srcpos);
+                }
+                catch(UTFException e)
+                {
+                    errorMessage_ = e.msg;
+                    return;
+                }
+                catch(Exception e)
+                {
+                    assert(false, "Unexpected exception in Reader.decodeUTF " ~ e.msg);
                 }
             }
             decoded_ = decodedSpace_[0 .. bufpos];
