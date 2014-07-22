@@ -71,6 +71,7 @@ final class Reader
         uint bufferOffset_ = 0;
         // Index of the current character in the buffer.
         size_t charIndex_ = 0;
+
         // Current line in file.
         uint line_;
         // Current column in file.
@@ -154,7 +155,7 @@ final class Reader
         ///                   buffer; in that case the returned slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        const(dstring) prefix(size_t length) @safe pure nothrow const @nogc
+        dstring prefix(size_t length) @safe pure nothrow const @nogc
         {
             return slice(0, length);
         }
@@ -170,7 +171,7 @@ final class Reader
         ///                  slice will be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        const(dstring) slice(size_t start, size_t end) @trusted pure nothrow const @nogc
+        dstring slice(size_t start, size_t end) @trusted pure nothrow const @nogc
         {
             end += bufferOffset_;
             start += bufferOffset_;
