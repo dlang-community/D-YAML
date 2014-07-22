@@ -202,7 +202,7 @@ final class Reader
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
-            while(length > 0)
+            for(; length > 0; --length)
             {
                 const c = buffer_[bufferOffset_];
                 ++bufferOffset_;
@@ -213,8 +213,7 @@ final class Reader
                     ++line_;
                     column_ = 0;
                 }
-                else if(c != '\uFEFF'){++column_;}
-                --length;
+                else if(c != '\uFEFF') { ++column_; }
             }
         }
 
