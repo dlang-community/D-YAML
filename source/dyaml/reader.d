@@ -436,16 +436,16 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         }
 
         /// Get maximum number of characters that might be in the stream.
-        @property size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
+        size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
 
         /// Get encoding we're decoding from.
-        @property UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
+        UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
         /// Get the current position in stream.
         size_t position() @trusted { return stream_.position; }
 
         /// Are we done decoding?
-        @property bool done() const pure @safe nothrow @nogc
+        bool done() const pure @safe nothrow @nogc
         {
             return rawUsed_ == 0 && buffer_.length == 0 && available_ == 0;
         }
