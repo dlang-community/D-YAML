@@ -54,13 +54,14 @@ class ReaderException : YAMLException
     this(string msg, string file = __FILE__, int line = __LINE__)
         @safe pure nothrow
     {
-        super("Error reading stream: " ~ msg, file, line);
+        super("Reader error: " ~ msg, file, line);
     }
 }
 
-/// Lazily reads and decodes data from stream, only storing as much as needed at any moment.
+/// Lazily reads and decodes data from a buffer, only storing as much as needed at any
+/// moment.
 ///
-/// Adds a '\0' to the end of the stream.
+/// Adds a '\0' to the end of the data.
 final class Reader
 {
     private:
@@ -70,7 +71,7 @@ final class Reader
         dchar[] buffer_ = null;
         // Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
-        // Index of the current character in the stream.
+        // Index of the current character in the buffer.
         size_t charIndex_ = 0;
         // Current line in file.
         uint line_;
@@ -116,11 +117,11 @@ final class Reader
         /// Get character at specified index relative to current position.
         ///
         /// Params:  index = Index of the character to get relative to current position
-        ///                  in the stream.
+        ///                  in the buffer.
         ///
         /// Returns: Character at specified position.
         ///
-        /// Throws:  ReaderException if trying to read past the end of the stream
+        /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
         dchar peek(size_t index = 0) @trusted
         {
@@ -131,7 +132,7 @@ final class Reader
 
             if(buffer_.length <= bufferOffset_ + index)
             {
-                throw new ReaderException("Trying to read past the end of the stream");
+                throw new ReaderException("Trying to read past the end of the buffer");
             }
 
             return buffer_[bufferOffset_ + index];
@@ -173,11 +174,11 @@ final class Reader
             return end > start ? cast(dstring)buffer_[start .. end] : "";
         }
 
-        /// Get the next character, moving stream position beyond it.
+        /// Get the next character, moving buffer position beyond it.
         ///
         /// Returns: Next character.
         ///
-        /// Throws:  ReaderException if trying to read past the end of the stream
+        /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
         dchar get() @safe
         {
@@ -186,13 +187,13 @@ final class Reader
             return result;
         }
 
-        /// Get specified number of characters, moving stream position beyond them.
+        /// Get specified number of characters, moving buffer position beyond them.
         ///
         /// Params:  length = Number or characters to get.
         ///
         /// Returns: Characters starting at current position.
         ///
-        /// Throws:  ReaderException if trying to read past the end of the stream
+        /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
         dstring get(size_t length) @safe
         {
@@ -205,7 +206,7 @@ final class Reader
         ///
         /// Params:  length = Number of characters to move position forward.
         ///
-        /// Throws:  ReaderException if trying to read past the end of the stream
+        /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
         void forward(size_t length = 1) @trusted
         {
@@ -232,7 +233,7 @@ final class Reader
             }
         }
 
-        /// Get a string describing current stream position, used for error messages.
+        /// Get a string describing current buffer position, used for error messages.
         final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
 
         /// Get current line number.
@@ -241,21 +242,21 @@ final class Reader
         /// Get current column number.
         final uint column() @safe pure nothrow const @nogc { return column_; }
 
-        /// Get index of the current character in the stream.
+        /// Get index of the current character in the buffer.
         final size_t charIndex() @safe pure nothrow const @nogc { return charIndex_; }
 
-        /// Get encoding of the input stream.
+        /// Get encoding of the input buffer.
         final Encoding encoding() @safe pure nothrow const @nogc { return decoder_.encoding; }
 
     private:
         // Update buffer to be able to read length characters after buffer offset.
         //
-        // If there are not enough characters in the stream, it will get
+        // If there are not enough characters in the buffer, it will get
         // as many as possible.
         //
         // Params:  length = Number of characters we need to read.
         //
-        // Throws:  ReaderException if trying to read past the end of the stream
+        // Throws:  ReaderException if trying to read past the end of the buffer
         //          or if invalid data is read.
         void updateBuffer(const size_t length) @system
         {
@@ -295,7 +296,7 @@ final class Reader
         //
         // Throws:  ReaderException on Unicode decoding error,
         //          if nonprintable characters are detected, or
-        //          if there is an error reading from the stream.
+        //          if there is an error reading from the buffer.
         //
         void loadChars(size_t chars) @system
         {
@@ -372,7 +373,7 @@ private:
 
 alias UTFBlockDecoder!512 UTFFastDecoder;
 
-/// Decodes streams to UTF-32 in blocks.
+/// Decodes a buffer to UTF-32 in blocks.
 struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
 {
     private:
@@ -397,9 +398,9 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             4,4,4,4,4,4,4,4,5,5,5,5,6,6,0xFF,0xFF,
         ];
 
-        // Encoding of the input stream.
+        // Encoding of the input buffer.
         UTFEncoding encoding_;
-        // Maximum number of characters that might be in the stream.
+        // Maximum number of characters that might be in the buffer.
         size_t maxChars_;
         // The entire input buffer.
         ubyte[] inputAll_;
@@ -435,7 +436,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             }
         }
 
-        /// Get maximum number of characters that might be in the stream.
+        /// Get maximum number of characters that might be in the buffer.
         size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
 
         /// Get encoding we're decoding from.
@@ -532,7 +533,7 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
             // If end is 0, there are no full UTF-8 chars.
             // This can happen at the end of file if there is an incomplete UTF-8 sequence.
             enforce(end > 0,
-                    new ReaderException("Invalid UTF-8 character at the end of stream"));
+                    new ReaderException("Invalid UTF-8 character at the end of buffer"));
 
             decodeUTF(buffer[0 .. end]);
 
