@@ -66,7 +66,7 @@ final class Reader
 {
     private:
         // Buffer of currently loaded characters.
-        dchar[] buffer_ = null;
+        dstring buffer_ = null;
         // Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
         // Index of the current character in the buffer.
@@ -115,7 +115,7 @@ final class Reader
                 throw new ReaderException("UTF decoding error: " ~ msg);
             }
 
-            buffer_ = decodeResult.decoded;
+            buffer_ = cast(dstring)decodeResult.decoded;
             // The part of buffer_ excluding trailing zeroes.
             auto noZeros = buffer_;
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
@@ -149,7 +149,7 @@ final class Reader
         /// Get specified number of characters starting at current position.
         ///
         /// Note: This gets only a "view" into the internal buffer,
-        ///       which WILL get invalidated after other Reader calls.
+        ///       which get invalidated after other Reader calls.
         ///
         /// Params:  length = Number of characters to get. May reach past the end of the
         ///                   buffer; in that case the returned slice will be shorter.
@@ -163,7 +163,7 @@ final class Reader
         /// Get a slice view of the internal buffer.
         ///
         /// Note: This gets only a "view" into the internal buffer,
-        ///       which WILL get invalidated after other Reader calls.
+        ///       which get invalidated after other Reader calls.
         ///
         /// Params:  start = Start of the slice relative to current position.
         ///          end   = End of the slice relative to current position. May reach
@@ -171,13 +171,12 @@ final class Reader
         ///                  slice will be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        dstring slice(size_t start, size_t end) @trusted pure nothrow const @nogc
+        dstring slice(size_t start, size_t end) @safe pure nothrow const @nogc
         {
-            end += bufferOffset_;
             start += bufferOffset_;
-            end = min(buffer_.length, end);
+            end    = min(buffer_.length, end + bufferOffset_);
 
-            return end > start ? cast(dstring)buffer_[start .. end] : "";
+            return end > start ? buffer_[start .. end] : "";
         }
 
         /// Get the next character, moving buffer position beyond it.
