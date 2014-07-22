@@ -75,8 +75,9 @@ final class Reader
         uint line_;
         // Current column in file.
         uint column_;
-        // Decoder reading data from file and decoding it to UTF-32.
-        UTFFastDecoder decoder_;
+
+        // Original Unicode encoding of the data.
+        Encoding encoding_;
 
         version(unittest)
         {
@@ -95,26 +96,26 @@ final class Reader
         this(Stream stream) @trusted //!nothrow
         {
             auto streamBytes = streamToBytesGC(stream);
-            auto result = fixUTFByteOrder(streamBytes);
-            if(result.bytesStripped > 0)
+            auto endianResult = fixUTFByteOrder(streamBytes);
+            if(endianResult.bytesStripped > 0)
             {
                 throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
                                           "to 2 or 4 bytes, respectively");
             }
 
-            version(unittest) { endian_ = result.endian; }
-            decoder_ = UTFFastDecoder(result.array, result.encoding);
-            decoder_.decodeAll();
-            const msg = decoder_.getAndClearErrorMessage();
+            version(unittest) { endian_ = endianResult.endian; }
+            encoding_ = endianResult.encoding;
 
+            auto decodeResult = decodeUTF(endianResult.array, endianResult.encoding);
+
+            const msg = decodeResult.errorMessage;
             if(msg !is null)
             {
                 throw new ReaderException("UTF decoding error: " ~ msg);
             }
 
-            buffer_ = decoder_.decoded;
-
-            // The part of buffer excluding trailing zeroes.
+            buffer_ = decodeResult.decoded;
+            // The part of buffer_ excluding trailing zeroes.
             auto noZeros = buffer_;
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
             enforce(printable(noZeros[]),
@@ -238,190 +239,121 @@ final class Reader
         final size_t charIndex() @safe pure nothrow const @nogc { return charIndex_; }
 
         /// Get encoding of the input buffer.
-        final Encoding encoding() @safe pure nothrow const @nogc { return decoder_.encoding; }
+        final Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
 }
 
 private:
 
-alias UTFDecoder UTFFastDecoder;
-
-struct UTFDecoder
+// Decode an UTF-8/16/32 buffer to UTF-32 (for UTF-32 this does nothing).
+//
+// Params:
+//
+// input    = The UTF-8/16/32 buffer to decode.
+// encoding = Encoding of input.
+// 
+// Returns:
+//
+// A struct with the following members:
+//
+// $(D string errorMessage) In case of a decoding error, the error message is stored
+//                          here. If there was no error, errorMessage is NULL. Always
+//                          check this first before using the other members.
+// $(D dchar[] decoded)     A GC-allocated buffer with decoded UTF-32 characters.
+// $(D size_t maxChars)     XXX reserved for future
+auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 {
-    private:
-        // UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
-        static immutable ubyte[256] utf8Stride =
-        [
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
-            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
-            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
-            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
-            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-            3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-            4,4,4,4,4,4,4,4,5,5,5,5,6,6,0xFF,0xFF,
-        ];
+    // Documented in function ddoc.
+    struct Result
+    {
+        string errorMessage;
 
-        // Encoding of the input buffer.
-        UTFEncoding encoding_;
-        // Maximum number of characters that might be in the buffer.
-        size_t maxChars_;
-        // Part of the input buffer that has not yet been decoded.
-        ubyte[] input_;
+        dchar[] decoded;
+    }
 
-        // Decoded (UTF-32) version of the entire input_. If input is UTF-32, this is
-        // just a reference to input_.
-        dchar[] decoded_;
+    Result result;
 
-        // Current error message.
-        //
-        // To be fully nothrow, we use return values and the user (Reader) can check
-        // for a detailed error message if they get an error return.
-        string errorMessage_;
+    final switch(encoding)
+    {
+        case UTFEncoding.UTF_8:  result.maxChars = input.length;     break;
+        case UTFEncoding.UTF_16: result.maxChars = input.length / 2; break;
+        case UTFEncoding.UTF_32: result.maxChars = input.length / 2; break;
+    }
 
-    public:
-        /// Construct a UTFBlockDecoder decoding data from a buffer.
-        this(ubyte[] buffer, UTFEncoding encoding) @safe pure nothrow @nogc
+    // Decode input_ if it's encoded as UTF-8 or UTF-16.
+    //
+    // Params:
+    //
+    // buffer = The input buffer to decode.
+    // result = A Result struct to put decoded result and any error messages to.
+    //
+    // On error, result.errorMessage will be set.
+    static void decode(C)(C[] input, ref Result result) @safe pure nothrow
+    {
+        // End of part of input that contains complete characters that can be decoded.
+        const size_t end = endOfLastUTFSequence(input);
+        // If end is 0, there are no full chars.
+        // This can happen at the end of file if there is an incomplete UTF sequence.
+        if(end < input.length)
         {
-            input_    = buffer;
-            encoding_ = encoding;
-            final switch(encoding_)
-            {
-                case UTFEncoding.UTF_8:  maxChars_ = input_.length;     break;
-                case UTFEncoding.UTF_16: maxChars_ = input_.length / 2; break;
-                case UTFEncoding.UTF_32: maxChars_ = input_.length / 2; break;
-            }
+            result.errorMessage = "Invalid UTF character at the end of input";
+            return;
         }
 
-        /// Decode all data passed to the constructor.
-        ///
-        /// On error, getAndClearErrorMessage() will return a non-null string.
-        void decodeAll() @safe pure nothrow
+        const srclength = input.length;
+        try for(size_t srcpos = 0; srcpos < srclength;)
         {
-            assert(decoded_ is null, "Calling decodeAll more than once");
-
-            final switch(encoding_)
+            const c = input[srcpos];
+            if(c < 0x80)
             {
-                case UTFEncoding.UTF_8:  decode(cast(char[])input_); break;
-                case UTFEncoding.UTF_16:
-                    assert(input_.length % 2 == 0, "UTF-16 buffer size must be even");
-                    decode(cast(wchar[])input_);
-                    break;
-                case UTFEncoding.UTF_32:
-                    assert(input_.length % 4 == 0,
-                           "UTF-32 buffer size must be a multiple of 4");
-                    // No need to decode anything
-                    decoded_ = cast(dchar[])input_;
-                    break;
+                result.decoded ~= c;
+                ++srcpos;
             }
-            // XXX This is risky. We rely on the assumption that the scanner only uses 
-            // peek() to detect the end of the buffer. Should this cause any bugs,
-            // revert.
-            //
-            // The buffer must be zero terminated for scanner to detect its end.
-            // if(decoded_.empty || decoded_.back() != '\0')
-            // {
-            //     decoded_ ~= cast(dchar)'\0';
-            // }
-        }
-
-        /// Get encoding we're decoding from.
-        UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
-
-        /// Get all decoded characters.
-        const(dchar[]) decoded() @safe pure nothrow @nogc { return decoded_; }
-
-        /// Get the error message and clear it.
-        string getAndClearErrorMessage() @safe pure nothrow @nogc
-        {
-            const result = errorMessage_;
-            errorMessage_ = null;
-            return result;
-        }
-
-    private:
-        // Decode input_ if it's encoded as UTF-8 or UTF-16.
-        //
-        // On error, errorMessage_ will be set.
-        void decode(C)(C[] buffer) @safe pure nothrow
-        {
-            // End of part of buffer that contains complete characters that can be decoded.
-            const size_t end = endOfLastUTFSequence(buffer);
-            // If end is 0, there are no full chars.
-            // This can happen at the end of file if there is an incomplete UTF sequence.
-            if(end < buffer.length)
+            else
             {
-                errorMessage_ = "Invalid UTF character at the end of buffer";
-                return;
-            }
-
-            const srclength = buffer.length;
-            try for(size_t srcpos = 0; srcpos < srclength;)
-            {
-                const c = buffer[srcpos];
-                if(c < 0x80)
-                {
-                    decoded_ ~= c;
-                    ++srcpos;
-                }
-                else
-                {
-                    decoded_ ~= std.utf.decode(buffer, srcpos);
-                }
-            }
-            catch(UTFException e)
-            {
-                errorMessage_ = e.msg;
-                return;
-            }
-            catch(Exception e)
-            {
-                assert(false, "Unexpected exception in decode(): " ~ e.msg);
+                result.decoded ~= std.utf.decode(input, srcpos);
             }
         }
-
-        // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
-        size_t endOfLastUTFSequence(C)(const C[] buffer)
-            @safe pure nothrow const @nogc
+        catch(UTFException e)
         {
-            static if(is(C == char))
-            {
-                for(long end = buffer.length - 1; end >= 0; --end)
-                {
-                    const stride = utf8Stride[buffer[cast(size_t)end]];
-                    if(stride != 0xFF)
-                    {
-                        // If stride goes beyond end of the buffer, return end.
-                        // Otherwise the last sequence ends at buffer.length, so we can
-                        // return that. (Unless there is an invalid code point, which is
-                        // caught at decoding)
-                        return (stride > buffer.length - end) ? cast(size_t)end : buffer.length;
-                    }
-                }
-                return 0;
-            }
-            else static if(is(C == wchar))
-            {
-                // TODO this is O(N), which is slow. Find out if we can somehow go
-                // from the end backwards with UTF-16.
-                size_t end = 0;
-                while(end < buffer.length)
-                {
-                    const s = stride(buffer, end);
-                    if(s + end > buffer.length) { break; }
-                    end += s;
-                }
-                return end;
-            }
+            result.errorMessage = e.msg;
+            return;
         }
+        catch(Exception e)
+        {
+            assert(false, "Unexpected exception in decode(): " ~ e.msg);
+        }
+    }
+
+    final switch(encoding)
+    {
+        case UTFEncoding.UTF_8:  decode(cast(char[])input, result); break;
+        case UTFEncoding.UTF_16:
+            assert(input.length % 2 == 0, "UTF-16 buffer size must be even");
+            decode(cast(wchar[])input, result);
+            break;
+        case UTFEncoding.UTF_32:
+            assert(input.length % 4 == 0,
+                    "UTF-32 buffer size must be a multiple of 4");
+            // No need to decode anything
+            result.decoded = cast(dchar[])input;
+            break;
+    }
+
+    if(result.errorMessage !is null) { return result; }
+
+    // XXX This is risky. We rely on the assumption that the scanner only uses 
+    // peek() to detect the end of the buffer. Should this cause any bugs,
+    // revert.
+    //
+    // The buffer must be zero terminated for scanner to detect its end.
+    // if(result.decoded.empty || result.decoded.back() != '\0')
+    // {
+    //     result.decoded ~= cast(dchar)'\0';
+    // }
+
+    return result;
 }
+
 
 /// Determine if all characters in an array are printable.
 ///
@@ -441,6 +373,62 @@ bool printable(const dchar[] chars) @safe pure nothrow @nogc
         }
     }
     return true;
+}
+
+// Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
+size_t endOfLastUTFSequence(C)(const C[] buffer)
+    @safe pure nothrow @nogc
+{
+    // UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
+    static immutable ubyte[256] utf8Stride =
+    [
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+        2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+        2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+        3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+        4,4,4,4,4,4,4,4,5,5,5,5,6,6,0xFF,0xFF,
+    ];
+
+    static if(is(C == char))
+    {
+        for(long end = buffer.length - 1; end >= 0; --end)
+        {
+            const stride = utf8Stride[buffer[cast(size_t)end]];
+            if(stride != 0xFF)
+            {
+                // If stride goes beyond end of the buffer, return end.
+                // Otherwise the last sequence ends at buffer.length, so we can
+                // return that. (Unless there is an invalid code point, which is
+                // caught at decoding)
+                return (stride > buffer.length - end) ? cast(size_t)end : buffer.length;
+            }
+        }
+        return 0;
+    }
+    else static if(is(C == wchar))
+    {
+        // TODO this is O(N), which is slow. Find out if we can somehow go
+        // from the end backwards with UTF-16.
+        size_t end = 0;
+        while(end < buffer.length)
+        {
+            const s = stride(buffer, end);
+            if(s + end > buffer.length) { break; }
+            end += s;
+        }
+        return end;
+    }
 }
 
 // Unittests.
