@@ -90,7 +90,8 @@ final class Reader
         ///
         /// Params:  stream = Input stream. Must be readable and seekable.
         ///
-        /// Throws:  ReaderException if the stream is invalid.
+        /// Throws:  ReaderException if the stream is invalid, on a UTF decoding error
+        ///          or if there are nonprintable unicode characters illegal in YAML.
         this(Stream stream) @trusted //!nothrow
         {
             auto streamBytes = streamToBytesGC(stream);
@@ -144,7 +145,8 @@ final class Reader
         /// Note: This gets only a "view" into the internal buffer,
         ///       which WILL get invalidated after other Reader calls.
         ///
-        /// Params:  length = Number of characters to get.
+        /// Params:  length = Number of characters to get. May reach past the end of the
+        ///                   buffer; in that case the returned slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
         const(dstring) prefix(size_t length) @safe pure nothrow const @nogc
@@ -158,7 +160,9 @@ final class Reader
         ///       which WILL get invalidated after other Reader calls.
         ///
         /// Params:  start = Start of the slice relative to current position.
-        ///          end   = End of the slice relative to current position.
+        ///          end   = End of the slice relative to current position. May reach
+        ///                  past the end of the buffer; in that case the returned
+        ///                  slice will be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
         const(dstring) slice(size_t start, size_t end) @trusted pure nothrow const @nogc
