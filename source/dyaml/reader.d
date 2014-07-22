@@ -196,9 +196,9 @@ final class Reader
         /// Params:  length = Number or characters to get.
         ///
         /// Returns: Characters starting at current position.
-        dstring get(size_t length) @safe pure nothrow
+        dstring get(size_t length) @safe pure nothrow @nogc
         {
-            auto result = prefix(length).idup;
+            auto result = prefix(length);
             forward(length);
             return result;
         }
