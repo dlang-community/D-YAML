@@ -634,7 +634,7 @@ bool printable(const dchar[] chars) @safe pure nothrow @nogc
     return true;
 }
 
-//Unittests.
+// Unittests.
 
 import std.stream;
 void testEndian(R)()
