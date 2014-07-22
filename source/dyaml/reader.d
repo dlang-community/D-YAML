@@ -102,7 +102,7 @@ final class Reader
             }
 
             version(unittest) { endian_ = result.endian; }
-            decoder_ = UTFFastDecoder(new MemoryStream(result.array), result.encoding);
+            decoder_ = UTFFastDecoder(result.array, result.encoding);
         }
 
         @trusted nothrow @nogc ~this()
@@ -421,10 +421,10 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         dchar[] buffer_;
 
     public:
-        /// Construct a UTFBlockDecoder decoding a stream.
-        this(MemoryStream stream, UTFEncoding encoding) @trusted
+        /// Construct a UTFBlockDecoder decoding data from a buffer.
+        this(ubyte[] buffer, UTFEncoding encoding) @trusted
         {
-            stream_    = stream;
+            stream_    = new MemoryStream(buffer);
             available_ = stream_.available;
             encoding_  = encoding;
             final switch(encoding_)
