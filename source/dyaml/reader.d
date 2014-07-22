@@ -15,7 +15,6 @@ import std.algorithm;
 import std.conv;
 import std.exception;
 import std.stdio;
-import std.stream;
 import std.string;
 import std.system;
 import std.utf;
@@ -87,6 +86,7 @@ final class Reader
         }
 
     public:
+        import std.stream;
         /// Construct a Reader.
         ///
         /// Params:  stream = Input stream. Must be readable and seekable.
@@ -619,6 +619,7 @@ bool printable(const dchar[] chars) @safe pure nothrow @nogc
 
 //Unittests.
 
+import std.stream;
 void testEndian(R)()
 {
     writeln(typeid(R).toString() ~ ": endian unittest");
