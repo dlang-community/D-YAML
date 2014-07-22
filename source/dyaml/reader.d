@@ -104,6 +104,13 @@ final class Reader
 
             version(unittest) { endian_ = result.endian; }
             decoder_ = UTFFastDecoder(result.array, result.encoding);
+            decoder_.decodeAll();
+            const msg = decoder_.getAndClearErrorMessage();
+            
+            if(msg !is null)
+            {
+                throw new ReaderException("UTF decoding error: " ~ msg);
+            }
         }
 
         @trusted nothrow @nogc ~this()
@@ -315,13 +322,6 @@ final class Reader
             for(size_t c = 0; chars && !decoder_.done;)
             {
                 const slice = decoder_.getDChars(chars);
-                if(slice is null)
-                {
-                    const msg = decoder_.getAndClearErrorMessage();
-                    throw new ReaderException(
-                              "Unicode decoding error between bytes %s and %s : %s"
-                              .format(oldPosition, decoder_.position, msg));
-                }
                 buffer_[oldLength + c .. oldLength + c + slice.length] = slice[];
                 c += slice.length;
                 chars -= slice.length;
@@ -358,10 +358,9 @@ final class Reader
 
 private:
 
-alias UTFBlockDecoder!512 UTFFastDecoder;
+alias UTFDecoder UTFFastDecoder;
 
-/// Decodes a buffer to UTF-32 in blocks.
-struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
+struct UTFDecoder
 {
     private:
         // UTF-8 codepoint strides (0xFF are codepoints that can't start a sequence).
@@ -389,24 +388,14 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         UTFEncoding encoding_;
         // Maximum number of characters that might be in the buffer.
         size_t maxChars_;
-        // The entire input buffer.
-        ubyte[] inputAll_;
         // Part of the input buffer that has not yet been decoded.
         ubyte[] input_;
 
-        // Buffer used to store raw UTF-8 or UTF-16 code points.
-        union
-        {
-            char[bufferSize_] rawBuffer8_;
-            wchar[bufferSize_ / 2] rawBuffer16_;
-        }
-        // Used space (in items) in rawBuffer8_/rawBuffer16_.
-        size_t rawUsed_;
-
-        // Space used by decoded_.
-        dchar[bufferSize_] decodedSpace_;
-        // Buffer of decoded, UTF-32 characters. This is a slice into decodedSpace_.
+        // Decoded (UTF-32) version of the entire input_. If input is UTF-32, this is
+        // just a reference to input_.
         dchar[] decoded_;
+        // The part of decoded_ that has not yet been read through getDChars().
+        dchar[] unread_;
 
         // Current error message.
         //
@@ -418,14 +407,36 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         /// Construct a UTFBlockDecoder decoding data from a buffer.
         this(ubyte[] buffer, UTFEncoding encoding) @safe pure nothrow @nogc
         {
-            inputAll_ = buffer;
-            input_    = inputAll_[];
+            input_    = buffer;
             encoding_ = encoding;
             final switch(encoding_)
             {
                 case UTFEncoding.UTF_8:  maxChars_ = input_.length;     break;
                 case UTFEncoding.UTF_16: maxChars_ = input_.length / 2; break;
                 case UTFEncoding.UTF_32: maxChars_ = input_.length / 2; break;
+            }
+        }
+
+        /// Decode all data passed to the constructor.
+        ///
+        /// On error, getAndClearErrorMessage() will return a non-null string.
+        void decodeAll() @safe
+        {
+            assert(decoded_ is null, "Calling decodeAll more than once");
+
+            final switch(encoding_)
+            {
+                case UTFEncoding.UTF_8:  decode(cast(char[])input_); break;
+                case UTFEncoding.UTF_16:
+                    assert(input_.length % 2 == 0, "UTF-16 buffer size must be even");
+                    decode(cast(wchar[])input_);
+                    break;
+                case UTFEncoding.UTF_32:
+                    assert(input_.length % 4 == 0,
+                           "UTF-32 buffer size must be a multiple of 4");
+                    // No need to decode anything
+                    unread_ = decoded_ = cast(dchar[])input_;
+                    break;
             }
         }
 
@@ -438,175 +449,110 @@ struct UTFBlockDecoder(size_t bufferSize_) if (bufferSize_ % 2 == 0)
         /// Get the current position in buffer.
         size_t position() @safe pure nothrow const @nogc
         {
-            return inputAll_.length - input_.length;
+            return decoded_.length - unread_.length;
         }
 
         /// Get the error message and clear it.
-        ///
-        /// Can only be used in case of an error return from e.g. getDChars().
         string getAndClearErrorMessage() @safe pure nothrow @nogc
         {
-            assert(errorMessage_ !is null,
-                   "Trying to get an error message when there's no error");
             const result = errorMessage_;
             errorMessage_ = null;
-            return errorMessage_;
+            return result;
         }
 
         /// Are we done decoding?
         bool done() const pure @safe nothrow @nogc
         {
-            return rawUsed_ == 0 && decoded_.length == 0 && input_.length == 0;
+            return position == decoded_.length;
         }
 
         /// Get as many characters as possible, but at most maxChars.
         ///
-        /// Returns: A slice with decoded characters or NULL on failure (in that case,
-        ///          check getAndClearErrorMessage(). The slice $(B will) be invalidated
-        ///          in further calls.
-        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe pure nothrow
+        /// Returns: A slice with decoded characters.
+        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe pure nothrow @nogc
         {
-            if(decoded_.length)
-            {
-                const slice = min(decoded_.length, maxChars);
-                const result = decoded_[0 .. slice];
-                decoded_ = decoded_[slice .. $];
-                assert(result !is null,
-                       "NULL error on a getDChars call without an error");
-                return result;
-            }
-
-            assert(input_.length > 0 || rawUsed_ > 0);
-            updateBuffer();
-            // updateBuffer may fail
-            return errorMessage_ is null ? getDChars(maxChars) : null;
+            const chars = min(maxChars, unread_.length);
+            const result = unread_[0 .. chars];
+            unread_ = unread_[chars .. $];
+            assert(result !is null, "NULL error on a getDChars call without an error");
+            return result;
         }
 
     private:
-        // Read and decode characters from file and store them in the buffer.
+        // Decode input_ if it's encoded as UTF-8 or UTF-16.
         //
         // On error, errorMessage_ will be set.
-        void updateBuffer() @trusted pure nothrow
+        void decode(C)(C[] buffer) @safe pure nothrow
         {
-            assert(decoded_.length == 0,
-                   "updateBuffer can only be called when the buffer is empty");
-            final switch(encoding_)
+            // End of part of buffer that contains complete characters that can be decoded.
+            const size_t end = endOfLastUTFSequence(buffer);
+            // If end is 0, there are no full chars.
+            // This can happen at the end of file if there is an incomplete UTF sequence.
+            if(end < buffer.length)
             {
-                case UTFEncoding.UTF_8:
-                    const bytes = min(bufferSize_ - rawUsed_, input_.length);
-                    rawBuffer8_[rawUsed_ .. rawUsed_ + bytes] = cast(char[])input_[0 .. bytes];
-                    input_ = input_[bytes .. $];
-                    // Current length of valid data in rawBuffer8_.
-                    const rawLength = rawUsed_ + bytes;
-                    decodeRawBuffer(rawBuffer8_, rawLength);
-                    break;
-                case UTFEncoding.UTF_16:
-                    const words = min((bufferSize_ / 2) - rawUsed_, input_.length / 2);
-                    const bytes = 2 * words;
-                    rawBuffer16_[rawUsed_ .. rawUsed_ + words] = cast(wchar[])input_[0 .. bytes];
-                    input_ = input_[bytes .. $];
-                    // Current length of valid data in rawBuffer16_.
-                    const rawLength = rawUsed_ + words;
-                    decodeRawBuffer(rawBuffer16_, rawLength);
-                    break;
-                case UTFEncoding.UTF_32:
-                    const chars = min(bufferSize_ / 4, input_.length / 4);
-                    const bytes = 4 * chars;
-                    decodedSpace_[0 .. chars] = cast(dchar[])input_[0 .. bytes];
-                    input_ = input_[bytes .. $];
-                    decoded_ = decodedSpace_[0 .. chars];
-                    break;
-            }
-        }
-
-        // Decode contents of a UTF-8 or UTF-16 raw buffer.
-        //
-        // On error, errorMessage_ will be set.
-        void decodeRawBuffer(C)(C[] buffer, const size_t length)
-            @safe pure nothrow
-        {
-            // End of part of rawBuffer8_ that contains
-            // complete characters and can be decoded.
-            const end = endOfLastUTFSequence(buffer, length);
-            // If end is 0, there are no full UTF-8 chars.
-            // This can happen at the end of file if there is an incomplete UTF-8 sequence.
-            if(end <= 0)
-            {
-                errorMessage_ = "Invalid UTF-8 character at the end of buffer";
+                errorMessage_ = "Invalid UTF character at the end of buffer";
                 return;
             }
 
-            decodeUTF(buffer[0 .. end]);
-            if(errorMessage_ !is null) { return; }
-
-            // After decoding, any code points not decoded go to the start of raw buffer.
-            rawUsed_ = length - end;
-            foreach(i; 0 .. rawUsed_) { buffer[i] = buffer[i + end]; }
+            const srclength = buffer.length;
+            try for(size_t srcpos = 0; srcpos < srclength;)
+            {
+                const c = buffer[srcpos];
+                if(c < 0x80)
+                {
+                    decoded_ ~= c;
+                    ++srcpos;
+                }
+                else
+                {
+                    decoded_ ~= std.utf.decode(buffer, srcpos);
+                }
+            }
+            catch(UTFException e)
+            {
+                errorMessage_ = e.msg;
+                return;
+            }
+            catch(Exception e)
+            {
+                assert(false, "Unexpected exception in decode(): " ~ e.msg);
+            }
+            unread_ = decoded_[];
         }
 
         // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
-        size_t endOfLastUTFSequence(C)(const C[] buffer, const size_t max)
+        size_t endOfLastUTFSequence(C)(const C[] buffer)
             @safe pure nothrow const @nogc
         {
             static if(is(C == char))
             {
-                for(long end = max - 1; end >= 0; --end)
+                for(long end = buffer.length - 1; end >= 0; --end)
                 {
-                    const s = utf8Stride[buffer[cast(size_t)end]];
-                    if(s != 0xFF)
+                    const stride = utf8Stride[buffer[cast(size_t)end]];
+                    if(stride != 0xFF)
                     {
-                        // If stride goes beyond end of the buffer (max), return end.
-                        // Otherwise the last sequence ends at max, so we can return that.
-                        // (Unless there is an invalid code point, which is
+                        // If stride goes beyond end of the buffer, return end. 
+                        // Otherwise the last sequence ends at buffer.length, so we can
+                        // return that. (Unless there is an invalid code point, which is
                         // caught at decoding)
-                        return (s > max - end) ?  cast(size_t)end : max;
+                        return (stride > buffer.length - end) ? cast(size_t)end : buffer.length;
                     }
                 }
                 return 0;
             }
-            else
+            else static if(is(C == wchar))
             {
+                // TODO this is O(N), which is slow. Find out if we can somehow go
+                // from the end backwards with UTF-16.
                 size_t end = 0;
-                while(end < max)
+                while(end < buffer.length)
                 {
                     const s = stride(buffer, end);
-                    if(s + end > max) { break; }
+                    if(s + end > buffer.length) { break; }
                     end += s;
                 }
                 return end;
             }
-        }
-
-        // Decode a UTF-8 or UTF-16 buffer (with no incomplete sequences at the end).
-        //
-        // On error, sets errorMessage_.
-        void decodeUTF(C)(const C[] source) @safe pure nothrow
-        {
-            size_t bufpos = 0;
-            const srclength = source.length;
-            for(size_t srcpos = 0; srcpos < srclength;)
-            {
-                const c = source[srcpos];
-                if(c < 0x80)
-                {
-                    decodedSpace_[bufpos++] = c;
-                    ++srcpos;
-                }
-                else try
-                {
-                    decodedSpace_[bufpos++] = decode(source, srcpos);
-                }
-                catch(UTFException e)
-                {
-                    errorMessage_ = e.msg;
-                    return;
-                }
-                catch(Exception e)
-                {
-                    assert(false, "Unexpected exception in Reader.decodeUTF " ~ e.msg);
-                }
-            }
-            decoded_ = decodedSpace_[0 .. bufpos];
         }
 }
 
