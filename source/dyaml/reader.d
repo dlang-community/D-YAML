@@ -12,6 +12,7 @@ import core.stdc.string;
 import core.thread;
 
 import std.algorithm;
+import std.array;
 import std.conv;
 import std.exception;
 import std.stdio;
@@ -64,8 +65,6 @@ class ReaderException : YAMLException
 final class Reader
 {
     private:
-        // Allocated space for buffer_.
-        dchar[] bufferAllocated_ = null;
         // Buffer of currently loaded characters.
         dchar[] buffer_ = null;
         // Current position within buffer. Only data after this position can be read.
@@ -106,19 +105,19 @@ final class Reader
             decoder_ = UTFFastDecoder(result.array, result.encoding);
             decoder_.decodeAll();
             const msg = decoder_.getAndClearErrorMessage();
-            
+
             if(msg !is null)
             {
                 throw new ReaderException("UTF decoding error: " ~ msg);
             }
-        }
 
-        @trusted nothrow @nogc ~this()
-        {
-            // Delete the buffer, if allocated.
-            if(bufferAllocated_ is null){return;}
-            free(bufferAllocated_.ptr);
-            buffer_ = bufferAllocated_ = null;
+            buffer_ = decoder_.decoded;
+
+            // The part of buffer excluding trailing zeroes.
+            auto noZeros = buffer_;
+            while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
+            enforce(printable(noZeros[]),
+                    new ReaderException("Special unicode characters are not allowed"));
         }
 
         /// Get character at specified index relative to current position.
@@ -132,11 +131,6 @@ final class Reader
         ///          or if invalid data is read.
         dchar peek(size_t index = 0) @safe
         {
-            if(buffer_.length < bufferOffset_ + index + 1)
-            {
-                updateBuffer(index + 1);
-            }
-
             if(buffer_.length <= bufferOffset_ + index)
             {
                 throw new ReaderException("Trying to read past the end of the buffer");
@@ -169,11 +163,6 @@ final class Reader
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
         const(dstring) slice(size_t start, size_t end) @trusted
         {
-            if(buffer_.length <= bufferOffset_ + end)
-            {
-                updateBuffer(end);
-            }
-
             end += bufferOffset_;
             start += bufferOffset_;
             end = min(buffer_.length, end);
@@ -199,9 +188,6 @@ final class Reader
         /// Params:  length = Number or characters to get.
         ///
         /// Returns: Characters starting at current position.
-        ///
-        /// Throws:  ReaderException if trying to read past the end of the buffer
-        ///          or if invalid data is read.
         dstring get(size_t length) @safe
         {
             auto result = prefix(length).idup;
@@ -212,16 +198,8 @@ final class Reader
         /// Move current position forward.
         ///
         /// Params:  length = Number of characters to move position forward.
-        ///
-        /// Throws:  ReaderException if trying to read past the end of the buffer
-        ///          or if invalid data is read.
         void forward(size_t length = 1) @safe
         {
-            if(buffer_.length <= bufferOffset_ + length + 1)
-            {
-                updateBuffer(length + 1);
-            }
-
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
             while(length > 0)
@@ -254,106 +232,6 @@ final class Reader
 
         /// Get encoding of the input buffer.
         final Encoding encoding() @safe pure nothrow const @nogc { return decoder_.encoding; }
-
-    private:
-        // Update buffer to be able to read length characters after buffer offset.
-        //
-        // If there are not enough characters in the buffer, it will get
-        // as many as possible.
-        //
-        // Params:  length = Number of characters we need to read.
-        //
-        // Throws:  ReaderException if trying to read past the end of the buffer
-        //          or if invalid data is read.
-        void updateBuffer(const size_t length) @trusted
-        {
-            // Get rid of unneeded data in the buffer.
-            if(bufferOffset_ > 0)
-            {
-                const size_t bufferLength = buffer_.length - bufferOffset_;
-                memmove(buffer_.ptr, buffer_.ptr + bufferOffset_,
-                        bufferLength * dchar.sizeof);
-                buffer_ = buffer_[0 .. bufferLength];
-                bufferOffset_ = 0;
-            }
-
-            // Load chars in batches of at most 1024 bytes (256 chars)
-            while(buffer_.length <= bufferOffset_ + length)
-            {
-                loadChars(512);
-
-                if(decoder_.done)
-                {
-                    if(buffer_.length == 0 || buffer_[$ - 1] != '\0')
-                    {
-                        bufferReserve(buffer_.length + 1);
-                        buffer_ = bufferAllocated_[0 .. buffer_.length + 1];
-                        buffer_[$ - 1] = '\0';
-                    }
-                    break;
-                }
-            }
-        }
-
-        // Load more characters to the buffer.
-        //
-        // Params:  chars = Recommended number of characters to load.
-        //                  More characters might be loaded.
-        //                  Less will be loaded if not enough available.
-        //
-        // Throws:  ReaderException on Unicode decoding error,
-        //          if nonprintable characters are detected, or
-        //          if there is an error reading from the buffer.
-        //
-        void loadChars(size_t chars) @safe
-        {
-            const oldLength = buffer_.length;
-            const oldPosition = decoder_.position;
-
-            bufferReserve(buffer_.length + chars);
-            buffer_ = bufferAllocated_[0 .. buffer_.length + chars];
-            scope(success)
-            {
-                buffer_ = buffer_[0 .. $ - chars];
-                enforce(printable(buffer_[oldLength .. $]),
-                        new ReaderException("Special unicode characters are not allowed"));
-            }
-
-            for(size_t c = 0; chars && !decoder_.done;)
-            {
-                const slice = decoder_.getDChars(chars);
-                buffer_[oldLength + c .. oldLength + c + slice.length] = slice[];
-                c += slice.length;
-                chars -= slice.length;
-            }
-        }
-
-        // Code shared by loadEntireFile methods.
-        void loadEntireFile_() @safe
-        {
-            const maxChars = decoder_.maxChars;
-            bufferReserve(maxChars + 1);
-            loadChars(maxChars);
-
-            if(buffer_.length == 0 || buffer_[$ - 1] != '\0')
-            {
-                buffer_ = bufferAllocated_[0 .. buffer_.length + 1];
-                buffer_[$ - 1] = '\0';
-            }
-        }
-
-        // Ensure there is space for at least capacity characters in bufferAllocated_.
-        void bufferReserve(const size_t capacity) @trusted nothrow @nogc
-        {
-            if(bufferAllocated_ !is null && bufferAllocated_.length >= capacity){return;}
-
-            // Handle first allocation as well as reallocation.
-            auto ptr = bufferAllocated_ !is null
-                       ? realloc(bufferAllocated_.ptr, capacity * dchar.sizeof)
-                       : malloc(capacity * dchar.sizeof);
-            bufferAllocated_ = (cast(dchar*)ptr)[0 .. capacity];
-            buffer_ = bufferAllocated_[0 .. buffer_.length];
-        }
 }
 
 private:
@@ -394,8 +272,6 @@ struct UTFDecoder
         // Decoded (UTF-32) version of the entire input_. If input is UTF-32, this is
         // just a reference to input_.
         dchar[] decoded_;
-        // The part of decoded_ that has not yet been read through getDChars().
-        dchar[] unread_;
 
         // Current error message.
         //
@@ -435,46 +311,27 @@ struct UTFDecoder
                     assert(input_.length % 4 == 0,
                            "UTF-32 buffer size must be a multiple of 4");
                     // No need to decode anything
-                    unread_ = decoded_ = cast(dchar[])input_;
+                    decoded_ = cast(dchar[])input_;
                     break;
             }
+            // The buffer must be zero terminated for scanner to detect its end.
+            if(decoded_.empty || decoded_.back() != '\0')
+            {
+                decoded_ ~= cast(dchar)'\0';
+            }
         }
-
-        /// Get maximum number of characters that might be in the buffer.
-        size_t maxChars() const pure @safe nothrow @nogc { return maxChars_; }
 
         /// Get encoding we're decoding from.
         UTFEncoding encoding() const pure @safe nothrow @nogc { return encoding_; }
 
-        /// Get the current position in buffer.
-        size_t position() @safe pure nothrow const @nogc
-        {
-            return decoded_.length - unread_.length;
-        }
+        /// Get all decoded characters.
+        const(dchar[]) decoded() @safe pure nothrow @nogc { return decoded_; }
 
         /// Get the error message and clear it.
         string getAndClearErrorMessage() @safe pure nothrow @nogc
         {
             const result = errorMessage_;
             errorMessage_ = null;
-            return result;
-        }
-
-        /// Are we done decoding?
-        bool done() const pure @safe nothrow @nogc
-        {
-            return position == decoded_.length;
-        }
-
-        /// Get as many characters as possible, but at most maxChars.
-        ///
-        /// Returns: A slice with decoded characters.
-        const(dchar[]) getDChars(size_t maxChars = size_t.max) @safe pure nothrow @nogc
-        {
-            const chars = min(maxChars, unread_.length);
-            const result = unread_[0 .. chars];
-            unread_ = unread_[chars .. $];
-            assert(result !is null, "NULL error on a getDChars call without an error");
             return result;
         }
 
@@ -517,7 +374,6 @@ struct UTFDecoder
             {
                 assert(false, "Unexpected exception in decode(): " ~ e.msg);
             }
-            unread_ = decoded_[];
         }
 
         // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
