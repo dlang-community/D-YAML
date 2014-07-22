@@ -129,7 +129,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar peek(size_t index = 0) @safe
+        dchar peek(size_t index = 0) @safe pure const
         {
             if(buffer_.length <= bufferOffset_ + index)
             {
@@ -147,7 +147,7 @@ final class Reader
         /// Params:  length = Number of characters to get.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        const(dstring) prefix(size_t length) @safe
+        const(dstring) prefix(size_t length) @safe pure nothrow const @nogc
         {
             return slice(0, length);
         }
@@ -161,7 +161,7 @@ final class Reader
         ///          end   = End of the slice relative to current position.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        const(dstring) slice(size_t start, size_t end) @trusted
+        const(dstring) slice(size_t start, size_t end) @trusted pure nothrow const @nogc
         {
             end += bufferOffset_;
             start += bufferOffset_;
@@ -176,7 +176,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar get() @safe
+        dchar get() @safe pure
         {
             const result = peek();
             forward();
@@ -188,7 +188,7 @@ final class Reader
         /// Params:  length = Number or characters to get.
         ///
         /// Returns: Characters starting at current position.
-        dstring get(size_t length) @safe
+        dstring get(size_t length) @safe pure nothrow
         {
             auto result = prefix(length).idup;
             forward(length);
@@ -198,7 +198,7 @@ final class Reader
         /// Move current position forward.
         ///
         /// Params:  length = Number of characters to move position forward.
-        void forward(size_t length = 1) @safe
+        void forward(size_t length = 1) @safe pure nothrow @nogc
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
