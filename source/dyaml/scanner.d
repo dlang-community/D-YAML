@@ -782,14 +782,14 @@ final class Scanner
                      (c == '-' || (flowLevel_ == 0 && "?:"d.canFind(c))));
         }
 
-        ///Move to the next non-space character.
-        void findNextNonSpace() @safe
+        /// Move to the next non-space character.
+        void findNextNonSpace() @safe pure nothrow @nogc
         {
             while(reader_.peek() == ' ') { reader_.forward(); }
         }
 
-        ///Scan a string of alphanumeric or "-_" characters.
-        dstring scanAlphaNumeric(string name)(const Mark startMark) @trusted
+        /// Scan a string of alphanumeric or "-_" characters.
+        dstring scanAlphaNumeric(string name)(const Mark startMark) @safe pure
         {
             uint length = 0;
             dchar c = reader_.peek();
@@ -807,8 +807,8 @@ final class Scanner
             return reader_.get(length);
         }
 
-        ///Scan all characters until nex line break.
-        dstring scanToNextBreak() @safe
+        /// Scan all characters until next line break.
+        dstring scanToNextBreak() @safe pure nothrow @nogc
         {
             uint length = 0;
             while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
@@ -909,8 +909,8 @@ final class Scanner
             return result;
         }
 
-        ///Scan a number from a YAML directive.
-        dstring scanYAMLDirectiveNumber(const Mark startMark) @trusted
+        /// Scan a number from a YAML directive.
+        dstring scanYAMLDirectiveNumber(const Mark startMark) @safe pure
         {
             enforce(isDigit(reader_.peek()),
                     new Error("While scanning a directive", startMark,
@@ -1402,8 +1402,8 @@ final class Scanner
             }
         }
 
-        ///Scan plain scalar token (no block, no quotes).
-        Token scanPlain() @system
+        /// Scan plain scalar token (no block, no quotes).
+        Token scanPlain() @system pure
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
@@ -1470,7 +1470,7 @@ final class Scanner
         }
 
         /// Scan spaces in a plain scalar.
-        dstring scanPlainSpaces(const Mark startMark) @system
+        dstring scanPlainSpaces(const Mark startMark) @safe pure nothrow
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1486,7 +1486,7 @@ final class Scanner
                 const lineBreak = scanLineBreak();
                 allowSimpleKey_ = true;
 
-                static bool end(Reader reader)
+                static bool end(Reader reader) nothrow
                 {
                     return ["---"d, "..."d].canFind(reader.prefix(3)) &&
                            " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader.peek(3));
@@ -1517,8 +1517,8 @@ final class Scanner
             return appender.data;
         }
 
-        ///Scan handle of a tag token.
-        dstring scanTagHandle(const string name, const Mark startMark) @system
+        /// Scan handle of a tag token.
+        dstring scanTagHandle(const string name, const Mark startMark) @safe pure
         {
             dchar c = reader_.peek();
             enforce(c == '!',
@@ -1546,8 +1546,8 @@ final class Scanner
             return reader_.get(length);
         }
 
-        ///Scan URI in a tag token.
-        dstring scanTagURI(const string name, const Mark startMark) @system
+        /// Scan URI in a tag token.
+        dstring scanTagURI(const string name, const Mark startMark) @system pure
         {
             // Note: we do not check if URI is well-formed.
             // Using appender_, so clear it when we're done.
@@ -1578,8 +1578,8 @@ final class Scanner
             return cast(dstring)appender_.data;
         }
 
-        ///Scan URI escape sequences.
-        dstring scanURIEscapes(const string name, const Mark startMark) @system
+        /// Scan URI escape sequences.
+        dstring scanURIEscapes(const string name, const Mark startMark) @system pure
         {
             ubyte[] bytes;
             Mark mark = reader_.mark;
@@ -1635,7 +1635,7 @@ final class Scanner
         ///   '\u2028'    :   '\u2028'
         ///   '\u2029     :   '\u2029'
         ///   no break    :   '\0'
-        dchar scanLineBreak() @safe
+        dchar scanLineBreak() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
 
