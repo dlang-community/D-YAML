@@ -71,84 +71,79 @@ class ScannerException : MarkedYAMLException
 private alias ScannerException Error;
 private alias MarkedYAMLExceptionData ErrorData;
 
-///Generates tokens from data provided by a Reader.
+/// Generates tokens from data provided by a Reader.
 final class Scanner
 {
     private:
-        /**
-         * A simple key is a key that is not denoted by the '?' indicator.
-         * For example:
-         *   ---
-         *   block simple key: value
-         *   ? not a simple key:
-         *   : { flow simple key: value }
-         * We emit the KEY token before all keys, so when we find a potential
-         * simple key, we try to locate the corresponding ':' indicator.
-         * Simple keys should be limited to a single line and 1024 characters.
-         *
-         * 16 bytes on 64-bit.
-         */
+        /// A simple key is a key that is not denoted by the '?' indicator.
+        /// For example:
+        ///   ---
+        ///   block simple key: value
+        ///   ? not a simple key:
+        ///   : { flow simple key: value }
+        /// We emit the KEY token before all keys, so when we find a potential simple
+        /// key, we try to locate the corresponding ':' indicator. Simple keys should be
+        /// limited to a single line and 1024 characters.
+        ///
+        /// 16 bytes on 64-bit.
         static struct SimpleKey
         {
-            ///Character index in reader where the key starts.
+            /// Character index in reader where the key starts.
             uint charIndex = uint.max;
-            ///Index of the key token from start (first token scanned being 0).
+            /// Index of the key token from start (first token scanned being 0).
             uint tokenIndex;
-            ///Line the key starts at.
+            /// Line the key starts at.
             uint line;
-            ///Column the key starts at.
+            /// Column the key starts at.
             ushort column;
-            ///Is this required to be a simple key?
+            /// Is this required to be a simple key?
             bool required;
-            ///Is this struct "null" (invalid)?.
+            /// Is this struct "null" (invalid)?.
             bool isNull;
         }
 
-        ///Block chomping types.
+        /// Block chomping types.
         enum Chomping
         {
-            ///Strip all trailing line breaks. '-' indicator.
+            /// Strip all trailing line breaks. '-' indicator.
             Strip,
-            ///Line break of the last line is preserved, others discarded. Default.
+            /// Line break of the last line is preserved, others discarded. Default.
             Clip,
-            ///All trailing line breaks are preserved. '+' indicator.
+            /// All trailing line breaks are preserved. '+' indicator.
             Keep
         }
 
-        ///Reader used to read from a file/stream.
+        /// Reader used to read from a file/stream.
         Reader reader_;
-        ///Are we done scanning?
+        /// Are we done scanning?
         bool done_;
 
-        ///Level of nesting in flow context. If 0, we're in block context.
+        /// Level of nesting in flow context. If 0, we're in block context.
         uint flowLevel_;
-        ///Current indentation level.
+        /// Current indentation level.
         int indent_ = -1;
-        ///Past indentation levels. Used as a stack.
+        /// Past indentation levels. Used as a stack.
         Array!int indents_;
 
-        ///Processed tokens not yet emitted. Used as a queue.
+        /// Processed tokens not yet emitted. Used as a queue.
         Queue!Token tokens_;
 
-        ///Number of tokens emitted through the getToken method.
+        /// Number of tokens emitted through the getToken method.
         uint tokensTaken_;
 
-        /**
-         * Can a simple key start at the current position? A simple key may
-         * start:
-         * - at the beginning of the line, not counting indentation spaces
-         *       (in block context),
-         * - after '{', '[', ',' (in the flow context),
-         * - after '?', ':', '-' (in the block context).
-         * In the block context, this flag also signifies if a block collection
-         * may start at the current position.
-         */
+        /// Can a simple key start at the current position? A simple key may start:
+        /// - at the beginning of the line, not counting indentation spaces
+        ///       (in block context),
+        /// - after '{', '[', ',' (in the flow context),
+        /// - after '?', ':', '-' (in the block context).
+        /// In the block context, this flag also signifies if a block collection
+        /// may start at the current position.
         bool allowSimpleKey_ = true;
 
-        ///Possible simple keys indexed by flow levels.
+        /// Possible simple keys indexed by flow levels.
         SimpleKey[] possibleSimpleKeys_;
 
-        ///Used for constructing strings while limiting reallocation.
+        /// Used for constructing strings while limiting reallocation.
         Appender!(dchar[]) appender_;
 
 
