@@ -1008,7 +1008,7 @@ final class Scanner
         }
 
         ///Scan a tag token.
-        Token scanTag() @trusted
+        Token scanTag() @trusted pure
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1239,8 +1239,8 @@ final class Scanner
             return tuple(chunks, endMark);
         }
 
-        ///Scan a qouted flow scalar token with specified quotes.
-        Token scanFlowScalar(const ScalarStyle quotes) @system
+        /// Scan a qouted flow scalar token with specified quotes.
+        Token scanFlowScalar(const ScalarStyle quotes) @system pure
         {
             const startMark = reader_.mark;
             const quote = reader_.get();
@@ -1262,7 +1262,8 @@ final class Scanner
         }
 
         ///Scan nonspace characters in a flow scalar.
-        void scanFlowScalarNonSpaces(const ScalarStyle quotes, const Mark startMark) @system
+        void scanFlowScalarNonSpaces(const ScalarStyle quotes, const Mark startMark) 
+            @safe pure
         {
             for(;;)
             {
@@ -1349,7 +1350,7 @@ final class Scanner
         }
 
         /// Scan space characters in a flow scalar.
-        void scanFlowScalarSpaces(const Mark startMark) @system
+        void scanFlowScalarSpaces(const Mark startMark) @safe pure
         {
             // Increase length as long as we see whitespace.
             uint length = 0;
@@ -1378,7 +1379,7 @@ final class Scanner
         }
 
         /// Scan line breaks in a flow scalar.
-        dstring scanFlowScalarBreaks(const Mark startMark) @system
+        dstring scanFlowScalarBreaks(const Mark startMark) @safe pure
         {
             auto appender = appender!dstring();
             for(;;)
