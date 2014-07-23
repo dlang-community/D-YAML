@@ -701,9 +701,14 @@ final class Scanner
             //No simple keys after plain scalars. But note that scanPlain() will
             //change this flag if the scan is finished at the beginning of the line.
             allowSimpleKey_ = false;
-
+            const plain = scanPlain();
+            if(error_)
+            {
+                error_ = false;
+                throw new Error(errorData_);
+            }
             //Scan and add SCALAR. May change allowSimpleKey_
-            tokens_.push(scanPlain());
+            tokens_.push(plain);
         }
 
 
