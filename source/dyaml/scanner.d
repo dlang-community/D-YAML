@@ -1654,3 +1654,14 @@ final class Scanner
             return '\0';
         }
 }
+
+private:
+
+/// A nothrow function that converts a dstring to a string.
+string utf32To8(dstring str) @safe pure nothrow
+{
+    try                    { return str.to!string; }
+    catch(ConvException e) { assert(false, "Unexpected invalid UTF-32 string"); }
+    catch(Exception e)     { assert(false, "Unexpected exception during UTF-8 encoding"); }
+}
+
