@@ -21,7 +21,7 @@ class YAMLException : Exception
 {
     /// Construct a YAMLException with specified message and position where it was thrown.
     public this(string msg, string file = __FILE__, int line = __LINE__)
-        @trusted pure nothrow
+        @safe pure nothrow
     {
         super(msg, file, line);
     }
@@ -74,7 +74,7 @@ abstract class MarkedYAMLException : YAMLException
 
     // Construct a MarkedYAMLException with specified problem.
     this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
-        @safe pure
+        @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
     }
