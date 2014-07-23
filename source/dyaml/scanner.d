@@ -1355,7 +1355,7 @@ final class Scanner
 
             const c = whitespaces[$ - 1];
             enforce(c != '\0', new Error("While scanning a quoted scalar", startMark,
-                                         "found unexpected end of stream", reader_.mark));
+                                         "found unexpected end of buffer", reader_.mark));
 
             if("\n\r\u0085\u2028\u2029"d.canFind(c))
             {
