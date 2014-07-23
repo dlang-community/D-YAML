@@ -59,7 +59,20 @@ struct Mark
 static assert(Mark.sizeof == 4, "Unexpected Mark size");
 
 package:
-//Base class of YAML exceptions with marked positions of the problem.
+// A struct storing parameters to the MarkedYAMLException constructor.
+struct MarkedYAMLExceptionData
+{
+    // Context of the error.
+    string context;
+    // Position of the context in a YAML buffer.
+    Mark contextMark;
+    // The error itself.
+    string problem;
+    // Position if the error.
+    Mark problemMark;
+}
+
+// Base class of YAML exceptions with marked positions of the problem.
 abstract class MarkedYAMLException : YAMLException
 {
     // Construct a MarkedYAMLException with specified context and problem.
@@ -77,6 +90,12 @@ abstract class MarkedYAMLException : YAMLException
         @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
+    }
+
+    /// Construct a MarkedYAMLException from a struct storing constructor parameters.
+    this(ref const(MarkedYAMLExceptionData) data) @safe pure nothrow
+    {
+        with(data) this(context, contextMark, problem, problemMark);
     }
 }
 
