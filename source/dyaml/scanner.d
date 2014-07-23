@@ -707,20 +707,20 @@ final class Scanner
             return reader_.peek() == '%' && reader_.column == 0;
         }
 
-        ///Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
+        /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
         bool checkDocumentStart() @safe
         {
-            //Check one char first, then all 3, to prevent reading outside stream.
+            // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column    == 0     &&
                    reader_.peek()    == '-'   &&
                    reader_.prefix(3) == "---" &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
-        ///Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
+        /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
         bool checkDocumentEnd() @safe
         {
-            //Check one char first, then all 3, to prevent reading outside stream.
+            // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column    == 0     &&
                    reader_.peek()    == '.'   &&
                    reader_.prefix(3) == "..." &&
@@ -1345,11 +1345,12 @@ final class Scanner
             }
         }
 
-        ///Scan space characters in a flow scalar.
+        /// Scan space characters in a flow scalar.
         void scanFlowScalarSpaces(const Mark startMark) @system
         {
+            // Increase length as long as we see whitespace.
             uint length = 0;
-            while(" \t"d.canFind(reader_.peek(length))){++length;}
+            while(" \t"d.canFind(reader_.peek(length))) { ++length; }
             const whitespaces = reader_.prefix(length + 1);
 
             const c = whitespaces[$ - 1];
@@ -1362,8 +1363,8 @@ final class Scanner
                 const lineBreak = scanLineBreak();
                 const breaks = scanFlowScalarBreaks(startMark);
 
-                if(lineBreak != '\n'){appender_.put(lineBreak);}
-                else if(breaks.length == 0){appender_.put(' ');}
+                if(lineBreak != '\n') { appender_.put(lineBreak); }
+                else if(breaks.length == 0) { appender_.put(' '); }
                 appender_.put(breaks);
             }
             else
@@ -1373,13 +1374,13 @@ final class Scanner
             }
         }
 
-        ///Scan line breaks in a flow scalar.
+        /// Scan line breaks in a flow scalar.
         dstring scanFlowScalarBreaks(const Mark startMark) @system
         {
             auto appender = appender!dstring();
             for(;;)
             {
-                //Instead of checking indentation, we check for document separators.
+                // Instead of checking indentation, we check for document separators.
                 const prefix = reader_.prefix(3);
                 if((prefix == "---"d || prefix == "..."d) &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
@@ -1388,13 +1389,13 @@ final class Scanner
                                     "found unexpected document separator", reader_.mark);
                 }
 
-                while(" \t"d.canFind(reader_.peek())){reader_.forward();}
+                while(" \t"d.canFind(reader_.peek())) { reader_.forward(); }
 
                 if("\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
                 {
                     appender.put(scanLineBreak());
                 }
-                else{return appender.data;}
+                else { return appender.data; }
             }
         }
 
@@ -1463,11 +1464,11 @@ final class Scanner
             return scalarToken(startMark, endMark, to!string(cast(dstring)appender_.data), ScalarStyle.Plain);
         }
 
-        ///Scan spaces in a plain scalar.
+        /// Scan spaces in a plain scalar.
         dstring scanPlainSpaces(const Mark startMark) @system
         {
-            ///The specification is really confusing about tabs in plain scalars.
-            ///We just forbid them completely. Do not use tabs in YAML!
+            // The specification is really confusing about tabs in plain scalars.
+            // We just forbid them completely. Do not use tabs in YAML!
             auto appender = appender!dstring();
 
             uint length = 0;
@@ -1499,8 +1500,8 @@ final class Scanner
                     }
                 }
 
-                if(lineBreak != '\n'){appender.put(lineBreak);}
-                else if(breaks.length == 0){appender.put(' ');}
+                if(lineBreak != '\n') { appender.put(lineBreak); }
+                else if(breaks.length == 0) { appender.put(' '); }
                 appender.put(breaks);
             }
             else if(whitespaces.length > 0)
@@ -1619,26 +1620,24 @@ final class Scanner
         }
 
 
-        /**
-         * Scan a line break, if any.
-         *
-         * Transforms:
-         *   '\r\n'      :   '\n'
-         *   '\r'        :   '\n'
-         *   '\n'        :   '\n'
-         *   '\u0085'    :   '\n'
-         *   '\u2028'    :   '\u2028'
-         *   '\u2029     :   '\u2029'
-         *   no break    :   '\0'
-         */
+        /// Scan a line break, if any.
+        ///
+        /// Transforms:
+        ///   '\r\n'      :   '\n'
+        ///   '\r'        :   '\n'
+        ///   '\n'        :   '\n'
+        ///   '\u0085'    :   '\n'
+        ///   '\u2028'    :   '\u2028'
+        ///   '\u2029     :   '\u2029'
+        ///   no break    :   '\0'
         dchar scanLineBreak() @safe
         {
             const c = reader_.peek();
 
             if(c == '\n' || c == '\r' || c == '\u0085')
             {
-                if(reader_.prefix(2) == "\r\n"d){reader_.forward(2);}
-                else{reader_.forward();}
+                if(reader_.prefix(2) == "\r\n"d) { reader_.forward(2); }
+                else { reader_.forward(); }
                 return '\n';
             }
             if(c == '\u2028' || c == '\u2029')
