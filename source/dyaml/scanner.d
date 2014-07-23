@@ -785,7 +785,7 @@ final class Scanner
         ///Move to the next non-space character.
         void findNextNonSpace() @safe
         {
-            while(reader_.peek() == ' '){reader_.forward();}
+            while(reader_.peek() == ' ') { reader_.forward(); }
         }
 
         ///Scan a string of alphanumeric or "-_" characters.
@@ -811,7 +811,10 @@ final class Scanner
         dstring scanToNextBreak() @safe
         {
             uint length = 0;
-            while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length))){++length;}
+            while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
+            {
+                ++length;
+            }
             return reader_.get(length);
         }
 
@@ -912,11 +915,11 @@ final class Scanner
             enforce(isDigit(reader_.peek()),
                     new Error("While scanning a directive", startMark,
                               "expected a digit, but found: " ~
-                              to!string(reader_.peek()), reader_.mark));
+                              reader_.peek().to!string, reader_.mark));
 
-            //Already found the first digit in the enforce(), so set length to 1.
+            // Already found the first digit in the enforce(), so set length to 1.
             uint length = 1;
-            while(isDigit(reader_.peek(length))){++length;}
+            while(isDigit(reader_.peek(length))) { ++length; }
 
             return reader_.get(length);
         }
@@ -1402,24 +1405,24 @@ final class Scanner
         ///Scan plain scalar token (no block, no quotes).
         Token scanPlain() @system
         {
-            //We keep track of the allowSimpleKey_ flag here.
-            //Indentation rules are loosed for the flow context
-            //Using appender_, so clear it when we're done.
-            scope(exit){appender_.clear();}
+            // We keep track of the allowSimpleKey_ flag here.
+            // Indentation rules are loosed for the flow context
+            // Using appender_, so clear it when we're done.
+            scope(exit) { appender_.clear(); }
             const startMark = reader_.mark;
             Mark endMark = startMark;
             const indent = indent_ + 1;
 
-            //We allow zero indentation for scalars, but then we need to check for
-            //document separators at the beginning of the line.
-            //if(indent == 0){indent = 1;}
+            // We allow zero indentation for scalars, but then we need to check for
+            // document separators at the beginning of the line.
+            // if(indent == 0) { indent = 1; }
             dstring spaces;
 
             mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
 
             for(;;)
             {
-                if(reader_.peek() == '#'){break;}
+                if(reader_.peek() == '#') { break; }
 
                 uint length = 0;
 
@@ -1430,11 +1433,11 @@ final class Scanner
                     const bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' &&
                                       search.canFind(reader_.peek(length + 1))) ||
                                       (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
-                    if(done){break;}
+                    if(done) { break; }
                     ++length;
                 }
 
-                //It's not clear what we should do with ':' in the flow context.
+                // It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
                    !search.canFind(reader_.peek(length + 1)) &&
                    !",[]{}"d.canFind(reader_.peek(length + 1)))
@@ -1446,7 +1449,7 @@ final class Scanner
                                     "for details.", reader_.mark);
                 }
 
-                if(length == 0){break;}
+                if(length == 0) { break; }
                 allowSimpleKey_ = false;
 
                 appender_.put(spaces);
@@ -1461,7 +1464,9 @@ final class Scanner
                     break;
                 }
             }
-            return scalarToken(startMark, endMark, to!string(cast(dstring)appender_.data), ScalarStyle.Plain);
+            return scalarToken(startMark, endMark, 
+                               to!string(cast(dstring)appender_.data),
+                               ScalarStyle.Plain);
         }
 
         /// Scan spaces in a plain scalar.
@@ -1472,7 +1477,7 @@ final class Scanner
             auto appender = appender!dstring();
 
             uint length = 0;
-            while(reader_.peek(length) == ' '){++length;}
+            while(reader_.peek(length) == ' ') { ++length; }
             dstring whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
@@ -1492,7 +1497,7 @@ final class Scanner
                 dstring breaks;
                 while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
                 {
-                    if(reader_.peek() == ' '){reader_.forward();}
+                    if(reader_.peek() == ' ') { reader_.forward(); }
                     else
                     {
                         breaks ~= scanLineBreak();
@@ -1518,7 +1523,7 @@ final class Scanner
             dchar c = reader_.peek();
             enforce(c == '!',
                     new Error("While scanning a " ~ name, startMark,
-                              "expected a '!', but found: " ~ to!string(c), reader_.mark));
+                              "expected a '!', but found: " ~ c.to!string, reader_.mark));
 
             uint length = 1;
             c = reader_.peek(length);
@@ -1533,7 +1538,7 @@ final class Scanner
                 {
                     reader_.forward(length);
                     throw new Error("While scanning a " ~ name, startMark,
-                                    "expected a '!', but found: " ~ to!string(c),
+                                    "expected a '!', but found: " ~ c.to!string,
                                     reader_.mark);
                 }
                 ++length;
@@ -1544,9 +1549,9 @@ final class Scanner
         ///Scan URI in a tag token.
         dstring scanTagURI(const string name, const Mark startMark) @system
         {
-            //Note: we do not check if URI is well-formed.
-            //Using appender_, so clear it when we're done.
-            scope(exit){appender_.clear();}
+            // Note: we do not check if URI is well-formed.
+            // Using appender_, so clear it when we're done.
+            scope(exit) { appender_.clear(); }
             uint length = 0;
 
             dchar c = reader_.peek();
@@ -1558,7 +1563,7 @@ final class Scanner
                     length = 0;
                     appender_.put(scanURIEscapes(name, startMark));
                 }
-                else{++length;}
+                else { ++length; }
                 c = reader_.peek(length);
             }
             if(length > 0)
@@ -1568,7 +1573,7 @@ final class Scanner
             }
             enforce(appender_.data.length > 0,
                     new Error("While parsing a " ~ name, startMark,
-                              "expected URI, but found: " ~ to!string(c), reader_.mark));
+                              "expected URI, but found: " ~ c.to!string, reader_.mark));
 
             return cast(dstring)appender_.data;
         }
@@ -1585,7 +1590,7 @@ final class Scanner
 
                 ubyte b = 0;
                 uint mult = 16;
-                //Converting 2 hexadecimal digits to a byte.
+                // Converting 2 hexadecimal digits to a byte.
                 foreach(k; 0 .. 2)
                 {
                     const dchar c = reader_.peek(k);
@@ -1593,13 +1598,13 @@ final class Scanner
                             new Error("While scanning a " ~ name, startMark,
                                       "expected URI escape sequence of "
                                       "2 hexadecimal numbers, but found: " ~
-                                      to!string(c), reader_.mark));
+                                      c.to!string, reader_.mark));
 
                     uint digit;
-                    if(c - '0' < 10){digit = c - '0';}
-                    else if(c - 'A' < 6){digit = c - 'A';}
-                    else if(c - 'a' < 6){digit = c - 'a';}
-                    else{assert(false);}
+                    if(c - '0' < 10)     { digit = c - '0'; }
+                    else if(c - 'A' < 6) { digit = c - 'A'; }
+                    else if(c - 'a' < 6) { digit = c - 'a'; }
+                    else                 { assert(false); }
                     b += mult * digit;
                     mult /= 16;
                 }
@@ -1608,7 +1613,7 @@ final class Scanner
                 reader_.forward(2);
             }
 
-            try{return to!dstring(cast(string)bytes);}
+            try { return to!dstring(cast(string)bytes); }
             catch(ConvException e)
             {
                 throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
