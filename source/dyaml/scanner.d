@@ -872,7 +872,7 @@ final class Scanner
             scanDirectiveIgnoredLine(startMark);
 
             //Storing directive name and value in a single string, separated by zero.
-            return directiveToken(startMark, endMark, to!string(name ~ '\0' ~ value));
+            return directiveToken(startMark, endMark, utf32To8(name ~ '\0' ~ value));
         }
 
         ///Scan name of a directive token.
@@ -998,11 +998,11 @@ final class Scanner
 
             if(id == TokenID.Alias)
             {
-                return aliasToken(startMark, reader_.mark, to!string(value));
+                return aliasToken(startMark, reader_.mark, value.utf32To8);
             }
             else if(id == TokenID.Anchor)
             {
-                return anchorToken(startMark, reader_.mark, to!string(value));
+                return anchorToken(startMark, reader_.mark, value.utf32To8);
             }
             assert(false, "This code should never be reached");
         }
@@ -1060,7 +1060,7 @@ final class Scanner
                     new Error("While scanning a tag", startMark,
                               "expected ' ' but found" ~ reader_.peek().to!string,
                               reader_.mark));
-            return tagToken(startMark, reader_.mark, to!string(handle ~ '\0' ~ suffix));
+            return tagToken(startMark, reader_.mark, utf32To8(handle ~ '\0' ~ suffix));
         }
 
         ///Scan a block scalar token with specified style.
@@ -1141,7 +1141,7 @@ final class Scanner
             if(chomping != Chomping.Strip){appender_.put(lineBreak);}
             if(chomping == Chomping.Keep){appender_.put(breaks);}
 
-            return scalarToken(startMark, endMark, to!string(cast(dstring)appender_.data), style);
+            return scalarToken(startMark, endMark, utf32To8(cast(dstring)appender_.data), style);
         }
 
         ///Scan chomping and indentation indicators of a scalar token.
@@ -1258,7 +1258,7 @@ final class Scanner
             }
             reader_.forward();
 
-            return scalarToken(startMark, reader_.mark, to!string(cast(dstring)appender_.data), quotes);
+            return scalarToken(startMark, reader_.mark, utf32To8(cast(dstring)appender_.data), quotes);
         }
 
         ///Scan nonspace characters in a flow scalar.
