@@ -16,10 +16,10 @@ import std.conv;
 alias to!string str;
 
 
-///Base class for all exceptions thrown by D:YAML.
+/// Base class for all exceptions thrown by D:YAML.
 class YAMLException : Exception
 {
-    ///Construct a YAMLException with specified message and position where it was thrown.
+    /// Construct a YAMLException with specified message and position where it was thrown.
     public this(string msg, string file = __FILE__, int line = __LINE__)
         @trusted pure nothrow
     {
@@ -49,8 +49,8 @@ struct Mark
         {
             /// Line/column numbers start at zero internally, make them start at 1.
             static string clamped(ushort v) @safe pure nothrow
-            { 
-                return str(v + 1) ~ (v == ushort.max ? " or higher" : ""); 
+            {
+                return str(v + 1) ~ (v == ushort.max ? " or higher" : "");
             }
             return "line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
         }
@@ -62,9 +62,9 @@ package:
 //Base class of YAML exceptions with marked positions of the problem.
 abstract class MarkedYAMLException : YAMLException
 {
-    //Construct a MarkedYAMLException with specified context and problem.
+    // Construct a MarkedYAMLException with specified context and problem.
     this(string context, Mark contextMark, string problem, Mark problemMark,
-         string file = __FILE__, int line = __LINE__) @safe pure
+         string file = __FILE__, int line = __LINE__) @safe pure nothrow
     {
         const msg = context ~ '\n' ~
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
@@ -72,7 +72,7 @@ abstract class MarkedYAMLException : YAMLException
         super(msg, file, line);
     }
 
-    //Construct a MarkedYAMLException with specified problem.
+    // Construct a MarkedYAMLException with specified problem.
     this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
         @safe pure
     {
@@ -80,7 +80,9 @@ abstract class MarkedYAMLException : YAMLException
     }
 }
 
-//Constructors of YAML exceptions are mostly the same, so we use a mixin.
+// Constructors of YAML exceptions are mostly the same, so we use a mixin.
+//
+// See_Also: YAMLException
 template ExceptionCtors()
 {
     public this(string msg, string file = __FILE__, int line = __LINE__)
@@ -90,14 +92,16 @@ template ExceptionCtors()
     }
 }
 
-//Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+// Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+//
+// See_Also: MarkedYAMLException
 template MarkedExceptionCtors()
 {
     public:
         this(string context, Mark contextMark, string problem, Mark problemMark,
              string file = __FILE__, int line = __LINE__) @safe pure
         {
-            super(context, contextMark, problem, problemMark, 
+            super(context, contextMark, problem, problemMark,
                   file, line);
         }
 
@@ -105,5 +109,10 @@ template MarkedExceptionCtors()
             @safe pure
         {
             super(problem, problemMark, file, line);
+        }
+
+        this(ref const(MarkedYAMLExceptionData) data) @safe pure nothrow
+        {
+            super(data);
         }
 }
