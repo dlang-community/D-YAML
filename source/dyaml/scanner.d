@@ -1021,7 +1021,7 @@ final class Scanner
                 suffix = scanTagURI("tag", startMark);
                 enforce(reader_.peek() == '>',
                         new Error("While scanning a tag", startMark,
-                                  "expected '>' but found" ~ to!string(reader_.peek()),
+                                  "expected '>' but found" ~ reader_.peek().to!string,
                                   reader_.mark));
                 reader_.forward();
             }
@@ -1046,7 +1046,7 @@ final class Scanner
                     c = reader_.peek(length);
                 }
 
-                if(useHandle){handle = scanTagHandle("tag", startMark);}
+                if(useHandle) { handle = scanTagHandle("tag", startMark); }
                 else
                 {
                     handle = "!";
@@ -1058,7 +1058,7 @@ final class Scanner
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a tag", startMark,
-                              "expected ' ' but found" ~ to!string(reader_.peek()),
+                              "expected ' ' but found" ~ reader_.peek().to!string,
                               reader_.mark));
             return tagToken(startMark, reader_.mark, to!string(handle ~ '\0' ~ suffix));
         }
@@ -1245,14 +1245,14 @@ final class Scanner
             const startMark = reader_.mark;
             const quote = reader_.get();
 
-            //Using appender_, so clear it when we're done.
-            scope(exit){appender_.clear();}
+            // Using appender_, so clear it when we're done.
+            scope(exit) { appender_.clear(); }
 
-            //Puts scanned data to appender_.
+            // Puts scanned data to appender_.
             scanFlowScalarNonSpaces(quotes, startMark);
             while(reader_.peek() != quote)
             {
-                //Puts scanned data to appender_.
+                // Puts scanned data to appender_.
                 scanFlowScalarSpaces(startMark);
                 scanFlowScalarNonSpaces(quotes, startMark);
             }
