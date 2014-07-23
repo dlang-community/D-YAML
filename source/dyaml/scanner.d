@@ -69,6 +69,7 @@ class ScannerException : MarkedYAMLException
 }
 
 private alias ScannerException Error;
+private alias MarkedYAMLExceptionData ErrorData;
 
 ///Generates tokens from data provided by a Reader.
 final class Scanner
@@ -149,6 +150,16 @@ final class Scanner
 
         ///Used for constructing strings while limiting reallocation.
         Appender!(dchar[]) appender_;
+
+
+        /// Set on error by nothrow/@nogc inner functions along with errorData_.
+        ///
+        /// Non-nothrow/GC-using caller functions can then throw an exception using
+        /// data stored in errorData_.
+        bool error_;
+
+        /// Data for the exception to throw if error_ is true.
+        ErrorData errorData_;
 
     public:
         ///Construct a Scanner using specified Reader.
