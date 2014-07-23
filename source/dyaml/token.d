@@ -4,10 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/**
- * YAML tokens.
- * Code based on PyYAML: http://www.pyyaml.org
- */
+/// YAML tokens.
+/// Code based on PyYAML: http://www.pyyaml.org
 module dyaml.token;
 
 
@@ -20,7 +18,8 @@ import dyaml.style;
 
 
 package:
-///Token types.
+
+/// Token types.
 enum TokenID : ubyte
 {
     Invalid = 0,        /// Invalid (uninitialized) token
@@ -29,8 +28,8 @@ enum TokenID : ubyte
     DocumentEnd,        /// DOCUMENT-END
     StreamStart,        /// STREAM-START
     StreamEnd,          /// STREAM-END
-    BlockSequenceStart, /// BLOCK-SEQUENCE-START 
-    BlockMappingStart,  /// BLOCK-MAPPING-START 
+    BlockSequenceStart, /// BLOCK-SEQUENCE-START
+    BlockMappingStart,  /// BLOCK-MAPPING-START
     BlockEnd,           /// BLOCK-END
     FlowSequenceStart,  /// FLOW-SEQUENCE-START
     FlowMappingStart,   /// FLOW-MAPPING-START
@@ -46,69 +45,63 @@ enum TokenID : ubyte
     Scalar              /// SCALAR
 }
 
-/**
- * Token produced by scanner.
- *
- * 32 bytes on 64-bit.
- */
-struct Token 
+/// Token produced by scanner.
+///
+/// 32 bytes on 64-bit.
+struct Token
 {
     @disable int opCmp(ref Token);
 
-    ///Value of the token, if any.
+    /// Value of the token, if any.
     string value;
-    ///Start position of the token in file/stream.
+    /// Start position of the token in file/stream.
     Mark startMark;
-    ///End position of the token in file/stream.
+    /// End position of the token in file/stream.
     Mark endMark;
-    ///Token type.
+    /// Token type.
     TokenID id;
-    ///Style of scalar token, if this is a scalar token.
+    /// Style of scalar token, if this is a scalar token.
     ScalarStyle style;
-    ///Encoding, if this is a stream start token.
+    /// Encoding, if this is a stream start token.
     Encoding encoding;
 
-    ///Get string representation of the token ID.
-    @property string idString() const @trusted {return to!string(id);}
+    /// Get string representation of the token ID.
+    @property string idString() @safe pure const {return id.to!string;}
 }
 
-/**
- * Construct a directive token.
- *
- * Params:  start = Start position of the token.
- *          end   = End position of the token. 
- *          value = Value of the token.
- */
-Token directiveToken(const Mark start, const Mark end, const string value) pure @safe nothrow
+@safe pure nothrow @nogc:
+
+/// Construct a directive token.
+///
+/// Params:  start = Start position of the token.
+///          end   = End position of the token.
+///          value = Value of the token.
+Token directiveToken(const Mark start, const Mark end, const string value)
 {
     return Token(value, start, end, TokenID.Directive);
 }
 
-/**
- * Construct a simple (no value) token with specified type.
- * 
- * Params:  id    = Type of the token.
- *          start = Start position of the token.
- *          end   = End position of the token.
- */
-Token simpleToken(TokenID id)(const Mark start, const Mark end) pure @safe nothrow
+/// Construct a simple (no value) token with specified type.
+///
+/// Params:  id    = Type of the token.
+///          start = Start position of the token.
+///          end   = End position of the token.
+Token simpleToken(TokenID id)(const Mark start, const Mark end)
 {
     return Token(null, start, end, id);
 }
 
-/**
- * Construct a stream start token.
- *
- * Params:  start    = Start position of the token.
- *          end      = End position of the token.
- *          encoding = Encoding of the stream.
- */
-Token streamStartToken(const Mark start, const Mark end, const Encoding encoding) pure @safe nothrow
+/// Construct a stream start token.
+///
+/// Params:  start    = Start position of the token.
+///          end      = End position of the token.
+///          encoding = Encoding of the stream.
+Token streamStartToken(const Mark start, const Mark end, const Encoding encoding)
 {
     return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
 }
 
-///Aliases for construction of simple token types.
+/// Aliases for construction of simple token types.
 alias simpleToken!(TokenID.StreamEnd)          streamEndToken;
 alias simpleToken!(TokenID.BlockSequenceStart) blockSequenceStartToken;
 alias simpleToken!(TokenID.BlockMappingStart)  blockMappingStartToken;
@@ -118,33 +111,29 @@ alias simpleToken!(TokenID.Value)              valueToken;
 alias simpleToken!(TokenID.BlockEntry)         blockEntryToken;
 alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
 
-/**
- * Construct a simple token with value with specified type.
- * 
- * Params:  id    = Type of the token.
- *          start = Start position of the token.
- *          end   = End position of the token.
- *          value = Value of the token.
- */
-Token simpleValueToken(TokenID id)(const Mark start, const Mark end, string value) pure @safe nothrow
+/// Construct a simple token with value with specified type.
+///
+/// Params:  id    = Type of the token.
+///          start = Start position of the token.
+///          end   = End position of the token.
+///          value = Value of the token.
+Token simpleValueToken(TokenID id)(const Mark start, const Mark end, const string value)
 {
     return Token(value, start, end, id);
 }
 
-///Alias for construction of tag token.
+/// Alias for construction of tag token.
 alias simpleValueToken!(TokenID.Tag) tagToken;
 alias simpleValueToken!(TokenID.Alias) aliasToken;
 alias simpleValueToken!(TokenID.Anchor) anchorToken;
 
-/**
- * Construct a scalar token.
- *
- * Params:  start = Start position of the token.
- *          end   = End position of the token. 
- *          value = Value of the token.
- *          style = Style of the token.
- */
-Token scalarToken(const Mark start, const Mark end, const string value, in ScalarStyle style) pure @safe nothrow
+/// Construct a scalar token.
+///
+/// Params:  start = Start position of the token.
+///          end   = End position of the token.
+///          value = Value of the token.
+///          style = Style of the token.
+Token scalarToken(const Mark start, const Mark end, const string value, const ScalarStyle style)
 {
     return Token(value, start, end, TokenID.Scalar, style);
 }
