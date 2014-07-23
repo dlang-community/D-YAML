@@ -1481,13 +1481,13 @@ final class Scanner
                 const lineBreak = scanLineBreak();
                 allowSimpleKey_ = true;
 
-                bool end()
+                static bool end(Reader reader)
                 {
-                    return ["---"d, "..."d].canFind(reader_.prefix(3)) &&
-                           " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
+                    return ["---"d, "..."d].canFind(reader.prefix(3)) &&
+                           " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader.peek(3));
                 }
 
-                if(end()){return "";}
+                if(end(reader_)) { return ""; }
 
                 dstring breaks;
                 while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
@@ -1496,7 +1496,7 @@ final class Scanner
                     else
                     {
                         breaks ~= scanLineBreak();
-                        if(end()){return "";}
+                        if(end(reader_)) { return ""; }
                     }
                 }
 
