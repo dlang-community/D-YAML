@@ -360,6 +360,64 @@ public:
         reader_.buffer_[end_++] = c;
     }
 
+    /// A slice building transaction.
+    ///
+    /// Can be used to save and revert back to slice state.
+    struct Transaction
+    {
+    private:
+        // The slice builder affected by the transaction.
+        SliceBuilder* builder_ = null;
+        // Index of the return point of the transaction in StringBuilder.endStack_.
+        size_t stackLevel_;
+        // True after commit() has been called.
+        bool committed_;
+
+    public:
+        /// Begins a transaction on a SliceBuilder object.
+        ///
+        /// The transaction must end $(B after) any transactions created within the
+        /// transaction but $(B before) the slice is finish()-ed. A transaction can be
+        /// ended either by commit()-ing or reverting through the destructor.
+        ///
+        /// Saves the current state of a slice.
+        this(ref SliceBuilder builder) @system pure nothrow @nogc
+        {
+            builder_ = &builder;
+            stackLevel_ = builder_.endStackUsed_;
+            builder_.push();
+        }
+
+        /// Commit changes to the slice. 
+        ///
+        /// Ends the transaction - can only be called once, and removes the possibility
+        /// to revert slice state.
+        ///
+        /// Does nothing for a default-initialized transaction (the transaction has not
+        /// been started yet).
+        void commit() @system pure nothrow @nogc
+        {
+            assert(!committed_, "Can't commit a transaction more than once");
+
+            if(builder_ is null) { return; }
+            assert(builder_.endStackUsed_ == stackLevel_ + 1,
+                   "Parent transactions don't fully contain child transactions");
+            builder_.apply();
+            committed_ = true;
+        }
+
+        /// Destroy the transaction and revert it if it hasn't been committed yet.
+        ///
+        /// Does nothing for a default-initialized transaction.
+        ~this() @system pure nothrow @nogc
+        {
+            if(builder_ is null || committed_) { return; }
+            assert(builder_.endStackUsed_ == stackLevel_ + 1,
+                   "Parent transactions don't fully contain child transactions");
+            builder_.pop();
+            builder_ = null;
+        }
+    }
 
 private:
     // Push the current end of the slice so we can revert to it if needed.
