@@ -1273,77 +1273,82 @@ final class Scanner
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
-        Token scanFlowScalar(const ScalarStyle quotes) @safe pure
+        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
 
-            // Using appender_, so clear it when we're done.
-            scope(exit) { appender_.clear(); }
+            reader_.sliceBuilder.begin();
+            //XXX remove once nothrow
+            scope(failure) { reader_.sliceBuilder.finish(); }
+            scope(exit) { if(error_) {reader_.sliceBuilder.finish();}}
 
-            // Puts scanned data to appender_.
-            scanFlowScalarNonSpaces(quotes, startMark);
+            scanFlowScalarNonSpacesToSlice(quotes, startMark);
             while(reader_.peek() != quote)
             {
-                // Puts scanned data to appender_.
-                scanFlowScalarSpaces(startMark);
-                scanFlowScalarNonSpaces(quotes, startMark);
+                scanFlowScalarSpacesToSlice(startMark);
+                scanFlowScalarNonSpacesToSlice(quotes, startMark);
             }
             reader_.forward();
 
-            return scalarToken(startMark, reader_.mark, utf32To8(appender_.data), quotes);
+            auto slice = reader_.sliceBuilder.finish();
+            return scalarToken(startMark, reader_.mark, slice.utf32To8, quotes);
         }
 
-        ///Scan nonspace characters in a flow scalar.
-        void scanFlowScalarNonSpaces(const ScalarStyle quotes, const Mark startMark)
-            @safe pure
+        /// Scan nonspace characters in a flow scalar.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
+            @system pure
         {
-            for(;;)
+            for(;;) with(ScalarStyle)
             {
                 dchar c = reader_.peek();
                 uint length = 0;
 
                 mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
 
-                //This is an optimized way of writing:
-                //while(!search.canFind(reader_.peek(length))){++length;}
+                // This is an optimized way of writing:
+                // while(!search.canFind(reader_.peek(length))){++length;}
                 outer: for(;;)
                 {
                     const slice = reader_.slice(length, length + 32);
+                    // XXX will be thrown by parent
                     enforce(slice.length > 0,
                             new Error("While reading a flow scalar", startMark,
                                       "reached end of file", reader_.mark));
                     foreach(ch; slice)
                     {
-                        if(search.canFind(ch)){break outer;}
+                        if(search.canFind(ch)) { break outer; }
                         ++length;
                     }
                 }
 
-                appender_.put(reader_.prefix(length));
-                reader_.forward(length);
+                reader_.sliceBuilder.write(reader_.get(length));
 
                 c = reader_.peek();
-                if(quotes == ScalarStyle.SingleQuoted &&
-                   c == '\'' && reader_.peek(1) == '\'')
+                if(quotes == SingleQuoted && c == '\'' && reader_.peek(1) == '\'')
                 {
-                    appender_.put('\'');
                     reader_.forward(2);
+                    reader_.sliceBuilder.write('\'');
                 }
-                else if((quotes == ScalarStyle.DoubleQuoted && c == '\'') ||
-                        (quotes == ScalarStyle.SingleQuoted && "\"\\"d.canFind(c)))
+                else if((quotes == DoubleQuoted && c == '\'') ||
+                        (quotes == SingleQuoted && "\"\\"d.canFind(c)))
                 {
-                    appender_.put(c);
                     reader_.forward();
+                    reader_.sliceBuilder.write(c);
                 }
-                else if(quotes == ScalarStyle.DoubleQuoted && c == '\\')
+                else if(quotes == DoubleQuoted && c == '\\')
                 {
                     reader_.forward();
                     c = reader_.peek();
                     if((c in dyaml.escapes.fromEscapes) !is null)
                     {
-                        appender_.put(dyaml.escapes.fromEscapes[c]);
                         reader_.forward();
+                        // This works because fromEscapes is dchar[dchar] - we use at
+                        // most the space freed by the forward() call above.
+                        reader_.sliceBuilder.write(dyaml.escapes.fromEscapes[c]);
                     }
                     else if((c in dyaml.escapes.escapeHexCodes) !is null)
                     {
@@ -1355,66 +1360,79 @@ final class Scanner
                             enforce(isHexDigit(reader_.peek(i)),
                                     new Error(
                                         "While scanning a double qouted scalar", startMark,
-                                        "expected escape sequence of " ~ to!string(length) ~
+                                        "expected escape sequence of " ~ length.to!string ~
                                         " hexadecimal numbers, but found " ~
-                                        to!string(reader_.peek(i)), reader_.mark));
+                                        reader_.peek(i).to!string, reader_.mark));
                         }
 
                         dchar[] hex = reader_.get(length);
-                        appender_.put(cast(dchar)parse!int(hex, 16));
+                        reader_.sliceBuilder.write(cast(dchar)parse!int(hex, 16));
                     }
                     else if("\n\r\u0085\u2028\u2029"d.canFind(c))
                     {
                         scanLineBreak();
-                        appender_.put(scanFlowScalarBreaks(startMark));
+                        scanFlowScalarBreaksToSlice(startMark);
+                        throwIfError();
                     }
                     else
                     {
                         throw new Error("While scanning a double quoted scalar", startMark,
-                                        "found unknown escape character: " ~ to!string(c),
+                                        "found unknown escape character: " ~ c.to!string,
                                         reader_.mark);
                     }
                 }
-                else
-                {
-                    return;
-                }
+                else { return; }
             }
         }
 
         /// Scan space characters in a flow scalar.
-        void scanFlowScalarSpaces(const Mark startMark) @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// spaces into that slice.
+        void scanFlowScalarSpacesToSlice(const Mark startMark) @system pure
         {
             // Increase length as long as we see whitespace.
-            uint length = 0;
+            size_t length = 0;
             while(" \t"d.canFind(reader_.peek(length))) { ++length; }
-            const whitespaces = reader_.prefix(length + 1);
+            auto whitespaces = reader_.prefix(length + 1);
 
             const c = whitespaces[$ - 1];
             enforce(c != '\0', new Error("While scanning a quoted scalar", startMark,
                                          "found unexpected end of buffer", reader_.mark));
 
-            if("\n\r\u0085\u2028\u2029"d.canFind(c))
+            // Spaces not followed by a line break.
+            if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 reader_.forward(length);
-                const lineBreak = scanLineBreak();
-                const breaks = scanFlowScalarBreaks(startMark);
+                reader_.sliceBuilder.write(whitespaces[0 .. $ - 1]);
+                return;
+            }
 
-                if(lineBreak != '\n') { appender_.put(lineBreak); }
-                else if(breaks.length == 0) { appender_.put(' '); }
-                appender_.put(breaks);
-            }
-            else
-            {
-                appender_.put(whitespaces[0 .. $ - 1]);
-                reader_.forward(length);
-            }
+            // There's a line break after the spaces.
+            reader_.forward(length);
+            const lineBreak = scanLineBreak();
+
+            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
+
+            // If we have extra line breaks after the first, scan them into the
+            // slice.
+            const bool extraBreaks = scanFlowScalarBreaksToSlice(startMark);
+            throwIfError();
+            // No extra breaks, one normal line break. Replace it with a space.
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
         }
 
         /// Scan line breaks in a flow scalar.
-        dchar[] scanFlowScalarBreaks(const Mark startMark) @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// line breaks into that slice.
+        ///
+        /// In case of an error, error_ is set. Check this before using the result.
+        bool scanFlowScalarBreaksToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
-            auto appender = appender!(dchar[])();
+            // True if at least one line break was found.
+            bool anyBreaks;
             for(;;)
             {
                 // Instead of checking indentation, we check for document separators.
@@ -1422,18 +1440,22 @@ final class Scanner
                 if((prefix == "---"d || prefix == "..."d) &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
                 {
-                    throw new Error("While scanning a quoted scalar", startMark,
-                                    "found unexpected document separator", reader_.mark);
+                    setError("While scanning a quoted scalar", startMark,
+                             "found unexpected document separator", reader_.mark);
+                    return false;
                 }
 
+                // Skip any whitespaces.
                 while(" \t"d.canFind(reader_.peek())) { reader_.forward(); }
 
-                if("\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
-                {
-                    appender.put(scanLineBreak());
-                }
-                else { return appender.data; }
+                // Encountered a non-whitespace non-linebreak character, so we're done.
+                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { break; }
+
+                const lineBreak = scanLineBreak();
+                anyBreaks = true;
+                reader_.sliceBuilder.write(lineBreak);
             }
+            return anyBreaks;
         }
 
         /// Scan plain scalar token (no block, no quotes).
