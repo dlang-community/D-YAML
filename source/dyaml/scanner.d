@@ -1415,12 +1415,10 @@ final class Scanner
         }
 
         /// Scan plain scalar token (no block, no quotes).
-        Token scanPlain() @system pure
+        Token scanPlain() @system pure nothrow
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
-            // Using appender_, so clear it when we're done.
-            scope(exit) { appender_.clear(); }
             const startMark = reader_.mark;
             Mark endMark = startMark;
             const indent = indent_ + 1;
@@ -1432,12 +1430,15 @@ final class Scanner
 
             mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
 
-            for(;;)
+            reader_.sliceBuilder.begin();
+
+            alias Transaction = SliceBuilder.Transaction;
+            Transaction spacesTransaction;
+            // Stop at a comment.
+            while(reader_.peek() != '#')
             {
-                if(reader_.peek() == '#') { break; }
-
+                // Scan the entire plain scalar.
                 uint length = 0;
-
                 dchar c;
                 for(;;)
                 {
@@ -1454,79 +1455,112 @@ final class Scanner
                    !search.canFind(reader_.peek(length + 1)) &&
                    !",[]{}"d.canFind(reader_.peek(length + 1)))
                 {
+                    // This is an error; throw the slice away.
+                    spacesTransaction.commit();
+                    reader_.sliceBuilder.finish();
                     reader_.forward(length);
-                    throw new Error("While scanning a plain scalar", startMark,
-                                    "found unexpected ':' . Please check "
-                                    "http://pyyaml.org/wiki/YAMLColonInFlowContext "
-                                    "for details.", reader_.mark);
+                    errorData_ = ErrorData("While scanning a plain scalar", startMark,
+                                           "found unexpected ':' . Please check "
+                                           "http://pyyaml.org/wiki/YAMLColonInFlowContext "
+                                           "for details.", reader_.mark);
+                    error_ = true;
+                    return Token.init;
                 }
 
                 if(length == 0) { break; }
+
                 allowSimpleKey_ = false;
 
-                appender_.put(spaces);
-                appender_.put(reader_.get(length));
+                reader_.sliceBuilder.write(reader_.get(length));
 
                 endMark = reader_.mark;
 
-                spaces = scanPlainSpaces(startMark);
-                if(spaces.length == 0 || reader_.peek() == '#' ||
-                   (flowLevel_ == 0 && reader_.column < indent))
+                spacesTransaction.commit();
+                spacesTransaction = Transaction(reader_.sliceBuilder);
+
+                const bool anySpaces = scanPlainSpacesToSlice(startMark);
+                if(!anySpaces || (flowLevel_ == 0 && reader_.column < indent))
                 {
                     break;
                 }
             }
-            return scalarToken(startMark, endMark, 
-                               to!string(cast(dstring)appender_.data),
-                               ScalarStyle.Plain);
+
+            spacesTransaction.__dtor();
+            const dstring slice = reader_.sliceBuilder.finish();
+
+            return scalarToken(startMark, endMark, slice.utf32To8, ScalarStyle.Plain);
         }
 
         /// Scan spaces in a plain scalar.
-        dstring scanPlainSpaces(const Mark startMark) @safe pure nothrow
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the spaces
+        /// into that slice.
+        bool scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
-            auto appender = appender!dstring();
 
-            uint length = 0;
+            // Get as many plain spaces as there are.
+            size_t length = 0;
             while(reader_.peek(length) == ' ') { ++length; }
-            dstring whitespaces = reader_.get(length);
+            const dstring whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
-            if("\n\r\u0085\u2028\u2029"d.canFind(c))
+            // No newline after the spaces (if any)
+            if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
-                const lineBreak = scanLineBreak();
-                allowSimpleKey_ = true;
-
-                static bool end(Reader reader) nothrow
+                // We have spaces, but no newline.
+                if(whitespaces.length > 0)
                 {
-                    return ["---"d, "..."d].canFind(reader.prefix(3)) &&
-                           " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader.peek(3));
+                    reader_.sliceBuilder.write(whitespaces);
+                    return true;
                 }
+                // No spaces or newline.
+                return false;
+            }
 
-                if(end(reader_)) { return ""; }
+            // Newline after the spaces (if any)
+            bool anySpaces  = false;
+            const lineBreak = scanLineBreak();
+            allowSimpleKey_ = true;
 
-                dstring breaks;
-                while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            static bool end(Reader reader_) @safe pure nothrow @nogc
+            {
+                return ("---"d == reader_.prefix(3) || "..."d == reader_.prefix(3))
+                        && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
+            }
+
+            if(end(reader_)) { return false; }
+
+            bool extraBreaks = false;
+
+            alias Transaction = SliceBuilder.Transaction;
+            auto transaction = Transaction(reader_.sliceBuilder);
+            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
+            while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            {
+                if(reader_.peek() == ' ') { reader_.forward(); }
+                else
                 {
-                    if(reader_.peek() == ' ') { reader_.forward(); }
-                    else
+                    const lBreak = scanLineBreak();
+                    extraBreaks  = true;
+                    reader_.sliceBuilder.write(lBreak);
+                    if(end(reader_))
                     {
-                        breaks ~= scanLineBreak();
-                        if(end(reader_)) { return ""; }
+                        return false;
                     }
                 }
-
-                if(lineBreak != '\n') { appender.put(lineBreak); }
-                else if(breaks.length == 0) { appender.put(' '); }
-                appender.put(breaks);
             }
-            else if(whitespaces.length > 0)
-            {
-                appender.put(whitespaces);
-            }
+            transaction.commit();
 
-            return appender.data;
+            // No line breaks, only a space.
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
+
+            // We've written some spaces into the slice if:
+            // (lineBreak != '\n' || extraBreaks || lineBreak == '\n' && !extraBreaks).
+            // That simplifies to (lineBreak != '\n' || lineBreak == '\n') which
+            // simplifies to (true)
+            return true;
         }
 
         /// Scan handle of a tag token.
