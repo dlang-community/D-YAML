@@ -242,15 +242,165 @@ final class Reader
         final Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
 }
 
-private:
 
+/// Used to build slices of already read data in Reader buffer, avoiding allocations.
+///
+/// Usually these slices point to unchanged Reader data, but sometimes the data is 
+/// changed due to how YAML interprets certain characters/strings.
+///
+/// See begin() documentation.
+struct SliceBuilder
+{
+private:
+    // No copying by the user.
+    @disable this(this);
+    @disable void opAssign(ref SliceBuilder);
+
+    // Reader this builder works in.
+    Reader reader_;
+
+    // Start of the slice om reader_.buffer_ (size_t.max while no slice being build)
+    size_t start_ = size_t.max;
+    // End of the slice om reader_.buffer_ (size_t.max while no slice being build)
+    size_t end_   = size_t.max;
+
+    // Stack of slice ends to revert to (see Transaction)
+    //
+    // Very few levels as we don't want arbitrarily nested transactions.
+    size_t[4] endStack_;
+    // The number of elements currently in endStack_.
+    size_t endStackUsed_ = 0;
+
+    @safe pure nothrow const @nogc invariant()
+    {
+        if(!inProgress) { return; }
+        assert(end_ <= reader_.bufferOffset_, "Slice ends after buffer position");
+        assert(start_ <= end_, "Slice start after slice end");
+    }
+
+    // Is a slice currently being built?
+    bool inProgress() @safe pure nothrow const @nogc
+    {
+        assert(start_ == size_t.max ? end_ == size_t.max :
+            end_ != size_t.max, "start_/end_ are not consistent");
+        return start_ != size_t.max;
+    }
+
+public:
+    /// Begin building a slice.
+    ///
+    /// Only one slice can be built at any given time; before beginning a new slice,
+    /// finish the previous one (if any).
+    ///
+    /// The slice starts at the current position in the Reader buffer. It can only be
+    /// extended up to the current position in the buffer; Reader methods get() and
+    /// forward() move the position. E.g. it is valid to extend a slice by write()-ing
+    /// a string just returned by get() - but not one returned by prefix() unless the
+    /// position has changed since the prefix() call.
+    void begin() @system pure nothrow @nogc
+    {
+        assert(!inProgress, "Beginning a slice while another slice is being built");
+        assert(endStackUsed_ == 0, "Slice stack not empty at slice begin");
+
+        start_ = reader_.bufferOffset_;
+        end_   = reader_.bufferOffset_;
+    }
+
+    /// Finish building a slice and return it.
+    ///
+    /// Any Transactions on the slice must be committed or destroyed before the slice
+    /// is finished.
+    dstring finish() @system pure nothrow @nogc
+    {
+        assert(inProgress, "sliceFinish called without sliceBegin");
+        assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
+
+        const result = cast(dstring)reader_.buffer_[start_ .. end_];
+        start_ = end_ = size_t.max;
+        return result;
+    }
+
+    /// Write a string to the slice being built.
+    ///
+    /// Data can only be written up to the current position in the Reader buffer.
+    ///
+    /// If str is a string returned by a Reader method, and str starts right after the
+    /// end of the slice being built, the slice is extended (trivial operation).
+    ///
+    /// See_Also: begin
+    void write(dstring str) @system pure nothrow @nogc
+    {
+        assert(inProgress, "sliceWrite called without sliceBegin");
+
+        // If str starts at the end of the slice (is a string returned by a Reader
+        // method), just extend the slice to contain str.
+        if(str.ptr == reader_.buffer_.ptr + end_)
+        {
+            end_ += str.length;
+        }
+        // Even if str does not start at the end of the slice, it still may be returned
+        // by a Reader method and point to buffer. So we need to memmove.
+        else
+        {
+            core.stdc.string.memmove(reader_.buffer_.ptr + end_, cast(dchar*)str.ptr,
+                                     str.length * dchar.sizeof);
+            end_ += str.length;
+        }
+    }
+
+    /// Write a character to the slice being built.
+    ///
+    /// Data can only be written up to the current position in the Reader buffer.
+    ///
+    /// See_Also: begin
+    void write(dchar c) @system pure nothrow @nogc
+    {
+        assert(inProgress, "sliceWrite called without sliceBegin");
+
+        reader_.buffer_[end_++] = c;
+    }
+
+
+private:
+    // Push the current end of the slice so we can revert to it if needed.
+    //
+    // Used by Transaction.
+    void push() @system pure nothrow @nogc
+    {
+        assert(inProgress, "slicePush called without sliceBegin");
+        assert(endStackUsed_ < endStack_.length, "Slice stack overflow");
+        endStack_[endStackUsed_++] = end_;
+    }
+
+    // Pop the current end of endStack_ and set the end of the slice to the popped
+    // value, reverting changes since the old end was pushed.
+    //
+    // Used by Transaction.
+    void pop() @system pure nothrow @nogc
+    {
+        assert(inProgress, "slicePop called without sliceBegin");
+        assert(endStackUsed_ > 0, "Trying to pop an empty slice stack");
+        end_ = endStack_[--endStackUsed_];
+    }
+
+    // Pop the current end of endStack_, but keep the current end of the slice, applying
+    // changes made since pushing the old end.
+    //
+    // Used by Transaction.
+    void apply() @system pure nothrow @nogc
+    {
+        assert(inProgress, "sliceApply called without sliceBegin");
+        assert(endStackUsed_ > 0, "Trying to apply an empty slice stack");
+        --endStackUsed_;
+    }
+}
 // Decode an UTF-8/16/32 buffer to UTF-32 (for UTF-32 this does nothing).
 //
 // Params:
 //
 // input    = The UTF-8/16/32 buffer to decode.
 // encoding = Encoding of input.
-// 
+//
 // Returns:
 //
 // A struct with the following members:
@@ -341,7 +491,7 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 
     if(result.errorMessage !is null) { return result; }
 
-    // XXX This is risky. We rely on the assumption that the scanner only uses 
+    // XXX This is risky. We rely on the assumption that the scanner only uses
     // peek() to detect the end of the buffer. Should this cause any bugs,
     // revert.
     //
