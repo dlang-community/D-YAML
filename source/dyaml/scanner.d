@@ -159,7 +159,7 @@ final class Scanner
 
     public:
         ///Construct a Scanner using specified Reader.
-        this(Reader reader) @trusted
+        this(Reader reader) @safe nothrow
         {
             //Return the next token, but do not delete it from the queue
             reader_ = reader;
@@ -238,7 +238,7 @@ final class Scanner
 
     private:
         ///Determine whether or not we need to fetch more tokens before peeking/getting a token.
-        @property bool needMoreTokens() pure @safe
+        bool needMoreTokens() @safe pure
         {
             if(done_)        {return false;}
             if(tokens_.empty){return true;}
@@ -249,7 +249,7 @@ final class Scanner
         }
 
         ///Fetch at token, adding it to tokens_.
-        void fetchToken() @trusted
+        void fetchToken() @safe
         {
             ///Eat whitespaces and comments until we reach the next token.
             scanToNextToken();
@@ -294,7 +294,7 @@ final class Scanner
 
 
         ///Return the token number of the nearest possible simple key.
-        uint nextPossibleSimpleKey() pure @safe nothrow
+        uint nextPossibleSimpleKey() @safe pure nothrow @nogc
         {
             uint minTokenNumber = uint.max;
             foreach(k, ref simpleKey; possibleSimpleKeys_)
@@ -314,7 +314,7 @@ final class Scanner
          * Disabling this will allow simple keys of any length and
          * height (may cause problems if indentation is broken though).
          */
-        void stalePossibleSimpleKeys() pure @safe
+        void stalePossibleSimpleKeys() @safe pure
         {
             foreach(level, ref key; possibleSimpleKeys_)
             {
@@ -335,7 +335,7 @@ final class Scanner
          *
          * This function is called for ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
          */
-        void savePossibleSimpleKey() pure @system
+        void savePossibleSimpleKey() @safe pure
         {
             //Check if a simple key is required at the current position.
             const required = (flowLevel_ == 0 && indent_ == reader_.column);
@@ -367,7 +367,7 @@ final class Scanner
         }
 
         ///Remove the saved possible key position at the current flow level.
-        void removePossibleSimpleKey() pure @safe
+        void removePossibleSimpleKey() @safe pure
         {
             if(possibleSimpleKeys_.length <= flowLevel_){return;}
 
@@ -714,13 +714,13 @@ final class Scanner
 
 
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
-        bool checkDirective() @safe
+        bool checkDirective() @safe pure nothrow @nogc
         {
             return reader_.peek() == '%' && reader_.column == 0;
         }
 
         /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
-        bool checkDocumentStart() @safe
+        bool checkDocumentStart() @safe 
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column    == 0     &&
@@ -730,7 +730,7 @@ final class Scanner
         }
 
         /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
-        bool checkDocumentEnd() @safe
+        bool checkDocumentEnd() @safe pure nothrow @nogc
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column    == 0     &&
@@ -740,7 +740,7 @@ final class Scanner
         }
 
         ///Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
-        bool checkBlockEntry() @safe
+        bool checkBlockEntry() @safe pure nothrow @nogc
         {
             return reader_.peek() == '-' &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
@@ -751,7 +751,7 @@ final class Scanner
          *
          * or KEY(block context):   '?' (' '|'\n')
          */
-        bool checkKey() @safe
+        bool checkKey() @safe pure nothrow @nogc
         {
             return reader_.peek() == '?' &&
                    (flowLevel_ > 0 ||
@@ -763,7 +763,7 @@ final class Scanner
          *
          * or VALUE(block context): ':' (' '|'\n')
          */
-        bool checkValue() @safe
+        bool checkValue() @safe pure nothrow @nogc
         {
             return reader_.peek() == ':' &&
                    (flowLevel_ > 0 ||
@@ -786,7 +786,7 @@ final class Scanner
          * '-' character) because we want the flow context to be space
          * independent.
          */
-        bool checkPlain() @safe
+        bool checkPlain() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
             return !("-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029"d.canFind(c)) ||
@@ -841,7 +841,7 @@ final class Scanner
          * specification requires. Any such mark will be considered as a part
          * of the document.
          */
-        void scanToNextToken() @safe
+        void scanToNextToken() @safe pure nothrow @nogc
         {
             //TODO(PyYAML): We need to make tab handling rules more sane. A good rule is:
             //  Tabs cannot precede tokens
@@ -868,7 +868,7 @@ final class Scanner
         }
 
         ///Scan directive token.
-        Token scanDirective() @trusted
+        Token scanDirective() @safe pure
         {
             Mark startMark = reader_.mark;
             //Skip the '%'.
@@ -888,7 +888,7 @@ final class Scanner
         }
 
         ///Scan name of a directive token.
-        dchar[] scanDirectiveName(const Mark startMark) @trusted
+        dchar[] scanDirectiveName(const Mark startMark) @safe pure
         {
             //Scan directive name.
             auto name = scanAlphaNumeric!"a directive"(startMark);
@@ -901,7 +901,7 @@ final class Scanner
         }
 
         ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
-        dchar[] scanYAMLDirectiveValue(const Mark startMark) @trusted
+        dchar[] scanYAMLDirectiveValue(const Mark startMark) @safe pure
         {
             findNextNonSpace();
 
@@ -937,7 +937,7 @@ final class Scanner
         }
 
         ///Scan value of a tag directive.
-        dchar[] scanTagDirectiveValue(const Mark startMark) @safe
+        dchar[] scanTagDirectiveValue(const Mark startMark) @safe pure
         {
             findNextNonSpace();
             const handle = scanTagDirectiveHandle(startMark);
@@ -946,7 +946,7 @@ final class Scanner
         }
 
         ///Scan handle of a tag directive.
-        dchar[] scanTagDirectiveHandle(const Mark startMark) @trusted
+        dchar[] scanTagDirectiveHandle(const Mark startMark) @safe pure
         {
             auto value = scanTagHandle("directive", startMark);
             enforce(reader_.peek() == ' ',
@@ -957,7 +957,7 @@ final class Scanner
         }
 
         ///Scan prefix of a tag directive.
-        dchar[] scanTagDirectivePrefix(const Mark startMark) @trusted
+        dchar[] scanTagDirectivePrefix(const Mark startMark) @safe pure
         {
             auto value = scanTagURI("directive", startMark);
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
@@ -969,7 +969,7 @@ final class Scanner
         }
 
         ///Scan (and ignore) ignored line after a directive.
-        void scanDirectiveIgnoredLine(const Mark startMark) @trusted
+        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure
         {
             findNextNonSpace();
             if(reader_.peek() == '#'){scanToNextBreak();}
@@ -993,7 +993,7 @@ final class Scanner
          *   [ *alias , "value" ]
          * Therefore we restrict aliases to ASCII alphanumeric characters.
          */
-        Token scanAnchor(TokenID id) @trusted
+        Token scanAnchor(TokenID id) @safe pure
         {
             const startMark = reader_.mark;
 
@@ -1020,7 +1020,7 @@ final class Scanner
         }
 
         ///Scan a tag token.
-        Token scanTag() @trusted pure
+        Token scanTag() @safe pure
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1076,7 +1076,7 @@ final class Scanner
         }
 
         ///Scan a block scalar token with specified style.
-        Token scanBlockScalar(const ScalarStyle style) @system
+        Token scanBlockScalar(const ScalarStyle style) @safe pure
         {
             const startMark = reader_.mark;
 
@@ -1157,7 +1157,8 @@ final class Scanner
         }
 
         ///Scan chomping and indentation indicators of a scalar token.
-        Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark) @trusted
+        Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark)
+            @safe pure
         {
             auto chomping = Chomping.Clip;
             int increment = int.min;
@@ -1200,7 +1201,7 @@ final class Scanner
         }
 
         ///Scan (and ignore) ignored line in a block scalar.
-        void scanBlockScalarIgnoredLine(const Mark startMark) @trusted
+        void scanBlockScalarIgnoredLine(const Mark startMark) @safe pure
         {
             findNextNonSpace();
             if(reader_.peek()== '#'){scanToNextBreak();}
@@ -1213,7 +1214,7 @@ final class Scanner
         }
 
         ///Scan indentation in a block scalar, returning line breaks, max indent and end mark.
-        Tuple!(dchar[], uint, Mark) scanBlockScalarIndentation() @safe
+        Tuple!(dchar[], uint, Mark) scanBlockScalarIndentation() @safe pure nothrow
         {
             dchar[] chunks;
             uint maxIndent;
@@ -1235,7 +1236,8 @@ final class Scanner
         }
 
         ///Scan line breaks at lower or specified indentation in a block scalar.
-        Tuple!(dchar[], Mark) scanBlockScalarBreaks(const uint indent) @safe
+        Tuple!(dchar[], Mark) scanBlockScalarBreaks(const uint indent)
+            @safe pure nothrow
         {
             dchar[] chunks;
             Mark endMark = reader_.mark;
@@ -1252,10 +1254,10 @@ final class Scanner
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
-        Token scanFlowScalar(const ScalarStyle quotes) @system pure
+        Token scanFlowScalar(const ScalarStyle quotes) @safe pure
         {
             const startMark = reader_.mark;
-            const quote = reader_.get();
+            const quote     = reader_.get();
 
             // Using appender_, so clear it when we're done.
             scope(exit) { appender_.clear(); }
@@ -1416,7 +1418,7 @@ final class Scanner
         }
 
         /// Scan plain scalar token (no block, no quotes).
-        Token scanPlain() @system pure nothrow
+        Token scanPlain() @trusted pure nothrow
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
@@ -1593,7 +1595,7 @@ final class Scanner
         }
 
         /// Scan URI in a tag token.
-        dchar[] scanTagURI(const string name, const Mark startMark) @system pure
+        dchar[] scanTagURI(const string name, const Mark startMark) @trusted pure
         {
             // Note: we do not check if URI is well-formed.
             // Using appender_, so clear it when we're done.
