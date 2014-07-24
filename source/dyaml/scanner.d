@@ -718,8 +718,10 @@ final class Scanner
             //No simple keys after flow scalars.
             allowSimpleKey_ = false;
 
-            //Scan and add SCALAR.
-            tokens_.push(scanFlowScalar(quotes));
+            // Scan and add SCALAR.
+            const scalar = scanFlowScalar(quotes);
+            throwIfError();
+            tokens_.push(scalar);
         }
 
         ///Aliases to add single or double quoted block scalar.
@@ -1282,24 +1284,25 @@ final class Scanner
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
-        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure
+        ///
+        /// In case of an error, error_ is set. Check this before using the result.
+        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure nothrow
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
 
             reader_.sliceBuilder.begin();
-            //XXX remove once nothrow
-            scope(failure) { reader_.sliceBuilder.finish(); }
-            scope(exit) { if(error_) {reader_.sliceBuilder.finish();}}
+            scope(exit) if(error_) { reader_.sliceBuilder.finish(); }
 
             scanFlowScalarNonSpacesToSlice(quotes, startMark);
-            throwIfError();
+            if(error_) { return Token.init; }
+
             while(reader_.peek() != quote)
             {
                 scanFlowScalarSpacesToSlice(startMark);
-                throwIfError();
+                if(error_) { return Token.init; }
                 scanFlowScalarNonSpacesToSlice(quotes, startMark);
-                throwIfError();
+                if(error_) { return Token.init; }
             }
             reader_.forward();
 
