@@ -121,6 +121,8 @@ final class Reader
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
             enforce(printable(noZeros[]),
                     new ReaderException("Special unicode characters are not allowed"));
+
+            this.sliceBuilder = SliceBuilder(this);
         }
 
         /// Get character at specified index relative to current position.
@@ -225,6 +227,9 @@ final class Reader
                 else if(c != '\uFEFF') { ++column_; }
             }
         }
+
+        /// Used to build slices of read data in Reader; to avoid allocations.
+        SliceBuilder sliceBuilder;
 
         /// Get a string describing current buffer position, used for error messages.
         final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
