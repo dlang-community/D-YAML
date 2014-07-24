@@ -1437,6 +1437,8 @@ final class Scanner
         }
 
         /// Scan plain scalar token (no block, no quotes).
+        ///
+        /// In case of an error, error_ is set. Check this before using the result.
         Token scanPlain() @trusted pure nothrow
         {
             // We keep track of the allowSimpleKey_ flag here.
