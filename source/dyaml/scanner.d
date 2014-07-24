@@ -1314,15 +1314,15 @@ final class Scanner
         ///
         /// In case of an error, error_ is set. Check this before using the result.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
-            @system pure
+            @system pure nothrow @nogc
         {
             for(;;) with(ScalarStyle)
             {
                 dchar c = reader_.peek();
-                uint length = 0;
 
                 mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
 
+                size_t length = 0;
                 // This is an optimized way of writing:
                 // while(!search.canFind(reader_.peek(length))){++length;}
                 outer: for(;;)
@@ -1359,29 +1359,35 @@ final class Scanner
                 {
                     reader_.forward();
                     c = reader_.peek();
-                    if((c in dyaml.escapes.fromEscapes) !is null)
+                    if(dyaml.escapes.escapes.canFind(c))
                     {
                         reader_.forward();
-                        // This works because fromEscapes is dchar[dchar] - we use at
-                        // most the space freed by the forward() call above.
-                        reader_.sliceBuilder.write(dyaml.escapes.fromEscapes[c]);
+                        reader_.sliceBuilder.write(dyaml.escapes.fromEscape(c));
                     }
-                    else if((c in dyaml.escapes.escapeHexCodes) !is null)
+                    else if(dyaml.escapes.escapeHexCodeList.canFind(c))
                     {
-                        length = dyaml.escapes.escapeHexCodes[c];
+                        const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.forward();
 
-                        foreach(i; 0 .. length) if(!reader_.peek(i).isHexDigit())
+                        foreach(i; 0 .. hexLength) if(!reader_.peek(i).isHexDigit())
                         {
-                            setError("While scanning a double qouted scalar", startMark,
-                                     "expected escape sequence of " ~ length.to!string ~
-                                     " hexadecimal numbers, but found " ~
-                                     reader_.peek(i).to!string, reader_.mark);
+                            setError("While scanning a double quoted scalar", startMark,
+                                     "found an unexpected character; expected escape "
+                                     "sequence of hexadecimal numbers.", reader_.mark);
                             return;
                         }
 
-                        dchar[] hex = reader_.get(length);
-                        reader_.sliceBuilder.write(cast(dchar)parse!int(hex, 16));
+                        dchar[] hex = reader_.get(hexLength);
+                        bool overflow;
+                        import dyaml.nogcutil;
+                        const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
+                        if(overflow)
+                        {
+                            setError("While scanning a double quoted scalar", startMark,
+                                     "overflow when parsing an escape sequence of "
+                                     "hexadecimal numbers.", reader_.mark);
+                        }
+                        reader_.sliceBuilder.write(decoded);
                     }
                     else if("\n\r\u0085\u2028\u2029"d.canFind(c))
                     {
@@ -1391,9 +1397,23 @@ final class Scanner
                     }
                     else
                     {
+                        // Build an error message about the unsupported escape character
+                        // without breaking purity or allocating.
+                        const msg = "found unsupported escape character: ";
+                        auto msgChars = msg.length;
+                        msgBuffer_[0 .. msgChars] = msg;
+                        if(c > char.max)
+                        {
+                            const unknown = "<unknown>";
+                            msgBuffer_[msgChars .. msgChars + unknown.length] = unknown;
+                            msgChars += unknown.length;
+                        }
+                        else
+                        {
+                            msgBuffer_[msgChars++] = cast(char)c;
+                        }
                         setError("While scanning a double quoted scalar", startMark,
-                                 "found unknown escape character: " ~ c.to!string,
-                                 reader_.mark);
+                                 cast(string)msgBuffer_[0 .. msgChars], reader_.mark);
                         return;
                     }
                 }
