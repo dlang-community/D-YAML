@@ -1311,6 +1311,8 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
+        ///
+        /// In case of an error, error_ is set. Check this before using the result.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @system pure
         {
@@ -1403,6 +1405,8 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
+        ///
+        /// In case of an error, error_ is set. Check this before using the result.
         void scanFlowScalarSpacesToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
