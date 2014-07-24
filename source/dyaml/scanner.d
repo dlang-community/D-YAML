@@ -1273,7 +1273,7 @@ final class Scanner
         }
 
         ///Scan nonspace characters in a flow scalar.
-        void scanFlowScalarNonSpaces(const ScalarStyle quotes, const Mark startMark) 
+        void scanFlowScalarNonSpaces(const ScalarStyle quotes, const Mark startMark)
             @safe pure
         {
             for(;;)
