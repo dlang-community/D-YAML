@@ -626,7 +626,7 @@ size_t endOfLastUTFSequence(C)(const C[] buffer)
             {
                 // If stride goes beyond end of the buffer, return end.
                 // Otherwise the last sequence ends at buffer.length, so we can
-                // return that. (Unless there is an invalid code point, which is
+                // return that. (Unless there is an invalid code unit, which is
                 // caught at decoding)
                 return (stride > buffer.length - end) ? cast(size_t)end : buffer.length;
             }
