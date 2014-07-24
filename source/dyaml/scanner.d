@@ -717,24 +717,20 @@ final class Scanner
         alias fetchFlowScalar!(ScalarStyle.SingleQuoted) fetchSingle;
         alias fetchFlowScalar!(ScalarStyle.DoubleQuoted) fetchDouble;
 
-        ///Add plain SCALAR token.
+        /// Add plain SCALAR token.
         void fetchPlain() @trusted
         {
-            //A plain scalar could be a simple key
+            // A plain scalar could be a simple key
             savePossibleSimpleKey();
-            //No simple keys after plain scalars. But note that scanPlain() will
-            //change this flag if the scan is finished at the beginning of the line.
+            // No simple keys after plain scalars. But note that scanPlain() will
+            // change this flag if the scan is finished at the beginning of the line.
             allowSimpleKey_ = false;
             const plain = scanPlain();
-            if(error_)
-            {
-                error_ = false;
-                throw new Error(errorData_);
-            }
-            //Scan and add SCALAR. May change allowSimpleKey_
+            throwIfError();
+
+            // Scan and add SCALAR. May change allowSimpleKey_
             tokens_.push(plain);
         }
-
 
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
         bool checkDirective() @safe pure nothrow @nogc
