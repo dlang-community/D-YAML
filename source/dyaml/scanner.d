@@ -21,6 +21,7 @@ import std.ascii : isAlphaNum, isDigit, isHexDigit;
 import std.exception;
 import std.string;
 import std.typecons;
+import std.traits : Unqual;
 import std.utf;
 
 import dyaml.fastcharsearch;
@@ -800,7 +801,7 @@ final class Scanner
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
-        dstring scanAlphaNumeric(string name)(const Mark startMark) @safe pure
+        dchar[] scanAlphaNumeric(string name)(const Mark startMark) @safe pure
         {
             uint length = 0;
             dchar c = reader_.peek();
@@ -819,7 +820,7 @@ final class Scanner
         }
 
         /// Scan all characters until next line break.
-        dstring scanToNextBreak() @safe pure nothrow @nogc
+        dchar[] scanToNextBreak() @safe pure nothrow @nogc
         {
             uint length = 0;
             while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
@@ -873,9 +874,9 @@ final class Scanner
             //Skip the '%'.
             reader_.forward();
 
-            const name  = scanDirectiveName(startMark);
-            const value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
-                          name == "TAG"  ? scanTagDirectiveValue(startMark) : "";
+            auto name  = scanDirectiveName(startMark);
+            auto value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
+                         name == "TAG"  ? scanTagDirectiveValue(startMark) : "";
 
             Mark endMark = reader_.mark;
 
@@ -887,10 +888,10 @@ final class Scanner
         }
 
         ///Scan name of a directive token.
-        dstring scanDirectiveName(const Mark startMark) @trusted
+        dchar[] scanDirectiveName(const Mark startMark) @trusted
         {
             //Scan directive name.
-            const name = scanAlphaNumeric!"a directive"(startMark);
+            auto name = scanAlphaNumeric!"a directive"(startMark);
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
@@ -900,11 +901,11 @@ final class Scanner
         }
 
         ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
-        dstring scanYAMLDirectiveValue(const Mark startMark) @trusted
+        dchar[] scanYAMLDirectiveValue(const Mark startMark) @trusted
         {
             findNextNonSpace();
 
-            dstring result = scanYAMLDirectiveNumber(startMark);
+            dchar[] result = scanYAMLDirectiveNumber(startMark);
             enforce(reader_.peek() == '.',
                     new Error("While scanning a directive", startMark,
                               "expected a digit or '.', but found: "
@@ -921,7 +922,7 @@ final class Scanner
         }
 
         /// Scan a number from a YAML directive.
-        dstring scanYAMLDirectiveNumber(const Mark startMark) @safe pure
+        dchar[] scanYAMLDirectiveNumber(const Mark startMark) @safe pure
         {
             enforce(isDigit(reader_.peek()),
                     new Error("While scanning a directive", startMark,
@@ -936,7 +937,7 @@ final class Scanner
         }
 
         ///Scan value of a tag directive.
-        dstring scanTagDirectiveValue(const Mark startMark) @safe
+        dchar[] scanTagDirectiveValue(const Mark startMark) @safe
         {
             findNextNonSpace();
             const handle = scanTagDirectiveHandle(startMark);
@@ -945,9 +946,9 @@ final class Scanner
         }
 
         ///Scan handle of a tag directive.
-        dstring scanTagDirectiveHandle(const Mark startMark) @trusted
+        dchar[] scanTagDirectiveHandle(const Mark startMark) @trusted
         {
-            const value = scanTagHandle("directive", startMark);
+            auto value = scanTagHandle("directive", startMark);
             enforce(reader_.peek() == ' ',
                     new Error("While scanning a directive handle", startMark,
                               "expected ' ', but found: " ~ to!string(reader_.peek()),
@@ -956,9 +957,9 @@ final class Scanner
         }
 
         ///Scan prefix of a tag directive.
-        dstring scanTagDirectivePrefix(const Mark startMark) @trusted
+        dchar[] scanTagDirectivePrefix(const Mark startMark) @trusted
         {
-            const value = scanTagURI("directive", startMark);
+            auto value = scanTagURI("directive", startMark);
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive prefix", startMark,
                               "expected ' ', but found" ~ to!string(reader_.peek()),
@@ -998,7 +999,7 @@ final class Scanner
 
             const dchar i = reader_.get();
 
-            dstring value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
+            dchar[] value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
                                      : scanAlphaNumeric!("an anchor")(startMark);
 
             enforce((" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) ||
@@ -1023,8 +1024,8 @@ final class Scanner
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
-            dstring handle = "";
-            dstring suffix;
+            dchar[] handle;
+            dchar[] suffix;
 
             if(c == '<')
             {
@@ -1038,7 +1039,7 @@ final class Scanner
             }
             else if(" \t\0\n\r\u0085\u2028\u2029"d.canFind(c))
             {
-                suffix = "!";
+                suffix = "!"d.dup;
                 reader_.forward();
             }
             else
@@ -1060,7 +1061,7 @@ final class Scanner
                 if(useHandle) { handle = scanTagHandle("tag", startMark); }
                 else
                 {
-                    handle = "!";
+                    handle = "!"d.dup;
                     reader_.forward();
                 }
 
@@ -1106,7 +1107,7 @@ final class Scanner
                 endMark = scalarBreaks[1];
             }
 
-            dstring lineBreak = "";
+            dchar[] lineBreak = ""d.dup;
 
             //Using appender_, so clear it when we're done.
             scope(exit){appender_.clear();}
@@ -1117,7 +1118,7 @@ final class Scanner
                 appender_.put(breaks);
                 const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
                 appender_.put(scanToNextBreak());
-                lineBreak = ""d ~ scanLineBreak();
+                lineBreak = [scanLineBreak()];
 
                 auto scalarBreaks = scanBlockScalarBreaks(indent);
                 breaks = scalarBreaks[0];
@@ -1152,7 +1153,7 @@ final class Scanner
             if(chomping != Chomping.Strip){appender_.put(lineBreak);}
             if(chomping == Chomping.Keep){appender_.put(breaks);}
 
-            return scalarToken(startMark, endMark, utf32To8(cast(dstring)appender_.data), style);
+            return scalarToken(startMark, endMark, utf32To8(appender_.data), style);
         }
 
         ///Scan chomping and indentation indicators of a scalar token.
@@ -1269,7 +1270,7 @@ final class Scanner
             }
             reader_.forward();
 
-            return scalarToken(startMark, reader_.mark, utf32To8(cast(dstring)appender_.data), quotes);
+            return scalarToken(startMark, reader_.mark, utf32To8(appender_.data), quotes);
         }
 
         ///Scan nonspace characters in a flow scalar.
@@ -1338,7 +1339,7 @@ final class Scanner
                                         to!string(reader_.peek(i)), reader_.mark));
                         }
 
-                        dstring hex = reader_.get(length);
+                        dchar[] hex = reader_.get(length);
                         appender_.put(cast(dchar)parse!int(hex, 16));
                     }
                     else if("\n\r\u0085\u2028\u2029"d.canFind(c))
@@ -1390,9 +1391,9 @@ final class Scanner
         }
 
         /// Scan line breaks in a flow scalar.
-        dstring scanFlowScalarBreaks(const Mark startMark) @safe pure
+        dchar[] scanFlowScalarBreaks(const Mark startMark) @safe pure
         {
-            auto appender = appender!dstring();
+            auto appender = appender!(dchar[])();
             for(;;)
             {
                 // Instead of checking indentation, we check for document separators.
@@ -1426,7 +1427,6 @@ final class Scanner
             // We allow zero indentation for scalars, but then we need to check for
             // document separators at the beginning of the line.
             // if(indent == 0) { indent = 1; }
-            dstring spaces;
 
             mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
 
@@ -1486,7 +1486,7 @@ final class Scanner
             }
 
             spacesTransaction.__dtor();
-            const dstring slice = reader_.sliceBuilder.finish();
+            dstring slice = reader_.sliceBuilder.finish();
 
             return scalarToken(startMark, endMark, slice.utf32To8, ScalarStyle.Plain);
         }
@@ -1503,7 +1503,7 @@ final class Scanner
             // Get as many plain spaces as there are.
             size_t length = 0;
             while(reader_.peek(length) == ' ') { ++length; }
-            const dstring whitespaces = reader_.get(length);
+            dchar[] whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
             // No newline after the spaces (if any)
@@ -1564,7 +1564,7 @@ final class Scanner
         }
 
         /// Scan handle of a tag token.
-        dstring scanTagHandle(const string name, const Mark startMark) @safe pure
+        dchar[] scanTagHandle(const string name, const Mark startMark) @safe pure
         {
             dchar c = reader_.peek();
             enforce(c == '!',
@@ -1593,7 +1593,7 @@ final class Scanner
         }
 
         /// Scan URI in a tag token.
-        dstring scanTagURI(const string name, const Mark startMark) @system pure
+        dchar[] scanTagURI(const string name, const Mark startMark) @system pure
         {
             // Note: we do not check if URI is well-formed.
             // Using appender_, so clear it when we're done.
@@ -1621,11 +1621,11 @@ final class Scanner
                     new Error("While parsing a " ~ name, startMark,
                               "expected URI, but found: " ~ c.to!string, reader_.mark));
 
-            return cast(dstring)appender_.data;
+            return appender_.data;
         }
 
         /// Scan URI escape sequences.
-        dstring scanURIEscapes(const string name, const Mark startMark) @system pure
+        dchar[] scanURIEscapes(const string name, const Mark startMark) @system pure
         {
             ubyte[] bytes;
             Mark mark = reader_.mark;
@@ -1659,7 +1659,7 @@ final class Scanner
                 reader_.forward(2);
             }
 
-            try { return to!dstring(cast(string)bytes); }
+            try { return to!(dchar[])(cast(string)bytes); }
             catch(ConvException e)
             {
                 throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
@@ -1702,8 +1702,9 @@ final class Scanner
 
 private:
 
-/// A nothrow function that converts a dstring to a string.
-string utf32To8(dstring str) @safe pure nothrow
+/// A nothrow function that converts a dchar[] to a string.
+string utf32To8(C)(C[] str) @safe pure nothrow
+    if(is(Unqual!C == dchar))
 {
     try                    { return str.to!string; }
     catch(ConvException e) { assert(false, "Unexpected invalid UTF-32 string"); }

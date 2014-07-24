@@ -157,7 +157,7 @@ final class Reader
         ///                   buffer; in that case the returned slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        dstring prefix(size_t length) @safe pure nothrow const @nogc
+        dchar[] prefix(size_t length) @safe pure nothrow @nogc
         {
             return slice(0, length);
         }
@@ -173,12 +173,13 @@ final class Reader
         ///                  slice will be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        dstring slice(size_t start, size_t end) @trusted pure nothrow const @nogc
+        dchar[] slice(size_t start, size_t end) @trusted pure nothrow @nogc
         {
             start += bufferOffset_;
             end    = min(buffer_.length, end + bufferOffset_);
+            assert(end >= start, "Trying to read a slice that starts after its end");
 
-            return end > start ? cast(dstring)buffer_[start .. end] : "";
+            return buffer_[start .. end];
         }
 
         /// Get the next character, moving buffer position beyond it.
@@ -199,7 +200,7 @@ final class Reader
         /// Params:  length = Number or characters to get.
         ///
         /// Returns: Characters starting at current position.
-        dstring get(size_t length) @safe pure nothrow @nogc
+        dchar[] get(size_t length) @safe pure nothrow @nogc
         {
             auto result = prefix(length);
             forward(length);
@@ -315,14 +316,17 @@ public:
     ///
     /// Any Transactions on the slice must be committed or destroyed before the slice
     /// is finished.
+    ///
+    /// Returns a string; once a slice is finished it is definitive that its contents
+    /// will not be changed.
     dstring finish() @system pure nothrow @nogc
     {
         assert(inProgress, "sliceFinish called without sliceBegin");
         assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
 
-        const result = cast(dstring)reader_.buffer_[start_ .. end_];
+        const result = reader_.buffer_[start_ .. end_];
         start_ = end_ = size_t.max;
-        return result;
+        return cast(dstring)result;
     }
 
     /// Write a string to the slice being built.
@@ -333,7 +337,7 @@ public:
     /// end of the slice being built, the slice is extended (trivial operation).
     ///
     /// See_Also: begin
-    void write(dstring str) @system pure nothrow @nogc
+    void write(dchar[] str) @system pure nothrow @nogc
     {
         assert(inProgress, "sliceWrite called without sliceBegin");
 
