@@ -1287,6 +1287,7 @@ final class Scanner
             while(reader_.peek() != quote)
             {
                 scanFlowScalarSpacesToSlice(startMark);
+                throwIfError();
                 scanFlowScalarNonSpacesToSlice(quotes, startMark);
             }
             reader_.forward();
@@ -1389,7 +1390,8 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
-        void scanFlowScalarSpacesToSlice(const Mark startMark) @system pure
+        void scanFlowScalarSpacesToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
             // Increase length as long as we see whitespace.
             size_t length = 0;
@@ -1397,8 +1399,12 @@ final class Scanner
             auto whitespaces = reader_.prefix(length + 1);
 
             const c = whitespaces[$ - 1];
-            enforce(c != '\0', new Error("While scanning a quoted scalar", startMark,
-                                         "found unexpected end of buffer", reader_.mark));
+            if(c == '\0')
+            {
+                setError("While scanning a quoted scalar", startMark,
+                         "found unexpected end of buffer", reader_.mark);
+                return;
+            }
 
             // Spaces not followed by a line break.
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
@@ -1417,7 +1423,8 @@ final class Scanner
             // If we have extra line breaks after the first, scan them into the
             // slice.
             const bool extraBreaks = scanFlowScalarBreaksToSlice(startMark);
-            throwIfError();
+            if(error_) { return; }
+
             // No extra breaks, one normal line break. Replace it with a space.
             if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
         }
