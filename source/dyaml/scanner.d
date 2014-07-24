@@ -706,16 +706,16 @@ final class Scanner
             tokens_.push(scanBlockScalar(style));
         }
 
-        ///Aliases to add literal or folded block scalar.
+        /// Aliases to add literal or folded block scalar.
         alias fetchBlockScalar!(ScalarStyle.Literal) fetchLiteral;
         alias fetchBlockScalar!(ScalarStyle.Folded) fetchFolded;
 
         /// Add quoted flow SCALAR token.
         void fetchFlowScalar(ScalarStyle quotes)() @safe
         {
-            //A flow scalar could be a simple key.
+            // A flow scalar could be a simple key.
             savePossibleSimpleKey();
-            //No simple keys after flow scalars.
+            // No simple keys after flow scalars.
             allowSimpleKey_ = false;
 
             // Scan and add SCALAR.
@@ -724,7 +724,7 @@ final class Scanner
             tokens_.push(scalar);
         }
 
-        ///Aliases to add single or double quoted block scalar.
+        /// Aliases to add single or double quoted block scalar.
         alias fetchFlowScalar!(ScalarStyle.SingleQuoted) fetchSingle;
         alias fetchFlowScalar!(ScalarStyle.DoubleQuoted) fetchDouble;
 
