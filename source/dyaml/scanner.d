@@ -1480,11 +1480,10 @@ final class Scanner
                     spacesTransaction.commit();
                     reader_.sliceBuilder.finish();
                     reader_.forward(length);
-                    errorData_ = ErrorData("While scanning a plain scalar", startMark,
-                                           "found unexpected ':' . Please check "
-                                           "http://pyyaml.org/wiki/YAMLColonInFlowContext "
-                                           "for details.", reader_.mark);
-                    error_ = true;
+                    setError("While scanning a plain scalar", startMark,
+                             "found unexpected ':' . Please check "
+                             "http://pyyaml.org/wiki/YAMLColonInFlowContext "
+                             "for details.", reader_.mark);
                     return Token.init;
                 }
 
