@@ -710,8 +710,8 @@ final class Scanner
         alias fetchBlockScalar!(ScalarStyle.Literal) fetchLiteral;
         alias fetchBlockScalar!(ScalarStyle.Folded) fetchFolded;
 
-        ///Add quoted flow SCALAR token.
-        void fetchFlowScalar(ScalarStyle quotes)() @trusted
+        /// Add quoted flow SCALAR token.
+        void fetchFlowScalar(ScalarStyle quotes)() @safe
         {
             //A flow scalar could be a simple key.
             savePossibleSimpleKey();
@@ -729,7 +729,7 @@ final class Scanner
         alias fetchFlowScalar!(ScalarStyle.DoubleQuoted) fetchDouble;
 
         /// Add plain SCALAR token.
-        void fetchPlain() @trusted
+        void fetchPlain() @safe
         {
             // A plain scalar could be a simple key
             savePossibleSimpleKey();
