@@ -157,6 +157,15 @@ final class Scanner
         /// Data for the exception to throw if error_ is true.
         ErrorData errorData_;
 
+        /// Error messages can be built in this buffer without using the GC.
+        ///
+        /// ScannerException (MarkedYAMLException) copies string data passed to its
+        /// constructor so it's safe to use slices of this buffer as parameters for
+        /// exceptions that may outlive the Scanner. The GC allocation when creating the
+        /// error message is removed, but the allocation when creating an exception is
+        /// not.
+        char[256] msgBuffer_;
+
     public:
         ///Construct a Scanner using specified Reader.
         this(Reader reader) @safe nothrow
