@@ -1284,11 +1284,13 @@ final class Scanner
             scope(exit) { if(error_) {reader_.sliceBuilder.finish();}}
 
             scanFlowScalarNonSpacesToSlice(quotes, startMark);
+            throwIfError();
             while(reader_.peek() != quote)
             {
                 scanFlowScalarSpacesToSlice(startMark);
                 throwIfError();
                 scanFlowScalarNonSpacesToSlice(quotes, startMark);
+                throwIfError();
             }
             reader_.forward();
 
@@ -1315,10 +1317,12 @@ final class Scanner
                 outer: for(;;)
                 {
                     const slice = reader_.slice(length, length + 32);
-                    // XXX will be thrown by parent
-                    enforce(slice.length > 0,
-                            new Error("While reading a flow scalar", startMark,
-                                      "reached end of file", reader_.mark));
+                    if(slice.empty)
+                    {
+                        setError("While reading a flow scalar", startMark,
+                                 "reached end of file", reader_.mark);
+                        return;
+                    }
                     foreach(ch; slice)
                     {
                         if(search.canFind(ch)) { break outer; }
@@ -1356,14 +1360,13 @@ final class Scanner
                         length = dyaml.escapes.escapeHexCodes[c];
                         reader_.forward();
 
-                        foreach(i; 0 .. length)
+                        foreach(i; 0 .. length) if(!reader_.peek(i).isHexDigit())
                         {
-                            enforce(isHexDigit(reader_.peek(i)),
-                                    new Error(
-                                        "While scanning a double qouted scalar", startMark,
-                                        "expected escape sequence of " ~ length.to!string ~
-                                        " hexadecimal numbers, but found " ~
-                                        reader_.peek(i).to!string, reader_.mark));
+                            setError("While scanning a double qouted scalar", startMark,
+                                     "expected escape sequence of " ~ length.to!string ~
+                                     " hexadecimal numbers, but found " ~
+                                     reader_.peek(i).to!string, reader_.mark);
+                            return;
                         }
 
                         dchar[] hex = reader_.get(length);
@@ -1373,13 +1376,14 @@ final class Scanner
                     {
                         scanLineBreak();
                         scanFlowScalarBreaksToSlice(startMark);
-                        throwIfError();
+                        if(error_) { return; }
                     }
                     else
                     {
-                        throw new Error("While scanning a double quoted scalar", startMark,
-                                        "found unknown escape character: " ~ c.to!string,
-                                        reader_.mark);
+                        setError("While scanning a double quoted scalar", startMark,
+                                 "found unknown escape character: " ~ c.to!string,
+                                 reader_.mark);
+                        return;
                     }
                 }
                 else { return; }
