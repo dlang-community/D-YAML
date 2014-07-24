@@ -66,7 +66,7 @@ final class Reader
 {
     private:
         // Buffer of currently loaded characters.
-        dstring buffer_ = null;
+        dchar[] buffer_ = null;
         // Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
         // Index of the current character in the buffer.
@@ -115,7 +115,7 @@ final class Reader
                 throw new ReaderException("UTF decoding error: " ~ msg);
             }
 
-            buffer_ = cast(dstring)decodeResult.decoded;
+            buffer_ = decodeResult.decoded;
             // The part of buffer_ excluding trailing zeroes.
             auto noZeros = buffer_;
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
@@ -136,7 +136,7 @@ final class Reader
         {
             if(buffer_.length <= bufferOffset_ + index)
             {
-                // XXX This is risky; revert this and the 'risky' change in UTF decoder 
+                // XXX This is risky; revert this and the 'risky' change in UTF decoder
                 // if any bugs are introduced. We rely on the assumption that Reader
                 // only uses peek() to detect the of buffer. The test suite passes.
                 // throw new ReaderException("Trying to read past the end of the buffer");
@@ -171,12 +171,12 @@ final class Reader
         ///                  slice will be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        dstring slice(size_t start, size_t end) @safe pure nothrow const @nogc
+        dstring slice(size_t start, size_t end) @trusted pure nothrow const @nogc
         {
             start += bufferOffset_;
             end    = min(buffer_.length, end + bufferOffset_);
 
-            return end > start ? buffer_[start .. end] : "";
+            return end > start ? cast(dstring)buffer_[start .. end] : "";
         }
 
         /// Get the next character, moving buffer position beyond it.
