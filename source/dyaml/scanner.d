@@ -178,6 +178,29 @@ final class Scanner
             reader_ = null;
         }
 
+        /// If error_ is true, throws a ScannerException constructed from errorData_ and
+        /// sets error_ to false.
+        void throwIfError() @safe pure
+        {
+            if(!error_) { return; }
+            error_ = false;
+            throw new ScannerException(errorData_);
+        }
+
+        /// Called by internal nothrow/@nogc methods to set an error to be thrown by
+        /// their callers.
+        ///
+        /// See_Also: dyaml.exception.MarkedYamlException
+        void setError(string context, const Mark contextMark, string problem,
+                      const Mark problemMark) @safe pure nothrow @nogc
+        {
+            assert(error_ == false,
+                   "Setting an error when there already is a not yet thrown error");
+            error_ = true;
+            errorData_ =
+                MarkedYAMLExceptionData(context, contextMark, problem, problemMark);
+        }
+
         /**
          * Check if the next token is one of specified types.
          *
