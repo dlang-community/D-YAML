@@ -11,35 +11,67 @@ module dyaml.escapes;
 package:
 
 ///Translation table from YAML escapes to dchars.
-immutable dchar[dchar] fromEscapes;
+// immutable dchar[dchar] fromEscapes;
 ///Translation table from dchars to YAML escapes.
 immutable dchar[dchar] toEscapes;
-///Translation table from prefixes of escaped hexadecimal format characters to their lengths.
-immutable uint[dchar]  escapeHexCodes;
+// ///Translation table from prefixes of escaped hexadecimal format characters to their lengths.
+// immutable uint[dchar]  escapeHexCodes;
+
+/// All YAML escapes.
+immutable dchar[] escapes = ['0', 'a', 'b', 't', '\t', 'n', 'v', 'f', 'r', 'e', ' ',
+                             '\"', '\\', 'N', '_', 'L', 'P'];
+
+/// YAML hex codes specifying the length of the hex number.
+immutable dchar[] escapeHexCodeList = ['x', 'u', 'U'];
+
+/// Covert a YAML escape to a dchar.
+///
+/// Need a function as associative arrays don't work with @nogc.
+/// (And this may be even faster with a function.)
+dchar fromEscape(dchar escape) @safe pure nothrow @nogc
+{
+    switch(escape)
+    {
+        case '0':  return '\0';
+        case 'a':  return '\x07';
+        case 'b':  return '\x08';
+        case 't':  return '\x09';
+        case '\t': return '\x09';
+        case 'n':  return '\x0A';
+        case 'v':  return '\x0B';
+        case 'f':  return '\x0C';
+        case 'r':  return '\x0D';
+        case 'e':  return '\x1B';
+        case ' ':  return '\x20';
+        case '\"': return '\"';
+        case '\\': return '\\';
+        case 'N':  return '\u0085';
+        case '_':  return '\xA0';
+        case 'L':  return '\u2028';
+        case 'P':  return '\u2029';
+        default:   assert(false, "No such YAML escape");
+    }
+}
+
+/// Get the length of a hexadecimal number determined by its hex code.
+///
+/// Need a function as associative arrays don't work with @nogc.
+/// (And this may be even faster with a function.)
+uint escapeHexLength(dchar hexCode) @safe pure nothrow @nogc
+{
+    switch(hexCode)
+    {
+        case 'x': return 2;
+        case 'u': return 4;
+        case 'U': return 8;
+        default:  assert(false, "No such YAML hex code");
+    }
+}
 
 
 static this()
 {
-    fromEscapes =
-        ['0':  '\0',
-         'a':  '\x07',
-         'b':  '\x08',
-         't':  '\x09',
-         '\t': '\x09',
-         'n':  '\x0A',
-         'v':  '\x0B',
-         'f':  '\x0C',
-         'r':  '\x0D',
-         'e':  '\x1B',
-         ' ':  '\x20',
-         '\"': '\"',
-         '\\': '\\',
-         'N':  '\u0085',
-         '_':  '\xA0',
-         'L':  '\u2028',
-         'P':  '\u2029'];
-
-    toEscapes = 
+    toEscapes =
         ['\0':     '0',
          '\x07':   'a',
          '\x08':   'b',
@@ -55,7 +87,5 @@ static this()
          '\xA0':   '_',
          '\u2028': 'L',
          '\u2029': 'P'];
-
-    escapeHexCodes = ['x': 2, 'u': 4, 'U': 8];
 }
 
