@@ -1148,7 +1148,7 @@ final class Scanner
         }
 
         ///Scan a block scalar token with specified style.
-        Token scanBlockScalar(const ScalarStyle style) @safe pure
+        Token scanBlockScalar(const ScalarStyle style) @trusted pure
         {
             const startMark = reader_.mark;
 
@@ -1165,7 +1165,7 @@ final class Scanner
 
             //Determine the indentation level and go to the first non-empty line.
             Mark endMark;
-            dchar[] breaks;
+            dstring breaks;
             uint indent = max(1, indent_ + 1);
             if(increment == int.min)
             {
@@ -1196,7 +1196,7 @@ final class Scanner
                 lineBreak = [scanLineBreak()];
 
                 auto scalarBreaks = scanBlockScalarBreaks(indent);
-                breaks = scalarBreaks[0];
+                breaks  = scalarBreaks[0];
                 endMark = scalarBreaks[1];
 
                 if(reader_.column == indent && reader_.peek() != '\0')
@@ -1332,10 +1332,11 @@ final class Scanner
             scanLineBreak();
         }
 
-        ///Scan indentation in a block scalar, returning line breaks, max indent and end mark.
-        Tuple!(dchar[], uint, Mark) scanBlockScalarIndentation() @safe pure nothrow
+        /// Scan indentation in a block scalar, returning line breaks, max indent and end mark.
+        Tuple!(dstring, uint, Mark) scanBlockScalarIndentation() 
+            @system pure nothrow @nogc
         {
-            dchar[] chunks;
+            reader_.sliceBuilder.begin();
             uint maxIndent;
             Mark endMark = reader_.mark;
 
@@ -1343,7 +1344,7 @@ final class Scanner
             {
                 if(reader_.peek() != ' ')
                 {
-                    chunks ~= scanLineBreak();
+                    reader_.sliceBuilder.write(scanLineBreak());
                     endMark = reader_.mark;
                     continue;
                 }
@@ -1351,25 +1352,25 @@ final class Scanner
                 maxIndent = max(reader_.column, maxIndent);
             }
 
-            return tuple(chunks, maxIndent, endMark);
+            return tuple(reader_.sliceBuilder.finish(), maxIndent, endMark);
         }
 
-        ///Scan line breaks at lower or specified indentation in a block scalar.
-        Tuple!(dchar[], Mark) scanBlockScalarBreaks(const uint indent)
-            @safe pure nothrow
+        /// Scan line breaks at lower or specified indentation in a block scalar.
+        Tuple!(dstring, Mark) scanBlockScalarBreaks(const uint indent)
+            @trusted pure nothrow @nogc
         {
-            dchar[] chunks;
+            reader_.sliceBuilder.begin();
             Mark endMark = reader_.mark;
 
             for(;;)
             {
-                while(reader_.column < indent && reader_.peek() == ' '){reader_.forward();}
-                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())){break;}
-                chunks ~= scanLineBreak();
+                while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
+                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
+                reader_.sliceBuilder.write(scanLineBreak());
                 endMark = reader_.mark;
             }
 
-            return tuple(chunks, endMark);
+            return tuple(reader_.sliceBuilder.finish(), endMark);
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
