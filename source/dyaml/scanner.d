@@ -33,7 +33,6 @@ import dyaml.reader;
 import dyaml.style;
 import dyaml.token;
 
-
 package:
 /**
  * Scanner produces tokens of the following types:
@@ -168,16 +167,16 @@ final class Scanner
         char[256] msgBuffer_;
 
     public:
-        ///Construct a Scanner using specified Reader.
+        /// Construct a Scanner using specified Reader.
         this(Reader reader) @safe nothrow
         {
-            //Return the next token, but do not delete it from the queue
-            reader_ = reader;
+            // Return the next token, but do not delete it from the queue
+            reader_   = reader;
             appender_ = appender!(dchar[])();
             fetchStreamStart();
         }
 
-        ///Destroy the scanner.
+        /// Destroy the scanner.
         @trusted ~this()
         {
             tokens_.destroy();
