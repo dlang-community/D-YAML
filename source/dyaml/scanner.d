@@ -999,7 +999,8 @@ final class Scanner
             reader_.sliceBuilder.begin();
             {
                 scope(failure) { reader_.sliceBuilder.finish(); }
-                scanTagURIToSlice("directive", startMark);
+                scanTagURIToSlice!"directive"(startMark);
+                throwIfError();
             }
             auto value = reader_.sliceBuilder.finish();
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
@@ -1078,7 +1079,8 @@ final class Scanner
                 reader_.forward(2);
 
                 handleEnd = 0;
-                scanTagURIToSlice("tag", startMark);
+                scanTagURIToSlice!"tag"(startMark);
+                throwIfError();
                 enforce(reader_.peek() == '>',
                         new Error("While scanning a tag", startMark,
                                   "expected '>' but found" ~ reader_.peek().to!string,
@@ -1120,7 +1122,8 @@ final class Scanner
                     handleEnd = cast(uint)reader_.sliceBuilder.length;
                 }
 
-                scanTagURIToSlice("tag", startMark);
+                scanTagURIToSlice!"tag"(startMark);
+                throwIfError();
             }
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
@@ -1711,14 +1714,16 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanTagURIToSlice(const string name, const Mark startMark) @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanTagURIToSlice(string name)(const Mark startMark) @trusted pure nothrow
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
             bool anyChars = false;
             {
                 uint length = 0;
-                while(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
+                while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
                 {
                     if(c == '%')
                     {
@@ -1726,7 +1731,8 @@ final class Scanner
                         reader_.sliceBuilder.write(chars);
                         anyChars = anyChars || (length > 0);
                         length = 0;
-                        anyChars = scanURIEscapesToSlice(name, startMark) || anyChars;
+                        anyChars = scanURIEscapesToSlice!name(startMark) || anyChars;
+                        if(error_) { return; }
                     }
                     else { ++length; }
                     c = reader_.peek(length);
@@ -1739,18 +1745,25 @@ final class Scanner
                     length = 0;
                 }
             }
-            enforce(anyChars,
-                    new Error("While parsing a " ~ name, startMark,
-                              "expected URI, but found: " ~ c.to!string, reader_.mark));
+            if(anyChars) { return; }
+
+            enum contextMsg = "While parsing a " ~ name;
+            setError(contextMsg, startMark, 
+                     cast(string)msgBuffer_.printNoGC("expected URI, but found: ", c),
+                     reader_.mark);
         }
 
+        // Not @nogc yet because std.utf.decode is not @nogc
         /// Scan URI escape sequences.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
         ///
         /// Returns: true if any escapes were scanned, false otherwise.
-        bool scanURIEscapesToSlice(const string name, const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        bool scanURIEscapesToSlice(string name)(const Mark startMark) 
+            @system pure nothrow // @nogc 
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
@@ -1779,6 +1792,7 @@ final class Scanner
                 return bytes.length - nextChar;
             }
 
+            enum contextMsg = "While scanning a " ~ name;
             try
             {
                 while(reader_.peek() == '%')
@@ -1795,11 +1809,15 @@ final class Scanner
                     foreach(k; 0 .. 2)
                     {
                         const dchar c = reader_.peek(k);
-                        enforce(isHexDigit(c),
-                                new Error("While scanning a " ~ name, startMark,
-                                        "expected URI escape sequence of "
-                                        "2 hexadecimal numbers, but found: " ~
-                                        c.to!string, reader_.mark));
+                        if(!c.isHexDigit)
+                        {
+                            auto msg = msgBuffer_.printNoGC(
+                                "expected URI escape sequence of 2 hexadecimal "
+                                "numbers, but found: ", c);
+                            setError(contextMsg, startMark, cast(string)msg,
+                                     reader_.mark);
+                            return false;
+                        }
 
                         uint digit;
                         if(c - '0' < 10)     { digit = c - '0'; }
@@ -1818,7 +1836,12 @@ final class Scanner
             }
             catch(UTFException e)
             {
-                throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
+                setError(contextMsg, startMark, e.msg, mark);
+                return false;
+            }
+            catch(Exception e)
+            {
+                assert(false, "Unexpected exception in scanURIEscapesToSlice");
             }
 
             return anyChars;
