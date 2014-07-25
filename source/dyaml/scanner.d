@@ -1727,14 +1727,14 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagHandleToSlice(string name)(const Mark startMark) 
+        void scanTagHandleToSlice(string name)(const Mark startMark)
             @system pure nothrow @nogc
         {
             dchar c = reader_.peek();
             enum contextMsg = "While scanning a " ~ name;
             if(c != '!')
             {
-                setError(contextMsg, startMark, 
+                setError(contextMsg, startMark,
                          buildMsg("expected a '!', but found: ", c), reader_.mark);
                 return;
             }
@@ -1751,7 +1751,7 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    setError(contextMsg, startMark, 
+                    setError(contextMsg, startMark,
                              buildMsg("expected a '!', but found: ", c), reader_.mark);
                     return;
                 }
@@ -1812,8 +1812,8 @@ final class Scanner
         /// Returns: true if any escapes were scanned, false otherwise.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanURIEscapesToSlice(string name)(const Mark startMark) 
-            @system pure nothrow // @nogc 
+        bool scanURIEscapesToSlice(string name)(const Mark startMark)
+            @system pure nothrow // @nogc
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
