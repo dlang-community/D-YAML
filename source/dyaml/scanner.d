@@ -1169,10 +1169,11 @@ final class Scanner
             uint indent = max(1, indent_ + 1);
             if(increment == int.min)
             {
-                auto indentation = scanBlockScalarIndentation();
-                breaks  = indentation[0];
-                endMark = indentation[2];
-                indent  = max(indent, indentation[1]);
+                reader_.sliceBuilder.begin();
+                auto indentation = scanBlockScalarIndentationToSlice();
+                breaks  = reader_.sliceBuilder.finish();
+                endMark = indentation[1];
+                indent  = max(indent, indentation[0]);
             }
             else
             {
@@ -1333,10 +1334,12 @@ final class Scanner
         }
 
         /// Scan indentation in a block scalar, returning line breaks, max indent and end mark.
-        Tuple!(dstring, uint, Mark) scanBlockScalarIndentation() 
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice()
             @system pure nothrow @nogc
         {
-            reader_.sliceBuilder.begin();
             uint maxIndent;
             Mark endMark = reader_.mark;
 
@@ -1352,7 +1355,7 @@ final class Scanner
                 maxIndent = max(reader_.column, maxIndent);
             }
 
-            return tuple(reader_.sliceBuilder.finish(), maxIndent, endMark);
+            return tuple(maxIndent, endMark);
         }
 
         /// Scan line breaks at lower or specified indentation in a block scalar.
