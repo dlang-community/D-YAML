@@ -992,9 +992,14 @@ final class Scanner
         }
 
         /// Scan prefix of a tag directive.
-        dstring scanTagDirectivePrefix(const Mark startMark) @safe pure
+        dstring scanTagDirectivePrefix(const Mark startMark) @trusted pure
         {
-            auto value = scanTagURI("directive", startMark);
+            reader_.sliceBuilder.begin();
+            {
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                scanTagURIToSlice("directive", startMark);
+            }
+            auto value = reader_.sliceBuilder.finish();
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive prefix", startMark,
                               "expected ' ', but found" ~ reader_.peek().to!string,
@@ -1065,7 +1070,13 @@ final class Scanner
             if(c == '<')
             {
                 reader_.forward(2);
-                suffix = scanTagURI("tag", startMark);
+
+                reader_.sliceBuilder.begin();
+                {
+                    scope(failure) { reader_.sliceBuilder.finish(); }
+                    scanTagURIToSlice("tag", startMark);
+                }
+                suffix = reader_.sliceBuilder.finish();
                 enforce(reader_.peek() == '>',
                         new Error("While scanning a tag", startMark,
                                   "expected '>' but found" ~ reader_.peek().to!string,
@@ -1106,7 +1117,10 @@ final class Scanner
                     reader_.forward();
                 }
 
-                suffix = scanTagURI("tag", startMark);
+                reader_.sliceBuilder.begin();
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                scanTagURIToSlice("tag", startMark);
+                suffix = reader_.sliceBuilder.finish();
             }
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
@@ -1699,14 +1713,15 @@ final class Scanner
         }
 
         /// Scan URI in a tag token.
-        dstring scanTagURI(const string name, const Mark startMark) @trusted pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanTagURIToSlice(const string name, const Mark startMark) @trusted pure
         {
             // Note: we do not check if URI is well-formed.
-
-            reader_.sliceBuilder.begin();
             dchar c = reader_.peek();
+            bool anyChars = false;
             {
-                scope(failure) { reader_.sliceBuilder.finish(); }
                 uint length = 0;
                 while(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
                 {
@@ -1714,8 +1729,9 @@ final class Scanner
                     {
                         auto chars = reader_.get(length);
                         reader_.sliceBuilder.write(chars);
+                        anyChars = anyChars || (length > 0);
                         length = 0;
-                        scanURIEscapesToSlice(name, startMark);
+                        anyChars = scanURIEscapesToSlice(name, startMark) || anyChars;
                     }
                     else { ++length; }
                     c = reader_.peek(length);
@@ -1724,15 +1740,13 @@ final class Scanner
                 {
                     auto chars = reader_.get(length);
                     reader_.sliceBuilder.write(chars);
+                    anyChars = true;
                     length = 0;
                 }
             }
-            dstring result = reader_.sliceBuilder.finish();
-            enforce(!result.empty,
+            enforce(anyChars,
                     new Error("While parsing a " ~ name, startMark,
                               "expected URI, but found: " ~ c.to!string, reader_.mark));
-
-            return result;
         }
 
         /// Scan URI escape sequences.
