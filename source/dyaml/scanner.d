@@ -27,6 +27,7 @@ import std.utf;
 import dyaml.fastcharsearch;
 import dyaml.escapes;
 import dyaml.exception;
+import dyaml.nogcutil;
 import dyaml.queue;
 import dyaml.reader;
 import dyaml.style;
@@ -1405,7 +1406,6 @@ final class Scanner
 
                         dchar[] hex = reader_.get(hexLength);
                         bool overflow;
-                        import dyaml.nogcutil;
                         const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
                         if(overflow)
                         {
@@ -1423,23 +1423,10 @@ final class Scanner
                     }
                     else
                     {
-                        // Build an error message about the unsupported escape character
-                        // without breaking purity or allocating.
-                        const msg = "found unsupported escape character: ";
-                        auto msgChars = msg.length;
-                        msgBuffer_[0 .. msgChars] = msg;
-                        if(c > char.max)
-                        {
-                            const unknown = "<unknown>";
-                            msgBuffer_[msgChars .. msgChars + unknown.length] = unknown;
-                            msgChars += unknown.length;
-                        }
-                        else
-                        {
-                            msgBuffer_[msgChars++] = cast(char)c;
-                        }
+                        auto msg = msgBuffer_.printNoGC("found unsupported escape "
+                                                        "character", c);
                         setError("While scanning a double quoted scalar", startMark,
-                                 cast(string)msgBuffer_[0 .. msgChars], reader_.mark);
+                                 cast(string)msg, reader_.mark);
                         return;
                     }
                 }
