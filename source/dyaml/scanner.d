@@ -991,13 +991,13 @@ final class Scanner
             return value;
         }
 
-        ///Scan prefix of a tag directive.
-        dchar[] scanTagDirectivePrefix(const Mark startMark) @safe pure
+        /// Scan prefix of a tag directive.
+        dstring scanTagDirectivePrefix(const Mark startMark) @safe pure
         {
             auto value = scanTagURI("directive", startMark);
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive prefix", startMark,
-                              "expected ' ', but found" ~ to!string(reader_.peek()),
+                              "expected ' ', but found" ~ reader_.peek().to!string,
                               reader_.mark));
 
             return value;
@@ -1054,13 +1054,13 @@ final class Scanner
             assert(false, "This code should never be reached");
         }
 
-        ///Scan a tag token.
-        Token scanTag() @safe pure
+        /// Scan a tag token.
+        Token scanTag() @trusted pure
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
-            dchar[] handle;
-            dchar[] suffix;
+            dstring handle;
+            dstring suffix;
 
             if(c == '<')
             {
@@ -1699,76 +1699,105 @@ final class Scanner
         }
 
         /// Scan URI in a tag token.
-        dchar[] scanTagURI(const string name, const Mark startMark) @trusted pure
+        dstring scanTagURI(const string name, const Mark startMark) @trusted pure
         {
             // Note: we do not check if URI is well-formed.
-            // Using appender_, so clear it when we're done.
-            scope(exit) { appender_.clear(); }
-            uint length = 0;
 
+            reader_.sliceBuilder.begin();
             dchar c = reader_.peek();
-            while(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
             {
-                if(c == '%')
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                uint length = 0;
+                while(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
                 {
-                    appender_.put(reader_.get(length));
-                    length = 0;
-                    appender_.put(scanURIEscapes(name, startMark));
+                    if(c == '%')
+                    {
+                        auto chars = reader_.get(length);
+                        reader_.sliceBuilder.write(chars);
+                        length = 0;
+                        scanURIEscapesToSlice(name, startMark);
+                    }
+                    else { ++length; }
+                    c = reader_.peek(length);
                 }
-                else { ++length; }
-                c = reader_.peek(length);
+                if(length > 0)
+                {
+                    auto chars = reader_.get(length);
+                    reader_.sliceBuilder.write(chars);
+                    length = 0;
+                }
             }
-            if(length > 0)
-            {
-                appender_.put(reader_.get(length));
-                length = 0;
-            }
-            enforce(appender_.data.length > 0,
+            dstring result = reader_.sliceBuilder.finish();
+            enforce(!result.empty,
                     new Error("While parsing a " ~ name, startMark,
                               "expected URI, but found: " ~ c.to!string, reader_.mark));
 
-            return appender_.data;
+            return result;
         }
 
         /// Scan URI escape sequences.
-        dchar[] scanURIEscapes(const string name, const Mark startMark) @system pure
+        void scanURIEscapesToSlice(const string name, const Mark startMark) @system pure
         {
-            ubyte[] bytes;
+            // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
+            // decoding into UTF-32.
+            char[4] bytes;
+            size_t bytesUsed;
             Mark mark = reader_.mark;
 
-            while(reader_.peek() == '%')
+            // Get one dchar by decoding data from bytes.
+            //
+            // This is probably slow, but simple and URI escapes are extremely uncommon
+            // in YAML.
+            static size_t getDchar(char[] bytes, Reader reader_)
             {
-                reader_.forward();
-
-                ubyte b = 0;
-                uint mult = 16;
-                // Converting 2 hexadecimal digits to a byte.
-                foreach(k; 0 .. 2)
+                import std.utf;
+                size_t nextChar;
+                const c = std.utf.decode(bytes[], nextChar); 
+                reader_.sliceBuilder.write(c);
+                if(bytes.length - nextChar > 0)
                 {
-                    const dchar c = reader_.peek(k);
-                    enforce(isHexDigit(c),
-                            new Error("While scanning a " ~ name, startMark,
-                                      "expected URI escape sequence of "
-                                      "2 hexadecimal numbers, but found: " ~
-                                      c.to!string, reader_.mark));
-
-                    uint digit;
-                    if(c - '0' < 10)     { digit = c - '0'; }
-                    else if(c - 'A' < 6) { digit = c - 'A'; }
-                    else if(c - 'a' < 6) { digit = c - 'a'; }
-                    else                 { assert(false); }
-                    b += mult * digit;
-                    mult /= 16;
+                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar, 
+                                             bytes.length - nextChar);
                 }
-                bytes ~= b;
-
-                reader_.forward(2);
+                return bytes.length - nextChar;
             }
 
-            try { return to!(dchar[])(cast(string)bytes); }
-            catch(ConvException e)
+            try 
             {
-                throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
+                while(reader_.peek() == '%')
+                {
+                    reader_.forward();
+                    if(bytesUsed == bytes.length)
+                    {
+                        bytesUsed = getDchar(bytes[], reader_); 
+                    }
+
+                    char b = 0;
+                    uint mult = 16;
+                    // Converting 2 hexadecimal digits to a byte.
+                    foreach(k; 0 .. 2)
+                    {
+                        const dchar c = reader_.peek(k);
+                        enforce(isHexDigit(c),
+                                new Error("While scanning a " ~ name, startMark,
+                                        "expected URI escape sequence of "
+                                        "2 hexadecimal numbers, but found: " ~
+                                        c.to!string, reader_.mark));
+
+                        uint digit;
+                        if(c - '0' < 10)     { digit = c - '0'; }
+                        else if(c - 'A' < 6) { digit = c - 'A'; }
+                        else if(c - 'a' < 6) { digit = c - 'a'; }
+                        else                 { assert(false); }
+                        b += mult * digit;
+                        mult /= 16;
+                    }
+                    bytes[bytesUsed++] = b;
+
+                    reader_.forward(2);
+                }
+
+                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
             }
             catch(UTFException e)
             {
