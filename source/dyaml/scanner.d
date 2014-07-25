@@ -697,6 +697,7 @@ final class Scanner
             allowSimpleKey_ = false;
 
             tokens_.push(scanTag());
+            throwIfError();
         }
 
         ///Add block SCALAR token.
@@ -1067,7 +1068,9 @@ final class Scanner
         }
 
         /// Scan a tag token.
-        Token scanTag() @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        Token scanTag() @trusted pure nothrow
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1084,11 +1087,14 @@ final class Scanner
 
                 handleEnd = 0;
                 scanTagURIToSlice!"tag"(startMark);
-                throwIfError();
-                enforce(reader_.peek() == '>',
-                        new Error("While scanning a tag", startMark,
-                                  "expected '>' but found" ~ reader_.peek().to!string,
-                                  reader_.mark));
+                if(error_) { return Token.init; }
+                if(reader_.peek() != '>')
+                {
+                    setError("While scanning a tag", startMark,
+                             buildMsg("expected '>' but found ", reader_.peek()),
+                             reader_.mark);
+                    return Token.init;
+                }
                 reader_.forward();
             }
             else if(" \t\0\n\r\u0085\u2028\u2029"d.canFind(c))
@@ -1117,7 +1123,7 @@ final class Scanner
                 {
                     scanTagHandleToSlice!"tag"(startMark);
                     handleEnd = cast(uint)reader_.sliceBuilder.length;
-                    throwIfError();
+                    if(error_) { return Token.init; }
                 }
                 else
                 {
@@ -1127,14 +1133,17 @@ final class Scanner
                 }
 
                 scanTagURIToSlice!"tag"(startMark);
-                throwIfError();
+                if(error_) { return Token.init; }
             }
 
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a tag", startMark,
-                              "expected ' ' but found" ~ reader_.peek().to!string,
-                              reader_.mark));
-            const dstring slice = reader_.sliceBuilder.finish();
+            if(!" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            {
+                setError("While scanning a tag", startMark,
+                         buildMsg("expected ' ' but found ", reader_.peek()),
+                         reader_.mark);
+                return Token.init;
+            }
+            const slice = reader_.sliceBuilder.finish();
             return tagToken(startMark, reader_.mark, slice.utf32To8, handleEnd);
         }
 
