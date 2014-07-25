@@ -1736,40 +1736,48 @@ final class Scanner
         }
 
         /// Scan URI escape sequences.
-        void scanURIEscapesToSlice(const string name, const Mark startMark) @system pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        ///
+        /// Returns: true if any escapes were scanned, false otherwise.
+        bool scanURIEscapesToSlice(const string name, const Mark startMark) @system pure
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
             char[4] bytes;
             size_t bytesUsed;
             Mark mark = reader_.mark;
+            // True if any characters were written to the slice.
+            bool anyChars;
 
             // Get one dchar by decoding data from bytes.
             //
             // This is probably slow, but simple and URI escapes are extremely uncommon
             // in YAML.
-            static size_t getDchar(char[] bytes, Reader reader_)
+            static size_t getDchar(char[] bytes, Reader reader_, ref bool anyChars)
             {
                 import std.utf;
                 size_t nextChar;
-                const c = std.utf.decode(bytes[], nextChar); 
+                const c = std.utf.decode(bytes[], nextChar);
                 reader_.sliceBuilder.write(c);
+                anyChars = true;
                 if(bytes.length - nextChar > 0)
                 {
-                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar, 
+                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
                                              bytes.length - nextChar);
                 }
                 return bytes.length - nextChar;
             }
 
-            try 
+            try
             {
                 while(reader_.peek() == '%')
                 {
                     reader_.forward();
                     if(bytesUsed == bytes.length)
                     {
-                        bytesUsed = getDchar(bytes[], reader_); 
+                        bytesUsed = getDchar(bytes[], reader_, anyChars);
                     }
 
                     char b = 0;
@@ -1797,12 +1805,14 @@ final class Scanner
                     reader_.forward(2);
                 }
 
-                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
+                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_, anyChars);
             }
             catch(UTFException e)
             {
                 throw new Error("While scanning a " ~ name, startMark, e.msg, mark);
             }
+
+            return anyChars;
         }
 
 
