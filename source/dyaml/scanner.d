@@ -1156,6 +1156,8 @@ final class Scanner
             reader_.forward();
 
             const indicators = scanBlockScalarIndicators(startMark);
+            throwIfError();
+
             const chomping   = indicators[0];
             const increment  = indicators[1];
             scanBlockScalarIgnoredLine(startMark);
@@ -1228,48 +1230,85 @@ final class Scanner
             return scalarToken(startMark, endMark, utf32To8(appender_.data), style);
         }
 
-        ///Scan chomping and indentation indicators of a scalar token.
+        /// Scan chomping and indentation indicators of a scalar token.
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark)
-            @safe pure
+            @safe pure nothrow @nogc
         {
             auto chomping = Chomping.Clip;
             int increment = int.min;
-            dchar c = reader_.peek();
+            dchar c       = reader_.peek();
 
-            ///Get chomping indicator, if detected. Return false otherwise.
-            bool getChomping()
+            /// Indicators can be in any order.
+            if(getChomping(c, chomping))
             {
-                if(!"+-"d.canFind(c)){return false;}
-                chomping = c == '+' ? Chomping.Keep : Chomping.Strip;
-                reader_.forward();
-                c = reader_.peek();
-                return true;
+                getIncrement(c, increment, startMark);
+                if(error_) { return tuple(Chomping.init, int.max); }
+            }
+            else
+            {
+                const gotIncrement = getIncrement(c, increment, startMark);
+                if(error_)       { return tuple(Chomping.init, int.max); }
+                if(gotIncrement) { getChomping(c, chomping); }
             }
 
-            ///Get increment indicator, if detected. Return false otherwise.
-            bool getIncrement()
+            if(!" \0\n\r\u0085\u2028\u2029"d.canFind(c))
             {
-                if(!isDigit(c)){return false;}
-                increment = to!int(""d ~ c);
-                enforce(increment != 0,
-                        new Error("While scanning a block scalar", startMark,
-                                  "expected indentation indicator in range 1-9, but found 0",
-                                  reader_.mark));
-                reader_.forward();
-                c = reader_.peek();
-                return true;
+                setError("While scanning a block scalar", startMark,
+                         buildMsg("expected chomping or indentation indicator, but found ", c),
+                         reader_.mark);
+                return tuple(Chomping.init, int.max);
             }
-
-            ///Indicators can be in any order.
-            if(getChomping())      {getIncrement();}
-            else if(getIncrement()){getChomping();}
-
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(c),
-                    new Error("While scanning a block scalar", startMark,
-                              "expected chomping or indentation indicator, but found "
-                              ~ to!string(c), reader_.mark));
 
             return tuple(chomping, increment);
+        }
+
+        /// Get chomping indicator, if detected. Return false otherwise.
+        ///
+        /// Used in scanBlockScalarIndicators.
+        ///
+        /// Params:
+        ///
+        /// c        = The character that may be a chomping indicator.
+        /// chomping = Write the chomping value here, if detected.
+        bool getChomping(ref dchar c, ref Chomping chomping) @safe pure nothrow @nogc
+        {
+            if(!"+-"d.canFind(c)) { return false; }
+            chomping = c == '+' ? Chomping.Keep : Chomping.Strip;
+            reader_.forward();
+            c = reader_.peek();
+            return true;
+        }
+
+        /// Get increment indicator, if detected. Return false otherwise.
+        ///
+        /// Used in scanBlockScalarIndicators.
+        ///
+        /// Params:
+        ///
+        /// c         = The character that may be an increment indicator.
+        ///             If an increment indicator is detected, this will be updated to
+        ///             the next character in the Reader.
+        /// increment = Write the increment value here, if detected.
+        /// startMark = Mark for error messages.
+        bool getIncrement(ref dchar c, ref int increment, const Mark startMark)
+            @safe pure nothrow @nogc
+        {
+            if(!c.isDigit) { return false; }
+            // Convert a digit to integer.
+            increment = c - '0';
+            assert(increment < 10 && increment >= 0, "Digit has invalid value");
+            if(increment == 0)
+            {
+                setError("While scanning a block scalar", startMark,
+                         "expected indentation indicator in range 1-9, but found 0",
+                         reader_.mark);
+                return false;
+            }
+            reader_.forward();
+            c = reader_.peek();
+            return true;
         }
 
         ///Scan (and ignore) ignored line in a block scalar.
