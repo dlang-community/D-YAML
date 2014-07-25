@@ -52,18 +52,27 @@ struct Token
 {
     @disable int opCmp(ref Token);
 
+    // 16B
     /// Value of the token, if any.
     string value;
+    // 4B
     /// Start position of the token in file/stream.
     Mark startMark;
+    // 4B
     /// End position of the token in file/stream.
     Mark endMark;
+    // 1B
     /// Token type.
     TokenID id;
+    // 1B
     /// Style of scalar token, if this is a scalar token.
     ScalarStyle style;
+    // 1B
     /// Encoding, if this is a stream start token.
     Encoding encoding;
+    // 4B
+    /// Used to split value into 2 substrings for tokens that need 2 values (tagToken)
+    uint valueDivider;
 
     /// Get string representation of the token ID.
     @property string idString() @safe pure const {return id.to!string;}
