@@ -82,7 +82,7 @@ char[] printNoGC(S...)(char[] buffer, S args) @safe pure nothrow @nogc
     {
         alias A = typeof(arg);
         static if(is(A == char[]) || is(A == string)) { appender.put(arg); }
-        else static if(is(A == dchar))                { appender.putDChar(arg); }
+        else static if(is(Unqual!A == dchar))         { appender.putDChar(arg); }
         else static assert(false, "printNoGC does not support " ~ A.stringof);
     }
 
