@@ -1165,23 +1165,20 @@ final class Scanner
 
             //Determine the indentation level and go to the first non-empty line.
             Mark endMark;
-            dstring breaks;
             uint indent = max(1, indent_ + 1);
+            reader_.sliceBuilder.begin();
             if(increment == int.min)
             {
-                reader_.sliceBuilder.begin();
                 auto indentation = scanBlockScalarIndentationToSlice();
-                breaks  = reader_.sliceBuilder.finish();
                 endMark = indentation[1];
                 indent  = max(indent, indentation[0]);
             }
             else
             {
                 indent += increment - 1;
-                reader_.sliceBuilder.begin();
                 endMark = scanBlockScalarBreaksToSlice(indent);
-                breaks  = reader_.sliceBuilder.finish();
             }
+            dstring breaks  = reader_.sliceBuilder.finish();
 
             dchar[] lineBreak = ""d.dup;
 
