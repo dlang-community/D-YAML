@@ -134,7 +134,6 @@ AppenderNoGCFixed!(E[]) appenderNoGC(A : E[], E)(A array)
 struct AppenderNoGCFixed(A : T[], T)
 {
     import std.array;
-    import std.traits;
 
     private struct Data
     {
