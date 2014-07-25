@@ -124,13 +124,16 @@ alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
 
 /// Construct a simple token with value with specified type.
 ///
-/// Params:  id    = Type of the token.
-///          start = Start position of the token.
-///          end   = End position of the token.
-///          value = Value of the token.
-Token simpleValueToken(TokenID id)(const Mark start, const Mark end, const string value)
+/// Params:  id           = Type of the token.
+///          start        = Start position of the token.
+///          end          = End position of the token.
+///          value        = Value of the token.
+///          valueDivider = A hack for TagToken to store 2 values in value; the first
+///                         value goes up to valueDivider, the second after it.
+Token simpleValueToken(TokenID id)(const Mark start, const Mark end, const string value,
+                                   const uint valueDivider = uint.max)
 {
-    return Token(value, start, end, id);
+    return Token(value, start, end, id, ScalarStyle.Invalid, Encoding.init, valueDivider);
 }
 
 /// Alias for construction of tag token.

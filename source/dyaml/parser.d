@@ -425,6 +425,8 @@ final class Parser
             string tag = null;
             Mark startMark, endMark, tagMark;
             bool invalidMarks = true;
+            // The index in the tag string where tag handle ends and tag suffix starts.
+            uint tagHandleEnd;
 
             //Get anchor/tag if detected. Return false otherwise.
             bool get(const TokenID id, const Flag!"first" first, ref string target)
@@ -433,7 +435,11 @@ final class Parser
                 invalidMarks = false;
                 immutable token = scanner_.getToken();
                 if(first){startMark = token.startMark;}
-                if(id == TokenID.Tag){tagMark = token.startMark;}
+                if(id == TokenID.Tag)
+                {
+                    tagMark = token.startMark;
+                    tagHandleEnd = token.valueDivider;
+                }
                 endMark = token.endMark; 
                 target  = token.value;
                 return true;
@@ -443,7 +449,7 @@ final class Parser
             if(get(TokenID.Anchor, Yes.first, anchor)){get(TokenID.Tag, No.first, tag);}
             else if(get(TokenID.Tag, Yes.first, tag)) {get(TokenID.Anchor, No.first, anchor);}
 
-            if(tag !is null){tag = processTag(tag, startMark, tagMark);}
+            if(tag !is null){tag = processTag(tag, tagHandleEnd, startMark, tagMark);}
 
             if(invalidMarks)
             {
@@ -525,17 +531,17 @@ final class Parser
          * Process a tag string retrieved from a tag token.
          *
          * Params:  tag       = Tag before processing.
+         *          handleEnd = Index in tag where tag handle ends and tag suffix
+         *                      starts.
          *          startMark = Position of the node the tag belongs to.
          *          tagMark   = Position of the tag.
          */ 
-        string processTag(const string tag, const Mark startMark, const Mark tagMark)
+        string processTag(const string tag, const uint handleEnd,
+                          const Mark startMark, const Mark tagMark)
             const @trusted
         {
-            //Tag handle and suffix are separated by '\0'.
-            const parts = tag.split("\0");
-            assert(parts.length == 2, "Tag data stored incorrectly in a token");
-            const handle = parts[0];
-            const suffix = parts[1];
+            const handle = tag[0 .. handleEnd];
+            const suffix = tag[handleEnd .. $];
 
             if(handle.length > 0)
             {

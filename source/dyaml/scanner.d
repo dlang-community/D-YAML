@@ -1064,19 +1064,19 @@ final class Scanner
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
-            dstring handle;
-            dstring suffix;
+
+            reader_.sliceBuilder.begin();
+            scope(failure) { reader_.sliceBuilder.finish(); }
+            // Index where tag handle ends and tag suffix starts in the tag value
+            // (slice) we will produce.
+            uint handleEnd;
 
             if(c == '<')
             {
                 reader_.forward(2);
 
-                reader_.sliceBuilder.begin();
-                {
-                    scope(failure) { reader_.sliceBuilder.finish(); }
-                    scanTagURIToSlice("tag", startMark);
-                }
-                suffix = reader_.sliceBuilder.finish();
+                handleEnd = 0;
+                scanTagURIToSlice("tag", startMark);
                 enforce(reader_.peek() == '>',
                         new Error("While scanning a tag", startMark,
                                   "expected '>' but found" ~ reader_.peek().to!string,
@@ -1085,8 +1085,9 @@ final class Scanner
             }
             else if(" \t\0\n\r\u0085\u2028\u2029"d.canFind(c))
             {
-                suffix = "!"d.dup;
                 reader_.forward();
+                handleEnd = 0;
+                reader_.sliceBuilder.write('!');
             }
             else
             {
@@ -1106,28 +1107,25 @@ final class Scanner
 
                 if(useHandle)
                 {
-                    reader_.sliceBuilder.begin();
-                    scope(failure) { reader_.sliceBuilder.finish(); }
                     scanTagHandleToSlice("tag", startMark);
-                    handle = reader_.sliceBuilder.finish();
+                    handleEnd = cast(uint)reader_.sliceBuilder.length;
                 }
                 else
                 {
-                    handle = "!"d.dup;
                     reader_.forward();
+                    reader_.sliceBuilder.write('!');
+                    handleEnd = cast(uint)reader_.sliceBuilder.length;
                 }
 
-                reader_.sliceBuilder.begin();
-                scope(failure) { reader_.sliceBuilder.finish(); }
                 scanTagURIToSlice("tag", startMark);
-                suffix = reader_.sliceBuilder.finish();
             }
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a tag", startMark,
                               "expected ' ' but found" ~ reader_.peek().to!string,
                               reader_.mark));
-            return tagToken(startMark, reader_.mark, utf32To8(handle ~ '\0' ~ suffix));
+            const dstring slice = reader_.sliceBuilder.finish();
+            return tagToken(startMark, reader_.mark, slice.utf32To8, handleEnd);
         }
 
         ///Scan a block scalar token with specified style.
