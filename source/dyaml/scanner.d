@@ -982,7 +982,8 @@ final class Scanner
             reader_.sliceBuilder.begin();
             {
                 scope(failure) { reader_.sliceBuilder.finish(); }
-                scanTagHandleToSlice("directive", startMark);
+                scanTagHandleToSlice!"directive"(startMark);
+                throwIfError();
             }
             auto value = reader_.sliceBuilder.finish();
             enforce(reader_.peek() == ' ',
@@ -1108,8 +1109,9 @@ final class Scanner
 
                 if(useHandle)
                 {
-                    scanTagHandleToSlice("tag", startMark);
+                    scanTagHandleToSlice!"tag"(startMark);
                     handleEnd = cast(uint)reader_.sliceBuilder.length;
+                    throwIfError();
                 }
                 else
                 {
@@ -1669,12 +1671,19 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanTagHandleToSlice(const string name, const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanTagHandleToSlice(string name)(const Mark startMark) 
+            @system pure nothrow @nogc
         {
             dchar c = reader_.peek();
-            enforce(c == '!',
-                    new Error("While scanning a " ~ name, startMark,
-                              "expected a '!', but found: " ~ c.to!string, reader_.mark));
+            enum contextMsg = "While scanning a " ~ name;
+            if(c != '!')
+            {
+                auto msg = msgBuffer_.printNoGC("expected a '!', but found: ", c);
+                setError(contextMsg, startMark, cast(string)msg, reader_.mark);
+                return;
+            }
 
             uint length = 1;
             c = reader_.peek(length);
@@ -1688,9 +1697,9 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    throw new Error("While scanning a " ~ name, startMark,
-                                    "expected a '!', but found: " ~ c.to!string,
-                                    reader_.mark);
+                    auto msg = msgBuffer_.printNoGC("expected a '!', but found: ", c);
+                    setError(contextMsg, startMark, cast(string)msg, reader_.mark);
+                    return;
                 }
                 ++length;
             }
