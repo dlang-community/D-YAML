@@ -1433,10 +1433,9 @@ final class Scanner
                     }
                     else
                     {
-                        auto msg = msgBuffer_.printNoGC("found unsupported escape "
-                                                        "character", c);
                         setError("While scanning a double quoted scalar", startMark,
-                                 cast(string)msg, reader_.mark);
+                                 buildMsg("found unsupported escape " "character", c),
+                                 reader_.mark);
                         return;
                     }
                 }
@@ -1597,7 +1596,7 @@ final class Scanner
             }
 
             spacesTransaction.__dtor();
-            dstring slice = reader_.sliceBuilder.finish();
+            const slice = reader_.sliceBuilder.finish();
 
             return scalarToken(startMark, endMark, slice.utf32To8, ScalarStyle.Plain);
         }
@@ -1687,8 +1686,8 @@ final class Scanner
             enum contextMsg = "While scanning a " ~ name;
             if(c != '!')
             {
-                auto msg = msgBuffer_.printNoGC("expected a '!', but found: ", c);
-                setError(contextMsg, startMark, cast(string)msg, reader_.mark);
+                setError(contextMsg, startMark, 
+                         buildMsg("expected a '!', but found: ", c), reader_.mark);
                 return;
             }
 
@@ -1704,8 +1703,8 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    auto msg = msgBuffer_.printNoGC("expected a '!', but found: ", c);
-                    setError(contextMsg, startMark, cast(string)msg, reader_.mark);
+                    setError(contextMsg, startMark, 
+                             buildMsg("expected a '!', but found: ", c), reader_.mark);
                     return;
                 }
                 ++length;
@@ -1752,8 +1751,7 @@ final class Scanner
             if(anyChars) { return; }
 
             enum contextMsg = "While parsing a " ~ name;
-            setError(contextMsg, startMark, 
-                     cast(string)msgBuffer_.printNoGC("expected URI, but found: ", c),
+            setError(contextMsg, startMark, buildMsg("expected URI, but found: ", c),
                      reader_.mark);
         }
 
@@ -1815,11 +1813,9 @@ final class Scanner
                         const dchar c = reader_.peek(k);
                         if(!c.isHexDigit)
                         {
-                            auto msg = msgBuffer_.printNoGC(
-                                "expected URI escape sequence of 2 hexadecimal "
-                                "numbers, but found: ", c);
-                            setError(contextMsg, startMark, cast(string)msg,
-                                     reader_.mark);
+                            auto msg = buildMsg("expected URI escape sequence of 2 "
+                                                "hexadecimal numbers, but found: ", c);
+                            setError(contextMsg, startMark, msg, reader_.mark);
                             return false;
                         }
 
