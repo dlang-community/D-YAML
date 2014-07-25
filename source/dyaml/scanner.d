@@ -966,8 +966,8 @@ final class Scanner
             return reader_.get(length);
         }
 
-        ///Scan value of a tag directive.
-        dchar[] scanTagDirectiveValue(const Mark startMark) @safe pure
+        /// Scan value of a tag directive.
+        dstring scanTagDirectiveValue(const Mark startMark) @safe pure
         {
             findNextNonSpace();
             const handle = scanTagDirectiveHandle(startMark);
@@ -976,9 +976,14 @@ final class Scanner
         }
 
         ///Scan handle of a tag directive.
-        dchar[] scanTagDirectiveHandle(const Mark startMark) @safe pure
+        dstring scanTagDirectiveHandle(const Mark startMark) @trusted pure
         {
-            auto value = scanTagHandle("directive", startMark);
+            reader_.sliceBuilder.begin();
+            {
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                scanTagHandleToSlice("directive", startMark);
+            }
+            auto value = reader_.sliceBuilder.finish();
             enforce(reader_.peek() == ' ',
                     new Error("While scanning a directive handle", startMark,
                               "expected ' ', but found: " ~ to!string(reader_.peek()),
@@ -1088,7 +1093,13 @@ final class Scanner
                     c = reader_.peek(length);
                 }
 
-                if(useHandle) { handle = scanTagHandle("tag", startMark); }
+                if(useHandle)
+                {
+                    reader_.sliceBuilder.begin();
+                    scope(failure) { reader_.sliceBuilder.finish(); }
+                    scanTagHandleToSlice("tag", startMark);
+                    handle = reader_.sliceBuilder.finish();
+                }
                 else
                 {
                     handle = "!"d.dup;
@@ -1655,7 +1666,10 @@ final class Scanner
         }
 
         /// Scan handle of a tag token.
-        dchar[] scanTagHandle(const string name, const Mark startMark) @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanTagHandleToSlice(const string name, const Mark startMark) @system pure
         {
             dchar c = reader_.peek();
             enforce(c == '!',
@@ -1666,7 +1680,7 @@ final class Scanner
             c = reader_.peek(length);
             if(c != ' ')
             {
-                while(isAlphaNum(c) || "-_"d.canFind(c))
+                while(c.isAlphaNum || "-_"d.canFind(c))
                 {
                     ++length;
                     c = reader_.peek(length);
@@ -1680,7 +1694,8 @@ final class Scanner
                 }
                 ++length;
             }
-            return reader_.get(length);
+
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan URI in a tag token.
