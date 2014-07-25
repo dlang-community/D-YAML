@@ -63,6 +63,63 @@ body
     assert(!atStart, "Nothing to parse in parse()");
     return v;
 }
+
+
+/// Buils a message to a buffer similarly to writef/writefln, but without
+/// using GC. 
+///
+/// C snprintf would be better, but it isn't pure.
+/// formattedWrite isn't completely @nogc yet (although it isn't GC-heavy).
+///
+/// The user has to ensure buffer is long enough - an assert checks that we don't run
+/// out of space. Currently this can only write strings and dchars.
+char[] printNoGC(S...)(char[] buffer, S args) @safe pure nothrow @nogc
+{
+    auto appender = appenderNoGC(buffer);
+
+    foreach(arg; args)
+    {
+        alias A = typeof(arg);
+        static if(is(A == char[]) || is(A == string)) { appender.put(arg); }
+        else static if(is(A == dchar))                { appender.putDChar(arg); }
+        else static assert(false, "printNoGC does not support " ~ A.stringof);
+    }
+
+    return appender.data;
+}
+
+
+/// Write a dchar to a character buffer without decoding or using the GC.
+///
+/// Params:
+///
+/// c   = The dchar to write. Will be written as ASCII if it is in ASCII or "<unknown"
+///       if it's not.
+/// buf = The buffer to write to. Must be large enough to store "<unknown>"
+///
+/// Returns: Slice of buf containing the written dchar.
+char[] writeDCharTo(dchar c, char[] buf) @safe pure nothrow @nogc
+{
+    const unknown = "'unknown'";
+    assert(buf.length > unknown.length, "Too small buffer for writeDCharTo");
+    if(c < 128) 
+    {
+        buf[0] = buf[2] = '\'';
+        buf[1] = cast(char)c; 
+        return buf[0 .. 3];
+    }
+    buf[0 .. unknown.length] = unknown[] ;
+    return buf[0 .. unknown.length];
+}
+
+/// A UFCS utility function to write a dchar to an AppenderNoGCFixed using writeDCharTo.
+void putDChar(ref AppenderNoGCFixed!(char[], char) appender, dchar c)
+    @safe pure nothrow @nogc 
+{
+    char[16] dcharBuf;
+    appender.put(c.writeDCharTo(dcharBuf));
+}
+
 /// Convenience function that returns an $(D AppenderNoGCFixed!A) using with $(D array)
 /// for storage.
 AppenderNoGCFixed!(E[]) appenderNoGC(A : E[], E)(A array)
@@ -186,4 +243,14 @@ struct AppenderNoGCFixed(A : T[], T)
         /// Clear is not available for const/immutable data.
         @disable void clear();
     }
+}
+
+unittest
+{
+    char[256] buffer;
+    auto appender = appenderNoGC(buffer[]);
+    appender.put("found unsupported escape character: ");
+    appender.putDChar('a');
+    appender.putDChar('á');
+    assert(appender.data == "found unsupported escape character: 'a''unknown'");
 }
