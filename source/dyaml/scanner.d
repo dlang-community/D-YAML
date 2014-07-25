@@ -1309,7 +1309,7 @@ final class Scanner
 
         /// Scan a qouted flow scalar token with specified quotes.
         ///
-        /// In case of an error, error_ is set. Check this before using the result.
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanFlowScalar(const ScalarStyle quotes) @trusted pure nothrow
         {
             const startMark = reader_.mark;
@@ -1339,7 +1339,7 @@ final class Scanner
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
         ///
-        /// In case of an error, error_ is set. Check this before using the result.
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @system pure nothrow @nogc
         {
@@ -1439,7 +1439,7 @@ final class Scanner
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
         ///
-        /// In case of an error, error_ is set. Check this before using the result.
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarSpacesToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
@@ -1484,7 +1484,7 @@ final class Scanner
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// line breaks into that slice.
         ///
-        /// In case of an error, error_ is set. Check this before using the result.
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         bool scanFlowScalarBreaksToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
@@ -1517,7 +1517,7 @@ final class Scanner
 
         /// Scan plain scalar token (no block, no quotes).
         ///
-        /// In case of an error, error_ is set. Check this before using the result.
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanPlain() @trusted pure nothrow
         {
             // We keep track of the allowSimpleKey_ flag here.
