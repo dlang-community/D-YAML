@@ -1178,9 +1178,9 @@ final class Scanner
             else
             {
                 indent += increment - 1;
-                auto scalarBreaks = scanBlockScalarBreaks(indent);
-                breaks  = scalarBreaks[0];
-                endMark = scalarBreaks[1];
+                reader_.sliceBuilder.begin();
+                endMark = scanBlockScalarBreaksToSlice(indent);
+                breaks  = reader_.sliceBuilder.finish();
             }
 
             dchar[] lineBreak = ""d.dup;
@@ -1374,6 +1374,25 @@ final class Scanner
             }
 
             return tuple(reader_.sliceBuilder.finish(), endMark);
+        }
+
+        /// Scan line breaks at lower or specified indentation in a block scalar.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted pure nothrow @nogc
+        {
+            Mark endMark = reader_.mark;
+
+            for(;;)
+            {
+                while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
+                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
+                reader_.sliceBuilder.write(scanLineBreak());
+                endMark = reader_.mark;
+            }
+
+            return endMark;
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
