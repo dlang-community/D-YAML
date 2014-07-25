@@ -1412,6 +1412,7 @@ final class Scanner
                             setError("While scanning a double quoted scalar", startMark,
                                      "overflow when parsing an escape sequence of "
                                      "hexadecimal numbers.", reader_.mark);
+                            return;
                         }
                         reader_.sliceBuilder.write(decoded);
                     }
