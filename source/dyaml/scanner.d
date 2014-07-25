@@ -1161,6 +1161,7 @@ final class Scanner
             const chomping   = indicators[0];
             const increment  = indicators[1];
             scanBlockScalarIgnoredLine(startMark);
+            throwIfError();
 
             //Determine the indentation level and go to the first non-empty line.
             Mark endMark;
@@ -1292,6 +1293,8 @@ final class Scanner
         ///             the next character in the Reader.
         /// increment = Write the increment value here, if detected.
         /// startMark = Mark for error messages.
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         bool getIncrement(ref dchar c, ref int increment, const Mark startMark)
             @safe pure nothrow @nogc
         {
@@ -1311,16 +1314,21 @@ final class Scanner
             return true;
         }
 
-        ///Scan (and ignore) ignored line in a block scalar.
-        void scanBlockScalarIgnoredLine(const Mark startMark) @safe pure
+        /// Scan (and ignore) ignored line in a block scalar.
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanBlockScalarIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
-            if(reader_.peek()== '#'){scanToNextBreak();}
+            if(reader_.peek()== '#') { scanToNextBreak(); }
 
-            enforce("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a block scalar", startMark,
-                              "expected a comment or a line break, but found "
-                              ~ to!string(reader_.peek()), reader_.mark));
+            if(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            {
+                setError("While scanning a block scalar", startMark,
+                         buildMsg("expected comment or line break, but found ", reader_.peek()),
+                         reader_.mark);
+                return;
+            }
             scanLineBreak();
         }
 
