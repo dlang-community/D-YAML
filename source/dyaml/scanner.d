@@ -4,10 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/**
- * YAML scanner.
- * Code based on PyYAML: http://www.pyyaml.org
- */
+/// YAML scanner.
+/// Code based on PyYAML: http://www.pyyaml.org
 module dyaml.scanner;
 
 
@@ -34,36 +32,32 @@ import dyaml.style;
 import dyaml.token;
 
 package:
-/**
- * Scanner produces tokens of the following types:
- * STREAM-START
- * STREAM-END
- * DIRECTIVE(name, value)
- * DOCUMENT-START
- * DOCUMENT-END
- * BLOCK-SEQUENCE-START
- * BLOCK-MAPPING-START
- * BLOCK-END
- * FLOW-SEQUENCE-START
- * FLOW-MAPPING-START
- * FLOW-SEQUENCE-END
- * FLOW-MAPPING-END
- * BLOCK-ENTRY
- * FLOW-ENTRY
- * KEY
- * VALUE
- * ALIAS(value)
- * ANCHOR(value)
- * TAG(value)
- * SCALAR(value, plain, style)
- */
+/// Scanner produces tokens of the following types:
+/// STREAM-START
+/// STREAM-END
+/// DIRECTIVE(name, value)
+/// DOCUMENT-START
+/// DOCUMENT-END
+/// BLOCK-SEQUENCE-START
+/// BLOCK-MAPPING-START
+/// BLOCK-END
+/// FLOW-SEQUENCE-START
+/// FLOW-MAPPING-START
+/// FLOW-SEQUENCE-END
+/// FLOW-MAPPING-END
+/// BLOCK-ENTRY
+/// FLOW-ENTRY
+/// KEY
+/// VALUE
+/// ALIAS(value)
+/// ANCHOR(value)
+/// TAG(value)
+/// SCALAR(value, plain, style)
 
 
-/**
- * Marked exception thrown at scanner errors.
- *
- * See_Also: MarkedYAMLException
- */
+/// Marked exception thrown at scanner errors.
+/// 
+/// See_Also: MarkedYAMLException
 class ScannerException : MarkedYAMLException
 {
     mixin MarkedExceptionCtors;
@@ -182,53 +176,46 @@ final class Scanner
             reader_ = null;
         }
 
-        /**
-         * Check if the next token is one of specified types.
-         *
-         * If no types are specified, checks if any tokens are left.
-         *
-         * Params:  ids = Token IDs to check for.
-         *
-         * Returns: true if the next token is one of specified types,
-         *          or if there are any tokens left if no types specified.
-         *          false otherwise.
-         */
+        /// Check if the next token is one of specified types.
+        ///
+        /// If no types are specified, checks if any tokens are left.
+        ///
+        /// Params:  ids = Token IDs to check for.
+        ///
+        /// Returns: true if the next token is one of specified types, or if there are
+        ///          any tokens left if no types specified, false otherwise.
         bool checkToken(const TokenID[] ids ...) @safe
         {
             //Check if the next token is one of specified types.
-            while(needMoreTokens()){fetchToken();}
+            while(needMoreTokens()) { fetchToken(); }
             if(!tokens_.empty)
             {
-                if(ids.length == 0){return true;}
+                if(ids.length == 0) { return true; }
                 else
                 {
                     const nextId = tokens_.peek().id;
                     foreach(id; ids)
                     {
-                        if(nextId == id){return true;}
+                        if(nextId == id) { return true; }
                     }
                 }
             }
             return false;
         }
 
-        /**
-         * Return the next token, but keep it in the queue.
-         *
-         * Must not be called if there are no tokens left.
-         */
+        /// Return the next token, but keep it in the queue.
+        ///
+        /// Must not be called if there are no tokens left.
         ref const(Token) peekToken() @safe
         {
-            while(needMoreTokens){fetchToken();}
-            if(!tokens_.empty){return tokens_.peek();}
+            while(needMoreTokens) { fetchToken(); }
+            if(!tokens_.empty)    { return tokens_.peek(); }
             assert(false, "No token left to peek");
         }
 
-        /**
-         * Return the next token, removing it from the queue.
-         *
-         * Must not be called if there are no tokens left.
-         */
+        /// Return the next token, removing it from the queue.
+        ///
+        /// Must not be called if there are no tokens left.
         Token getToken() @safe
         {
             while(needMoreTokens){fetchToken();}
@@ -276,124 +263,117 @@ final class Scanner
             errorData_ = MarkedYAMLExceptionData(context, contextMark, problem, problemMark);
         }
 
-        ///Determine whether or not we need to fetch more tokens before peeking/getting a token.
+        /// Determine whether or not we need to fetch more tokens before peeking/getting a token.
         bool needMoreTokens() @safe pure
         {
-            if(done_)        {return false;}
-            if(tokens_.empty){return true;}
+            if(done_)         { return false; }
+            if(tokens_.empty) { return true; }
 
-            ///The current token may be a potential simple key, so we need to look further.
+            /// The current token may be a potential simple key, so we need to look further.
             stalePossibleSimpleKeys();
             return nextPossibleSimpleKey() == tokensTaken_;
         }
 
-        ///Fetch at token, adding it to tokens_.
+        /// Fetch at token, adding it to tokens_.
         void fetchToken() @safe
         {
-            ///Eat whitespaces and comments until we reach the next token.
+            // Eat whitespaces and comments until we reach the next token.
             scanToNextToken();
 
-            //Remove obsolete possible simple keys.
+            // Remove obsolete possible simple keys.
             stalePossibleSimpleKeys();
 
-            //Compare current indentation and column. It may add some tokens
-            //and decrease the current indentation level.
+            // Compare current indentation and column. It may add some tokens
+            // and decrease the current indentation level.
             unwindIndent(reader_.column);
 
-            //Get the next character.
+            // Get the next character.
             const dchar c = reader_.peek();
 
-            //Fetch the token.
-            if(c == '\0')                  {return fetchStreamEnd();}
-            if(checkDirective())           {return fetchDirective();}
-            if(checkDocumentStart())       {return fetchDocumentStart();}
-            if(checkDocumentEnd())         {return fetchDocumentEnd();}
-            //Order of the following checks is NOT significant.
-            if(c == '[')                   {return fetchFlowSequenceStart();}
-            if(c == '{')                   {return fetchFlowMappingStart();}
-            if(c == ']')                   {return fetchFlowSequenceEnd();}
-            if(c == '}')                   {return fetchFlowMappingEnd();}
-            if(c == ',')                   {return fetchFlowEntry();}
-            if(checkBlockEntry())          {return fetchBlockEntry();}
-            if(checkKey())                 {return fetchKey();}
-            if(checkValue())               {return fetchValue();}
-            if(c == '*')                   {return fetchAlias();}
-            if(c == '&')                   {return fetchAnchor();}
-            if(c == '!')                   {return fetchTag();}
-            if(c == '|' && flowLevel_ == 0){return fetchLiteral();}
-            if(c == '>' && flowLevel_ == 0){return fetchFolded();}
-            if(c == '\'')                  {return fetchSingle();}
-            if(c == '\"')                  {return fetchDouble();}
-            if(checkPlain())               {return fetchPlain();}
+            // Fetch the token.
+            if(c == '\0')                   { return fetchStreamEnd();         }
+            if(checkDirective())            { return fetchDirective();         }
+            if(checkDocumentStart())        { return fetchDocumentStart();     }
+            if(checkDocumentEnd())          { return fetchDocumentEnd();       }
+            // Order of the following checks is NOT significant.
+            if(c == '[')                    { return fetchFlowSequenceStart(); }
+            if(c == '{')                    { return fetchFlowMappingStart();  }
+            if(c == ']')                    { return fetchFlowSequenceEnd();   }
+            if(c == '}')                    { return fetchFlowMappingEnd();    }
+            if(c == ',')                    { return fetchFlowEntry();         }
+            if(checkBlockEntry())           { return fetchBlockEntry();        }
+            if(checkKey())                  { return fetchKey();               }
+            if(checkValue())                { return fetchValue();             }
+            if(c == '*')                    { return fetchAlias();             }
+            if(c == '&')                    { return fetchAnchor();            }
+            if(c == '!')                    { return fetchTag();               }
+            if(c == '|' && flowLevel_ == 0) { return fetchLiteral();           }
+            if(c == '>' && flowLevel_ == 0) { return fetchFolded();            }
+            if(c == '\'')                   { return fetchSingle();            }
+            if(c == '\"')                   { return fetchDouble();            }
+            if(checkPlain())                { return fetchPlain();             }
 
-            throw new Error(format("While scanning for the next token, found "
-                                   "character \'%s\', index %s that cannot start any token"
-                                   , c, to!int(c)), reader_.mark);
+            throw new ScannerException("While scanning for the next token, found character "
+                                       "\'%s\', index %s that cannot start any token"
+                                       .format(c, to!int(c)), reader_.mark);
         }
 
 
-        ///Return the token number of the nearest possible simple key.
+        /// Return the token number of the nearest possible simple key.
         uint nextPossibleSimpleKey() @safe pure nothrow @nogc
         {
             uint minTokenNumber = uint.max;
             foreach(k, ref simpleKey; possibleSimpleKeys_)
             {
-                if(simpleKey.isNull){continue;}
+                if(simpleKey.isNull) { continue; }
                 minTokenNumber = min(minTokenNumber, simpleKey.tokenIndex);
             }
             return minTokenNumber;
         }
 
-        /**
-         * Remove entries that are no longer possible simple keys.
-         *
-         * According to the YAML specification, simple keys
-         * - should be limited to a single line,
-         * - should be no longer than 1024 characters.
-         * Disabling this will allow simple keys of any length and
-         * height (may cause problems if indentation is broken though).
-         */
+        /// Remove entries that are no longer possible simple keys.
+        ///
+        /// According to the YAML specification, simple keys
+        /// - should be limited to a single line,
+        /// - should be no longer than 1024 characters.
+        /// Disabling this will allow simple keys of any length and
+        /// height (may cause problems if indentation is broken though).
         void stalePossibleSimpleKeys() @safe pure
         {
             foreach(level, ref key; possibleSimpleKeys_)
             {
-                if(key.isNull){continue;}
+                if(key.isNull) { continue; }
                 if(key.line != reader_.line || reader_.charIndex - key.charIndex > 1024)
                 {
                     enforce(!key.required,
-                            new Error("While scanning a simple key",
-                                      Mark(key.line, key.column),
-                                      "could not find expected ':'", reader_.mark));
+                            new ScannerException("While scanning a simple key",
+                                                 Mark(key.line, key.column),
+                                                 "could not find expected ':'", reader_.mark));
                     key.isNull = true;
                 }
             }
         }
 
-        /**
-         * Check if the next token starts a possible simple key and if so, save its position.
-         *
-         * This function is called for ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
-         */
+        /// Check if the next token starts a possible simple key and if so, save its position.
+        ///
+        /// This function is called for ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
         void savePossibleSimpleKey() @safe pure
         {
-            //Check if a simple key is required at the current position.
+            // Check if a simple key is required at the current position.
             const required = (flowLevel_ == 0 && indent_ == reader_.column);
             assert(allowSimpleKey_ || !required, "A simple key is required only if it is "
                    "the first token in the current line. Therefore it is always allowed.");
 
-            if(!allowSimpleKey_){return;}
+            if(!allowSimpleKey_) { return; }
 
-            //The next token might be a simple key, so save its number and position.
+            // The next token might be a simple key, so save its number and position.
             removePossibleSimpleKey();
             const tokenCount = tokensTaken_ + cast(uint)tokens_.length;
 
-            const line = reader_.line;
+            const line   = reader_.line;
             const column = reader_.column;
-            const key = SimpleKey(cast(uint)reader_.charIndex,
-                                  tokenCount,
-                                  line,
-                                  column < ushort.max ? cast(ushort)column : ushort.max,
-                                  required);
+            const key    = SimpleKey(cast(uint)reader_.charIndex, tokenCount, line,
+                                     cast(ushort)min(column, ushort.max), required);
 
             if(possibleSimpleKeys_.length <= flowLevel_)
             {
@@ -405,10 +385,10 @@ final class Scanner
             possibleSimpleKeys_[flowLevel_] = key;
         }
 
-        ///Remove the saved possible key position at the current flow level.
+        /// Remove the saved possible key position at the current flow level.
         void removePossibleSimpleKey() @safe pure
         {
-            if(possibleSimpleKeys_.length <= flowLevel_){return;}
+            if(possibleSimpleKeys_.length <= flowLevel_) { return; }
 
             if(!possibleSimpleKeys_[flowLevel_].isNull)
             {
@@ -420,21 +400,19 @@ final class Scanner
             }
         }
 
-        /**
-         * Decrease indentation, removing entries in indents_.
-         *
-         * Params:  column = Current column in the file/stream.
-         */
+        /// Decrease indentation, removing entries in indents_.
+        ///
+        /// Params:  column = Current column in the file/stream.
         void unwindIndent(const int column) @trusted
         {
             if(flowLevel_ > 0)
             {
-                //In flow context, tokens should respect indentation.
-                //The condition should be `indent >= column` according to the spec.
-                //But this condition will prohibit intuitively correct
-                //constructions such as
-                //key : {
-                //}
+                // In flow context, tokens should respect indentation.
+                // The condition should be `indent >= column` according to the spec.
+                // But this condition will prohibit intuitively correct
+                // constructions such as
+                // key : {
+                // }
 
                 //In the flow context, indentation is ignored. We make the scanner less
                 //restrictive than what the specification requires.
@@ -446,7 +424,7 @@ final class Scanner
                 return;
             }
 
-            //In block context, we may need to issue the BLOCK-END tokens.
+            // In block context, we may need to issue the BLOCK-END tokens.
             while(indent_ > column)
             {
                 indent_ = indents_.back;
@@ -455,13 +433,11 @@ final class Scanner
             }
         }
 
-        /**
-         * Increase indentation if needed.
-         *
-         * Params:  column = Current column in the file/stream.
-         *
-         * Returns: true if the indentation was increased, false otherwise.
-         */
+        /// Increase indentation if needed.
+        ///
+        /// Params:  column = Current column in the file/stream.
+        ///
+        /// Returns: true if the indentation was increased, false otherwise.
         bool addIndent(int column) @trusted
         {
             if(indent_ >= column){return false;}
@@ -471,7 +447,7 @@ final class Scanner
         }
 
 
-        ///Add STREAM-START token.
+        /// Add STREAM-START token.
         void fetchStreamStart() @safe nothrow
         {
             tokens_.push(streamStartToken(reader_.mark, reader_.mark, reader_.encoding));
@@ -504,13 +480,13 @@ final class Scanner
             tokens_.push(directive);
         }
 
-        ///Add DOCUMENT-START or DOCUMENT-END token.
+        /// Add DOCUMENT-START or DOCUMENT-END token.
         void fetchDocumentIndicator(TokenID id)() @safe
             if(id == TokenID.DocumentStart || id == TokenID.DocumentEnd)
         {
-            //Set indentation to -1 .
+            // Set indentation to -1 .
             unwindIndent(-1);
-            //Reset simple keys. Note that there can't be a block collection after '---'.
+            // Reset simple keys. Note that there can't be a block collection after '---'.
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
 
@@ -519,16 +495,16 @@ final class Scanner
             tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
-        ///Aliases to add DOCUMENT-START or DOCUMENT-END token.
+        /// Aliases to add DOCUMENT-START or DOCUMENT-END token.
         alias fetchDocumentIndicator!(TokenID.DocumentStart) fetchDocumentStart;
         alias fetchDocumentIndicator!(TokenID.DocumentEnd) fetchDocumentEnd;
 
-        ///Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
+        /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionStart(TokenID id)() @trusted
         {
-            //'[' and '{' may start a simple key.
+            // '[' and '{' may start a simple key.
             savePossibleSimpleKey();
-            //Simple keys are allowed after '[' and '{'.
+            // Simple keys are allowed after '[' and '{'.
             allowSimpleKey_ = true;
             ++flowLevel_;
 
@@ -537,16 +513,16 @@ final class Scanner
             tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
-        ///Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
+        /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         alias fetchFlowCollectionStart!(TokenID.FlowSequenceStart) fetchFlowSequenceStart;
         alias fetchFlowCollectionStart!(TokenID.FlowMappingStart) fetchFlowMappingStart;
 
-        ///Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
+        /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionEnd(TokenID id)() @safe
         {
-            //Reset possible simple key on the current level.
+            // Reset possible simple key on the current level.
             removePossibleSimpleKey();
-            //No simple keys after ']' and '}'.
+            // No simple keys after ']' and '}'.
             allowSimpleKey_ = false;
             --flowLevel_;
 
@@ -555,16 +531,16 @@ final class Scanner
             tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
-        ///Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token/
+        /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token/
         alias fetchFlowCollectionEnd!(TokenID.FlowSequenceEnd) fetchFlowSequenceEnd;
         alias fetchFlowCollectionEnd!(TokenID.FlowMappingEnd) fetchFlowMappingEnd;
 
-        ///Add FLOW-ENTRY token;
+        /// Add FLOW-ENTRY token;
         void fetchFlowEntry() @safe
         {
-            //Reset possible simple key on the current level.
+            // Reset possible simple key on the current level.
             removePossibleSimpleKey();
-            //Simple keys are allowed after ','.
+            // Simple keys are allowed after ','.
             allowSimpleKey_ = true;
 
             Mark startMark = reader_.mark;
@@ -572,12 +548,10 @@ final class Scanner
             tokens_.push(flowEntryToken(startMark, reader_.mark));
         }
 
-        /**
-         * Additional checks used in block context in fetchBlockEntry and fetchKey.
-         *
-         * Params:  type = String representing the token type we might need to add.
-         *          id   = Token type we might need to add.
-         */
+        /// Additional checks used in block context in fetchBlockEntry and fetchKey.
+        ///
+        /// Params:  type = String representing the token type we might need to add.
+        ///          id   = Token type we might need to add.
         void blockChecks(string type, TokenID id)() @safe
         {
             //Are we allowed to start a key (not neccesarily a simple one)?
@@ -590,17 +564,17 @@ final class Scanner
             }
         }
 
-        ///Add BLOCK-ENTRY token. Might add BLOCK-SEQUENCE-START in the process.
+        /// Add BLOCK-ENTRY token. Might add BLOCK-SEQUENCE-START in the process.
         void fetchBlockEntry() @safe
         {
-            if(flowLevel_ == 0){blockChecks!("Sequence", TokenID.BlockSequenceStart)();}
+            if(flowLevel_ == 0) { blockChecks!("Sequence", TokenID.BlockSequenceStart)(); }
 
-            //It's an error for the block entry to occur in the flow context,
-            //but we let the parser detect this.
+            // It's an error for the block entry to occur in the flow context,
+            // but we let the parser detect this.
 
-            //Reset possible simple key on the current level.
+            // Reset possible simple key on the current level.
             removePossibleSimpleKey();
-            //Simple keys are allowed after '-'.
+            // Simple keys are allowed after '-'.
             allowSimpleKey_ = true;
 
             Mark startMark = reader_.mark;
@@ -608,14 +582,14 @@ final class Scanner
             tokens_.push(blockEntryToken(startMark, reader_.mark));
         }
 
-        ///Add KEY token. Might add BLOCK-MAPPING-START in the process.
+        /// Add KEY token. Might add BLOCK-MAPPING-START in the process.
         void fetchKey() @safe
         {
-            if(flowLevel_ == 0){blockChecks!("Mapping", TokenID.BlockMappingStart)();}
+            if(flowLevel_ == 0) { blockChecks!("Mapping", TokenID.BlockMappingStart)(); }
 
-            //Reset possible simple key on the current level.
+            // Reset possible simple key on the current level.
             removePossibleSimpleKey();
-            //Simple keys are allowed after '?' in the block context.
+            // Simple keys are allowed after '?' in the block context.
             allowSimpleKey_ = (flowLevel_ == 0);
 
             Mark startMark = reader_.mark;
@@ -623,7 +597,7 @@ final class Scanner
             tokens_.push(keyToken(startMark, reader_.mark));
         }
 
-        ///Add VALUE token. Might add KEY and/or BLOCK-MAPPING-START in the process.
+        /// Add VALUE token. Might add KEY and/or BLOCK-MAPPING-START in the process.
         void fetchValue() @safe
         {
             //Do we determine a simple key?
@@ -637,52 +611,52 @@ final class Scanner
 
                 assert(idx >= 0);
 
-                //Add KEY.
-                //Manually inserting since tokens are immutable (need linked list).
+                // Add KEY.
+                // Manually inserting since tokens are immutable (need linked list).
                 tokens_.insert(keyToken(keyMark, keyMark), idx);
 
-                //If this key starts a new block mapping, we need to add BLOCK-MAPPING-START.
+                // If this key starts a new block mapping, we need to add BLOCK-MAPPING-START.
                 if(flowLevel_ == 0 && addIndent(key.column))
                 {
                     tokens_.insert(blockMappingStartToken(keyMark, keyMark), idx);
                 }
 
-                //There cannot be two simple keys in a row.
+                // There cannot be two simple keys in a row.
                 allowSimpleKey_ = false;
             }
-            //Part of a complex key
+            // Part of a complex key
             else
             {
-                //We can start a complex value if and only if we can start a simple key.
+                // We can start a complex value if and only if we can start a simple key.
                 enforce(flowLevel_ > 0 || allowSimpleKey_,
                         new Error("Mapping values are not allowed here", reader_.mark));
 
-                //If this value starts a new block mapping, we need to add
-                //BLOCK-MAPPING-START. It'll be detected as an error later by the parser.
+                // If this value starts a new block mapping, we need to add
+                // BLOCK-MAPPING-START. It'll be detected as an error later by the parser.
                 if(flowLevel_ == 0 && addIndent(reader_.column))
                 {
                     tokens_.push(blockMappingStartToken(reader_.mark, reader_.mark));
                 }
 
-                //Reset possible simple key on the current level.
+                // Reset possible simple key on the current level.
                 removePossibleSimpleKey();
-                //Simple keys are allowed after ':' in the block context.
+                // Simple keys are allowed after ':' in the block context.
                 allowSimpleKey_ = (flowLevel_ == 0);
             }
 
-            //Add VALUE.
+            // Add VALUE.
             Mark startMark = reader_.mark;
             reader_.forward();
             tokens_.push(valueToken(startMark, reader_.mark));
         }
 
-        ///Add ALIAS or ANCHOR token.
+        /// Add ALIAS or ANCHOR token.
         void fetchAnchor_(TokenID id)() @trusted
             if(id == TokenID.Alias || id == TokenID.Anchor)
         {
-            //ALIAS/ANCHOR could be a simple key.
+            // ALIAS/ANCHOR could be a simple key.
             savePossibleSimpleKey();
-            //No simple keys after ALIAS/ANCHOR.
+            // No simple keys after ALIAS/ANCHOR.
             allowSimpleKey_ = false;
 
             const anchor = scanAnchor(id);
@@ -690,11 +664,11 @@ final class Scanner
             tokens_.push(anchor);
         }
 
-        ///Aliases to add ALIAS or ANCHOR token.
+        /// Aliases to add ALIAS or ANCHOR token.
         alias fetchAnchor_!(TokenID.Alias) fetchAlias;
         alias fetchAnchor_!(TokenID.Anchor) fetchAnchor;
 
-        ///Add TAG token.
+        /// Add TAG token.
         void fetchTag() @trusted
         {
             //TAG could start a simple key.
@@ -706,13 +680,13 @@ final class Scanner
             throwIfError();
         }
 
-        ///Add block SCALAR token.
+        /// Add block SCALAR token.
         void fetchBlockScalar(ScalarStyle style)() @trusted
             if(style == ScalarStyle.Literal || style == ScalarStyle.Folded)
         {
-            //Reset possible simple key on the current level.
+            // Reset possible simple key on the current level.
             removePossibleSimpleKey();
-            //A simple key may follow a block scalar.
+            // A simple key may follow a block scalar.
             allowSimpleKey_ = true;
 
             auto blockScalar = scanBlockScalar(style);
@@ -1567,7 +1541,7 @@ final class Scanner
 
                 size_t length = 0;
                 // This is an optimized way of writing:
-                // while(!search.canFind(reader_.peek(length))){++length;}
+                // while(!search.canFind(reader_.peek(length))) { ++length; }
                 outer: for(;;)
                 {
                     const slice = reader_.slice(length, length + 32);
@@ -1912,7 +1886,8 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagURIToSlice(string name)(const Mark startMark) @trusted pure nothrow
+        void scanTagURIToSlice(string name)(const Mark startMark)
+            @trusted pure nothrow // @nogc
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
