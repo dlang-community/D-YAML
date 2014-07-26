@@ -63,9 +63,6 @@ class ScannerException : MarkedYAMLException
     mixin MarkedExceptionCtors;
 }
 
-private alias ScannerException Error;
-private alias MarkedYAMLExceptionData ErrorData;
-
 /// Generates tokens from data provided by a Reader.
 final class Scanner
 {
@@ -146,7 +143,7 @@ final class Scanner
         bool error_;
 
         /// Data for the exception to throw if error_ is true.
-        ErrorData errorData_;
+        MarkedYAMLExceptionData errorData_;
 
         /// Error messages can be built in this buffer without using the GC.
         ///
@@ -394,8 +391,9 @@ final class Scanner
             {
                 const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required,
-                        new Error("While scanning a simple key", Mark(key.line, key.column),
-                                  "could not find expected ':'", reader_.mark));
+                        new ScannerException("While scanning a simple key",
+                                             Mark(key.line, key.column),
+                                             "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
         }
@@ -414,13 +412,13 @@ final class Scanner
                 // key : {
                 // }
 
-                //In the flow context, indentation is ignored. We make the scanner less
-                //restrictive than what the specification requires.
-                //if(pedantic_ && flowLevel_ > 0 && indent_ > column)
-                //{
-                //    throw new Error("Invalid intendation or unclosed '[' or '{'",
-                //                    reader_.mark)
-                //}
+                // In the flow context, indentation is ignored. We make the scanner less
+                // restrictive than what the specification requires.
+                // if(pedantic_ && flowLevel_ > 0 && indent_ > column)
+                // {
+                //     throw new ScannerException("Invalid intendation or unclosed '[' or '{'",
+                //                                reader_.mark)
+                // }
                 return;
             }
 
@@ -554,9 +552,9 @@ final class Scanner
         ///          id   = Token type we might need to add.
         void blockChecks(string type, TokenID id)() @safe
         {
-            //Are we allowed to start a key (not neccesarily a simple one)?
-            enforce(allowSimpleKey_, new Error(type ~ " keys are not allowed here",
-                                               reader_.mark));
+            enum context = type ~ " keys are not allowed here";
+            // Are we allowed to start a key (not neccesarily a simple one)?
+            enforce(allowSimpleKey_, new ScannerException(context, reader_.mark));
 
             if(addIndent(reader_.column))
             {
@@ -629,7 +627,7 @@ final class Scanner
             {
                 // We can start a complex value if and only if we can start a simple key.
                 enforce(flowLevel_ > 0 || allowSimpleKey_,
-                        new Error("Mapping values are not allowed here", reader_.mark));
+                        new ScannerException("Mapping values are not allowed here", reader_.mark));
 
                 // If this value starts a new block mapping, we need to add
                 // BLOCK-MAPPING-START. It'll be detected as an error later by the parser.
