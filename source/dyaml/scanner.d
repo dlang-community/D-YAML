@@ -247,6 +247,13 @@ final class Scanner
             return cast(string)msgBuffer_.printNoGC(args);
         }
 
+        /// Most scanning error messages have the same format; so build them with this
+        /// function.
+        string expected(T)(string expected, T found) @safe pure nothrow @nogc 
+        {
+            return buildMsg("expected ", expected, ", but found ", found);
+        }
+
         /// If error_ is true, throws a ScannerException constructed from errorData_ and
         /// sets error_ to false.
         void throwIfError() @safe pure
@@ -849,8 +856,7 @@ final class Scanner
             if(length == 0)
             {
                 enum contextMsg = "While scanning " ~ name;
-                error(contextMsg, startMark,
-                      buildMsg("expected alphanumeric, '-' or '_', but found ", c),
+                error(contextMsg, startMark, expected("alphanumeric, '-' or '_'", c),
                       reader_.mark);
                 return;
             }
@@ -961,8 +967,7 @@ final class Scanner
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
             error("While scanning a directive", startMark,
-                  buildMsg("expected alphanumeric, '-' or '_', but found ", reader_.peek()),
-                  reader_.mark);
+                  expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
         }
 
         ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
@@ -1124,8 +1129,7 @@ final class Scanner
                 if(reader_.peek() != '>')
                 {
                     error("While scanning a tag", startMark,
-                          buildMsg("expected '>' but found ", reader_.peek()),
-                          reader_.mark);
+                          expected("'>'", reader_.peek()), reader_.mark);
                     return Token.init;
                 }
                 reader_.forward();
@@ -1175,8 +1179,8 @@ final class Scanner
                 return tagToken(startMark, reader_.mark, slice.utf32To8, handleEnd);
             }
 
-            error("While scanning a tag", startMark,
-                  buildMsg("expected ' ' but found ", reader_.peek()), reader_.mark);
+            error("While scanning a tag", startMark, expected("' '", reader_.peek()),
+                  reader_.mark);
             return Token.init;
         }
 
@@ -1352,8 +1356,7 @@ final class Scanner
                 return tuple(chomping, increment);
             }
             error("While scanning a block scalar", startMark,
-                  buildMsg("expected chomping or indentation indicator, but found ", c),
-                  reader_.mark);
+                  expected("chomping or indentation indicator", c), reader_.mark);
             return tuple(Chomping.init, int.max);
         }
 
@@ -1401,7 +1404,7 @@ final class Scanner
                 return true;
             }
             error("While scanning a block scalar", startMark,
-                  "expected indentation indicator in range 1-9, but found 0", reader_.mark);
+                  expected("indentation indicator in range 1-9", "0"), reader_.mark);
             return false;
         }
 
@@ -1419,8 +1422,7 @@ final class Scanner
                 return;
             }
             error("While scanning a block scalar", startMark,
-                  buildMsg("expected comment or line break, but found ", reader_.peek()),
-                  reader_.mark);
+                  expected("comment or line break", reader_.peek()), reader_.mark);
         }
 
         /// Scan indentation in a block scalar, returning line breaks, max indent and end mark.
@@ -1559,8 +1561,8 @@ final class Scanner
                         foreach(i; 0 .. hexLength) if(!reader_.peek(i).isHexDigit())
                         {
                             error("While scanning a double quoted scalar", startMark,
-                                  "found an unexpected character; expected escape "
-                                  "sequence of hexadecimal numbers.", reader_.mark);
+                                  expected("escape sequence of hexadecimal numbers",
+                                           reader_.peek(i)), reader_.mark);
                             return;
                         }
 
@@ -1585,7 +1587,7 @@ final class Scanner
                     else
                     {
                         error("While scanning a double quoted scalar", startMark,
-                              buildMsg("found unsupported escape " "character", c),
+                              buildMsg("found unsupported escape character", c),
                               reader_.mark);
                         return;
                     }
@@ -1825,8 +1827,7 @@ final class Scanner
             enum contextMsg = "While scanning a " ~ name;
             if(c != '!')
             {
-                error(contextMsg, startMark,
-                      buildMsg("expected a '!', but found: ", c), reader_.mark);
+                error(contextMsg, startMark, expected("'!'", c), reader_.mark);
                 return;
             }
 
@@ -1842,8 +1843,7 @@ final class Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    error(contextMsg, startMark,
-                          buildMsg("expected a '!', but found: ", c), reader_.mark);
+                    error(contextMsg, startMark, expected("'!'", c), reader_.mark);
                     return;
                 }
                 ++length;
@@ -1889,8 +1889,7 @@ final class Scanner
             if(reader_.sliceBuilder.length > startLen) { return; }
 
             enum contextMsg = "While parsing a " ~ name;
-            error(contextMsg, startMark, buildMsg("expected URI, but found: ", c),
-                  reader_.mark);
+            error(contextMsg, startMark, expected("URI", c), reader_.mark);
         }
 
         // Not @nogc yet because std.utf.decode is not @nogc
@@ -1946,8 +1945,8 @@ final class Scanner
                         const dchar c = reader_.peek(k);
                         if(!c.isHexDigit)
                         {
-                            auto msg = buildMsg("expected URI escape sequence of 2 "
-                                                "hexadecimal numbers, but found: ", c);
+                            auto msg = expected("URI escape sequence of 2 hexadecimal "
+                                                "numbers", c);
                             error(contextMsg, startMark, msg, reader_.mark);
                             return;
                         }
