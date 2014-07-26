@@ -1183,6 +1183,12 @@ final class Scanner
             uint indent = max(1, indent_ + 1);
 
             reader_.sliceBuilder.begin();
+            alias Transaction = SliceBuilder.Transaction;
+            // Used to strip the last line breaks written to the slice at the end of the
+            // scalar, which may be needed based on chomping.
+            Transaction breaksTransaction = Transaction(reader_.sliceBuilder);
+            // Read the first indentation/line breaks before the scalar.
+            size_t startLen = reader_.sliceBuilder.length;
             if(increment == int.min)
             {
                 auto indentation = scanBlockScalarIndentationToSlice();
@@ -1194,25 +1200,32 @@ final class Scanner
                 indent += increment - 1;
                 endMark = scanBlockScalarBreaksToSlice(indent);
             }
-            dstring breaks  = reader_.sliceBuilder.finish();
+            size_t endLen = reader_.sliceBuilder.length;
 
             dchar[] lineBreak = ""d.dup;
 
-            //Using appender_, so clear it when we're done.
-            scope(exit){appender_.clear();}
 
             // Scan the inner part of the block scalar.
             while(reader_.column == indent && reader_.peek() != '\0')
             {
-                appender_.put(breaks);
+                breaksTransaction.commit();
                 const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
-                appender_.put(scanToNextBreak());
+                // This is where the 'interesting' non-whitespace data gets read.
+                scanToNextBreakToSlice();
                 lineBreak = [scanLineBreak()];
 
-                auto scalarBreaks = scanBlockScalarBreaks(indent);
-                breaks  = scalarBreaks[0];
-                endMark = scalarBreaks[1];
+                // This transaction serves to rollback data read in the
+                // scanBlockScalarBreaksToSlice() call.
+                breaksTransaction = Transaction(reader_.sliceBuilder);
+                startLen = reader_.sliceBuilder.length;
+                // The line breaks should actually be written _after_ the if() block
+                // below. We work around that by inserting 
+                endMark = scanBlockScalarBreaksToSlice(indent);
+                endLen = reader_.sliceBuilder.length;
 
+                // This will not run during the last iteration (see the if() vs the
+                // while()), hence breaksTransaction rollback (which happens after this
+                // loop) will never roll back data written in this if() block.
                 if(reader_.column == indent && reader_.peek() != '\0')
                 {
                     //Unfortunately, folding rules are ambiguous.
@@ -1221,9 +1234,20 @@ final class Scanner
                     if(style == ScalarStyle.Folded && lineBreak == "\n" &&
                        leadingNonSpace && !" \t"d.canFind(reader_.peek()))
                     {
-                        if(breaks.length == 0){appender_.put(' ');}
+                        // No breaks were scanned; no need to insert the space in the
+                        // middle of slice.
+                        if(startLen == endLen)
+                        {
+                            reader_.sliceBuilder.write(' ');
+                        }
                     }
-                    else{appender_.put(lineBreak);}
+                    else
+                    {
+                        // We need to insert in the middle of the slice in case any line
+                        // breaks were scanned.
+                        reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen);
+                    }
+                
                     ////this is Clark Evans's interpretation (also in the spec
                     ////examples):
                     //
@@ -1237,12 +1261,38 @@ final class Scanner
                     //}
                     //else{appender_.put(lineBreak);}
                 }
-                else{break;}
+                else
+                {
+                    break;
+                }
             }
-            if(chomping != Chomping.Strip){appender_.put(lineBreak);}
-            if(chomping == Chomping.Keep){appender_.put(breaks);}
 
-            return scalarToken(startMark, endMark, utf32To8(appender_.data), style);
+            // If chompint is Keep, we keep (commit) the last scanned line breaks
+            // (which are at the end of the scalar). Otherwise re remove them (end the
+            // transaction).
+            if(chomping == Chomping.Keep)  { breaksTransaction.commit(); }
+            else                           { breaksTransaction.__dtor(); }
+            if(chomping != Chomping.Strip && !lineBreak.empty)
+            {
+                // If chomping is Keep, we keep the line break but the first line break
+                // that isn't stripped (since chomping isn't Strip in this branch) must
+                // be inserted _before_ the other line breaks.
+                if(chomping == Chomping.Keep)
+                {
+                    reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen); 
+                }
+                // If chomping is not Keep, breaksTransaction was cancelled so we can
+                // directly write the first line break (as it isn't stripped - chomping
+                // is not Strip)
+                else
+                {
+                    reader_.sliceBuilder.write(lineBreak[0]); 
+                }
+            }
+
+            const slice  = reader_.sliceBuilder.finish();
+
+            return scalarToken(startMark, endMark, slice.utf32To8, style);
         }
 
         /// Scan chomping and indentation indicators of a scalar token.
