@@ -999,16 +999,16 @@ final class Scanner
         {
             findNextNonSpace();
 
-            reader_.sliceBuilder.write(scanYAMLDirectiveNumber(startMark));
+            scanYAMLDirectiveNumberToSlice(startMark);
             enforce(reader_.peek() == '.',
                     new Error("While scanning a directive", startMark,
                               "expected a digit or '.', but found: "
                               ~ to!string(reader_.peek()), reader_.mark));
-            //Skip the '.'.
+            // Skip the '.'.
             reader_.forward();
 
             reader_.sliceBuilder.write('.');
-            reader_.sliceBuilder.write(scanYAMLDirectiveNumber(startMark));
+            scanYAMLDirectiveNumberToSlice(startMark);
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
                               "expected a digit or '.', but found: "
@@ -1016,7 +1016,10 @@ final class Scanner
         }
 
         /// Scan a number from a YAML directive.
-        dchar[] scanYAMLDirectiveNumber(const Mark startMark) @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanYAMLDirectiveNumberToSlice(const Mark startMark) @system pure
         {
             enforce(isDigit(reader_.peek()),
                     new Error("While scanning a directive", startMark,
@@ -1027,7 +1030,7 @@ final class Scanner
             uint length = 1;
             while(isDigit(reader_.peek(length))) { ++length; }
 
-            return reader_.get(length);
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan value of a tag directive.
