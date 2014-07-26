@@ -837,16 +837,23 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanAlphaNumericToSlice(string name)(const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanAlphaNumericToSlice(string name)(const Mark startMark)
+            @system pure nothrow @nogc
         {
             size_t length = 0;
             dchar c = reader_.peek();
             while(c.isAlphaNum || "-_"d.canFind(c)) { c = reader_.peek(++length); }
 
-            enforce(length > 0,
-                    new Error("While scanning " ~ name, startMark,
-                              "expected alphanumeric, - or _, but found " ~ c.to!string,
-                              reader_.mark));
+            if(length == 0)
+            {
+                enum contextMsg = "While scanning " ~ name;
+                setError(contextMsg, startMark,
+                         buildMsg("expected alphanumeric, '-' or '_', but found ", c),
+                         reader_.mark);
+                return;
+            }
 
             reader_.sliceBuilder.write(reader_.get(length));
         }
@@ -925,6 +932,7 @@ final class Scanner
             {
                 scope(failure) { reader_.sliceBuilder.finish(); }
                 scanDirectiveNameToSlice(startMark);
+                throwIfError();
             }
             const name  = reader_.sliceBuilder.finish();
             const value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
@@ -943,15 +951,18 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanDirectiveNameToSlice(const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanDirectiveNameToSlice(const Mark startMark) @system pure nothrow @nogc
         {
             //Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
+            if(error_) { return; }
 
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a directive", startMark,
-                              "expected alphanumeric, - or _, but found "
-                              ~ reader_.peek().to!string, reader_.mark));
+            if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
+            setError("While scanning a directive", startMark,
+                     buildMsg("expected alphanumeric, '-' or '_', but found ", reader_.peek()),
+                     reader_.mark);
         }
 
         ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
@@ -1068,6 +1079,7 @@ final class Scanner
                 scope(failure) { reader_.sliceBuilder.finish(); }
                 if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
                 else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
+                throwIfError();
             }
             const value = reader_.sliceBuilder.finish();
 
