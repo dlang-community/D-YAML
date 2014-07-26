@@ -683,7 +683,9 @@ final class Scanner
             //No simple keys after ALIAS/ANCHOR.
             allowSimpleKey_ = false;
 
-            tokens_.push(scanAnchor(id));
+            const anchor = scanAnchor(id);
+            throwIfError();
+            tokens_.push(anchor);
         }
 
         ///Aliases to add ALIAS or ANCHOR token.
@@ -961,7 +963,7 @@ final class Scanner
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanDirectiveNameToSlice(const Mark startMark) @system pure nothrow @nogc
         {
-            //Scan directive name.
+            // Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
             if(error_) { return; }
 
@@ -1073,32 +1075,35 @@ final class Scanner
         /// and
         ///   [ *alias , "value" ]
         /// Therefore we restrict aliases to ASCII alphanumeric characters.
-        Token scanAnchor(const TokenID id) @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        Token scanAnchor(const TokenID id) @trusted pure nothrow
         {
             const startMark = reader_.mark;
-
             const dchar i = reader_.get();
 
             reader_.sliceBuilder.begin();
-            {
-                scope(failure) { reader_.sliceBuilder.finish(); }
-                if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
-                else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
-                throwIfError();
-            }
+            if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
+            else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
+            // On error, value is discarded as we return immediately
             const value = reader_.sliceBuilder.finish();
+            if(error_)   { return Token.init; }
 
-            enforce((" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) ||
-                     ("?:,]}%@"d).canFind(reader_.peek())),
-                    new Error("While scanning an " ~ (i == '*') ? "alias" : "anchor",
-                               startMark, "expected alphanumeric, - or _, but found "~
-                               reader_.peek().to!string, reader_.mark));
+            if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
+               !"?:,]}%@"d.canFind(reader_.peek()))
+            {
+                enum anchorCtx = "While scanning an anchor";
+                enum aliasCtx  = "While scanning an alias";
+                error(i == '*' ? aliasCtx : anchorCtx, startMark,
+                      expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
+                return Token.init;
+            }
 
             if(id == TokenID.Alias)
             {
                 return aliasToken(startMark, reader_.mark, value.utf32To8);
             }
-            else if(id == TokenID.Anchor)
+            if(id == TokenID.Anchor)
             {
                 return anchorToken(startMark, reader_.mark, value.utf32To8);
             }
