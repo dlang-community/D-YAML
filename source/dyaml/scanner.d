@@ -1034,12 +1034,15 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagDirectiveValueToSlice(const Mark startMark, ref uint handleLength)
-            @trusted pure
+            @system pure nothrow
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder.length;
             scanTagDirectiveHandleToSlice(startMark);
+            if(error_) { return; }
             handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
             findNextNonSpace();
             scanTagDirectivePrefixToSlice(startMark);
@@ -1049,28 +1052,35 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanTagDirectiveHandleToSlice(const Mark startMark) @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanTagDirectiveHandleToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
             scanTagHandleToSlice!"directive"(startMark);
-            enforce(reader_.peek() == ' ',
-                    new Error("While scanning a directive handle", startMark,
-                              "expected ' ', but found: " ~ to!string(reader_.peek()),
-                              reader_.mark));
+            if(error_) { return; }
+            if(reader_.peek() == ' ') { return; }
+            error("While scanning a directive handle", startMark,
+                  expected("' '", reader_.peek()), reader_.mark);
         }
 
         /// Scan prefix of a tag directive.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanTagDirectivePrefixToSlice(const Mark startMark) @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanTagDirectivePrefixToSlice(const Mark startMark) @system pure nothrow
         {
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a directive prefix", startMark,
-                              "expected ' ', but found" ~ reader_.peek().to!string,
-                              reader_.mark));
+            scanTagURIToSlice!"directive"(startMark);
+            if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
+            error("While scanning a directive prefix", startMark,
+                  expected("' '", reader_.peek()), reader_.mark);
         }
 
         /// Scan (and ignore) ignored line after a directive.
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
