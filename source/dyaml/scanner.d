@@ -866,6 +866,20 @@ final class Scanner
             return reader_.get(length);
         }
 
+        /// Scan all characters until next line break.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanToNextBreakToSlice() @system pure nothrow @nogc
+        {
+            uint length = 0;
+            while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
+            {
+                ++length;
+            }
+            reader_.sliceBuilder.write(reader_.get(length));
+        }
+
         /**
          * Move to next token in the file/stream.
          *
