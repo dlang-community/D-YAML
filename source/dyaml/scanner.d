@@ -949,7 +949,7 @@ final class Scanner
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
             if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
-            else if(name == "TAG"d) { scanTagDirectiveValueToSlice(startMark, tagHandleEnd); }
+            else if(name == "TAG"d) { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
             throwIfError();
             const value = reader_.sliceBuilder.finish();
 
@@ -1051,17 +1051,21 @@ final class Scanner
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
         ///
+        /// Returns: Length of tag handle (which is before tag prefix) in scanned data
+        ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectiveValueToSlice(const Mark startMark, ref uint handleLength)
+        uint scanTagDirectiveValueToSlice(const Mark startMark)
             @system pure nothrow
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder.length;
             scanTagDirectiveHandleToSlice(startMark);
-            if(error_) { return; }
-            handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
+            if(error_) { return uint.max; }
+            const handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
             findNextNonSpace();
             scanTagDirectivePrefixToSlice(startMark);
+
+            return handleLength;
         }
 
         /// Scan handle of a tag directive.
