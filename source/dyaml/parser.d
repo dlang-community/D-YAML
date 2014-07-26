@@ -346,23 +346,20 @@ final class Parser
             while(scanner_.checkToken(TokenID.Directive))
             {
                 immutable token = scanner_.getToken();
-                //Name and value are separated by '\0'.
-                const parts = token.value.split("\0");
-                const name = parts[0];
-                if(name == "YAML")
+                const value = token.value;
+                if(token.directive == DirectiveType.YAML)
                 {
-                    enforce(YAMLVersion_ is null, 
+                    enforce(YAMLVersion_ is null,
                             new Error("Duplicate YAML directive", token.startMark));
-                    const minor = parts[1].split(".")[0];
-                    enforce(minor == "1", 
+                    const minor = value.split(".")[0];
+                    enforce(minor == "1",
                             new Error("Incompatible document (version 1.x is required)",
                                       token.startMark));
-                    YAMLVersion_ = parts[1];
+                    YAMLVersion_ = value;
                 }
-                else if(name == "TAG")
+                else if(token.directive == DirectiveType.TAG)
                 {
-                    assert(parts.length == 3, "Tag directive stored incorrectly in a token");
-                    auto handle = parts[1];
+                    auto handle = value[0 .. token.valueDivider];
 
                     foreach(ref pair; tagDirectives_)
                     {
@@ -371,8 +368,10 @@ final class Parser
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagDirectives_ ~= TagDirective(handle, parts[2]);
+                    tagDirectives_ ~= TagDirective(handle, value[token.valueDivider .. $]);
                 }
+                // Any other directive type is ignored (only YAML and TAG are in YAML
+                // 1.1/1.2, any other directives are "reserved")
             }
 
             TagDirective[] value = tagDirectives_;

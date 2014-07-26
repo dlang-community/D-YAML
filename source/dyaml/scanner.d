@@ -943,17 +943,28 @@ final class Scanner
                 throwIfError();
             }
             const name  = reader_.sliceBuilder.finish();
-            const value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
-                          name == "TAG"  ? scanTagDirectiveValue(startMark) : "";
+            // Index where tag handle ends and suffix starts in a tag directive value.
+            uint tagHandleEnd = uint.max;
+            const value = name == "YAML"d ? scanYAMLDirectiveValue(startMark):
+                          name == "TAG"d  ? scanTagDirectiveValue(startMark, tagHandleEnd) : "";
 
             Mark endMark = reader_.mark;
 
-            if(!["YAML"d, "TAG"d].canFind(name)) { scanToNextBreak(); }
+            DirectiveType directive;
+            if(name == "YAML"d)     { directive = DirectiveType.YAML; }
+            else if(name == "TAG"d) { directive = DirectiveType.TAG; }
+            else
+            {
+                directive = DirectiveType.Reserved;
+                scanToNextBreak();
+            }
+
             scanDirectiveIgnoredLine(startMark);
             throwIfError();
 
             //Storing directive name and value in a single string, separated by zero.
-            return directiveToken(startMark, endMark, utf32To8(name ~ '\0' ~ value));
+            return directiveToken(startMark, endMark, utf32To8(value),
+                                  directive, tagHandleEnd);
         }
 
         /// Scan name of a directive token.
@@ -1010,12 +1021,14 @@ final class Scanner
         }
 
         /// Scan value of a tag directive.
-        dstring scanTagDirectiveValue(const Mark startMark) @safe pure
+        dstring scanTagDirectiveValue(const Mark startMark, ref uint handleLength)
+            @safe pure
         {
             findNextNonSpace();
             const handle = scanTagDirectiveHandle(startMark);
             findNextNonSpace();
-            return handle ~ '\0' ~ scanTagDirectivePrefix(startMark);
+            handleLength = cast(uint)handle.length;
+            return handle ~ scanTagDirectivePrefix(startMark);
         }
 
         ///Scan handle of a tag directive.

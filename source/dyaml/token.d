@@ -98,12 +98,15 @@ static assert(Token.sizeof <= 32, "Token has unexpected size");
 
 /// Construct a directive token.
 ///
-/// Params:  start = Start position of the token.
-///          end   = End position of the token.
-///          value = Value of the token.
-Token directiveToken(const Mark start, const Mark end, const string value)
+/// Params:  start     = Start position of the token.
+///          end       = End position of the token.
+///          value     = Value of the token.
+///          directive = Directive type (YAML or TAG in YAML 1.1).
+Token directiveToken(const Mark start, const Mark end, const string value, 
+                     DirectiveType directive, const uint nameEnd)
 {
-    return Token(value, start, end, TokenID.Directive);
+    return Token(value, start, end, TokenID.Directive, ScalarStyle.init, Encoding.init,
+                 directive, nameEnd);
 }
 
 /// Construct a simple (no value) token with specified type.
