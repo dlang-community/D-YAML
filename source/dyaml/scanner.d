@@ -882,40 +882,42 @@ final class Scanner
             reader_.sliceBuilder.write(reader_.get(length));
         }
 
-        /**
-         * Move to next token in the file/stream.
-         *
-         * We ignore spaces, line breaks and comments.
-         * If we find a line break in the block context, we set
-         * allowSimpleKey` on.
-         *
-         * We do not yet support BOM inside the stream as the
-         * specification requires. Any such mark will be considered as a part
-         * of the document.
-         */
+
+        /// Move to next token in the file/stream.
+        ///
+        /// We ignore spaces, line breaks and comments.
+        /// If we find a line break in the block context, we set
+        /// allowSimpleKey` on.
+        ///
+        /// We do not yet support BOM inside the stream as the
+        /// specification requires. Any such mark will be considered as a part
+        /// of the document.
         void scanToNextToken() @safe pure nothrow @nogc
         {
-            //TODO(PyYAML): We need to make tab handling rules more sane. A good rule is:
-            //  Tabs cannot precede tokens
-            //  BLOCK-SEQUENCE-START, BLOCK-MAPPING-START, BLOCK-END,
-            //  KEY(block), VALUE(block), BLOCK-ENTRY
-            //So the checking code is
-            //  if <TAB>:
-            //      allowSimpleKey_ = false
-            //We also need to add the check for `allowSimpleKey_ == true` to
-            //`unwindIndent` before issuing BLOCK-END.
-            //Scanners for block, flow, and plain scalars need to be modified.
+            // TODO(PyYAML): We need to make tab handling rules more sane. A good rule is:
+            //   Tabs cannot precede tokens
+            //   BLOCK-SEQUENCE-START, BLOCK-MAPPING-START, BLOCK-END,
+            //   KEY(block), VALUE(block), BLOCK-ENTRY
+            // So the checking code is
+            //   if <TAB>:
+            //       allowSimpleKey_ = false
+            // We also need to add the check for `allowSimpleKey_ == true` to
+            // `unwindIndent` before issuing BLOCK-END.
+            // Scanners for block, flow, and plain scalars need to be modified.
 
             for(;;)
             {
                 findNextNonSpace();
 
-                if(reader_.peek() == '#'){scanToNextBreak();}
+                if(reader_.peek() == '#') { scanToNextBreak(); }
                 if(scanLineBreak() != '\0')
                 {
-                    if(flowLevel_ == 0){allowSimpleKey_ = true;}
+                    if(flowLevel_ == 0) { allowSimpleKey_ = true; }
                 }
-                else{break;}
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -932,7 +934,7 @@ final class Scanner
 
             Mark endMark = reader_.mark;
 
-            if(!["YAML"d, "TAG"d].canFind(name)){scanToNextBreak();}
+            if(!["YAML"d, "TAG"d].canFind(name)) { scanToNextBreak(); }
             scanDirectiveIgnoredLine(startMark);
 
             //Storing directive name and value in a single string, separated by zero.
@@ -1032,15 +1034,15 @@ final class Scanner
             return value;
         }
 
-        ///Scan (and ignore) ignored line after a directive.
+        /// Scan (and ignore) ignored line after a directive.
         void scanDirectiveIgnoredLine(const Mark startMark) @safe pure
         {
             findNextNonSpace();
-            if(reader_.peek() == '#'){scanToNextBreak();}
+            if(reader_.peek() == '#') { scanToNextBreak(); }
             enforce("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
                               "expected comment or a line break, but found"
-                              ~ to!string(reader_.peek()), reader_.mark));
+                              ~ reader_.peek().to!string, reader_.mark));
             scanLineBreak();
         }
 
@@ -1303,8 +1305,7 @@ final class Scanner
                 }
             }
 
-            const slice  = reader_.sliceBuilder.finish();
-
+            const slice = reader_.sliceBuilder.finish();
             return scalarToken(startMark, endMark, slice.utf32To8, style);
         }
 
