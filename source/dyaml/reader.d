@@ -31,19 +31,6 @@ import dyaml.streamcompat;
 
 package:
 
-//XXX VIM STUFF:
-//XXX THE f/t COLORING PLUGIN, AND TRY TO REMOVE THE f/t AUTOREPEAT PLUGIN
-// (AND MAYBE DO THE REPEAT WITH ALT-T/ALT-F
-//XXX DDOC snippets such as $D, $BIGOH, anything else
-//    OR MAYBE JUST $ - EXPANDING TO $(${1} ${2})
-//    WHERE DEFAULT ${1} IS 'D' AND SPECIAL SNIPPETS FOR SPECIFIC DDOC MACROS
-//    (E.G. XREF HAS 2 ARGS)
-// XXX DON'T FORGET TO COMMIT DSNIPS CHANGES
-// XXX SNIPPETS: WHY CAN'T WE USE NEW IN NEW? FIX!
-// XXX ALSO WRITELN VISUAL! (print whatever we have selected)
-// XXX AND ``fun`` VISUAL TOO!
-// XXX snippet to print variable along its name AND
-// OR MULTIPLE VARS - USE std.format!
 
 
 
