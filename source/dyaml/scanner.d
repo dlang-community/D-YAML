@@ -249,7 +249,7 @@ final class Scanner
 
         /// Most scanning error messages have the same format; so build them with this
         /// function.
-        string expected(T)(string expected, T found) @safe pure nothrow @nogc 
+        string expected(T)(string expected, T found) @safe pure nothrow @nogc
         {
             return buildMsg("expected ", expected, ", but found ", found);
         }
@@ -937,12 +937,9 @@ final class Scanner
 
             // Scan directive name
             reader_.sliceBuilder.begin();
-            {
-                scope(failure) { reader_.sliceBuilder.finish(); }
-                scanDirectiveNameToSlice(startMark);
-                throwIfError();
-            }
-            const name  = reader_.sliceBuilder.finish();
+            scanDirectiveNameToSlice(startMark);
+            throwIfError();
+            const name = reader_.sliceBuilder.finish();
 
             reader_.sliceBuilder.begin();
 
