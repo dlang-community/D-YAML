@@ -369,6 +369,29 @@ public:
         reader_.buffer_[end_++] = c;
     }
 
+    /// Insert a character into the slice, backwards characters before the end.
+    ///
+    /// Enlarges the slice by 1 char. Note that the slice can only extend up to the
+    /// current position in the Reader buffer.
+    void insertBack(dchar c, size_t backwards) @system pure nothrow @nogc
+    {
+        assert(inProgress, "insertBack called without begin");
+        assert(end_ - backwards >= start_, "Trying to insert in front of the slice");
+
+        const point = end_ - backwards;
+        core.stdc.string.memmove(reader_.buffer_.ptr + point + 1,
+                                 reader_.buffer_.ptr + point, 
+                                 backwards * dchar.sizeof);
+        ++end_;
+        reader_.buffer_[point] = c;
+    }
+
+    /// Get the current length of the slice.
+    size_t length() @safe pure nothrow const @nogc
+    {
+        return end_ - start_;
+    }
+
     /// A slice building transaction.
     ///
     /// Can be used to save and revert back to slice state.
