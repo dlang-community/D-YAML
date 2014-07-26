@@ -1228,9 +1228,9 @@ final class Scanner
                 // loop) will never roll back data written in this if() block.
                 if(reader_.column == indent && reader_.peek() != '\0')
                 {
-                    //Unfortunately, folding rules are ambiguous.
+                    // Unfortunately, folding rules are ambiguous.
 
-                    //This is the folding according to the specification:
+                    // This is the folding according to the specification:
                     if(style == ScalarStyle.Folded && lineBreak == "\n" &&
                        leadingNonSpace && !" \t"d.canFind(reader_.peek()))
                     {
