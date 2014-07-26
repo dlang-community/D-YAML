@@ -935,7 +935,7 @@ final class Scanner
             // Skip the '%'.
             reader_.forward();
 
-
+            // Scan directive name
             reader_.sliceBuilder.begin();
             {
                 scope(failure) { reader_.sliceBuilder.finish(); }
@@ -943,10 +943,17 @@ final class Scanner
                 throwIfError();
             }
             const name  = reader_.sliceBuilder.finish();
+
+            reader_.sliceBuilder.begin();
+
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
-            const value = name == "YAML"d ? scanYAMLDirectiveValue(startMark):
-                          name == "TAG"d  ? scanTagDirectiveValue(startMark, tagHandleEnd) : "";
+            {
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
+                else if(name == "TAG"d) { scanTagDirectiveValueToSlice(startMark, tagHandleEnd); }
+            }
+            const value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
 
@@ -984,12 +991,15 @@ final class Scanner
                   expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
         }
 
-        ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
-        dchar[] scanYAMLDirectiveValue(const Mark startMark) @safe pure
+        /// Scan value of a YAML directive token. Returns major, minor version separated by '.'.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanYAMLDirectiveValueToSlice(const Mark startMark) @system pure
         {
             findNextNonSpace();
 
-            dchar[] result = scanYAMLDirectiveNumber(startMark);
+            reader_.sliceBuilder.write(scanYAMLDirectiveNumber(startMark));
             enforce(reader_.peek() == '.',
                     new Error("While scanning a directive", startMark,
                               "expected a digit or '.', but found: "
@@ -997,12 +1007,12 @@ final class Scanner
             //Skip the '.'.
             reader_.forward();
 
-            result ~= '.' ~ scanYAMLDirectiveNumber(startMark);
+            reader_.sliceBuilder.write('.');
+            reader_.sliceBuilder.write(scanYAMLDirectiveNumber(startMark));
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
                               "expected a digit or '.', but found: "
                               ~ to!string(reader_.peek()), reader_.mark));
-            return result;
         }
 
         /// Scan a number from a YAML directive.
@@ -1021,49 +1031,43 @@ final class Scanner
         }
 
         /// Scan value of a tag directive.
-        dstring scanTagDirectiveValue(const Mark startMark, ref uint handleLength)
-            @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanTagDirectiveValueToSlice(const Mark startMark, ref uint handleLength)
+            @trusted pure
         {
             findNextNonSpace();
-            const handle = scanTagDirectiveHandle(startMark);
+            const startLength = reader_.sliceBuilder.length;
+            scanTagDirectiveHandleToSlice(startMark);
+            handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
             findNextNonSpace();
-            handleLength = cast(uint)handle.length;
-            return handle ~ scanTagDirectivePrefix(startMark);
+            scanTagDirectivePrefixToSlice(startMark);
         }
 
-        ///Scan handle of a tag directive.
-        dstring scanTagDirectiveHandle(const Mark startMark) @trusted pure
+        /// Scan handle of a tag directive.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanTagDirectiveHandleToSlice(const Mark startMark) @trusted pure
         {
-            reader_.sliceBuilder.begin();
-            {
-                scope(failure) { reader_.sliceBuilder.finish(); }
-                scanTagHandleToSlice!"directive"(startMark);
-                throwIfError();
-            }
-            auto value = reader_.sliceBuilder.finish();
+            scanTagHandleToSlice!"directive"(startMark);
             enforce(reader_.peek() == ' ',
                     new Error("While scanning a directive handle", startMark,
                               "expected ' ', but found: " ~ to!string(reader_.peek()),
                               reader_.mark));
-            return value;
         }
 
         /// Scan prefix of a tag directive.
-        dstring scanTagDirectivePrefix(const Mark startMark) @trusted pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanTagDirectivePrefixToSlice(const Mark startMark) @trusted pure
         {
-            reader_.sliceBuilder.begin();
-            {
-                scope(failure) { reader_.sliceBuilder.finish(); }
-                scanTagURIToSlice!"directive"(startMark);
-                throwIfError();
-            }
-            auto value = reader_.sliceBuilder.finish();
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive prefix", startMark,
                               "expected ' ', but found" ~ reader_.peek().to!string,
                               reader_.mark));
-
-            return value;
         }
 
         /// Scan (and ignore) ignored line after a directive.
