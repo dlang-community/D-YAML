@@ -7,7 +7,7 @@
 module dyaml.queue;
 
 
-///Queue collection.
+/// Queue collection.
 import core.stdc.stdlib;
 import core.memory;
 
@@ -17,37 +17,35 @@ import std.traits;
 
 package:
 
-/**
- * Simple queue implemented as a singly linked list with a tail pointer.
- *
- * Needed in some D:YAML code that needs a queue-like structure without too 
- * much reallocation that goes with an array.
- *
- * This should be replaced once Phobos has a decent queue/linked list.
- *
- * Uses manual allocation through malloc/free.
- *
- * Also has some features uncommon for a queue, e.g. iteration.
- * Couldn't bother with implementing a range, as this is used only as
- * a placeholder until Phobos gets a decent replacement.
- */
+/// Simple queue implemented as a singly linked list with a tail pointer.
+/// 
+/// Needed in some D:YAML code that needs a queue-like structure without too much
+/// reallocation that goes with an array.
+/// 
+/// This should be replaced once Phobos has a decent queue/linked list.
+/// 
+/// Uses manual allocation through malloc/free.
+/// 
+/// Also has some features uncommon for a queue, e.g. iteration. Couldn't bother with
+/// implementing a range, as this is used only as a placeholder until Phobos gets a
+/// decent replacement.
 struct Queue(T)
 {
     private:
-        ///Linked list node containing one element and pointer to the next node.
+        /// Linked list node containing one element and pointer to the next node.
         struct Node
         {
             T payload_;
             Node* next_ = null;
         }
 
-        ///Start of the linked list - first element added in time (end of the queue).
+        /// Start of the linked list - first element added in time (end of the queue).
         Node* first_ = null;
-        ///Last element of the linked list - last element added in time (start of the queue).
+        /// Last element of the linked list - last element added in time (start of the queue).
         Node* last_ = null;
-        ///Cursor pointing to the current node in iteration.
+        /// Cursor pointing to the current node in iteration.
         Node* cursor_ = null;
-        ///Length of the queue.
+        /// Length of the queue.
         size_t length_ = 0;
 
     public:
@@ -89,17 +87,17 @@ struct Queue(T)
             return cursor_ is null;
         }
 
-        ///Push new item to the queue.
+        /// Push new item to the queue.
         void push(T item) @trusted nothrow
         {
             Node* newLast = allocate!Node(item, cast(Node*)null);
-            if(last_ !is null){last_.next_ = newLast;}
-            if(first_ is null){first_ = newLast;}
+            if(last_ !is null) { last_.next_ = newLast; }
+            if(first_ is null) { first_ = newLast; }
             last_ = newLast;
             ++length_;
         }
 
-        ///Insert a new item putting it to specified index in the linked list.
+        /// Insert a new item putting it to specified index in the linked list.
         void insert(T item, in size_t idx) @trusted nothrow
         in
         {
@@ -109,31 +107,31 @@ struct Queue(T)
         {
             if(idx == 0)
             {
-                //Add after the first element - so this will be the next to pop.
+                // Add after the first element - so this will be the next to pop.
                 first_ = allocate!Node(item, first_);
                 ++length_;
             }
             else if(idx == length_)
             {
-                //Adding before last added element, so we can just push.
+                // Adding before last added element, so we can just push.
                 push(item);
             }
             else
             {
-                //Get the element before one we're inserting.
+                // Get the element before one we're inserting.
                 Node* current = first_;
                 foreach(i; 1 .. idx)
                 {
                     current = current.next_;
                 }
 
-                //Insert a new node after current, and put current.next_ behind it.
+                // Insert a new node after current, and put current.next_ behind it.
                 current.next_ = allocate!Node(item, current.next_);
                 ++length_;
             }
         }
 
-        ///Return the next element in the queue and remove it.
+        /// Return the next element in the queue and remove it.
         T pop() @trusted nothrow
         in
         {
@@ -141,9 +139,9 @@ struct Queue(T)
         }
         body
         {
-            T result = peek();
+            T result   = peek();
             Node* temp = first_;
-            first_ = first_.next_;
+            first_     = first_.next_;
             free(temp);
             if(--length_ == 0)
             {
@@ -181,22 +179,22 @@ struct Queue(T)
 
 private:
 
-///Allocate a struct, passing arguments to its constructor or default initializer.
+/// Allocate a struct, passing arguments to its constructor or default initializer.
 T* allocate(T, Args...)(Args args) @system nothrow
 {
     T* ptr = cast(T*)malloc(T.sizeof);
     *ptr = T(args);
-    //The struct might contain references to GC-allocated memory, so tell the GC about it.
-    static if(hasIndirections!T){GC.addRange(cast(void*)ptr, T.sizeof);}
+    // The struct might contain references to GC-allocated memory, so tell the GC about it.
+    static if(hasIndirections!T) { GC.addRange(cast(void*)ptr, T.sizeof); }
     return ptr;
 }
 
-///Deallocate struct pointed at by specified pointer.
+/// Deallocate struct pointed at by specified pointer.
 void free(T)(T* ptr) @system nothrow
 {
-    //GC doesn't need to care about any references in this struct anymore.
-    static if(hasIndirections!T){GC.removeRange(cast(void*)ptr);}
-    static if(hasMember!(T, "__dtor")){(*ptr).destroy;}
+    // GC doesn't need to care about any references in this struct anymore.
+    static if(hasIndirections!T) { GC.removeRange(cast(void*)ptr); }
+    static if(hasMember!(T, "__dtor")) { (*ptr).destroy; }
     core.stdc.stdlib.free(ptr);
 }
 
