@@ -839,22 +839,21 @@ final class Scanner
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
-        dchar[] scanAlphaNumeric(string name)(const Mark startMark) @safe pure
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanAlphaNumericToSlice(string name)(const Mark startMark) @system pure
         {
-            uint length = 0;
+            size_t length = 0;
             dchar c = reader_.peek();
-            while(isAlphaNum(c) || "-_"d.canFind(c))
-            {
-                ++length;
-                c = reader_.peek(length);
-            }
+            while(c.isAlphaNum || "-_"d.canFind(c)) { c = reader_.peek(++length); }
 
             enforce(length > 0,
                     new Error("While scanning " ~ name, startMark,
-                              "expected alphanumeric, - or _, but found " ~ to!string(c),
+                              "expected alphanumeric, - or _, but found " ~ c.to!string,
                               reader_.mark));
 
-            return reader_.get(length);
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan and throw away all characters until next line break.
@@ -919,16 +918,22 @@ final class Scanner
             }
         }
 
-        ///Scan directive token.
-        Token scanDirective() @safe pure
+        /// Scan directive token.
+        Token scanDirective() @trusted pure
         {
             Mark startMark = reader_.mark;
             //Skip the '%'.
             reader_.forward();
 
-            auto name  = scanDirectiveName(startMark);
-            auto value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
-                         name == "TAG"  ? scanTagDirectiveValue(startMark) : "";
+
+            reader_.sliceBuilder.begin();
+            {
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                scanDirectiveNameToSlice(startMark);
+            }
+            const name  = reader_.sliceBuilder.finish();
+            const value = name == "YAML" ? scanYAMLDirectiveValue(startMark):
+                          name == "TAG"  ? scanTagDirectiveValue(startMark) : "";
 
             Mark endMark = reader_.mark;
 
@@ -939,17 +944,19 @@ final class Scanner
             return directiveToken(startMark, endMark, utf32To8(name ~ '\0' ~ value));
         }
 
-        ///Scan name of a directive token.
-        dchar[] scanDirectiveName(const Mark startMark) @safe pure
+        /// Scan name of a directive token.
+        ///
+        /// Assumes that the caller is building a slice in Reader, and puts the scanned
+        /// characters into that slice.
+        void scanDirectiveNameToSlice(const Mark startMark) @system pure
         {
             //Scan directive name.
-            auto name = scanAlphaNumeric!"a directive"(startMark);
+            scanAlphaNumericToSlice!"a directive"(startMark);
 
             enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
                     new Error("While scanning a directive", startMark,
                               "expected alphanumeric, - or _, but found "
-                              ~ to!string(reader_.peek()), reader_.mark));
-            return name;
+                              ~ reader_.peek().to!string, reader_.mark));
         }
 
         ///Scan value of a YAML directive token. Returns major, minor version separated by '.'.
@@ -1045,32 +1052,35 @@ final class Scanner
         }
 
 
-        /**
-         * Scan an alias or an anchor.
-         *
-         * The specification does not restrict characters for anchors and
-         * aliases. This may lead to problems, for instance, the document:
-         *   [ *alias, value ]
-         * can be interpteted in two ways, as
-         *   [ "value" ]
-         * and
-         *   [ *alias , "value" ]
-         * Therefore we restrict aliases to ASCII alphanumeric characters.
-         */
-        Token scanAnchor(TokenID id) @safe pure
+        /// Scan an alias or an anchor.
+        ///
+        /// The specification does not restrict characters for anchors and
+        /// aliases. This may lead to problems, for instance, the document:
+        ///   [ *alias, value ]
+        /// can be interpteted in two ways, as
+        ///   [ "value" ]
+        /// and
+        ///   [ *alias , "value" ]
+        /// Therefore we restrict aliases to ASCII alphanumeric characters.
+        Token scanAnchor(const TokenID id) @trusted pure
         {
             const startMark = reader_.mark;
 
             const dchar i = reader_.get();
 
-            dchar[] value = i == '*' ? scanAlphaNumeric!("an alias")(startMark)
-                                     : scanAlphaNumeric!("an anchor")(startMark);
+            reader_.sliceBuilder.begin();
+            {
+                scope(failure) { reader_.sliceBuilder.finish(); }
+                if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
+                else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
+            }
+            const value = reader_.sliceBuilder.finish();
 
             enforce((" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) ||
-                     ("?:,]}%@").canFind(reader_.peek())),
+                     ("?:,]}%@"d).canFind(reader_.peek())),
                     new Error("While scanning an " ~ (i == '*') ? "alias" : "anchor",
-                                         startMark, "expected alphanumeric, - or _, but found "~
-                                         to!string(reader_.peek()), reader_.mark));
+                               startMark, "expected alphanumeric, - or _, but found "~
+                               reader_.peek().to!string, reader_.mark));
 
             if(id == TokenID.Alias)
             {
