@@ -484,6 +484,9 @@ private:
         --endStackUsed_;
     }
 }
+
+private:
+
 // Decode an UTF-8/16/32 buffer to UTF-32 (for UTF-32 this does nothing).
 //
 // Params:
