@@ -321,7 +321,7 @@ public:
     /// will not be changed.
     dstring finish() @system pure nothrow @nogc
     {
-        assert(inProgress, "sliceFinish called without sliceBegin");
+        assert(inProgress, "finish called without begin");
         assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
 
         const result = reader_.buffer_[start_ .. end_];
@@ -339,7 +339,7 @@ public:
     /// See_Also: begin
     void write(dchar[] str) @system pure nothrow @nogc
     {
-        assert(inProgress, "sliceWrite called without sliceBegin");
+        assert(inProgress, "write called without begin");
 
         // If str starts at the end of the slice (is a string returned by a Reader
         // method), just extend the slice to contain str.
@@ -364,7 +364,7 @@ public:
     /// See_Also: begin
     void write(dchar c) @system pure nothrow @nogc
     {
-        assert(inProgress, "sliceWrite called without sliceBegin");
+        assert(inProgress, "write called without begin");
 
         reader_.buffer_[end_++] = c;
     }
@@ -457,7 +457,7 @@ private:
     // Used by Transaction.
     void push() @system pure nothrow @nogc
     {
-        assert(inProgress, "slicePush called without sliceBegin");
+        assert(inProgress, "push called without begin");
         assert(endStackUsed_ < endStack_.length, "Slice stack overflow");
         endStack_[endStackUsed_++] = end_;
     }
@@ -468,7 +468,7 @@ private:
     // Used by Transaction.
     void pop() @system pure nothrow @nogc
     {
-        assert(inProgress, "slicePop called without sliceBegin");
+        assert(inProgress, "pop called without begin");
         assert(endStackUsed_ > 0, "Trying to pop an empty slice stack");
         end_ = endStack_[--endStackUsed_];
     }
@@ -479,7 +479,7 @@ private:
     // Used by Transaction.
     void apply() @system pure nothrow @nogc
     {
-        assert(inProgress, "sliceApply called without sliceBegin");
+        assert(inProgress, "apply called without begin");
         assert(endStackUsed_ > 0, "Trying to apply an empty slice stack");
         --endStackUsed_;
     }
