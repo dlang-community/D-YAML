@@ -144,9 +144,6 @@ final class Scanner
         /// Possible simple keys indexed by flow levels.
         SimpleKey[] possibleSimpleKeys_;
 
-        /// Used for constructing strings while limiting reallocation.
-        Appender!(dchar[]) appender_;
-
 
         /// Set on error by nothrow/@nogc inner functions along with errorData_.
         ///
@@ -172,7 +169,6 @@ final class Scanner
         {
             // Return the next token, but do not delete it from the queue
             reader_   = reader;
-            appender_ = appender!(dchar[])();
             fetchStreamStart();
         }
 
@@ -183,7 +179,6 @@ final class Scanner
             indents_.destroy();
             possibleSimpleKeys_.destroy();
             possibleSimpleKeys_ = null;
-            appender_.destroy();
             reader_ = null;
         }
 
