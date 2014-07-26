@@ -709,7 +709,9 @@ final class Scanner
             //A simple key may follow a block scalar.
             allowSimpleKey_ = true;
 
-            tokens_.push(scanBlockScalar(style));
+            auto blockScalar = scanBlockScalar(style);
+            throwIfError();
+            tokens_.push(blockScalar);
         }
 
         /// Aliases to add literal or folded block scalar.
@@ -1162,8 +1164,9 @@ final class Scanner
         }
 
         /// Scan a block scalar token with specified style.
-        Token scanBlockScalar(const ScalarStyle style)
-            @trusted pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        Token scanBlockScalar(const ScalarStyle style) @trusted pure nothrow
         {
             const startMark = reader_.mark;
 
@@ -1171,12 +1174,12 @@ final class Scanner
             reader_.forward();
 
             const indicators = scanBlockScalarIndicators(startMark);
-            throwIfError();
+            if(error_) { return Token.init; }
 
             const chomping   = indicators[0];
             const increment  = indicators[1];
             scanBlockScalarIgnoredLine(startMark);
-            throwIfError();
+            if(error_) { return Token.init; }
 
             // Determine the indentation level and go to the first non-empty line.
             Mark endMark;
