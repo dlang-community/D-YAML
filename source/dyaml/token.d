@@ -81,6 +81,9 @@ struct Token
     // 1B
     /// Encoding, if this is a stream start token.
     Encoding encoding;
+    // 1B
+    /// Type of directive for directiveToken.
+    DirectiveType directive;
     // 4B
     /// Used to split value into 2 substrings for tokens that need 2 values (tagToken)
     uint valueDivider;
@@ -144,7 +147,8 @@ alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
 Token simpleValueToken(TokenID id)(const Mark start, const Mark end, const string value,
                                    const uint valueDivider = uint.max)
 {
-    return Token(value, start, end, id, ScalarStyle.Invalid, Encoding.init, valueDivider);
+    return Token(value, start, end, id, ScalarStyle.Invalid, Encoding.init,
+                 DirectiveType.init, valueDivider);
 }
 
 /// Alias for construction of tag token.
