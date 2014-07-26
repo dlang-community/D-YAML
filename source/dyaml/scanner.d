@@ -1161,12 +1161,13 @@ final class Scanner
             return tagToken(startMark, reader_.mark, slice.utf32To8, handleEnd);
         }
 
-        ///Scan a block scalar token with specified style.
-        Token scanBlockScalar(const ScalarStyle style) @trusted pure
+        /// Scan a block scalar token with specified style.
+        Token scanBlockScalar(const ScalarStyle style)
+            @trusted pure
         {
             const startMark = reader_.mark;
 
-            //Scan the header.
+            // Scan the header.
             reader_.forward();
 
             const indicators = scanBlockScalarIndicators(startMark);
@@ -1177,9 +1178,10 @@ final class Scanner
             scanBlockScalarIgnoredLine(startMark);
             throwIfError();
 
-            //Determine the indentation level and go to the first non-empty line.
+            // Determine the indentation level and go to the first non-empty line.
             Mark endMark;
             uint indent = max(1, indent_ + 1);
+
             reader_.sliceBuilder.begin();
             if(increment == int.min)
             {
@@ -1199,7 +1201,7 @@ final class Scanner
             //Using appender_, so clear it when we're done.
             scope(exit){appender_.clear();}
 
-            //Scan the inner part of the block scalar.
+            // Scan the inner part of the block scalar.
             while(reader_.column == indent && reader_.peek() != '\0')
             {
                 appender_.put(breaks);
