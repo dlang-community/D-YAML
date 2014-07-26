@@ -932,7 +932,7 @@ final class Scanner
         Token scanDirective() @trusted pure
         {
             Mark startMark = reader_.mark;
-            //Skip the '%'.
+            // Skip the '%'.
             reader_.forward();
 
 

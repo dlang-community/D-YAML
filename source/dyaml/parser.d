@@ -31,7 +31,7 @@ package:
 /**
  * The following YAML grammar is LL(1) and is parsed by a recursive descent
  * parser.
- * 
+ *
  * stream            ::= STREAM-START implicit_document? explicit_document* STREAM-END
  * implicit_document ::= block_node DOCUMENT-END*
  * explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
@@ -67,9 +67,9 @@ package:
  *                       flow_mapping_entry?
  *                       FLOW-MAPPING-END
  * flow_mapping_entry    ::= flow_node | KEY flow_node? (VALUE flow_node?)?
- * 
+ *
  * FIRST sets:
- * 
+ *
  * stream: { STREAM-START }
  * explicit_document: { DIRECTIVE DOCUMENT-START }
  * implicit_document: FIRST(block_node)
@@ -88,7 +88,7 @@ package:
  * flow_mapping: { FLOW-MAPPING-START }
  * flow_sequence_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
  * flow_mapping_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
- */            
+ */
 
 
 /**
@@ -104,7 +104,7 @@ class ParserException : MarkedYAMLException
 private alias ParserException Error;
 
 ///Generates events from tokens provided by a Scanner.
-final class Parser 
+final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
@@ -189,7 +189,7 @@ final class Parser
         }
 
         /**
-         * Return the next event, but keep it in the queue. 
+         * Return the next event, but keep it in the queue.
          *
          * Must not be called if there are no events left.
          */
@@ -229,7 +229,7 @@ final class Parser
         ///Pop and return the newest state in states_.
         Event delegate() popState() @trusted
         {
-            enforce(states_.length > 0, 
+            enforce(states_.length > 0,
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
             const result = states_.back;
             states_.length = states_.length - 1;
@@ -239,7 +239,7 @@ final class Parser
         ///Pop and return the newest mark in marks_.
         Mark popMark() @trusted
         {
-            enforce(marks_.length > 0, 
+            enforce(marks_.length > 0,
                     new YAMLException("Parser: Need to pop mark but no marks left to pop"));
             const result = marks_.back;
             marks_.length = marks_.length - 1;
@@ -260,19 +260,19 @@ final class Parser
             return streamStartEvent(token.startMark, token.endMark, token.encoding);
         }
 
-        ///Parse implicit document start, unless explicit is detected: if so, parse explicit.
+        /// Parse implicit document start, unless explicit detected: if so, parse explicit.
         Event parseImplicitDocumentStart() @trusted
         {
-            //Parse an implicit document.
+            // Parse an implicit document.
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
                                     TokenID.StreamEnd))
             {
-                tagDirectives_ = defaultTagDirectives_;
+                tagDirectives_  = defaultTagDirectives_;
                 immutable token = scanner_.peekToken();
 
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseBlockNode;
-                
+
                 return documentStartEvent(token.startMark, token.endMark, false, null, null);
             }
             return parseDocumentStart();
@@ -292,7 +292,7 @@ final class Parser
                 auto tagDirectives = processDirectives();
                 enforce(scanner_.checkToken(TokenID.DocumentStart),
                         new Error("Expected document start but found " ~
-                                  scanner_.peekToken().idString, 
+                                  scanner_.peekToken().idString,
                                   scanner_.peekToken().startMark));
 
                 const endMark = scanner_.getToken().endMark;
@@ -326,7 +326,7 @@ final class Parser
         ///Parse document content.
         Event parseDocumentContent() @safe
         {
-            if(scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
+            if(scanner_.checkToken(TokenID.Directive,   TokenID.DocumentStart,
                                    TokenID.DocumentEnd, TokenID.StreamEnd))
             {
                 state_ = popState();
@@ -335,14 +335,14 @@ final class Parser
             return parseBlockNode();
         }
 
-        ///Process directives at the beginning of a document.
+        /// Process directives at the beginning of a document.
         TagDirective[] processDirectives() @system
         {
-            //Destroy version and tag handles from previous document.
+            // Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
             tagDirectives_.length = 0;
 
-            //Process directives.
+            // Process directives.
             while(scanner_.checkToken(TokenID.Directive))
             {
                 immutable token = scanner_.getToken();
@@ -363,7 +363,7 @@ final class Parser
 
                     foreach(ref pair; tagDirectives_)
                     {
-                        //handle
+                        // handle
                         const h = pair.handle;
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
@@ -385,7 +385,7 @@ final class Parser
                     found = true;
                     break;
                 }
-                if(!found){tagDirectives_ ~= defaultPair;}
+                if(!found) {tagDirectives_ ~= defaultPair; }
             }
 
             return value;
@@ -439,7 +439,7 @@ final class Parser
                     tagMark = token.startMark;
                     tagHandleEnd = token.valueDivider;
                 }
-                endMark = token.endMark; 
+                endMark = token.endMark;
                 target  = token.value;
                 return true;
             }
@@ -472,7 +472,7 @@ final class Parser
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
-                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag), 
+                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag),
                                    tuple(implicit, implicit_2), token.value, token.style);
             }
 
@@ -480,7 +480,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                           implicit, CollectionStyle.Flow);
             }
 
@@ -488,7 +488,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                          implicit, CollectionStyle.Flow);
             }
 
@@ -496,7 +496,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                           implicit, CollectionStyle.Block);
             }
 
@@ -504,7 +504,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                          implicit, CollectionStyle.Block);
             }
 
@@ -512,17 +512,17 @@ final class Parser
             {
                 state_ = popState();
 
-                //PyYAML uses a tuple(implicit, false) for the second last arg here, 
+                //PyYAML uses a tuple(implicit, false) for the second last arg here,
                 //but the second bool is never used after that - so we don't use it.
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
-                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                    tuple(implicit, false) , "");
             }
 
             immutable token = scanner_.peekToken();
-            throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
-                            startMark, "expected node content, but found: " 
+            throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node",
+                            startMark, "expected node content, but found: "
                             ~ token.idString, token.startMark);
         }
 
@@ -534,7 +534,7 @@ final class Parser
          *                      starts.
          *          startMark = Position of the node the tag belongs to.
          *          tagMark   = Position of the tag.
-         */ 
+         */
         string processTag(const string tag, const uint handleEnd,
                           const Mark startMark, const Mark tagMark)
             const @trusted
@@ -591,7 +591,7 @@ final class Parser
             {
                 immutable token = scanner_.peekToken();
                 throw new Error("While parsing a block collection", marks_.back,
-                                "expected block end, but found " ~ token.idString, 
+                                "expected block end, but found " ~ token.idString,
                                 token.startMark);
             }
 
@@ -610,9 +610,9 @@ final class Parser
             {
                 immutable token = scanner_.getToken();
 
-                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key, 
+                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key,
                                         TokenID.Value, TokenID.BlockEnd))
-                {                  
+                {
                     states_ ~= &parseIndentlessSequenceEntry;
                     return parseBlockNode();
                 }
@@ -656,7 +656,7 @@ final class Parser
             {
                 immutable token = scanner_.peekToken();
                 throw new Error("While parsing a block mapping", marks_.back,
-                                "expected block end, but found: " ~ token.idString, 
+                                "expected block end, but found: " ~ token.idString,
                                 token.startMark);
             }
 
@@ -693,7 +693,7 @@ final class Parser
          *                       flow_sequence_entry?
          *                       FLOW-SEQUENCE-END
          * flow_sequence_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
-         * 
+         *
          * Note that while production rules for both flow_sequence_entry and
          * flow_mapping_entry are equal, their interpretations are different.
          * For `flow_sequence_entry`, the part `KEY flow_node? (VALUE flow_node?)?`
@@ -726,7 +726,7 @@ final class Parser
                 {
                     immutable token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
-                    return mappingStartEvent(token.startMark, token.endMark, 
+                    return mappingStartEvent(token.startMark, token.endMark,
                                              Anchor(), Tag(), true, CollectionStyle.Flow);
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
@@ -747,7 +747,7 @@ final class Parser
         {
             immutable token = scanner_.getToken();
 
-            if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry, 
+            if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry,
                                     TokenID.FlowSequenceEnd))
             {
                 states_ ~= nextState;
@@ -776,7 +776,7 @@ final class Parser
                     states_ ~= nextState;
                     return parseFlowNode();
                 }
-                
+
                 state_ = nextState;
                 return processEmptyScalar(token.endMark);
             }
