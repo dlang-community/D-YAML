@@ -1431,24 +1431,6 @@ final class Scanner
         }
 
         /// Scan line breaks at lower or specified indentation in a block scalar.
-        Tuple!(dstring, Mark) scanBlockScalarBreaks(const uint indent)
-            @trusted pure nothrow @nogc
-        {
-            reader_.sliceBuilder.begin();
-            Mark endMark = reader_.mark;
-
-            for(;;)
-            {
-                while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
-                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
-                reader_.sliceBuilder.write(scanLineBreak());
-                endMark = reader_.mark;
-            }
-
-            return tuple(reader_.sliceBuilder.finish(), endMark);
-        }
-
-        /// Scan line breaks at lower or specified indentation in a block scalar.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
