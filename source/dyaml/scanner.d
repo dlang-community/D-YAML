@@ -1253,13 +1253,22 @@ final class Scanner
                     //
                     //if(style == ScalarStyle.Folded && lineBreak == "\n"d)
                     //{
-                    //    if(breaks.length == 0)
+                    //    if(startLen == endLen)
                     //    {
-                    //        if(!" \t"d.canFind(reader_.peek())){appender_.put(' ');}
-                    //        else{chunks ~= lineBreak;}
+                    //        if(!" \t"d.canFind(reader_.peek()))
+                    //        {
+                    //            reader_.sliceBuilder.write(' ');
+                    //        }
+                    //        else
+                    //        {
+                    //            chunks ~= lineBreak[0];
+                    //        }
                     //    }
                     //}
-                    //else{appender_.put(lineBreak);}
+                    //else
+                    //{
+                    //    reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen);
+                    //}
                 }
                 else
                 {
