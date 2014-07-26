@@ -55,22 +55,22 @@ struct Queue(T)
         @disable bool opEquals(ref Queue);
         @disable int opCmp(ref Queue);
 
-        ///Destroy the queue, deallocating all its elements.
+        /// Destroy the queue, deallocating all its elements.
         @safe nothrow ~this()
         {
-            while(!empty){pop();}
+            while(!empty) { pop(); }
             cursor_ = last_ = first_ = null;
             length_ = 0;
         }
 
-        ///Start iterating over the queue.
-        void startIteration() pure @safe nothrow
+        /// Start iterating over the queue.
+        void startIteration() @safe pure nothrow @nogc
         {
             cursor_ = first_;
         }
 
-        ///Get next element in the queue.
-        ref const(T) next() pure @safe nothrow
+        /// Get next element in the queue.
+        ref const(T) next() @safe pure nothrow @nogc
         in
         {
             assert(!empty);
@@ -83,8 +83,8 @@ struct Queue(T)
             return previous.payload_;
         }
 
-        ///Are we done iterating?
-        bool iterationOver() const pure @safe nothrow
+        /// Are we done iterating?
+        bool iterationOver() @safe pure nothrow const @nogc
         {
             return cursor_ is null;
         }
@@ -154,8 +154,8 @@ struct Queue(T)
             return result;
         }
 
-        ///Return the next element in the queue.
-        ref inout(T) peek() inout pure @safe nothrow
+        /// Return the next element in the queue.
+        ref inout(T) peek() @safe pure nothrow inout @nogc 
         in
         {
             assert(!empty, "Trying to peek at an element in an empty queue");
@@ -165,14 +165,14 @@ struct Queue(T)
             return first_.payload_;
         }
 
-        ///Is the queue empty?
-        @property bool empty() const pure @safe nothrow
+        /// Is the queue empty?
+        bool empty() @safe pure nothrow const @nogc
         {
             return first_ is null;
         }
 
-        ///Return number of elements in the queue.
-        @property size_t length() const pure @safe nothrow
+        /// Return number of elements in the queue.
+        size_t length() @safe pure nothrow const @nogc
         {
             return length_;
         }
