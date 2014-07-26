@@ -219,7 +219,7 @@ final class Reader
                 const c = buffer_[bufferOffset_];
                 ++bufferOffset_;
                 ++charIndex_;
-                //New line.
+                // New line.
                 if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
@@ -582,8 +582,7 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
     if(result.errorMessage !is null) { return result; }
 
     // XXX This is risky. We rely on the assumption that the scanner only uses
-    // peek() to detect the end of the buffer. Should this cause any bugs,
-    // revert.
+    // peek() to detect the end of the buffer. Should this cause any bugs, revert.
     //
     // The buffer must be zero terminated for scanner to detect its end.
     // if(result.decoded.empty || result.decoded.back() != '\0')
