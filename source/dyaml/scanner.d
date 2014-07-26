@@ -490,16 +490,18 @@ final class Scanner
             done_ = true;
         }
 
-        ///Add DIRECTIVE token.
+        /// Add DIRECTIVE token.
         void fetchDirective() @safe
         {
-            //Set intendation to -1 .
+            // Set intendation to -1 .
             unwindIndent(-1);
-            //Reset simple keys.
+            // Reset simple keys.
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
 
-            tokens_.push(scanDirective());
+            const directive = scanDirective();
+            throwIfError();
+            tokens_.push(directive);
         }
 
         ///Add DOCUMENT-START or DOCUMENT-END token.
@@ -929,7 +931,7 @@ final class Scanner
         }
 
         /// Scan directive token.
-        Token scanDirective() @trusted pure
+        Token scanDirective() @trusted pure nothrow
         {
             Mark startMark = reader_.mark;
             // Skip the '%'.
@@ -938,7 +940,7 @@ final class Scanner
             // Scan directive name
             reader_.sliceBuilder.begin();
             scanDirectiveNameToSlice(startMark);
-            throwIfError();
+            if(error_) { return Token.init; }
             const name = reader_.sliceBuilder.finish();
 
             reader_.sliceBuilder.begin();
@@ -947,7 +949,7 @@ final class Scanner
             uint tagHandleEnd = uint.max;
             if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
             else if(name == "TAG"d) { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
-            throwIfError();
+            if(error_) { return Token.init; }
             const value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
@@ -962,7 +964,7 @@ final class Scanner
             }
 
             scanDirectiveIgnoredLine(startMark);
-            throwIfError();
+            if(error_) { return Token.init; }
 
             //Storing directive name and value in a single string, separated by zero.
             return directiveToken(startMark, endMark, utf32To8(value),
