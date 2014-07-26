@@ -738,7 +738,7 @@ final class Scanner
         }
 
         /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
-        bool checkDocumentStart() @safe
+        bool checkDocumentStart() @safe pure nothrow @nogc
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column    == 0     &&
