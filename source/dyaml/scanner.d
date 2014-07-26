@@ -1722,8 +1722,10 @@ final class Scanner
                 spacesTransaction.commit();
                 spacesTransaction = Transaction(reader_.sliceBuilder);
 
-                const bool anySpaces = scanPlainSpacesToSlice(startMark);
-                if(!anySpaces || (flowLevel_ == 0 && reader_.column < indent))
+                const startLength = reader_.sliceBuilder.length;
+                scanPlainSpacesToSlice(startMark);
+                if(startLength == reader_.sliceBuilder.length ||
+                   (flowLevel_ == 0 && reader_.column < indent))
                 {
                     break;
                 }
@@ -1739,7 +1741,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        bool scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
+        void scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1754,17 +1756,11 @@ final class Scanner
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 // We have spaces, but no newline.
-                if(whitespaces.length > 0)
-                {
-                    reader_.sliceBuilder.write(whitespaces);
-                    return true;
-                }
-                // No spaces or newline.
-                return false;
+                if(whitespaces.length > 0) { reader_.sliceBuilder.write(whitespaces); }
+                return;
             }
 
             // Newline after the spaces (if any)
-            bool anySpaces  = false;
             const lineBreak = scanLineBreak();
             allowSimpleKey_ = true;
 
@@ -1774,7 +1770,7 @@ final class Scanner
                         && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
             }
 
-            if(end(reader_)) { return false; }
+            if(end(reader_)) { return; }
 
             bool extraBreaks = false;
 
@@ -1789,22 +1785,14 @@ final class Scanner
                     const lBreak = scanLineBreak();
                     extraBreaks  = true;
                     reader_.sliceBuilder.write(lBreak);
-                    if(end(reader_))
-                    {
-                        return false;
-                    }
+
+                    if(end(reader_)) { return; }
                 }
             }
             transaction.commit();
 
             // No line breaks, only a space.
             if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
-
-            // We've written some spaces into the slice if:
-            // (lineBreak != '\n' || extraBreaks || lineBreak == '\n' && !extraBreaks).
-            // That simplifies to (lineBreak != '\n' || lineBreak == '\n') which
-            // simplifies to (true)
-            return true;
         }
 
         /// Scan handle of a tag token.
@@ -1857,7 +1845,7 @@ final class Scanner
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
-            bool anyChars = false;
+            const startLen = reader_.sliceBuilder.length;
             {
                 uint length = 0;
                 while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
@@ -1866,9 +1854,8 @@ final class Scanner
                     {
                         auto chars = reader_.get(length);
                         reader_.sliceBuilder.write(chars);
-                        anyChars = anyChars || (length > 0);
                         length = 0;
-                        anyChars = scanURIEscapesToSlice!name(startMark) || anyChars;
+                        scanURIEscapesToSlice!name(startMark);
                         if(error_) { return; }
                     }
                     else { ++length; }
@@ -1878,11 +1865,11 @@ final class Scanner
                 {
                     auto chars = reader_.get(length);
                     reader_.sliceBuilder.write(chars);
-                    anyChars = true;
                     length = 0;
                 }
             }
-            if(anyChars) { return; }
+            // OK if we scanned something, error otherwise.
+            if(reader_.sliceBuilder.length > startLen) { return; }
 
             enum contextMsg = "While parsing a " ~ name;
             setError(contextMsg, startMark, buildMsg("expected URI, but found: ", c),
@@ -1895,10 +1882,8 @@ final class Scanner
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
         ///
-        /// Returns: true if any escapes were scanned, false otherwise.
-        ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanURIEscapesToSlice(string name)(const Mark startMark)
+        void scanURIEscapesToSlice(string name)(const Mark startMark)
             @system pure nothrow // @nogc
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
@@ -1906,20 +1891,17 @@ final class Scanner
             char[4] bytes;
             size_t bytesUsed;
             Mark mark = reader_.mark;
-            // True if any characters were written to the slice.
-            bool anyChars;
 
             // Get one dchar by decoding data from bytes.
             //
             // This is probably slow, but simple and URI escapes are extremely uncommon
             // in YAML.
-            static size_t getDchar(char[] bytes, Reader reader_, ref bool anyChars)
+            static size_t getDchar(char[] bytes, Reader reader_)
             {
                 import std.utf;
                 size_t nextChar;
                 const c = std.utf.decode(bytes[], nextChar);
                 reader_.sliceBuilder.write(c);
-                anyChars = true;
                 if(bytes.length - nextChar > 0)
                 {
                     core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
@@ -1936,7 +1918,7 @@ final class Scanner
                     reader_.forward();
                     if(bytesUsed == bytes.length)
                     {
-                        bytesUsed = getDchar(bytes[], reader_, anyChars);
+                        bytesUsed = getDchar(bytes[], reader_);
                     }
 
                     char b = 0;
@@ -1950,7 +1932,7 @@ final class Scanner
                             auto msg = buildMsg("expected URI escape sequence of 2 "
                                                 "hexadecimal numbers, but found: ", c);
                             setError(contextMsg, startMark, msg, reader_.mark);
-                            return false;
+                            return;
                         }
 
                         uint digit;
@@ -1966,19 +1948,17 @@ final class Scanner
                     reader_.forward(2);
                 }
 
-                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_, anyChars);
+                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
             }
             catch(UTFException e)
             {
                 setError(contextMsg, startMark, e.msg, mark);
-                return false;
+                return;
             }
             catch(Exception e)
             {
                 assert(false, "Unexpected exception in scanURIEscapesToSlice");
             }
-
-            return anyChars;
         }
 
 
