@@ -948,11 +948,9 @@ final class Scanner
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
-            {
-                scope(failure) { reader_.sliceBuilder.finish(); }
-                if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
-                else if(name == "TAG"d) { scanTagDirectiveValueToSlice(startMark, tagHandleEnd); }
-            }
+            if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
+            else if(name == "TAG"d) { scanTagDirectiveValueToSlice(startMark, tagHandleEnd); }
+            throwIfError();
             const value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
@@ -995,36 +993,51 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanYAMLDirectiveValueToSlice(const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanYAMLDirectiveValueToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
             findNextNonSpace();
 
             scanYAMLDirectiveNumberToSlice(startMark);
-            enforce(reader_.peek() == '.',
-                    new Error("While scanning a directive", startMark,
-                              "expected a digit or '.', but found: "
-                              ~ to!string(reader_.peek()), reader_.mark));
+            if(error_) { return; }
+
+            if(reader_.peek() != '.')
+            {
+                error("While scanning a directive", startMark,
+                      expected("digit or '.'", reader_.peek()), reader_.mark);
+                return;
+            }
             // Skip the '.'.
             reader_.forward();
 
             reader_.sliceBuilder.write('.');
             scanYAMLDirectiveNumberToSlice(startMark);
-            enforce(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a directive", startMark,
-                              "expected a digit or '.', but found: "
-                              ~ to!string(reader_.peek()), reader_.mark));
+            if(error_) { return; }
+
+            if(!" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            {
+                error("While scanning a directive", startMark,
+                      expected("digit or '.'", reader_.peek()), reader_.mark);
+            }
         }
 
         /// Scan a number from a YAML directive.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanYAMLDirectiveNumberToSlice(const Mark startMark) @system pure
+        ///
+        /// In case of an error, error_ is set. Use throwIfError() to handle this.
+        void scanYAMLDirectiveNumberToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
-            enforce(isDigit(reader_.peek()),
-                    new Error("While scanning a directive", startMark,
-                              "expected a digit, but found: " ~
-                              reader_.peek().to!string, reader_.mark));
+            if(!isDigit(reader_.peek()))
+            {
+                error("While scanning a directive", startMark,
+                      expected("digit", reader_.peek()), reader_.mark);
+                return;
+            }
 
             // Already found the first digit in the enforce(), so set length to 1.
             uint length = 1;
