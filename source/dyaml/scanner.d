@@ -950,6 +950,7 @@ final class Scanner
 
             if(!["YAML"d, "TAG"d].canFind(name)) { scanToNextBreak(); }
             scanDirectiveIgnoredLine(startMark);
+            throwIfError();
 
             //Storing directive name and value in a single string, separated by zero.
             return directiveToken(startMark, endMark, utf32To8(name ~ '\0' ~ value));
@@ -1053,15 +1054,17 @@ final class Scanner
         }
 
         /// Scan (and ignore) ignored line after a directive.
-        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure
+        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
             if(reader_.peek() == '#') { scanToNextBreak(); }
-            enforce("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()),
-                    new Error("While scanning a directive", startMark,
-                              "expected comment or a line break, but found"
-                              ~ reader_.peek().to!string, reader_.mark));
-            scanLineBreak();
+            if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            {
+                scanLineBreak();
+                return;
+            }
+            error("While scanning a directive", startMark,
+                  expected("comment or a line break", reader_.peek()), reader_.mark);
         }
 
 
