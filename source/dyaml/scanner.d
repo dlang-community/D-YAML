@@ -1202,7 +1202,8 @@ final class Scanner
             }
             size_t endLen = reader_.sliceBuilder.length;
 
-            dchar[] lineBreak = ""d.dup;
+            // dchar.max means there's no line break.
+            dchar lineBreak = dchar.max;
 
 
             // Scan the inner part of the block scalar.
@@ -1212,14 +1213,14 @@ final class Scanner
                 const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
                 // This is where the 'interesting' non-whitespace data gets read.
                 scanToNextBreakToSlice();
-                lineBreak = [scanLineBreak()];
+                lineBreak = scanLineBreak();
 
                 // This transaction serves to rollback data read in the
                 // scanBlockScalarBreaksToSlice() call.
                 breaksTransaction = Transaction(reader_.sliceBuilder);
                 startLen = reader_.sliceBuilder.length;
                 // The line breaks should actually be written _after_ the if() block
-                // below. We work around that by inserting 
+                // below. We work around that by inserting
                 endMark = scanBlockScalarBreaksToSlice(indent);
                 endLen = reader_.sliceBuilder.length;
 
@@ -1231,7 +1232,7 @@ final class Scanner
                     // Unfortunately, folding rules are ambiguous.
 
                     // This is the folding according to the specification:
-                    if(style == ScalarStyle.Folded && lineBreak == "\n" &&
+                    if(style == ScalarStyle.Folded && lineBreak == '\n' &&
                        leadingNonSpace && !" \t"d.canFind(reader_.peek()))
                     {
                         // No breaks were scanned; no need to insert the space in the
@@ -1245,13 +1246,13 @@ final class Scanner
                     {
                         // We need to insert in the middle of the slice in case any line
                         // breaks were scanned.
-                        reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen);
+                        reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
                     }
-                
+
                     ////this is Clark Evans's interpretation (also in the spec
                     ////examples):
                     //
-                    //if(style == ScalarStyle.Folded && lineBreak == "\n"d)
+                    //if(style == ScalarStyle.Folded && lineBreak == '\n')
                     //{
                     //    if(startLen == endLen)
                     //    {
@@ -1261,13 +1262,13 @@ final class Scanner
                     //        }
                     //        else
                     //        {
-                    //            chunks ~= lineBreak[0];
+                    //            chunks ~= lineBreak;
                     //        }
                     //    }
                     //}
                     //else
                     //{
-                    //    reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen);
+                    //    reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
                     //}
                 }
                 else
@@ -1281,21 +1282,21 @@ final class Scanner
             // transaction).
             if(chomping == Chomping.Keep)  { breaksTransaction.commit(); }
             else                           { breaksTransaction.__dtor(); }
-            if(chomping != Chomping.Strip && !lineBreak.empty)
+            if(chomping != Chomping.Strip && lineBreak != dchar.max)
             {
                 // If chomping is Keep, we keep the line break but the first line break
                 // that isn't stripped (since chomping isn't Strip in this branch) must
                 // be inserted _before_ the other line breaks.
                 if(chomping == Chomping.Keep)
                 {
-                    reader_.sliceBuilder.insertBack(lineBreak[0], endLen - startLen); 
+                    reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
                 }
                 // If chomping is not Keep, breaksTransaction was cancelled so we can
                 // directly write the first line break (as it isn't stripped - chomping
                 // is not Strip)
                 else
                 {
-                    reader_.sliceBuilder.write(lineBreak[0]); 
+                    reader_.sliceBuilder.write(lineBreak);
                 }
             }
 
