@@ -45,6 +45,17 @@ enum TokenID : ubyte
     Scalar              /// SCALAR
 }
 
+/// Specifies the type of a tag directive token.
+enum DirectiveType : ubyte
+{
+    // YAML version directive.
+    YAML,
+    // Tag directive.
+    TAG,
+    // Any other directive is "reserved" for future YAML versions.
+    Reserved
+}
+
 /// Token produced by scanner.
 ///
 /// 32 bytes on 64-bit.
