@@ -1,11 +1,11 @@
-// Copyright Ferdinand Majerech 2014, Andrei Alexandrescu 2008- and Jonathan M Davis 2011-.
+// Copyright Ferdinand Majerech 2014, Digital Mars 2000-2012, Andrei Alexandrescu 2008- and Jonathan M Davis 2011-.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 
-// @nogc versions of Phobos functions that are not yet @nogc and wrappers to simplify
-// their use.
+/// @nogc versions of or alternatives to Phobos functions that are not yet @nogc and
+/// wrappers to simplify their use.
 module dyaml.nogcutil;
 
 
