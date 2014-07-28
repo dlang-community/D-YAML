@@ -153,10 +153,6 @@ struct AppenderNoGCFixed(A : T[], T)
     {
         // initialize to a given array.
         _data.arr = cast(Unqual!T[])arr[0 .. 0]; //trusted
-
-        if (__ctfe)
-            return;
-
         _data.capacity = arr.length;
     }
 
@@ -186,23 +182,6 @@ struct AppenderNoGCFixed(A : T[], T)
     {
         assert(_data.capacity >= _data.arr.length + nelems,
                 "AppenderFixed ran out of space");
-    }
-
-    /**
-     * Appends one item to the managed array.
-     */
-    void put(U)(U item) if (is(Unqual!U == T))
-    {
-        ensureAddable(1);
-        immutable len = _data.arr.length;
-
-        auto bigDataFun() @trusted nothrow { return _data.arr.ptr[0 .. len + 1];}
-        auto bigData = bigDataFun();
-
-        emplaceRef!T(bigData[len], item);
-
-        //We do this at the end, in case of exceptions
-        _data.arr = bigData;
     }
 
     void put(U)(U[] items) if (is(Unqual!U == T))
@@ -244,7 +223,6 @@ struct AppenderNoGCFixed(A : T[], T)
         @disable void clear();
     }
 }
-
 unittest
 {
     char[256] buffer;
