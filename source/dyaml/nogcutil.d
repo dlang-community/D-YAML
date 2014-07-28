@@ -24,7 +24,7 @@ import std.range;
 Target parseNoGC(Target, Source)(ref Source s, uint radix, out bool overflow)
     @safe pure nothrow @nogc
     if (isSomeChar!(ElementType!Source) &&
-        isIntegral!Target && !is(Target == enum)) 
+        isIntegral!Target && !is(Target == enum))
 in { assert(radix >= 2 && radix <= 36); }
 body
 {
@@ -33,10 +33,15 @@ body
     Target v = 0;
     size_t atStart = true;
 
-    for (; !s.empty; s.popFront())
+    // We can safely foreach over individual code points.
+    // Even with UTF-8 any digit is ASCII and anything not ASCII (such as the start of
+    // a UTF-8 sequence) is not a digit.
+    foreach(i; 0 .. s.length)
     {
-        uint c = s.front;
-        if (c < '0')
+        dchar c = s[i];
+        // We can just take a char instead of decoding because anything non-ASCII is not
+        // going to be a decodable digit, i.e. we will end at such a byte.
+        if (c < '0' || c >= 0x80)
             break;
         if (radix < 10)
         {
@@ -67,7 +72,7 @@ body
 
 
 /// Buils a message to a buffer similarly to writef/writefln, but without
-/// using GC. 
+/// using GC.
 ///
 /// C snprintf would be better, but it isn't pure.
 /// formattedWrite isn't completely @nogc yet (although it isn't GC-heavy).
