@@ -45,7 +45,7 @@ dchar fromEscape(dchar escape) @safe pure nothrow @nogc
         case ' ':  return '\x20';
         case '\"': return '\"';
         case '\\': return '\\';
-        case 'N':  return '\u0085';
+        case 'N':  return '\x85'; //'\u0085';
         case '_':  return '\xA0';
         case 'L':  return '\u2028';
         case 'P':  return '\u2029';
