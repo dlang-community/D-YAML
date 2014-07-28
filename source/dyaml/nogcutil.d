@@ -356,6 +356,63 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
 
     return ValidateResult(true);
 }
+
+/// @nogc version of std.utf.decode() for (char[]), but assumes str is valid UTF-8.
+///
+/// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
+/// force code using this function to be efficient.
+///
+/// Params:
+///
+/// str   = Will decode the first code point from this string. Must be valid UTF-8,
+///         otherwise undefined behavior WILL occur.
+/// index = Index in str where the code point starts. Will be updated to point to the
+///         next code point.
+dchar decodeValidUTF8NoGC(const(char[]) str, ref size_t index)
+    @trusted pure nothrow @nogc
+{
+    /// Dchar bitmask for different numbers of UTF-8 code units.
+    enum bitMask = [(1 << 7) - 1, (1 << 11) - 1, (1 << 16) - 1, (1 << 21) - 1];
+
+    auto pstr = str.ptr + index;
+
+    immutable length = str.length - index;
+    ubyte fst = pstr[0];
+
+    assert(fst & 0x80);
+    ubyte tmp = void;
+    dchar d = fst; // upper control bits are masked out later
+    fst <<= 1;
+
+    enum invalidUTFMsg = "Invalid UTF-8 sequence in supposedly validated string";
+    foreach (i; TypeTuple!(1, 2, 3))
+    {
+        assert(i != length, "Decoding out of bounds in supposedly validated UTF-8");
+        tmp = pstr[i];
+        assert((tmp & 0xC0) == 0x80, invalidUTFMsg);
+
+        d = (d << 6) | (tmp & 0x3F);
+        fst <<= 1;
+
+        if (!(fst & 0x80)) // no more bytes
+        {
+            d &= bitMask[i]; // mask out control bits
+
+            // overlong, could have been encoded with i bytes
+            assert((d & ~bitMask[i - 1]) != 0, invalidUTFMsg);
+
+            // check for surrogates only needed for 3 bytes
+            static if (i == 2) { assert(isValidDchar(d), invalidUTFMsg); }
+
+            index += i + 1;
+            static if (i == 3) { assert(d <= dchar.max, invalidUTFMsg); }
+            return d;
+        }
+    }
+
+    assert(false, invalidUTFMsg);
+}
+
 /// @nogc version of std.utf.isValidDchar
 bool isValidDchar(dchar c) @safe pure nothrow @nogc
 {
