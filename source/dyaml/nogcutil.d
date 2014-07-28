@@ -239,6 +239,123 @@ unittest
 }
 
 
+/// Result of a validateUTF8NoGC call.
+struct ValidateResult
+{
+    /// Is the validated string valid?
+    bool   valid;
+    /// If the string is not valid, error message with details is here.
+    string msg;
+    /// If the string is not valid, the first invalid sequence of bytes is here.
+    const(uint)[] sequence() @safe pure nothrow const @nogc
+    {
+        return sequenceBuffer[0 .. sequenceLength];
+    }
+
+private:
+    // Buffer for the invalid sequence of bytes if valid == false.
+    uint[4] sequenceBuffer;
+    // Number of used bytes in sequenceBuffer.
+    size_t  sequenceLength;
+}
+
+/// Validate a UTF-8 string, checking if it is well-formed Unicode.
+///
+/// See_Also: ValidateResult
+ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
+{
+    immutable len = str.length;
+    outer: for (size_t index = 0; index < len; )
+    {
+        if(str[index] < 0x80)
+        {
+            index++;
+            continue;
+        }
+
+        // The following encodings are valid, except for the 5 and 6 byte combinations:
+        //  0xxxxxxx
+        //  110xxxxx 10xxxxxx
+        //  1110xxxx 10xxxxxx 10xxxxxx
+        //  11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        //  111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+        //  1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+
+        // Dchar bitmask for different numbers of UTF-8 code units.
+        import std.typecons;
+        enum bitMask     = tuple((1 << 7) - 1, (1 << 11) - 1, (1 << 16) - 1, (1 << 21) - 1);
+        auto pstr        = str.ptr + index;
+        immutable length = str.length - index;
+        ubyte fst        = pstr[0];
+
+        static ValidateResult error(const(char[]) str, string msg) @safe pure nothrow @nogc
+        {
+            ValidateResult result;
+            size_t i;
+
+            do
+            {
+                result.sequenceBuffer[i] = str[i];
+            } while (++i < str.length && i < 4 && (str[i] & 0xC0) == 0x80);
+
+            result.valid          = false;
+            result.msg            = msg;
+            result.sequenceLength = i;
+            return result;
+        }
+
+        static ValidateResult invalidUTF(const(char[]) str) @safe pure nothrow @nogc
+        {
+            return error(str, "Invalid UTF-8 sequence");
+        }
+        static ValidateResult outOfBounds(const(char[]) str) @safe pure nothrow @nogc
+        {
+            return error(str, "Attempted to decode past the end of a string");
+        }
+
+        assert(fst & 0x80);
+        ubyte tmp = void;
+        dchar d = fst; // upper control bits are masked out later
+        fst <<= 1;
+
+        foreach (i; TypeTuple!(1, 2, 3))
+        {
+            if(i == length) { return outOfBounds(pstr[0 .. length]); }
+
+            tmp = pstr[i];
+
+            if ((tmp & 0xC0) != 0x80) { return invalidUTF(pstr[0 .. length]); }
+
+            d = (d << 6) | (tmp & 0x3F);
+            fst <<= 1;
+
+            if (!(fst & 0x80)) // no more bytes
+            {
+                d &= bitMask[i]; // mask out control bits
+
+                // overlong, could have been encoded with i bytes
+                if ((d & ~bitMask[i - 1]) == 0) { return invalidUTF(pstr[0 .. length]); }
+
+                // check for surrogates only needed for 3 bytes
+                static if(i == 2)
+                {
+                    if (!isValidDchar(d)) { return invalidUTF(pstr[0 .. length]); }
+                }
+
+                index += i + 1;
+                static if(i == 3)
+                {
+                    if (d > dchar.max) { return invalidUTF(pstr[0 .. length]); }
+                }
+                continue outer;
+            }
+        }
+
+        return invalidUTF(pstr[0 .. length]);
+    }
+
+    return ValidateResult(true);
+}
 /// @nogc version of std.utf.isValidDchar
 bool isValidDchar(dchar c) @safe pure nothrow @nogc
 {
