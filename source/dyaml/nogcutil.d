@@ -413,6 +413,50 @@ dchar decodeValidUTF8NoGC(const(char[]) str, ref size_t index)
     assert(false, invalidUTFMsg);
 }
 
+/// @nogc version of std.utf.endoce() for char[], but assumes c is a valid UTF-32 char.
+///
+/// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
+/// force code using this function to be efficient.
+///
+/// Params:
+///
+/// buf = Buffer to write the encoded result to.
+/// c   = Character to encode. Must be valid UTF-32, otherwise undefined behavior
+///       $(D will) occur.
+///
+/// Returns: Number of bytes the encoded character takes up in buf.
+size_t encodeValidCharNoGC(ref char[4] buf, dchar c) @safe pure nothrow @nogc
+{
+    assert(isValidDchar(c));
+    // Force the caller to optimize ASCII (the 1-byte case)
+    assert(c >= 0x80, "Caller should explicitly handle ASCII chars");
+    if (c <= 0x7FF)
+    {
+        buf[0] = cast(char)(0xC0 | (c >> 6));
+        buf[1] = cast(char)(0x80 | (c & 0x3F));
+        return 2;
+    }
+    if (c <= 0xFFFF)
+    {
+        assert(0xD800 > c || c > 0xDFFF,
+               "Supposedly valid code point is a surrogate code point");
+
+        buf[0] = cast(char)(0xE0 | (c >> 12));
+        buf[1] = cast(char)(0x80 | ((c >> 6) & 0x3F));
+        buf[2] = cast(char)(0x80 | (c & 0x3F));
+        return 3;
+    }
+    if (c <= 0x10FFFF)
+    {
+        buf[0] = cast(char)(0xF0 | (c >> 18));
+        buf[1] = cast(char)(0x80 | ((c >> 12) & 0x3F));
+        buf[2] = cast(char)(0x80 | ((c >> 6) & 0x3F));
+        buf[3] = cast(char)(0x80 | (c & 0x3F));
+        return 4;
+    }
+    assert(false, "This should not be reached for valid dchars");
+}
+
 /// @nogc version of std.utf.isValidDchar
 bool isValidDchar(dchar c) @safe pure nothrow @nogc
 {
