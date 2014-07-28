@@ -237,3 +237,10 @@ unittest
     appender.putDChar('á');
     assert(appender.data == "found unsupported escape character: 'a''unknown'");
 }
+
+
+/// @nogc version of std.utf.isValidDchar
+bool isValidDchar(dchar c) @safe pure nothrow @nogc
+{
+    return c < 0xD800 || (c > 0xDFFF && c <= 0x10FFFF);
+}
