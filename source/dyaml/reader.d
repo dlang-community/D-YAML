@@ -77,6 +77,18 @@ final class Reader
             Endian endian_;
         }
 
+        // Index to buffer8_ where the last decoded character starts.
+        size_t lastDecodedBufferOffset_ = 0;
+        // Offset, relative to charIndex_, of the last decoded character, 
+        // in code points, not chars.
+        size_t lastDecodedCharOffset_ = 0;
+
+        // Number of character decodings done during the life of the Reader.
+        //
+        // Used for performance testing.
+        size_t decodeCount_ = 0;
+
+
     public:
         import std.stream;
         /// Construct a Reader.
@@ -134,9 +146,9 @@ final class Reader
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(size_t index = 0) @safe pure nothrow const @nogc
+        dchar peek(size_t index = 0) @safe pure nothrow @nogc
         {
-            if(buffer_.length <= bufferOffset_ + index)
+            if(buffer_.length <= charIndex_ + index)
             {
                 // XXX This is risky; revert this and the 'risky' change in UTF decoder
                 // if any bugs are introduced. We rely on the assumption that Reader
@@ -145,7 +157,34 @@ final class Reader
                 return '\0';
             }
 
-            return buffer_[bufferOffset_ + index];
+            // Optimized path for Scanner code that peeks chars in linear order to
+            // determine the length of some sequence.
+            if(index == lastDecodedCharOffset_)
+            {
+
+                ++decodeCount_;
+                ++lastDecodedCharOffset_;
+                const char b = buffer8_[lastDecodedBufferOffset_];
+                // ASCII
+                if(b < 0x80) 
+                {
+                    ++lastDecodedBufferOffset_;
+                    return b;
+                }
+                return decodeValidUTF8NoGC(buffer8_, lastDecodedBufferOffset_);
+            }
+
+
+            // 'Slow' path where we decode everything up to the requested character.
+            lastDecodedCharOffset_   = 0;
+            lastDecodedBufferOffset_ = bufferOffset8_;
+            dchar d;
+            while(lastDecodedCharOffset_ <= index)
+            {
+                d = decodeNext();
+            }
+
+            return d;
         }
 
         /// Get specified number of characters starting at current position.
@@ -244,6 +283,28 @@ final class Reader
 
         /// Get encoding of the input buffer.
         final Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
+
+private:
+        // Decode the next character relative to
+        // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
+        //
+        // Does not advance the buffer position. Used in peek() and slice().
+        dchar decodeNext() @safe pure nothrow @nogc 
+        {
+            assert(lastDecodedBufferOffset_ < buffer8_.length,
+                   "Attempted to decode past the end of a string");
+            ++decodeCount_;
+            const char b = buffer8_[lastDecodedBufferOffset_];
+            ++lastDecodedCharOffset_;
+            // ASCII
+            if(b < 0x80)
+            {
+                ++lastDecodedBufferOffset_;
+                return b;
+            }
+
+            return decodeValidUTF8NoGC(buffer8_, lastDecodedBufferOffset_);
+        }
 
         // Decode the character starting at bufferOffset8_ and move to the next
         // character.
