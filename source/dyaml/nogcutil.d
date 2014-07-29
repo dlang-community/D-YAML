@@ -119,11 +119,21 @@ char[] writeDCharTo(dchar c, char[] buf) @safe pure nothrow @nogc
 }
 
 /// A UFCS utility function to write a dchar to an AppenderNoGCFixed using writeDCharTo.
+///
+/// The char $(B must) be a valid dchar.
 void putDChar(ref AppenderNoGCFixed!(char[], char) appender, dchar c)
-    @safe pure nothrow @nogc 
+    @safe pure nothrow @nogc
 {
-    char[16] dcharBuf;
-    appender.put(c.writeDCharTo(dcharBuf));
+    char[4] dcharBuf;
+    if(c < 0x80)
+    {
+        dcharBuf[0] = cast(char)c;
+        appender.put(dcharBuf[0 .. 1]);
+        return;
+    }
+    // Should be safe to use as the first thing Reader does is validate everything.
+    const bytes = encodeValidCharNoGC(dcharBuf, c);
+    appender.put(dcharBuf[0 .. bytes]);
 }
 
 /// Convenience function that returns an $(D AppenderNoGCFixed!A) using with $(D array)
@@ -235,7 +245,7 @@ unittest
     appender.put("found unsupported escape character: ");
     appender.putDChar('a');
     appender.putDChar('á');
-    assert(appender.data == "found unsupported escape character: 'a''unknown'");
+    assert(appender.data == "found unsupported escape character: 'a''á'");
 }
 
 
