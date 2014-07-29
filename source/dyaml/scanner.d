@@ -1894,6 +1894,37 @@ final class Scanner
 
             reader_.sliceBuilder.write(reader_.get(length));
         }
+        void scanTagHandleToSlice8(string name)(const Mark startMark)
+            @system pure nothrow @nogc
+        {
+            dchar c = reader_.peek();
+            enum contextMsg = "While scanning a " ~ name;
+            if(c != '!')
+            {
+                error(contextMsg, startMark, expected("'!'", c), reader_.mark);
+                return;
+            }
+
+            uint length = 1;
+            c = reader_.peek(length);
+            if(c != ' ')
+            {
+                while(c.isAlphaNum || "-_"d.canFind(c))
+                {
+                    ++length;
+                    c = reader_.peek(length);
+                }
+                if(c != '!')
+                {
+                    reader_.forward(length);
+                    error(contextMsg, startMark, expected("'!'", c), reader_.mark);
+                    return;
+                }
+                ++length;
+            }
+
+            reader_.sliceBuilder8.write(reader_.get8(length));
+        }
 
         /// Scan URI in a tag token.
         ///
