@@ -162,7 +162,6 @@ final class Reader
             // determine the length of some sequence.
             if(index == lastDecodedCharOffset_)
             {
-
                 ++decodeCount_;
                 ++lastDecodedCharOffset_;
                 const char b = buffer8_[lastDecodedBufferOffset_];
@@ -174,7 +173,6 @@ final class Reader
                 }
                 return decodeValidUTF8NoGC(buffer8_, lastDecodedBufferOffset_);
             }
-
 
             // 'Slow' path where we decode everything up to the requested character.
             lastDecodedCharOffset_   = 0;
