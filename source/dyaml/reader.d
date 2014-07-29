@@ -63,6 +63,8 @@ final class Reader
 
         // Index of the current character in the buffer.
         size_t charIndex_ = 0;
+        // Number of characters (code points) in buffer8_.
+        size_t characterCount_ = 0;
 
         // Current line in file.
         uint line_;
@@ -133,6 +135,7 @@ final class Reader
             enforce(validateResult.valid,
                     new ReaderException(validateResult.msg ~ 
                                         validateResult.sequence.to!string));
+            characterCount_ = validateResult.characterCount;
 
             this.sliceBuilder8 = SliceBuilder8(this);
         }
@@ -148,7 +151,7 @@ final class Reader
         // Throws:  ReaderException if trying to read past the end of the buffer.
         dchar peek(size_t index = 0) @safe pure nothrow @nogc
         {
-            if(buffer_.length <= charIndex_ + index)
+            if(characterCount_ <= charIndex_ + index)
             {
                 // XXX This is risky; revert this and the 'risky' change in UTF decoder
                 // if any bugs are introduced. We rely on the assumption that Reader
