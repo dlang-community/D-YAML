@@ -1730,9 +1730,9 @@ final class Scanner
 
             mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
 
-            reader_.sliceBuilder.begin();
+            reader_.sliceBuilder8.begin();
 
-            alias Transaction = SliceBuilder.Transaction;
+            alias Transaction = SliceBuilder8.Transaction;
             Transaction spacesTransaction;
             // Stop at a comment.
             while(reader_.peek() != '#')
@@ -1757,7 +1757,7 @@ final class Scanner
                 {
                     // This is an error; throw the slice away.
                     spacesTransaction.commit();
-                    reader_.sliceBuilder.finish();
+                    reader_.sliceBuilder8.finish();
                     reader_.forward(length);
                     error("While scanning a plain scalar", startMark,
                           "found unexpected ':' . Please check "
@@ -1770,16 +1770,16 @@ final class Scanner
 
                 allowSimpleKey_ = false;
 
-                reader_.sliceBuilder.write(reader_.get(length));
+                reader_.sliceBuilder8.write(reader_.get8(length));
 
                 endMark = reader_.mark;
 
                 spacesTransaction.commit();
-                spacesTransaction = Transaction(reader_.sliceBuilder);
+                spacesTransaction = Transaction(reader_.sliceBuilder8);
 
-                const startLength = reader_.sliceBuilder.length;
-                scanPlainSpacesToSlice(startMark);
-                if(startLength == reader_.sliceBuilder.length ||
+                const startLength = reader_.sliceBuilder8.length;
+                scanPlainSpacesToSlice8(startMark);
+                if(startLength == reader_.sliceBuilder8.length ||
                    (flowLevel_ == 0 && reader_.column < indent))
                 {
                     break;
@@ -1787,16 +1787,16 @@ final class Scanner
             }
 
             spacesTransaction.__dtor();
-            const slice = reader_.sliceBuilder.finish();
+            const slice = reader_.sliceBuilder8.finish();
 
-            return scalarToken(startMark, endMark, slice.utf32To8, ScalarStyle.Plain);
+            return scalarToken(startMark, endMark, slice, ScalarStyle.Plain);
         }
 
         /// Scan spaces in a plain scalar.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        void scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
+        void scanPlainSpacesToSlice8(const Mark startMark) @system pure nothrow @nogc
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1804,14 +1804,14 @@ final class Scanner
             // Get as many plain spaces as there are.
             size_t length = 0;
             while(reader_.peek(length) == ' ') { ++length; }
-            dchar[] whitespaces = reader_.get(length);
+            char[] whitespaces = reader_.get8(length);
 
             dchar c = reader_.peek();
             // No newline after the spaces (if any)
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 // We have spaces, but no newline.
-                if(whitespaces.length > 0) { reader_.sliceBuilder.write(whitespaces); }
+                if(whitespaces.length > 0) { reader_.sliceBuilder8.write(whitespaces); }
                 return;
             }
 
@@ -1821,7 +1821,7 @@ final class Scanner
 
             static bool end(Reader reader_) @safe pure nothrow @nogc
             {
-                return ("---"d == reader_.prefix(3) || "..."d == reader_.prefix(3))
+                return ("---" == reader_.prefix8(3) || "..." == reader_.prefix8(3))
                         && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
             }
 
@@ -1829,9 +1829,9 @@ final class Scanner
 
             bool extraBreaks = false;
 
-            alias Transaction = SliceBuilder.Transaction;
-            auto transaction = Transaction(reader_.sliceBuilder);
-            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
+            alias Transaction = SliceBuilder8.Transaction;
+            auto transaction = Transaction(reader_.sliceBuilder8);
+            if(lineBreak != '\n') { reader_.sliceBuilder8.write(lineBreak); }
             while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
                 if(reader_.peek() == ' ') { reader_.forward(); }
@@ -1839,7 +1839,7 @@ final class Scanner
                 {
                     const lBreak = scanLineBreak();
                     extraBreaks  = true;
-                    reader_.sliceBuilder.write(lBreak);
+                    reader_.sliceBuilder8.write(lBreak);
 
                     if(end(reader_)) { return; }
                 }
@@ -1847,7 +1847,7 @@ final class Scanner
             transaction.commit();
 
             // No line breaks, only a space.
-            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder8.write(' '); }
         }
 
         /// Scan handle of a tag token.
