@@ -11,6 +11,7 @@
 module dyaml.parser;
 
 
+import std.algorithm;
 import std.array;
 import std.container;
 import std.conv;
@@ -411,7 +412,8 @@ final class Parser
 
         ///Parse a node.
         Event parseNode(const Flag!"block" block,
-                        const Flag!"indentlessSequence" indentlessSequence = No.indentlessSequence) @safe
+                        const Flag!"indentlessSequence" indentlessSequence = No.indentlessSequence)
+            @trusted
         {
             if(scanner_.checkToken(TokenID.Alias))
             {
@@ -468,12 +470,15 @@ final class Parser
             if(scanner_.checkToken(TokenID.Scalar))
             {
                 immutable token = scanner_.getToken();
+                auto value = token.style == ScalarStyle.DoubleQuoted
+                           ? handleDoubleQuotedScalarEscapes(token.value)
+                           : token.value;
 
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
                 return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag),
-                                   tuple(implicit, implicit_2), token.value, token.style);
+                                   tuple(implicit, implicit_2), value, token.style);
             }
 
             if(scanner_.checkToken(TokenID.FlowSequenceStart))
@@ -524,6 +529,84 @@ final class Parser
             throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node",
                             startMark, "expected node content, but found: "
                             ~ token.idString, token.startMark);
+        }
+
+        /// Handle escape sequences in a double quoted scalar.
+        ///
+        /// Moved here from scanner as it can't always be done in-place with slices.
+        string handleDoubleQuotedScalarEscapes(string tokenValue)
+        {
+            string notInPlace;
+            bool inEscape = false;
+            import dyaml.nogcutil;
+            auto appender = appenderNoGC(cast(char[])tokenValue);
+            for(string oldValue = tokenValue; !oldValue.empty();)
+            {
+                const dchar c = oldValue.front();
+                oldValue.popFront();
+
+                if(!inEscape)
+                {
+                    if(c != '\\')
+                    {
+                        if(notInPlace is null) { appender.putDChar(c); }
+                        else                   { notInPlace ~= c; }
+                        continue;
+                    }
+                    // Escape sequence starts with a '\'
+                    inEscape = true;
+                    continue;
+                }
+
+                import dyaml.escapes;
+                scope(exit) { inEscape = false; }
+
+                // 'Normal' escape sequence.
+                if(dyaml.escapes.escapes.canFind(c))
+                {
+                    if(notInPlace is null)
+                    {
+                        // \L and \C can't be handled in place as the expand into
+                        // many-byte unicode chars
+                        if(c != 'L' && c != 'P')
+                        {
+                            appender.putDChar(dyaml.escapes.fromEscape(c));
+                            continue;
+                        }
+                        // Need to duplicate as we won't fit into
+                        // token.value - which is what appender uses
+                        notInPlace = appender.data.dup;
+                        notInPlace ~= dyaml.escapes.fromEscape(c);
+                        continue;
+                    }
+                    notInPlace ~= dyaml.escapes.fromEscape(c);
+                    continue;
+                }
+
+                // Unicode char written in hexadecimal in an escape sequence.
+                if(dyaml.escapes.escapeHexCodeList.canFind(c))
+                {
+                    // Scanner has already checked that the hex string is valid.
+
+                    const hexLength = dyaml.escapes.escapeHexLength(c);
+                    // Any hex digits are 1-byte so this works.
+                    string hex = oldValue[0 .. hexLength];
+                    oldValue = oldValue[hexLength .. $];
+                    assert(!hex.canFind!(d => !d.isHexDigit),
+                            "Scanner must ensure the hex string is valid");
+
+                    bool overflow;
+                    const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
+                    assert(!overflow, "Scanner must ensure there's no overflow");
+                    if(notInPlace is null) { appender.putDChar(decoded); }
+                    else                   { notInPlace ~= decoded; }
+                    continue;
+                }
+
+                assert(false, "Scanner must handle unsupported escapes");
+            }
+
+            return notInPlace is null ? cast(string)appender.data : notInPlace;
         }
 
         /**

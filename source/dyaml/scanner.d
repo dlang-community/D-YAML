@@ -1519,23 +1519,23 @@ final class Scanner
             const startMark = reader_.mark;
             const quote     = reader_.get();
 
-            reader_.sliceBuilder.begin();
-            scope(exit) if(error_) { reader_.sliceBuilder.finish(); }
+            reader_.sliceBuilder8.begin();
+            scope(exit) if(error_) { reader_.sliceBuilder8.finish(); }
 
-            scanFlowScalarNonSpacesToSlice(quotes, startMark);
+            scanFlowScalarNonSpacesToSlice8(quotes, startMark);
             if(error_) { return Token.init; }
 
             while(reader_.peek() != quote)
             {
-                scanFlowScalarSpacesToSlice(startMark);
+                scanFlowScalarSpacesToSlice8(startMark);
                 if(error_) { return Token.init; }
-                scanFlowScalarNonSpacesToSlice(quotes, startMark);
+                scanFlowScalarNonSpacesToSlice8(quotes, startMark);
                 if(error_) { return Token.init; }
             }
             reader_.forward();
 
-            auto slice = reader_.sliceBuilder.finish();
-            return scalarToken(startMark, reader_.mark, slice.utf32To8, quotes);
+            auto slice = reader_.sliceBuilder8.finish();
+            return scalarToken(startMark, reader_.mark, slice, quotes);
         }
 
         /// Scan nonspace characters in a flow scalar.
@@ -1544,7 +1544,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
+        void scanFlowScalarNonSpacesToSlice8(const ScalarStyle quotes, const Mark startMark)
             @system pure nothrow @nogc
         {
             for(;;) with(ScalarStyle)
@@ -1558,33 +1558,35 @@ final class Scanner
                 // while(!search.canFind(reader_.peek(length))) { ++length; }
                 outer: for(;;)
                 {
-                    const slice = reader_.slice(length, length + 32);
-                    if(slice.empty)
+                    const char[] slice = reader_.slice8(length + 32);
+                    if(slice.length == length)
                     {
                         error("While reading a flow scalar", startMark,
                               "reached end of file", reader_.mark);
                         return;
                     }
-                    foreach(ch; slice)
+                    for(size_t i = length; i < slice.length;)
                     {
+                        // slice is UTF-8 - need to decode
+                        const ch = slice[i] < 0x80 ? slice[i++] : decodeValidUTF8NoGC(slice, i);
                         if(search.canFind(ch)) { break outer; }
                         ++length;
                     }
                 }
 
-                reader_.sliceBuilder.write(reader_.get(length));
+                reader_.sliceBuilder8.write(reader_.get8(length));
 
                 c = reader_.peek();
                 if(quotes == SingleQuoted && c == '\'' && reader_.peek(1) == '\'')
                 {
                     reader_.forward(2);
-                    reader_.sliceBuilder.write('\'');
+                    reader_.sliceBuilder8.write('\'');
                 }
                 else if((quotes == DoubleQuoted && c == '\'') ||
                         (quotes == SingleQuoted && "\"\\"d.canFind(c)))
                 {
                     reader_.forward();
-                    reader_.sliceBuilder.write(c);
+                    reader_.sliceBuilder8.write(c);
                 }
                 else if(quotes == DoubleQuoted && c == '\\')
                 {
@@ -1593,24 +1595,35 @@ final class Scanner
                     if(dyaml.escapes.escapes.canFind(c))
                     {
                         reader_.forward();
-                        reader_.sliceBuilder.write(dyaml.escapes.fromEscape(c));
+                        // Escaping has been moved to Parser as it can't be done in
+                        // place (in a slice) in case of '\P' and '\L' (very uncommon,
+                        // but we don't want to break the spec)
+                        char[2] escapeSequence = ['\\', cast(char)c];
+                        reader_.sliceBuilder8.write(escapeSequence);
                     }
                     else if(dyaml.escapes.escapeHexCodeList.canFind(c))
                     {
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.forward();
 
-                        foreach(i; 0 .. hexLength) if(!reader_.peek(i).isHexDigit())
+                        foreach(i; 0 .. hexLength) if(!reader_.peek(i).isHexDigit)
                         {
                             error("While scanning a double quoted scalar", startMark,
                                   expected("escape sequence of hexadecimal numbers",
                                            reader_.peek(i)), reader_.mark);
                             return;
                         }
-
-                        dchar[] hex = reader_.get(hexLength);
+                        char[] hex = reader_.get8(hexLength);
+                        char[2] escapeStart = ['\\', cast(char) c];
+                        reader_.sliceBuilder8.write(escapeStart);
+                        reader_.sliceBuilder8.write(hex);
                         bool overflow;
-                        const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
+                        // Note: This is just error checking; Parser does the actual
+                        //       escaping (otherwise we could accidentally create an
+                        //       escape sequence here that wasn't in input, breaking the
+                        //       escaping code in parser, which is in parser because it
+                        //       can't always be done in place)
+                        parseNoGC!int(hex, 16u, overflow);
                         if(overflow)
                         {
                             error("While scanning a double quoted scalar", startMark,
@@ -1618,12 +1631,11 @@ final class Scanner
                                   "hexadecimal numbers.", reader_.mark);
                             return;
                         }
-                        reader_.sliceBuilder.write(decoded);
                     }
                     else if("\n\r\u0085\u2028\u2029"d.canFind(c))
                     {
-                        scanLineBreak();
-                        scanFlowScalarBreaksToSlice(startMark);
+                        scanLineBreak8();
+                        scanFlowScalarBreaksToSlice8(startMark);
                         if(error_) { return; }
                     }
                     else
@@ -1644,15 +1656,16 @@ final class Scanner
         /// spaces into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarSpacesToSlice(const Mark startMark)
+        void scanFlowScalarSpacesToSlice8(const Mark startMark)
             @system pure nothrow @nogc
         {
             // Increase length as long as we see whitespace.
             size_t length = 0;
             while(" \t"d.canFind(reader_.peek(length))) { ++length; }
-            auto whitespaces = reader_.prefix(length + 1);
+            auto whitespaces = reader_.prefix8(length);
 
-            const c = whitespaces[$ - 1];
+            // Can check the last byte without striding because '\0' is ASCII
+            const c = reader_.peek(length);
             if(c == '\0')
             {
                 error("While scanning a quoted scalar", startMark,
@@ -1664,23 +1677,23 @@ final class Scanner
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 reader_.forward(length);
-                reader_.sliceBuilder.write(whitespaces[0 .. $ - 1]);
+                reader_.sliceBuilder8.write(whitespaces);
                 return;
             }
 
             // There's a line break after the spaces.
             reader_.forward(length);
-            const lineBreak = scanLineBreak();
+            const lineBreak = scanLineBreak8();
 
-            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
+            if(lineBreak != '\n') { reader_.sliceBuilder8.write(lineBreak); }
 
             // If we have extra line breaks after the first, scan them into the
             // slice.
-            const bool extraBreaks = scanFlowScalarBreaksToSlice(startMark);
+            const bool extraBreaks = scanFlowScalarBreaksToSlice8(startMark);
             if(error_) { return; }
 
             // No extra breaks, one normal line break. Replace it with a space.
-            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder8.write(' '); }
         }
 
         /// Scan line breaks in a flow scalar.
@@ -1689,7 +1702,7 @@ final class Scanner
         /// line breaks into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanFlowScalarBreaksToSlice(const Mark startMark)
+        bool scanFlowScalarBreaksToSlice8(const Mark startMark)
             @system pure nothrow @nogc
         {
             // True if at least one line break was found.
@@ -1697,8 +1710,8 @@ final class Scanner
             for(;;)
             {
                 // Instead of checking indentation, we check for document separators.
-                const prefix = reader_.prefix(3);
-                if((prefix == "---"d || prefix == "..."d) &&
+                const prefix = reader_.prefix8(3);
+                if((prefix == "---" || prefix == "...") &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
                 {
                     error("While scanning a quoted scalar", startMark,
@@ -1712,9 +1725,9 @@ final class Scanner
                 // Encountered a non-whitespace non-linebreak character, so we're done.
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { break; }
 
-                const lineBreak = scanLineBreak();
+                const lineBreak = scanLineBreak8();
                 anyBreaks = true;
-                reader_.sliceBuilder.write(lineBreak);
+                reader_.sliceBuilder8.write(lineBreak);
             }
             return anyBreaks;
         }
