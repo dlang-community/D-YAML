@@ -1935,6 +1935,40 @@ final class Scanner
             enum contextMsg = "While parsing a " ~ name;
             error(contextMsg, startMark, expected("URI", c), reader_.mark);
         }
+        void scanTagURIToSlice8(string name)(const Mark startMark)
+            @trusted pure nothrow // @nogc
+        {
+            // Note: we do not check if URI is well-formed.
+            dchar c = reader_.peek();
+            const startLen = reader_.sliceBuilder8.length;
+            {
+                uint length = 0;
+                while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
+                {
+                    if(c == '%')
+                    {
+                        auto chars = reader_.get8(length);
+                        reader_.sliceBuilder8.write(chars);
+                        length = 0;
+                        scanURIEscapesToSlice8!name(startMark);
+                        if(error_) { return; }
+                    }
+                    else { ++length; }
+                    c = reader_.peek(length);
+                }
+                if(length > 0)
+                {
+                    auto chars = reader_.get8(length);
+                    reader_.sliceBuilder8.write(chars);
+                    length = 0;
+                }
+            }
+            // OK if we scanned something, error otherwise.
+            if(reader_.sliceBuilder8.length > startLen) { return; }
+
+            enum contextMsg = "While parsing a " ~ name;
+            error(contextMsg, startMark, expected("URI", c), reader_.mark);
+        }
 
         // Not @nogc yet because std.utf.decode is not @nogc
         /// Scan URI escape sequences.
