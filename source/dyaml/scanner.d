@@ -739,9 +739,9 @@ final class Scanner
         bool checkDocumentStart() @safe pure nothrow @nogc
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
-            return reader_.column    == 0     &&
-                   reader_.peek()    == '-'   &&
-                   reader_.prefix(3) == "---" &&
+            return reader_.column     == 0     &&
+                   reader_.peek()     == '-'   &&
+                   reader_.prefix8(3) == "---" &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -749,9 +749,9 @@ final class Scanner
         bool checkDocumentEnd() @safe pure nothrow @nogc
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
-            return reader_.column    == 0     &&
-                   reader_.peek()    == '.'   &&
-                   reader_.prefix(3) == "..." &&
+            return reader_.column     == 0     &&
+                   reader_.peek()     == '.'   &&
+                   reader_.prefix8(3) == "..." &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -891,7 +891,7 @@ final class Scanner
                 findNextNonSpace();
 
                 if(reader_.peek() == '#') { scanToNextBreak(); }
-                if(scanLineBreak() != '\0')
+                if(scanLineBreak8() != '\0')
                 {
                     if(flowLevel_ == 0) { allowSimpleKey_ = true; }
                 }
@@ -1076,7 +1076,7 @@ final class Scanner
             if(reader_.peek() == '#') { scanToNextBreak(); }
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                scanLineBreak();
+                scanLineBreak8();
                 return;
             }
             error("While scanning a directive", startMark,
@@ -1814,7 +1814,7 @@ final class Scanner
             }
 
             // Newline after the spaces (if any)
-            const lineBreak = scanLineBreak();
+            const lineBreak = scanLineBreak8();
             allowSimpleKey_ = true;
 
             static bool end(Reader reader_) @safe pure nothrow @nogc
@@ -1835,7 +1835,7 @@ final class Scanner
                 if(reader_.peek() == ' ') { reader_.forward(); }
                 else
                 {
-                    const lBreak = scanLineBreak();
+                    const lBreak = scanLineBreak8();
                     extraBreaks  = true;
                     reader_.sliceBuilder8.write(lBreak);
 
