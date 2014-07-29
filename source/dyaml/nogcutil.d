@@ -231,6 +231,8 @@ struct ValidateResult
 {
     /// Is the validated string valid?
     bool   valid;
+    /// Number of characters in the string.
+    size_t characterCount;
     /// If the string is not valid, error message with details is here.
     string msg;
     /// If the string is not valid, the first invalid sequence of bytes is here.
@@ -252,11 +254,13 @@ private:
 ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
 {
     immutable len = str.length;
+    size_t characterCount;
     outer: for (size_t index = 0; index < len; )
     {
         if(str[index] < 0x80)
         {
-            index++;
+            ++index;
+            ++characterCount;
             continue;
         }
 
@@ -329,6 +333,7 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
                     if (!isValidDchar(d)) { return invalidUTF(pstr[0 .. length]); }
                 }
 
+                ++characterCount;
                 index += i + 1;
                 static if(i == 3)
                 {
@@ -341,7 +346,7 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
         return invalidUTF(pstr[0 .. length]);
     }
 
-    return ValidateResult(true);
+    return ValidateResult(true, characterCount);
 }
 
 /// @nogc version of std.utf.decode() for (char[]), but assumes str is valid UTF-8.
