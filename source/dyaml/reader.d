@@ -859,13 +859,6 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 
     Result result;
 
-    final switch(encoding)
-    {
-        case UTFEncoding.UTF_8:  result.maxChars = input.length;     break;
-        case UTFEncoding.UTF_16: result.maxChars = input.length / 2; break;
-        case UTFEncoding.UTF_32: result.maxChars = input.length / 2; break;
-    }
-
     // Decode input_ if it's encoded as UTF-8 or UTF-16.
     //
     // Params:
