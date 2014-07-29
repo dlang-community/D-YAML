@@ -57,7 +57,6 @@ final class Reader
         char[] buffer8_ = null;
 
         // Current position within buffer. Only data after this position can be read.
-        uint bufferOffset_ = 0;
         size_t bufferOffset8_ = 0;
 
         // Index of the current character in the buffer.
@@ -332,7 +331,6 @@ private:
             assert(bufferOffset8_ < buffer8_.length,
                    "Attempted to decode past the end of a string");
             const b = buffer8_[bufferOffset8_];
-            ++bufferOffset_;
             ++charIndex_;
             ++decodeCount_;
             if(b < 0x80)
