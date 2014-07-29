@@ -200,6 +200,10 @@ final class Reader
         {
             return slice(0, length);
         }
+        char[] prefix8(const size_t length) @safe pure nothrow @nogc
+        {
+            return slice8(length);
+        }
 
         /// Get a slice view of the internal buffer.
         ///
@@ -262,6 +266,12 @@ final class Reader
         dchar[] get(size_t length) @safe pure nothrow @nogc
         {
             auto result = prefix(length);
+            forward(length);
+            return result;
+        }
+        char[] get8(const size_t length) @safe pure nothrow @nogc
+        {
+            auto result = prefix8(length);
             forward(length);
             return result;
         }
