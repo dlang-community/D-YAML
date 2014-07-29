@@ -915,14 +915,14 @@ final class Scanner
             if(error_) { return Token.init; }
             const name = reader_.sliceBuilder8.finish();
 
-            reader_.sliceBuilder.begin();
+            reader_.sliceBuilder8.begin();
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
-            if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
-            else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
+            if(name == "YAML")     { scanYAMLDirectiveValueToSlice8(startMark); }
+            else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice8(startMark); }
             if(error_) { return Token.init; }
-            const value = reader_.sliceBuilder.finish();
+            const value = reader_.sliceBuilder8.finish();
 
             Mark endMark = reader_.mark;
 
@@ -935,11 +935,10 @@ final class Scanner
                 scanToNextBreak();
             }
 
-            scanDirectiveIgnoredLine(startMark);
+            scanDirectiveIgnoredLine8(startMark);
             if(error_) { return Token.init; }
 
-            return directiveToken(startMark, endMark, utf32To8(value),
-                                  directive, tagHandleEnd);
+            return directiveToken(startMark, endMark, value, directive, tagHandleEnd);
         }
 
         /// Scan name of a directive token.
@@ -965,12 +964,12 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveValueToSlice(const Mark startMark)
+        void scanYAMLDirectiveValueToSlice8(const Mark startMark)
             @system pure nothrow @nogc
         {
             findNextNonSpace();
 
-            scanYAMLDirectiveNumberToSlice(startMark);
+            scanYAMLDirectiveNumberToSlice8(startMark);
             if(error_) { return; }
 
             if(reader_.peek() != '.')
@@ -982,8 +981,8 @@ final class Scanner
             // Skip the '.'.
             reader_.forward();
 
-            reader_.sliceBuilder.write('.');
-            scanYAMLDirectiveNumberToSlice(startMark);
+            reader_.sliceBuilder8.write('.');
+            scanYAMLDirectiveNumberToSlice8(startMark);
             if(error_) { return; }
 
             if(!" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
@@ -999,7 +998,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveNumberToSlice(const Mark startMark)
+        void scanYAMLDirectiveNumberToSlice8(const Mark startMark)
             @system pure nothrow @nogc
         {
             if(!isDigit(reader_.peek()))
@@ -1013,7 +1012,7 @@ final class Scanner
             uint length = 1;
             while(isDigit(reader_.peek(length))) { ++length; }
 
-            reader_.sliceBuilder.write(reader_.get(length));
+            reader_.sliceBuilder8.write(reader_.get8(length));
         }
 
         /// Scan value of a tag directive.
@@ -1024,16 +1023,16 @@ final class Scanner
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        uint scanTagDirectiveValueToSlice(const Mark startMark)
+        uint scanTagDirectiveValueToSlice8(const Mark startMark)
             @system pure nothrow
         {
             findNextNonSpace();
-            const startLength = reader_.sliceBuilder.length;
-            scanTagDirectiveHandleToSlice(startMark);
+            const startLength = reader_.sliceBuilder8.length;
+            scanTagDirectiveHandleToSlice8(startMark);
             if(error_) { return uint.max; }
-            const handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
+            const handleLength = cast(uint)(reader_.sliceBuilder8.length  - startLength);
             findNextNonSpace();
-            scanTagDirectivePrefixToSlice(startMark);
+            scanTagDirectivePrefixToSlice8(startMark);
 
             return handleLength;
         }
@@ -1044,10 +1043,10 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectiveHandleToSlice(const Mark startMark)
+        void scanTagDirectiveHandleToSlice8(const Mark startMark)
             @system pure nothrow @nogc
         {
-            scanTagHandleToSlice!"directive"(startMark);
+            scanTagHandleToSlice8!"directive"(startMark);
             if(error_) { return; }
             if(reader_.peek() == ' ') { return; }
             error("While scanning a directive handle", startMark,
@@ -1060,9 +1059,9 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectivePrefixToSlice(const Mark startMark) @system pure nothrow
+        void scanTagDirectivePrefixToSlice8(const Mark startMark) @system pure nothrow
         {
-            scanTagURIToSlice!"directive"(startMark);
+            scanTagURIToSlice8!"directive"(startMark);
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
             error("While scanning a directive prefix", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
@@ -1071,7 +1070,7 @@ final class Scanner
         /// Scan (and ignore) ignored line after a directive.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
+        void scanDirectiveIgnoredLine8(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
             if(reader_.peek() == '#') { scanToNextBreak(); }
