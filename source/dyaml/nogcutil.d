@@ -222,7 +222,7 @@ unittest
     appender.put("found unsupported escape character: ");
     appender.putDChar('a');
     appender.putDChar('á');
-    assert(appender.data == "found unsupported escape character: 'a''á'");
+    assert(appender.data == "found unsupported escape character: aá");
 }
 
 
