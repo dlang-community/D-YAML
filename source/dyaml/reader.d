@@ -494,6 +494,39 @@ public:
         end_ += bytes;
     }
 
+    /// Insert a character to a specified position in the slice.
+    ///
+    /// Enlarges the slice by 1 char. Note that the slice can only extend up to the
+    /// current position in the Reader buffer.
+    ///
+    /// Params:
+    ///
+    /// c        = The character to insert.
+    /// position = Position to insert the character at in code units, not code points.
+    ///            Must be less than slice length(); a previously returned length()
+    ///            can be used.
+    void insert(const dchar c, const size_t position) @system pure nothrow @nogc
+    {
+        assert(inProgress, "insert called without begin");
+        assert(start_ + position <= end_, "Trying to insert after the end of the slice");
+
+        const point       = start_ + position;
+        const movedLength = end_ - point;
+
+        // Encode c into UTF-8
+        char[4] encodeBuf;
+        if(c < 0x80) { encodeBuf[0] = cast(char)c; }
+        const size_t bytes = c < 0x80 ? 1 : encodeValidCharNoGC(encodeBuf, c);
+
+        if(movedLength > 0)
+        {
+            core.stdc.string.memmove(reader_.buffer8_.ptr + point + bytes,
+                                     reader_.buffer8_.ptr + point,
+                                     movedLength * char.sizeof);
+        }
+        reader_.buffer8_[point .. point + bytes] = encodeBuf[0 .. bytes];
+        end_ += bytes;
+    }
 
     /// Get the current length of the slice.
     size_t length() @safe pure nothrow const @nogc
