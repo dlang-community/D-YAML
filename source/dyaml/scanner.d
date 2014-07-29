@@ -1248,7 +1248,6 @@ final class Scanner
                 indent += increment - 1;
                 endMark = scanBlockScalarBreaksToSlice(indent);
             }
-            size_t endLen = reader_.sliceBuilder.length;
 
             // int.max means there's no line break (int.max is outside UTF-32).
             dchar lineBreak = cast(dchar)int.max;
@@ -1269,7 +1268,6 @@ final class Scanner
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
                 endMark = scanBlockScalarBreaksToSlice(indent);
-                endLen = reader_.sliceBuilder.length;
 
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
@@ -1284,7 +1282,7 @@ final class Scanner
                     {
                         // No breaks were scanned; no need to insert the space in the
                         // middle of slice.
-                        if(startLen == endLen)
+                        if(startLen == reader_.sliceBuilder.length)
                         {
                             reader_.sliceBuilder.write(' ');
                         }
@@ -1293,7 +1291,7 @@ final class Scanner
                     {
                         // We need to insert in the middle of the slice in case any line
                         // breaks were scanned.
-                        reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
+                        reader_.sliceBuilder.insert(lineBreak, startLen);
                     }
 
                     ////this is Clark Evans's interpretation (also in the spec
@@ -1336,7 +1334,7 @@ final class Scanner
                 // be inserted _before_ the other line breaks.
                 if(chomping == Chomping.Keep)
                 {
-                    reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
+                    reader_.sliceBuilder.insert(lineBreak, startLen);
                 }
                 // If chomping is not Keep, breaksTransaction was cancelled so we can
                 // directly write the first line break (as it isn't stripped - chomping
