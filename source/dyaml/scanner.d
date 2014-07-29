@@ -822,23 +822,6 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanAlphaNumericToSlice(string name)(const Mark startMark)
-            @system pure nothrow @nogc
-        {
-            size_t length = 0;
-            dchar c = reader_.peek();
-            while(c.isAlphaNum || "-_"d.canFind(c)) { c = reader_.peek(++length); }
-
-            if(length == 0)
-            {
-                enum contextMsg = "While scanning " ~ name;
-                error(contextMsg, startMark, expected("alphanumeric, '-' or '_'", c),
-                      reader_.mark);
-                return;
-            }
-
-            reader_.sliceBuilder.write(reader_.get(length));
-        }
         void scanAlphaNumericToSlice8(string name)(const Mark startMark)
             @system pure nothrow @nogc
         {
