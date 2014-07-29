@@ -1211,7 +1211,7 @@ final class Scanner
         /// Scan a block scalar token with specified style.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanBlockScalar(const ScalarStyle style) @trusted pure nothrow
+        Token scanBlockScalar(const ScalarStyle style) @trusted pure nothrow @nogc
         {
             const startMark = reader_.mark;
 
@@ -1494,7 +1494,7 @@ final class Scanner
         /// Scan a qouted flow scalar token with specified quotes.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure nothrow
+        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure nothrow @nogc
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
@@ -1715,7 +1715,7 @@ final class Scanner
         /// Scan plain scalar token (no block, no quotes).
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanPlain() @trusted pure nothrow
+        Token scanPlain() @trusted pure nothrow @nogc
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
