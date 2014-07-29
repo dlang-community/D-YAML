@@ -302,6 +302,7 @@ final class Reader
 
         /// Used to build slices of read data in Reader; to avoid allocations.
         SliceBuilder sliceBuilder;
+        SliceBuilder8 sliceBuilder8;
 
         /// Get a string describing current buffer position, used for error messages.
         final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
@@ -362,6 +363,236 @@ private:
         }
 }
 
+/// Used to build slices of already read data in Reader buffer, avoiding allocations.
+///
+/// Usually these slices point to unchanged Reader data, but sometimes the data is 
+/// changed due to how YAML interprets certain characters/strings.
+///
+/// See begin() documentation.
+struct SliceBuilder8
+{
+private:
+    // No copying by the user.
+    @disable this(this);
+    @disable void opAssign(ref SliceBuilder8);
+
+    // Reader this builder works in.
+    Reader reader_;
+
+    // Start of the slice om reader_.buffer8_ (size_t.max while no slice being build)
+    size_t start_ = size_t.max;
+    // End of the slice om reader_.buffer8_ (size_t.max while no slice being build)
+    size_t end_   = size_t.max;
+
+    // Stack of slice ends to revert to (see Transaction)
+    //
+    // Very few levels as we don't want arbitrarily nested transactions.
+    size_t[4] endStack_;
+    // The number of elements currently in endStack_.
+    size_t endStackUsed_ = 0;
+
+    @safe pure nothrow const @nogc invariant()
+    {
+        if(!inProgress) { return; }
+        assert(end_ <= reader_.bufferOffset8_, "Slice ends after buffer position");
+        assert(start_ <= end_, "Slice start after slice end");
+    }
+
+    // Is a slice currently being built?
+    bool inProgress() @safe pure nothrow const @nogc
+    {
+        assert(start_ == size_t.max ? end_ == size_t.max : end_ != size_t.max,
+               "start_/end_ are not consistent");
+        return start_ != size_t.max;
+    }
+
+public:
+    /// Begin building a slice.
+    ///
+    /// Only one slice can be built at any given time; before beginning a new slice,
+    /// finish the previous one (if any).
+    ///
+    /// The slice starts at the current position in the Reader buffer. It can only be
+    /// extended up to the current position in the buffer; Reader methods get() and
+    /// forward() move the position. E.g. it is valid to extend a slice by write()-ing
+    /// a string just returned by get() - but not one returned by prefix() unless the
+    /// position has changed since the prefix() call.
+    void begin() @system pure nothrow @nogc
+    {
+        assert(!inProgress, "Beginning a slice while another slice is being built");
+        assert(endStackUsed_ == 0, "Slice stack not empty at slice begin");
+
+        start_ = reader_.bufferOffset8_;
+        end_   = reader_.bufferOffset8_;
+    }
+
+    /// Finish building a slice and return it.
+    ///
+    /// Any Transactions on the slice must be committed or destroyed before the slice
+    /// is finished.
+    ///
+    /// Returns a string; once a slice is finished it is definitive that its contents
+    /// will not be changed.
+    string finish() @system pure nothrow @nogc
+    {
+        assert(inProgress, "finish called without begin");
+        assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
+
+        const result = reader_.buffer8_[start_ .. end_];
+        start_ = end_ = size_t.max;
+        return cast(string)result;
+    }
+
+    /// Write a string to the slice being built.
+    ///
+    /// Data can only be written up to the current position in the Reader buffer.
+    ///
+    /// If str is a string returned by a Reader method, and str starts right after the
+    /// end of the slice being built, the slice is extended (trivial operation).
+    ///
+    /// See_Also: begin
+    void write(char[] str) @system pure nothrow @nogc
+    {
+        assert(inProgress, "write called without begin");
+        assert(end_ <= reader_.bufferOffset8_,
+               "AT START: Slice ends after buffer position");
+
+        // If str starts at the end of the slice (is a string returned by a Reader
+        // method), just extend the slice to contain str.
+        if(str.ptr == reader_.buffer8_.ptr + end_)
+        {
+            end_ += str.length;
+        }
+        // Even if str does not start at the end of the slice, it still may be returned
+        // by a Reader method and point to buffer. So we need to memmove.
+        else
+        {
+            core.stdc.string.memmove(reader_.buffer8_.ptr + end_, cast(char*)str.ptr,
+                                     str.length * char.sizeof);
+            end_ += str.length;
+        }
+    }
+
+    /// Write a character to the slice being built.
+    ///
+    /// Data can only be written up to the current position in the Reader buffer.
+    ///
+    /// See_Also: begin
+    void write(dchar c) @system pure nothrow @nogc
+    {
+        assert(inProgress, "write called without begin");
+        if(c < 0x80)
+        {
+            reader_.buffer8_[end_++] = cast(char)c;
+            return;
+        }
+
+        // We need to encode a non-ASCII dchar into UTF-8
+        char[4] encodeBuf;
+        const bytes = encodeValidCharNoGC(encodeBuf, c);
+        reader_.buffer8_[end_ .. end_ + bytes] = encodeBuf[0 .. bytes];
+        end_ += bytes;
+    }
+
+
+    /// Get the current length of the slice.
+    size_t length() @safe pure nothrow const @nogc
+    {
+        return end_ - start_;
+    }
+
+    /// A slice building transaction.
+    ///
+    /// Can be used to save and revert back to slice state.
+    struct Transaction
+    {
+    private:
+        // The slice builder affected by the transaction.
+        SliceBuilder* builder_ = null;
+        // Index of the return point of the transaction in StringBuilder.endStack_.
+        size_t stackLevel_;
+        // True after commit() has been called.
+        bool committed_;
+
+    public:
+        /// Begins a transaction on a SliceBuilder object.
+        ///
+        /// The transaction must end $(B after) any transactions created within the
+        /// transaction but $(B before) the slice is finish()-ed. A transaction can be
+        /// ended either by commit()-ing or reverting through the destructor.
+        ///
+        /// Saves the current state of a slice.
+        this(ref SliceBuilder builder) @system pure nothrow @nogc
+        {
+            builder_ = &builder;
+            stackLevel_ = builder_.endStackUsed_;
+            builder_.push();
+        }
+
+        /// Commit changes to the slice. 
+        ///
+        /// Ends the transaction - can only be called once, and removes the possibility
+        /// to revert slice state.
+        ///
+        /// Does nothing for a default-initialized transaction (the transaction has not
+        /// been started yet).
+        void commit() @system pure nothrow @nogc
+        {
+            assert(!committed_, "Can't commit a transaction more than once");
+
+            if(builder_ is null) { return; }
+            assert(builder_.endStackUsed_ == stackLevel_ + 1,
+                   "Parent transactions don't fully contain child transactions");
+            builder_.apply();
+            committed_ = true;
+        }
+
+        /// Destroy the transaction and revert it if it hasn't been committed yet.
+        ///
+        /// Does nothing for a default-initialized transaction.
+        ~this() @system pure nothrow @nogc
+        {
+            if(builder_ is null || committed_) { return; }
+            assert(builder_.endStackUsed_ == stackLevel_ + 1,
+                   "Parent transactions don't fully contain child transactions");
+            builder_.pop();
+            builder_ = null;
+        }
+    }
+
+private:
+    // Push the current end of the slice so we can revert to it if needed.
+    //
+    // Used by Transaction.
+    void push() @system pure nothrow @nogc
+    {
+        assert(inProgress, "push called without begin");
+        assert(endStackUsed_ < endStack_.length, "Slice stack overflow");
+        endStack_[endStackUsed_++] = end_;
+    }
+
+    // Pop the current end of endStack_ and set the end of the slice to the popped
+    // value, reverting changes since the old end was pushed.
+    //
+    // Used by Transaction.
+    void pop() @system pure nothrow @nogc
+    {
+        assert(inProgress, "pop called without begin");
+        assert(endStackUsed_ > 0, "Trying to pop an empty slice stack");
+        end_ = endStack_[--endStackUsed_];
+    }
+
+    // Pop the current end of endStack_, but keep the current end of the slice, applying
+    // changes made since pushing the old end.
+    //
+    // Used by Transaction.
+    void apply() @system pure nothrow @nogc
+    {
+        assert(inProgress, "apply called without begin");
+        assert(endStackUsed_ > 0, "Trying to apply an empty slice stack");
+        --endStackUsed_;
+    }
+}
 
 /// Used to build slices of already read data in Reader buffer, avoiding allocations.
 ///
