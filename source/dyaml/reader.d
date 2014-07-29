@@ -216,11 +216,9 @@ final class Reader
 
             for(; length > 0; --length)
             {
-                const c = buffer_[bufferOffset_];
-                ++bufferOffset_;
-                ++charIndex_;
-                // New line.
-                if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                const c = decodeAndAdvanceCurrent();
+                // New line. (can compare with '\n' without decoding since it's ASCII)
+                if(search.canFind(c) || (c == '\r' && buffer8_[bufferOffset8_] != '\n'))
                 {
                     ++line_;
                     column_ = 0;
@@ -246,6 +244,27 @@ final class Reader
 
         /// Get encoding of the input buffer.
         final Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
+
+        // Decode the character starting at bufferOffset8_ and move to the next
+        // character.
+        //
+        // Used in forward().
+        dchar decodeAndAdvanceCurrent() @safe pure nothrow @nogc
+        {
+            assert(bufferOffset8_ < buffer8_.length,
+                   "Attempted to decode past the end of a string");
+            const b = buffer8_[bufferOffset8_];
+            ++bufferOffset_;
+            ++charIndex_;
+            ++decodeCount_;
+            if(b < 0x80)
+            {
+                ++bufferOffset8_;
+                return b; 
+            }
+
+            return decodeValidUTF8NoGC(buffer8_, bufferOffset8_);
+        }
 }
 
 
