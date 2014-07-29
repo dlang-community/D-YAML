@@ -2049,6 +2049,23 @@ final class Scanner
             }
             return '\0';
         }
+        dchar scanLineBreak8() @safe pure nothrow @nogc
+        {
+            const c = reader_.peek();
+
+            if(c == '\n' || c == '\r' || c == '\u0085')
+            {
+                if(reader_.prefix8(2) == "\r\n") { reader_.forward(2); }
+                else { reader_.forward(); }
+                return '\n';
+            }
+            if(c == '\u2028' || c == '\u2029')
+            {
+                reader_.forward();
+                return c;
+            }
+            return '\0';
+        }
 }
 
 private:
