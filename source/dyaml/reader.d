@@ -135,7 +135,7 @@ final class Reader
                                         validateResult.sequence.to!string));
             characterCount_ = validateResult.characterCount;
 
-            this.sliceBuilder8 = SliceBuilder8(this);
+            this.sliceBuilder = SliceBuilder(this);
         }
 
         /// Get character at specified index relative to current position.
@@ -198,9 +198,9 @@ final class Reader
         ///                   returned slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        char[] prefix8(const size_t length) @safe pure nothrow @nogc
+        char[] prefix(const size_t length) @safe pure nothrow @nogc
         {
-            return slice8(length);
+            return slice(length);
         }
 
         /// Get a slice view of the internal buffer, starting at the current position.
@@ -213,7 +213,7 @@ final class Reader
         ///                be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        char[] slice8(const size_t end) @safe pure nothrow @nogc
+        char[] slice(const size_t end) @safe pure nothrow @nogc
         {
             // Fast path in case the caller has already peek()ed all the way to end.
             if(end == lastDecodedCharOffset_)
@@ -252,9 +252,9 @@ final class Reader
         /// Params:  length = Number or characters (code points, not bytes) to get.
         ///
         /// Returns: Characters starting at current position.
-        char[] get8(const size_t length) @safe pure nothrow @nogc
+        char[] get(const size_t length) @safe pure nothrow @nogc
         {
-            auto result = prefix8(length);
+            auto result = prefix(length);
             forward(length);
             return result;
         }
@@ -283,7 +283,7 @@ final class Reader
         }
 
         /// Used to build slices of read data in Reader; to avoid allocations.
-        SliceBuilder8 sliceBuilder8;
+        SliceBuilder sliceBuilder;
 
         /// Get a string describing current buffer position, used for error messages.
         final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
@@ -349,12 +349,12 @@ private:
 /// changed due to how YAML interprets certain characters/strings.
 ///
 /// See begin() documentation.
-struct SliceBuilder8
+struct SliceBuilder
 {
 private:
     // No copying by the user.
     @disable this(this);
-    @disable void opAssign(ref SliceBuilder8);
+    @disable void opAssign(ref SliceBuilder);
 
     // Reader this builder works in.
     Reader reader_;
@@ -521,7 +521,7 @@ public:
     {
     private:
         // The slice builder affected by the transaction.
-        SliceBuilder8* builder_ = null;
+        SliceBuilder* builder_ = null;
         // Index of the return point of the transaction in StringBuilder.endStack_.
         size_t stackLevel_;
         // True after commit() has been called.
@@ -535,7 +535,7 @@ public:
         /// ended either by commit()-ing or reverting through the destructor.
         ///
         /// Saves the current state of a slice.
-        this(ref SliceBuilder8 builder) @system pure nothrow @nogc
+        this(ref SliceBuilder builder) @system pure nothrow @nogc
         {
             builder_ = &builder;
             stackLevel_ = builder_.endStackUsed_;
@@ -816,7 +816,7 @@ void testPeekPrefixForward(R)()
     assert(reader.peek(2) == 't');
     assert(reader.peek(3) == 'a');
     assert(reader.peek(4) == '\0');
-    assert(reader.prefix8(4) == "data");
+    assert(reader.prefix(4) == "data");
     // assert(reader.prefix(6) == "data\0");
     reader.forward(2);
     assert(reader.peek(1) == 'a');

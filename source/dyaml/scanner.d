@@ -741,7 +741,7 @@ final class Scanner
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
                    reader_.peek()     == '-'   &&
-                   reader_.prefix8(3) == "---" &&
+                   reader_.prefix(3) == "---" &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -751,7 +751,7 @@ final class Scanner
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
                    reader_.peek()     == '.'   &&
-                   reader_.prefix8(3) == "..." &&
+                   reader_.prefix(3) == "..." &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -831,7 +831,7 @@ final class Scanner
                 return;
             }
 
-            reader_.sliceBuilder8.write(reader_.get8(length));
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan and throw away all characters until next line break.
@@ -854,7 +854,7 @@ final class Scanner
             {
                 ++length;
             }
-            reader_.sliceBuilder8.write(reader_.get8(length));
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
 
@@ -904,19 +904,19 @@ final class Scanner
             reader_.forward();
 
             // Scan directive name
-            reader_.sliceBuilder8.begin();
+            reader_.sliceBuilder.begin();
             scanDirectiveNameToSlice(startMark);
             if(error_) { return Token.init; }
-            const name = reader_.sliceBuilder8.finish();
+            const name = reader_.sliceBuilder.finish();
 
-            reader_.sliceBuilder8.begin();
+            reader_.sliceBuilder.begin();
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
             if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
             else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
             if(error_) { return Token.init; }
-            const value = reader_.sliceBuilder8.finish();
+            const value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
 
@@ -975,7 +975,7 @@ final class Scanner
             // Skip the '.'.
             reader_.forward();
 
-            reader_.sliceBuilder8.write('.');
+            reader_.sliceBuilder.write('.');
             scanYAMLDirectiveNumberToSlice(startMark);
             if(error_) { return; }
 
@@ -1006,7 +1006,7 @@ final class Scanner
             uint length = 1;
             while(isDigit(reader_.peek(length))) { ++length; }
 
-            reader_.sliceBuilder8.write(reader_.get8(length));
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan value of a tag directive.
@@ -1021,10 +1021,10 @@ final class Scanner
             @system pure nothrow
         {
             findNextNonSpace();
-            const startLength = reader_.sliceBuilder8.length;
+            const startLength = reader_.sliceBuilder.length;
             scanTagDirectiveHandleToSlice(startMark);
             if(error_) { return uint.max; }
-            const handleLength = cast(uint)(reader_.sliceBuilder8.length  - startLength);
+            const handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
             findNextNonSpace();
             scanTagDirectivePrefixToSlice(startMark);
 
@@ -1095,11 +1095,11 @@ final class Scanner
             const startMark = reader_.mark;
             const dchar i = reader_.get();
 
-            reader_.sliceBuilder8.begin();
+            reader_.sliceBuilder.begin();
             if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
             else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
             // On error, value is discarded as we return immediately
-            const value = reader_.sliceBuilder8.finish();
+            const value = reader_.sliceBuilder.finish();
             if(error_)   { return Token.init; }
 
             if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
@@ -1131,8 +1131,8 @@ final class Scanner
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
 
-            reader_.sliceBuilder8.begin();
-            scope(failure) { reader_.sliceBuilder8.finish(); }
+            reader_.sliceBuilder.begin();
+            scope(failure) { reader_.sliceBuilder.finish(); }
             // Index where tag handle ends and tag suffix starts in the tag value
             // (slice) we will produce.
             uint handleEnd;
@@ -1156,7 +1156,7 @@ final class Scanner
             {
                 reader_.forward();
                 handleEnd = 0;
-                reader_.sliceBuilder8.write('!');
+                reader_.sliceBuilder.write('!');
             }
             else
             {
@@ -1177,14 +1177,14 @@ final class Scanner
                 if(useHandle)
                 {
                     scanTagHandleToSlice!"tag"(startMark);
-                    handleEnd = cast(uint)reader_.sliceBuilder8.length;
+                    handleEnd = cast(uint)reader_.sliceBuilder.length;
                     if(error_) { return Token.init; }
                 }
                 else
                 {
                     reader_.forward();
-                    reader_.sliceBuilder8.write('!');
-                    handleEnd = cast(uint)reader_.sliceBuilder8.length;
+                    reader_.sliceBuilder.write('!');
+                    handleEnd = cast(uint)reader_.sliceBuilder.length;
                 }
 
                 scanTagURIToSlice!"tag"(startMark);
@@ -1193,7 +1193,7 @@ final class Scanner
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                const slice = reader_.sliceBuilder8.finish();
+                const slice = reader_.sliceBuilder.finish();
                 return tagToken(startMark, reader_.mark, slice, handleEnd);
             }
 
@@ -1224,13 +1224,13 @@ final class Scanner
             Mark endMark;
             uint indent = max(1, indent_ + 1);
 
-            reader_.sliceBuilder8.begin();
-            alias Transaction = SliceBuilder8.Transaction;
+            reader_.sliceBuilder.begin();
+            alias Transaction = SliceBuilder.Transaction;
             // Used to strip the last line breaks written to the slice at the end of the
             // scalar, which may be needed based on chomping.
-            Transaction breaksTransaction = Transaction(reader_.sliceBuilder8);
+            Transaction breaksTransaction = Transaction(reader_.sliceBuilder);
             // Read the first indentation/line breaks before the scalar.
-            size_t startLen = reader_.sliceBuilder8.length;
+            size_t startLen = reader_.sliceBuilder.length;
             if(increment == int.min)
             {
                 auto indentation = scanBlockScalarIndentationToSlice();
@@ -1258,8 +1258,8 @@ final class Scanner
 
                 // This transaction serves to rollback data read in the
                 // scanBlockScalarBreaksToSlice() call.
-                breaksTransaction = Transaction(reader_.sliceBuilder8);
-                startLen = reader_.sliceBuilder8.length;
+                breaksTransaction = Transaction(reader_.sliceBuilder);
+                startLen = reader_.sliceBuilder.length;
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
                 endMark = scanBlockScalarBreaksToSlice(indent);
@@ -1277,16 +1277,16 @@ final class Scanner
                     {
                         // No breaks were scanned; no need to insert the space in the
                         // middle of slice.
-                        if(startLen == reader_.sliceBuilder8.length)
+                        if(startLen == reader_.sliceBuilder.length)
                         {
-                            reader_.sliceBuilder8.write(' ');
+                            reader_.sliceBuilder.write(' ');
                         }
                     }
                     else
                     {
                         // We need to insert in the middle of the slice in case any line
                         // breaks were scanned.
-                        reader_.sliceBuilder8.insert(lineBreak, startLen);
+                        reader_.sliceBuilder.insert(lineBreak, startLen);
                     }
 
                     ////this is Clark Evans's interpretation (also in the spec
@@ -1298,7 +1298,7 @@ final class Scanner
                     //    {
                     //        if(!" \t"d.canFind(reader_.peek()))
                     //        {
-                    //            reader_.sliceBuilder8.write(' ');
+                    //            reader_.sliceBuilder.write(' ');
                     //        }
                     //        else
                     //        {
@@ -1308,7 +1308,7 @@ final class Scanner
                     //}
                     //else
                     //{
-                    //    reader_.sliceBuilder8.insertBack(lineBreak, endLen - startLen);
+                    //    reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
                     //}
                 }
                 else
@@ -1329,18 +1329,18 @@ final class Scanner
                 // be inserted _before_ the other line breaks.
                 if(chomping == Chomping.Keep)
                 {
-                    reader_.sliceBuilder8.insert(lineBreak, startLen);
+                    reader_.sliceBuilder.insert(lineBreak, startLen);
                 }
                 // If chomping is not Keep, breaksTransaction was cancelled so we can
                 // directly write the first line break (as it isn't stripped - chomping
                 // is not Strip)
                 else
                 {
-                    reader_.sliceBuilder8.write(lineBreak);
+                    reader_.sliceBuilder.write(lineBreak);
                 }
             }
 
-            const slice = reader_.sliceBuilder8.finish();
+            const slice = reader_.sliceBuilder.finish();
             return scalarToken(startMark, endMark, slice, style);
         }
 
@@ -1455,7 +1455,7 @@ final class Scanner
             {
                 if(reader_.peek() != ' ')
                 {
-                    reader_.sliceBuilder8.write(scanLineBreak());
+                    reader_.sliceBuilder.write(scanLineBreak());
                     endMark = reader_.mark;
                     continue;
                 }
@@ -1478,7 +1478,7 @@ final class Scanner
             {
                 while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
-                reader_.sliceBuilder8.write(scanLineBreak());
+                reader_.sliceBuilder.write(scanLineBreak());
                 endMark = reader_.mark;
             }
 
@@ -1493,8 +1493,8 @@ final class Scanner
             const startMark = reader_.mark;
             const quote     = reader_.get();
 
-            reader_.sliceBuilder8.begin();
-            scope(exit) if(error_) { reader_.sliceBuilder8.finish(); }
+            reader_.sliceBuilder.begin();
+            scope(exit) if(error_) { reader_.sliceBuilder.finish(); }
 
             scanFlowScalarNonSpacesToSlice(quotes, startMark);
             if(error_) { return Token.init; }
@@ -1508,7 +1508,7 @@ final class Scanner
             }
             reader_.forward();
 
-            auto slice = reader_.sliceBuilder8.finish();
+            auto slice = reader_.sliceBuilder.finish();
             return scalarToken(startMark, reader_.mark, slice, quotes);
         }
 
@@ -1532,7 +1532,7 @@ final class Scanner
                 // while(!search.canFind(reader_.peek(length))) { ++length; }
                 outer: for(;;)
                 {
-                    const char[] slice = reader_.slice8(length + 32);
+                    const char[] slice = reader_.slice(length + 32);
                     if(slice.length == length)
                     {
                         error("While reading a flow scalar", startMark,
@@ -1548,19 +1548,19 @@ final class Scanner
                     }
                 }
 
-                reader_.sliceBuilder8.write(reader_.get8(length));
+                reader_.sliceBuilder.write(reader_.get(length));
 
                 c = reader_.peek();
                 if(quotes == SingleQuoted && c == '\'' && reader_.peek(1) == '\'')
                 {
                     reader_.forward(2);
-                    reader_.sliceBuilder8.write('\'');
+                    reader_.sliceBuilder.write('\'');
                 }
                 else if((quotes == DoubleQuoted && c == '\'') ||
                         (quotes == SingleQuoted && "\"\\"d.canFind(c)))
                 {
                     reader_.forward();
-                    reader_.sliceBuilder8.write(c);
+                    reader_.sliceBuilder.write(c);
                 }
                 else if(quotes == DoubleQuoted && c == '\\')
                 {
@@ -1573,7 +1573,7 @@ final class Scanner
                         // place (in a slice) in case of '\P' and '\L' (very uncommon,
                         // but we don't want to break the spec)
                         char[2] escapeSequence = ['\\', cast(char)c];
-                        reader_.sliceBuilder8.write(escapeSequence);
+                        reader_.sliceBuilder.write(escapeSequence);
                     }
                     else if(dyaml.escapes.escapeHexCodeList.canFind(c))
                     {
@@ -1587,10 +1587,10 @@ final class Scanner
                                            reader_.peek(i)), reader_.mark);
                             return;
                         }
-                        char[] hex = reader_.get8(hexLength);
+                        char[] hex = reader_.get(hexLength);
                         char[2] escapeStart = ['\\', cast(char) c];
-                        reader_.sliceBuilder8.write(escapeStart);
-                        reader_.sliceBuilder8.write(hex);
+                        reader_.sliceBuilder.write(escapeStart);
+                        reader_.sliceBuilder.write(hex);
                         bool overflow;
                         // Note: This is just error checking; Parser does the actual
                         //       escaping (otherwise we could accidentally create an
@@ -1636,7 +1636,7 @@ final class Scanner
             // Increase length as long as we see whitespace.
             size_t length = 0;
             while(" \t"d.canFind(reader_.peek(length))) { ++length; }
-            auto whitespaces = reader_.prefix8(length);
+            auto whitespaces = reader_.prefix(length);
 
             // Can check the last byte without striding because '\0' is ASCII
             const c = reader_.peek(length);
@@ -1651,7 +1651,7 @@ final class Scanner
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 reader_.forward(length);
-                reader_.sliceBuilder8.write(whitespaces);
+                reader_.sliceBuilder.write(whitespaces);
                 return;
             }
 
@@ -1659,7 +1659,7 @@ final class Scanner
             reader_.forward(length);
             const lineBreak = scanLineBreak();
 
-            if(lineBreak != '\n') { reader_.sliceBuilder8.write(lineBreak); }
+            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
 
             // If we have extra line breaks after the first, scan them into the
             // slice.
@@ -1667,7 +1667,7 @@ final class Scanner
             if(error_) { return; }
 
             // No extra breaks, one normal line break. Replace it with a space.
-            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder8.write(' '); }
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
         }
 
         /// Scan line breaks in a flow scalar.
@@ -1684,7 +1684,7 @@ final class Scanner
             for(;;)
             {
                 // Instead of checking indentation, we check for document separators.
-                const prefix = reader_.prefix8(3);
+                const prefix = reader_.prefix(3);
                 if((prefix == "---" || prefix == "...") &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
                 {
@@ -1701,7 +1701,7 @@ final class Scanner
 
                 const lineBreak = scanLineBreak();
                 anyBreaks = true;
-                reader_.sliceBuilder8.write(lineBreak);
+                reader_.sliceBuilder.write(lineBreak);
             }
             return anyBreaks;
         }
@@ -1723,9 +1723,9 @@ final class Scanner
 
             mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
 
-            reader_.sliceBuilder8.begin();
+            reader_.sliceBuilder.begin();
 
-            alias Transaction = SliceBuilder8.Transaction;
+            alias Transaction = SliceBuilder.Transaction;
             Transaction spacesTransaction;
             // Stop at a comment.
             while(reader_.peek() != '#')
@@ -1750,7 +1750,7 @@ final class Scanner
                 {
                     // This is an error; throw the slice away.
                     spacesTransaction.commit();
-                    reader_.sliceBuilder8.finish();
+                    reader_.sliceBuilder.finish();
                     reader_.forward(length);
                     error("While scanning a plain scalar", startMark,
                           "found unexpected ':' . Please check "
@@ -1763,16 +1763,16 @@ final class Scanner
 
                 allowSimpleKey_ = false;
 
-                reader_.sliceBuilder8.write(reader_.get8(length));
+                reader_.sliceBuilder.write(reader_.get(length));
 
                 endMark = reader_.mark;
 
                 spacesTransaction.commit();
-                spacesTransaction = Transaction(reader_.sliceBuilder8);
+                spacesTransaction = Transaction(reader_.sliceBuilder);
 
-                const startLength = reader_.sliceBuilder8.length;
+                const startLength = reader_.sliceBuilder.length;
                 scanPlainSpacesToSlice(startMark);
-                if(startLength == reader_.sliceBuilder8.length ||
+                if(startLength == reader_.sliceBuilder.length ||
                    (flowLevel_ == 0 && reader_.column < indent))
                 {
                     break;
@@ -1780,7 +1780,7 @@ final class Scanner
             }
 
             spacesTransaction.__dtor();
-            const slice = reader_.sliceBuilder8.finish();
+            const slice = reader_.sliceBuilder.finish();
 
             return scalarToken(startMark, endMark, slice, ScalarStyle.Plain);
         }
@@ -1797,14 +1797,14 @@ final class Scanner
             // Get as many plain spaces as there are.
             size_t length = 0;
             while(reader_.peek(length) == ' ') { ++length; }
-            char[] whitespaces = reader_.get8(length);
+            char[] whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
             // No newline after the spaces (if any)
             if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
             {
                 // We have spaces, but no newline.
-                if(whitespaces.length > 0) { reader_.sliceBuilder8.write(whitespaces); }
+                if(whitespaces.length > 0) { reader_.sliceBuilder.write(whitespaces); }
                 return;
             }
 
@@ -1814,7 +1814,7 @@ final class Scanner
 
             static bool end(Reader reader_) @safe pure nothrow @nogc
             {
-                return ("---" == reader_.prefix8(3) || "..." == reader_.prefix8(3))
+                return ("---" == reader_.prefix(3) || "..." == reader_.prefix(3))
                         && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
             }
 
@@ -1822,9 +1822,9 @@ final class Scanner
 
             bool extraBreaks = false;
 
-            alias Transaction = SliceBuilder8.Transaction;
-            auto transaction = Transaction(reader_.sliceBuilder8);
-            if(lineBreak != '\n') { reader_.sliceBuilder8.write(lineBreak); }
+            alias Transaction = SliceBuilder.Transaction;
+            auto transaction = Transaction(reader_.sliceBuilder);
+            if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
             while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
                 if(reader_.peek() == ' ') { reader_.forward(); }
@@ -1832,7 +1832,7 @@ final class Scanner
                 {
                     const lBreak = scanLineBreak();
                     extraBreaks  = true;
-                    reader_.sliceBuilder8.write(lBreak);
+                    reader_.sliceBuilder.write(lBreak);
 
                     if(end(reader_)) { return; }
                 }
@@ -1840,7 +1840,7 @@ final class Scanner
             transaction.commit();
 
             // No line breaks, only a space.
-            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder8.write(' '); }
+            if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
         }
 
         /// Scan handle of a tag token.
@@ -1878,7 +1878,7 @@ final class Scanner
                 ++length;
             }
 
-            reader_.sliceBuilder8.write(reader_.get8(length));
+            reader_.sliceBuilder.write(reader_.get(length));
         }
 
         /// Scan URI in a tag token.
@@ -1892,15 +1892,15 @@ final class Scanner
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
-            const startLen = reader_.sliceBuilder8.length;
+            const startLen = reader_.sliceBuilder.length;
             {
                 uint length = 0;
                 while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
                 {
                     if(c == '%')
                     {
-                        auto chars = reader_.get8(length);
-                        reader_.sliceBuilder8.write(chars);
+                        auto chars = reader_.get(length);
+                        reader_.sliceBuilder.write(chars);
                         length = 0;
                         scanURIEscapesToSlice!name(startMark);
                         if(error_) { return; }
@@ -1910,13 +1910,13 @@ final class Scanner
                 }
                 if(length > 0)
                 {
-                    auto chars = reader_.get8(length);
-                    reader_.sliceBuilder8.write(chars);
+                    auto chars = reader_.get(length);
+                    reader_.sliceBuilder.write(chars);
                     length = 0;
                 }
             }
             // OK if we scanned something, error otherwise.
-            if(reader_.sliceBuilder8.length > startLen) { return; }
+            if(reader_.sliceBuilder.length > startLen) { return; }
 
             enum contextMsg = "While parsing a " ~ name;
             error(contextMsg, startMark, expected("URI", c), reader_.mark);
@@ -1947,7 +1947,7 @@ final class Scanner
                 import std.utf;
                 size_t nextChar;
                 const c = std.utf.decode(bytes[], nextChar);
-                reader_.sliceBuilder8.write(c);
+                reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)
                 {
                     core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
@@ -2024,7 +2024,7 @@ final class Scanner
 
             if(c == '\n' || c == '\r' || c == '\u0085')
             {
-                if(reader_.prefix8(2) == "\r\n") { reader_.forward(2); }
+                if(reader_.prefix(2) == "\r\n") { reader_.forward(2); }
                 else { reader_.forward(); }
                 return '\n';
             }
