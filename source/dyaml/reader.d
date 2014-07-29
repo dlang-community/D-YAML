@@ -508,7 +508,7 @@ public:
     {
     private:
         // The slice builder affected by the transaction.
-        SliceBuilder* builder_ = null;
+        SliceBuilder8* builder_ = null;
         // Index of the return point of the transaction in StringBuilder.endStack_.
         size_t stackLevel_;
         // True after commit() has been called.
@@ -522,7 +522,7 @@ public:
         /// ended either by commit()-ing or reverting through the destructor.
         ///
         /// Saves the current state of a slice.
-        this(ref SliceBuilder builder) @system pure nothrow @nogc
+        this(ref SliceBuilder8 builder) @system pure nothrow @nogc
         {
             builder_ = &builder;
             stackLevel_ = builder_.endStackUsed_;
