@@ -1115,16 +1115,16 @@ final class Scanner
         /// Therefore we restrict aliases to ASCII alphanumeric characters.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanAnchor(const TokenID id) @trusted pure nothrow
+        Token scanAnchor(const TokenID id) @trusted pure nothrow @nogc
         {
             const startMark = reader_.mark;
             const dchar i = reader_.get();
 
-            reader_.sliceBuilder.begin();
-            if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
-            else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
+            reader_.sliceBuilder8.begin();
+            if(i == '*') { scanAlphaNumericToSlice8!"an alias"(startMark); }
+            else         { scanAlphaNumericToSlice8!"an anchor"(startMark); }
             // On error, value is discarded as we return immediately
-            const value = reader_.sliceBuilder.finish();
+            const value = reader_.sliceBuilder8.finish();
             if(error_)   { return Token.init; }
 
             if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
@@ -1139,11 +1139,11 @@ final class Scanner
 
             if(id == TokenID.Alias)
             {
-                return aliasToken(startMark, reader_.mark, value.utf32To8);
+                return aliasToken(startMark, reader_.mark, value);
             }
             if(id == TokenID.Anchor)
             {
-                return anchorToken(startMark, reader_.mark, value.utf32To8);
+                return anchorToken(startMark, reader_.mark, value);
             }
             assert(false, "This code should never be reached");
         }
