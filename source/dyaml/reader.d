@@ -107,7 +107,8 @@ final class Reader
             }
 
             buffer_ = decodeResult.decoded;
-            // The part of buffer_ excluding trailing zeroes.
+            // Check that excluding any trailing zeroes, all character in buffer are 
+            // printable.
             auto noZeros = buffer_;
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
             enforce(printable(noZeros[]),
