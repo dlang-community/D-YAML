@@ -1269,9 +1269,8 @@ final class Scanner
             }
             size_t endLen = reader_.sliceBuilder.length;
 
-            // dchar.max means there's no line break.
-            dchar lineBreak = dchar.max;
-
+            // int.max means there's no line break (int.max is outside UTF-32).
+            dchar lineBreak = cast(dchar)int.max;
 
             // Scan the inner part of the block scalar.
             while(reader_.column == indent && reader_.peek() != '\0')
@@ -1349,7 +1348,7 @@ final class Scanner
             // transaction).
             if(chomping == Chomping.Keep)  { breaksTransaction.commit(); }
             else                           { breaksTransaction.__dtor(); }
-            if(chomping != Chomping.Strip && lineBreak != dchar.max)
+            if(chomping != Chomping.Strip && lineBreak != int.max)
             {
                 // If chomping is Keep, we keep the line break but the first line break
                 // that isn't stripped (since chomping isn't Strip in this branch) must
