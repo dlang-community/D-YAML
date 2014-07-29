@@ -727,7 +727,7 @@ public:
     ///            can be used.
     void insert(const dchar c, const size_t position) @system pure nothrow @nogc
     {
-        assert(inProgress, "insertBack called without begin");
+        assert(inProgress, "insert called without begin");
         assert(start_ + position <= end_, "Trying to insert after the end of the slice");
 
         const point       = start_ + position;
