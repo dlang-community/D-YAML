@@ -1856,37 +1856,6 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagHandleToSlice(string name)(const Mark startMark)
-            @system pure nothrow @nogc
-        {
-            dchar c = reader_.peek();
-            enum contextMsg = "While scanning a " ~ name;
-            if(c != '!')
-            {
-                error(contextMsg, startMark, expected("'!'", c), reader_.mark);
-                return;
-            }
-
-            uint length = 1;
-            c = reader_.peek(length);
-            if(c != ' ')
-            {
-                while(c.isAlphaNum || "-_"d.canFind(c))
-                {
-                    ++length;
-                    c = reader_.peek(length);
-                }
-                if(c != '!')
-                {
-                    reader_.forward(length);
-                    error(contextMsg, startMark, expected("'!'", c), reader_.mark);
-                    return;
-                }
-                ++length;
-            }
-
-            reader_.sliceBuilder.write(reader_.get(length));
-        }
         void scanTagHandleToSlice8(string name)(const Mark startMark)
             @system pure nothrow @nogc
         {
@@ -1925,40 +1894,6 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagURIToSlice(string name)(const Mark startMark)
-            @trusted pure nothrow // @nogc
-        {
-            // Note: we do not check if URI is well-formed.
-            dchar c = reader_.peek();
-            const startLen = reader_.sliceBuilder.length;
-            {
-                uint length = 0;
-                while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
-                {
-                    if(c == '%')
-                    {
-                        auto chars = reader_.get(length);
-                        reader_.sliceBuilder.write(chars);
-                        length = 0;
-                        scanURIEscapesToSlice!name(startMark);
-                        if(error_) { return; }
-                    }
-                    else { ++length; }
-                    c = reader_.peek(length);
-                }
-                if(length > 0)
-                {
-                    auto chars = reader_.get(length);
-                    reader_.sliceBuilder.write(chars);
-                    length = 0;
-                }
-            }
-            // OK if we scanned something, error otherwise.
-            if(reader_.sliceBuilder.length > startLen) { return; }
-
-            enum contextMsg = "While parsing a " ~ name;
-            error(contextMsg, startMark, expected("URI", c), reader_.mark);
-        }
         void scanTagURIToSlice8(string name)(const Mark startMark)
             @trusted pure nothrow // @nogc
         {
@@ -2001,83 +1936,6 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanURIEscapesToSlice(string name)(const Mark startMark)
-            @system pure nothrow // @nogc
-        {
-            // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
-            // decoding into UTF-32.
-            char[4] bytes;
-            size_t bytesUsed;
-            Mark mark = reader_.mark;
-
-            // Get one dchar by decoding data from bytes.
-            //
-            // This is probably slow, but simple and URI escapes are extremely uncommon
-            // in YAML.
-            static size_t getDchar(char[] bytes, Reader reader_)
-            {
-                import std.utf;
-                size_t nextChar;
-                const c = std.utf.decode(bytes[], nextChar);
-                reader_.sliceBuilder.write(c);
-                if(bytes.length - nextChar > 0)
-                {
-                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
-                                             bytes.length - nextChar);
-                }
-                return bytes.length - nextChar;
-            }
-
-            enum contextMsg = "While scanning a " ~ name;
-            try
-            {
-                while(reader_.peek() == '%')
-                {
-                    reader_.forward();
-                    if(bytesUsed == bytes.length)
-                    {
-                        bytesUsed = getDchar(bytes[], reader_);
-                    }
-
-                    char b = 0;
-                    uint mult = 16;
-                    // Converting 2 hexadecimal digits to a byte.
-                    foreach(k; 0 .. 2)
-                    {
-                        const dchar c = reader_.peek(k);
-                        if(!c.isHexDigit)
-                        {
-                            auto msg = expected("URI escape sequence of 2 hexadecimal "
-                                                "numbers", c);
-                            error(contextMsg, startMark, msg, reader_.mark);
-                            return;
-                        }
-
-                        uint digit;
-                        if(c - '0' < 10)     { digit = c - '0'; }
-                        else if(c - 'A' < 6) { digit = c - 'A'; }
-                        else if(c - 'a' < 6) { digit = c - 'a'; }
-                        else                 { assert(false); }
-                        b += mult * digit;
-                        mult /= 16;
-                    }
-                    bytes[bytesUsed++] = b;
-
-                    reader_.forward(2);
-                }
-
-                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
-            }
-            catch(UTFException e)
-            {
-                error(contextMsg, startMark, e.msg, mark);
-                return;
-            }
-            catch(Exception e)
-            {
-                assert(false, "Unexpected exception in scanURIEscapesToSlice");
-            }
-        }
         void scanURIEscapesToSlice8(string name)(const Mark startMark)
             @system pure nothrow // @nogc
         {
