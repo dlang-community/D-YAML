@@ -2020,6 +2020,83 @@ final class Scanner
                 assert(false, "Unexpected exception in scanURIEscapesToSlice");
             }
         }
+        void scanURIEscapesToSlice8(string name)(const Mark startMark)
+            @system pure nothrow // @nogc
+        {
+            // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
+            // decoding into UTF-32.
+            char[4] bytes;
+            size_t bytesUsed;
+            Mark mark = reader_.mark;
+
+            // Get one dchar by decoding data from bytes.
+            //
+            // This is probably slow, but simple and URI escapes are extremely uncommon
+            // in YAML.
+            static size_t getDchar(char[] bytes, Reader reader_)
+            {
+                import std.utf;
+                size_t nextChar;
+                const c = std.utf.decode(bytes[], nextChar);
+                reader_.sliceBuilder8.write(c);
+                if(bytes.length - nextChar > 0)
+                {
+                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
+                                             bytes.length - nextChar);
+                }
+                return bytes.length - nextChar;
+            }
+
+            enum contextMsg = "While scanning a " ~ name;
+            try
+            {
+                while(reader_.peek() == '%')
+                {
+                    reader_.forward();
+                    if(bytesUsed == bytes.length)
+                    {
+                        bytesUsed = getDchar(bytes[], reader_);
+                    }
+
+                    char b = 0;
+                    uint mult = 16;
+                    // Converting 2 hexadecimal digits to a byte.
+                    foreach(k; 0 .. 2)
+                    {
+                        const dchar c = reader_.peek(k);
+                        if(!c.isHexDigit)
+                        {
+                            auto msg = expected("URI escape sequence of 2 hexadecimal "
+                                                "numbers", c);
+                            error(contextMsg, startMark, msg, reader_.mark);
+                            return;
+                        }
+
+                        uint digit;
+                        if(c - '0' < 10)     { digit = c - '0'; }
+                        else if(c - 'A' < 6) { digit = c - 'A'; }
+                        else if(c - 'a' < 6) { digit = c - 'a'; }
+                        else                 { assert(false); }
+                        b += mult * digit;
+                        mult /= 16;
+                    }
+                    bytes[bytesUsed++] = b;
+
+                    reader_.forward(2);
+                }
+
+                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
+            }
+            catch(UTFException e)
+            {
+                error(contextMsg, startMark, e.msg, mark);
+                return;
+            }
+            catch(Exception e)
+            {
+                assert(false, "Unexpected exception in scanURIEscapesToSlice");
+            }
+        }
 
 
         /// Scan a line break, if any.
