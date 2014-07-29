@@ -54,8 +54,12 @@ final class Reader
     private:
         // Buffer of currently loaded characters.
         dchar[] buffer_ = null;
+        char[] buffer8_ = null;
+
         // Current position within buffer. Only data after this position can be read.
         uint bufferOffset_ = 0;
+        size_t bufferOffset8_ = 0;
+
         // Index of the current character in the buffer.
         size_t charIndex_ = 0;
 
@@ -109,7 +113,15 @@ final class Reader
             enforce(printable(noZeros[]),
                     new ReaderException("Special unicode characters are not allowed"));
 
-            this.sliceBuilder = SliceBuilder(this);
+            //TEMP (UTF-8 will be the default)
+            buffer8_ = cast(char[])buffer_.to!string;
+            const validateResult = buffer8_.validateUTF8NoGC;
+            enforce(validateResult.valid,
+                    new ReaderException(validateResult.msg ~ 
+                                        validateResult.sequence.to!string));
+
+            this.sliceBuilder  = SliceBuilder(this);
+            this.sliceBuilder8 = SliceBuilder8(this);
         }
 
         /// Get character at specified index relative to current position.
