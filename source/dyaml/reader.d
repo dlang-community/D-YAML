@@ -54,7 +54,6 @@ final class Reader
 {
     private:
         // Buffer of currently loaded characters.
-        dchar[] buffer_ = null;
         char[] buffer8_ = null;
 
         // Current position within buffer. Only data after this position can be read.
@@ -121,16 +120,16 @@ final class Reader
                 throw new ReaderException("UTF decoding error: " ~ msg);
             }
 
-            buffer_ = decodeResult.decoded;
+            auto buffer = decodeResult.decoded;
             // Check that excluding any trailing zeroes, all character in buffer are 
             // printable.
-            auto noZeros = buffer_;
+            auto noZeros = buffer;
             while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
             enforce(printable(noZeros[]),
                     new ReaderException("Special unicode characters are not allowed"));
 
             //TEMP (UTF-8 will be the default)
-            buffer8_ = cast(char[])buffer_.to!string;
+            buffer8_ = cast(char[])buffer.to!string;
             const validateResult = buffer8_.validateUTF8NoGC;
             enforce(validateResult.valid,
                     new ReaderException(validateResult.msg ~ 
