@@ -25,6 +25,7 @@ import tinyendian;
 import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
+import dyaml.nogcutil;
 import dyaml.streamcompat;
 
 
