@@ -220,6 +220,26 @@ final class Reader
 
             return buffer_[start .. end];
         }
+        char[] slice8(const size_t end) @safe pure nothrow @nogc
+        {
+            // Fast path in case the caller has already peek()ed all the way to end.
+            if(end == lastDecodedCharOffset_)
+            {
+                return buffer8_[bufferOffset8_ .. lastDecodedBufferOffset_];
+            }
+
+            lastDecodedCharOffset_   = 0;
+            lastDecodedBufferOffset_ = bufferOffset8_;
+
+            // 'Slow' path - decode everything up to end.
+            while(lastDecodedCharOffset_ < end &&
+                  lastDecodedBufferOffset_ < buffer8_.length)
+            {
+                decodeNext();
+            }
+
+            return buffer8_[bufferOffset8_ .. lastDecodedBufferOffset_];
+        }
 
         /// Get the next character, moving buffer position beyond it.
         ///
