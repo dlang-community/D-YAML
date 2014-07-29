@@ -847,7 +847,6 @@ private:
 //                          here. If there was no error, errorMessage is NULL. Always
 //                          check this first before using the other members.
 // $(D dchar[] decoded)     A GC-allocated buffer with decoded UTF-32 characters.
-// $(D size_t maxChars)     XXX reserved for future
 auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 {
     // Documented in function ddoc.
