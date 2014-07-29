@@ -816,7 +816,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanAlphaNumericToSlice8(string name)(const Mark startMark)
+        void scanAlphaNumericToSlice(string name)(const Mark startMark)
             @system pure nothrow @nogc
         {
             size_t length = 0;
@@ -847,7 +847,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanToNextBreakToSlice8() @system pure nothrow @nogc
+        void scanToNextBreakToSlice() @system pure nothrow @nogc
         {
             uint length = 0;
             while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
@@ -885,7 +885,7 @@ final class Scanner
                 findNextNonSpace();
 
                 if(reader_.peek() == '#') { scanToNextBreak(); }
-                if(scanLineBreak8() != '\0')
+                if(scanLineBreak() != '\0')
                 {
                     if(flowLevel_ == 0) { allowSimpleKey_ = true; }
                 }
@@ -905,7 +905,7 @@ final class Scanner
 
             // Scan directive name
             reader_.sliceBuilder8.begin();
-            scanDirectiveNameToSlice8(startMark);
+            scanDirectiveNameToSlice(startMark);
             if(error_) { return Token.init; }
             const name = reader_.sliceBuilder8.finish();
 
@@ -913,8 +913,8 @@ final class Scanner
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
-            if(name == "YAML")     { scanYAMLDirectiveValueToSlice8(startMark); }
-            else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice8(startMark); }
+            if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
+            else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
             if(error_) { return Token.init; }
             const value = reader_.sliceBuilder8.finish();
 
@@ -929,7 +929,7 @@ final class Scanner
                 scanToNextBreak();
             }
 
-            scanDirectiveIgnoredLine8(startMark);
+            scanDirectiveIgnoredLine(startMark);
             if(error_) { return Token.init; }
 
             return directiveToken(startMark, endMark, value, directive, tagHandleEnd);
@@ -941,10 +941,10 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveNameToSlice8(const Mark startMark) @system pure nothrow @nogc
+        void scanDirectiveNameToSlice(const Mark startMark) @system pure nothrow @nogc
         {
             // Scan directive name.
-            scanAlphaNumericToSlice8!"a directive"(startMark);
+            scanAlphaNumericToSlice!"a directive"(startMark);
             if(error_) { return; }
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
@@ -958,12 +958,12 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveValueToSlice8(const Mark startMark)
+        void scanYAMLDirectiveValueToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
             findNextNonSpace();
 
-            scanYAMLDirectiveNumberToSlice8(startMark);
+            scanYAMLDirectiveNumberToSlice(startMark);
             if(error_) { return; }
 
             if(reader_.peek() != '.')
@@ -976,7 +976,7 @@ final class Scanner
             reader_.forward();
 
             reader_.sliceBuilder8.write('.');
-            scanYAMLDirectiveNumberToSlice8(startMark);
+            scanYAMLDirectiveNumberToSlice(startMark);
             if(error_) { return; }
 
             if(!" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
@@ -992,7 +992,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveNumberToSlice8(const Mark startMark)
+        void scanYAMLDirectiveNumberToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
             if(!isDigit(reader_.peek()))
@@ -1017,16 +1017,16 @@ final class Scanner
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        uint scanTagDirectiveValueToSlice8(const Mark startMark)
+        uint scanTagDirectiveValueToSlice(const Mark startMark)
             @system pure nothrow
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder8.length;
-            scanTagDirectiveHandleToSlice8(startMark);
+            scanTagDirectiveHandleToSlice(startMark);
             if(error_) { return uint.max; }
             const handleLength = cast(uint)(reader_.sliceBuilder8.length  - startLength);
             findNextNonSpace();
-            scanTagDirectivePrefixToSlice8(startMark);
+            scanTagDirectivePrefixToSlice(startMark);
 
             return handleLength;
         }
@@ -1037,10 +1037,10 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectiveHandleToSlice8(const Mark startMark)
+        void scanTagDirectiveHandleToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
-            scanTagHandleToSlice8!"directive"(startMark);
+            scanTagHandleToSlice!"directive"(startMark);
             if(error_) { return; }
             if(reader_.peek() == ' ') { return; }
             error("While scanning a directive handle", startMark,
@@ -1053,9 +1053,9 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectivePrefixToSlice8(const Mark startMark) @system pure nothrow
+        void scanTagDirectivePrefixToSlice(const Mark startMark) @system pure nothrow
         {
-            scanTagURIToSlice8!"directive"(startMark);
+            scanTagURIToSlice!"directive"(startMark);
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
             error("While scanning a directive prefix", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
@@ -1064,13 +1064,13 @@ final class Scanner
         /// Scan (and ignore) ignored line after a directive.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveIgnoredLine8(const Mark startMark) @safe pure nothrow @nogc
+        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
             if(reader_.peek() == '#') { scanToNextBreak(); }
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                scanLineBreak8();
+                scanLineBreak();
                 return;
             }
             error("While scanning a directive", startMark,
@@ -1096,8 +1096,8 @@ final class Scanner
             const dchar i = reader_.get();
 
             reader_.sliceBuilder8.begin();
-            if(i == '*') { scanAlphaNumericToSlice8!"an alias"(startMark); }
-            else         { scanAlphaNumericToSlice8!"an anchor"(startMark); }
+            if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
+            else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
             // On error, value is discarded as we return immediately
             const value = reader_.sliceBuilder8.finish();
             if(error_)   { return Token.init; }
@@ -1142,7 +1142,7 @@ final class Scanner
                 reader_.forward(2);
 
                 handleEnd = 0;
-                scanTagURIToSlice8!"tag"(startMark);
+                scanTagURIToSlice!"tag"(startMark);
                 if(error_) { return Token.init; }
                 if(reader_.peek() != '>')
                 {
@@ -1176,7 +1176,7 @@ final class Scanner
 
                 if(useHandle)
                 {
-                    scanTagHandleToSlice8!"tag"(startMark);
+                    scanTagHandleToSlice!"tag"(startMark);
                     handleEnd = cast(uint)reader_.sliceBuilder8.length;
                     if(error_) { return Token.init; }
                 }
@@ -1187,7 +1187,7 @@ final class Scanner
                     handleEnd = cast(uint)reader_.sliceBuilder8.length;
                 }
 
-                scanTagURIToSlice8!"tag"(startMark);
+                scanTagURIToSlice!"tag"(startMark);
                 if(error_) { return Token.init; }
             }
 
@@ -1233,14 +1233,14 @@ final class Scanner
             size_t startLen = reader_.sliceBuilder8.length;
             if(increment == int.min)
             {
-                auto indentation = scanBlockScalarIndentationToSlice8();
+                auto indentation = scanBlockScalarIndentationToSlice();
                 endMark = indentation[1];
                 indent  = max(indent, indentation[0]);
             }
             else
             {
                 indent += increment - 1;
-                endMark = scanBlockScalarBreaksToSlice8(indent);
+                endMark = scanBlockScalarBreaksToSlice(indent);
             }
 
             // int.max means there's no line break (int.max is outside UTF-32).
@@ -1252,8 +1252,8 @@ final class Scanner
                 breaksTransaction.commit();
                 const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
                 // This is where the 'interesting' non-whitespace data gets read.
-                scanToNextBreakToSlice8();
-                lineBreak = scanLineBreak8();
+                scanToNextBreakToSlice();
+                lineBreak = scanLineBreak();
 
 
                 // This transaction serves to rollback data read in the
@@ -1262,7 +1262,7 @@ final class Scanner
                 startLen = reader_.sliceBuilder8.length;
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
-                endMark = scanBlockScalarBreaksToSlice8(indent);
+                endMark = scanBlockScalarBreaksToSlice(indent);
 
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
@@ -1434,7 +1434,7 @@ final class Scanner
 
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                scanLineBreak8();
+                scanLineBreak();
                 return;
             }
             error("While scanning a block scalar", startMark,
@@ -1445,7 +1445,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice8()
+        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice()
             @system pure nothrow @nogc
         {
             uint maxIndent;
@@ -1455,7 +1455,7 @@ final class Scanner
             {
                 if(reader_.peek() != ' ')
                 {
-                    reader_.sliceBuilder8.write(scanLineBreak8());
+                    reader_.sliceBuilder8.write(scanLineBreak());
                     endMark = reader_.mark;
                     continue;
                 }
@@ -1470,7 +1470,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Mark scanBlockScalarBreaksToSlice8(const uint indent) @trusted pure nothrow @nogc
+        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted pure nothrow @nogc
         {
             Mark endMark = reader_.mark;
 
@@ -1478,7 +1478,7 @@ final class Scanner
             {
                 while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
-                reader_.sliceBuilder8.write(scanLineBreak8());
+                reader_.sliceBuilder8.write(scanLineBreak());
                 endMark = reader_.mark;
             }
 
@@ -1496,14 +1496,14 @@ final class Scanner
             reader_.sliceBuilder8.begin();
             scope(exit) if(error_) { reader_.sliceBuilder8.finish(); }
 
-            scanFlowScalarNonSpacesToSlice8(quotes, startMark);
+            scanFlowScalarNonSpacesToSlice(quotes, startMark);
             if(error_) { return Token.init; }
 
             while(reader_.peek() != quote)
             {
-                scanFlowScalarSpacesToSlice8(startMark);
+                scanFlowScalarSpacesToSlice(startMark);
                 if(error_) { return Token.init; }
-                scanFlowScalarNonSpacesToSlice8(quotes, startMark);
+                scanFlowScalarNonSpacesToSlice(quotes, startMark);
                 if(error_) { return Token.init; }
             }
             reader_.forward();
@@ -1518,7 +1518,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarNonSpacesToSlice8(const ScalarStyle quotes, const Mark startMark)
+        void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @system pure nothrow @nogc
         {
             for(;;) with(ScalarStyle)
@@ -1608,8 +1608,8 @@ final class Scanner
                     }
                     else if("\n\r\u0085\u2028\u2029"d.canFind(c))
                     {
-                        scanLineBreak8();
-                        scanFlowScalarBreaksToSlice8(startMark);
+                        scanLineBreak();
+                        scanFlowScalarBreaksToSlice(startMark);
                         if(error_) { return; }
                     }
                     else
@@ -1630,7 +1630,7 @@ final class Scanner
         /// spaces into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarSpacesToSlice8(const Mark startMark)
+        void scanFlowScalarSpacesToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
             // Increase length as long as we see whitespace.
@@ -1657,13 +1657,13 @@ final class Scanner
 
             // There's a line break after the spaces.
             reader_.forward(length);
-            const lineBreak = scanLineBreak8();
+            const lineBreak = scanLineBreak();
 
             if(lineBreak != '\n') { reader_.sliceBuilder8.write(lineBreak); }
 
             // If we have extra line breaks after the first, scan them into the
             // slice.
-            const bool extraBreaks = scanFlowScalarBreaksToSlice8(startMark);
+            const bool extraBreaks = scanFlowScalarBreaksToSlice(startMark);
             if(error_) { return; }
 
             // No extra breaks, one normal line break. Replace it with a space.
@@ -1676,7 +1676,7 @@ final class Scanner
         /// line breaks into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanFlowScalarBreaksToSlice8(const Mark startMark)
+        bool scanFlowScalarBreaksToSlice(const Mark startMark)
             @system pure nothrow @nogc
         {
             // True if at least one line break was found.
@@ -1699,7 +1699,7 @@ final class Scanner
                 // Encountered a non-whitespace non-linebreak character, so we're done.
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { break; }
 
-                const lineBreak = scanLineBreak8();
+                const lineBreak = scanLineBreak();
                 anyBreaks = true;
                 reader_.sliceBuilder8.write(lineBreak);
             }
@@ -1771,7 +1771,7 @@ final class Scanner
                 spacesTransaction = Transaction(reader_.sliceBuilder8);
 
                 const startLength = reader_.sliceBuilder8.length;
-                scanPlainSpacesToSlice8(startMark);
+                scanPlainSpacesToSlice(startMark);
                 if(startLength == reader_.sliceBuilder8.length ||
                    (flowLevel_ == 0 && reader_.column < indent))
                 {
@@ -1789,7 +1789,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        void scanPlainSpacesToSlice8(const Mark startMark) @system pure nothrow @nogc
+        void scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1809,7 +1809,7 @@ final class Scanner
             }
 
             // Newline after the spaces (if any)
-            const lineBreak = scanLineBreak8();
+            const lineBreak = scanLineBreak();
             allowSimpleKey_ = true;
 
             static bool end(Reader reader_) @safe pure nothrow @nogc
@@ -1830,7 +1830,7 @@ final class Scanner
                 if(reader_.peek() == ' ') { reader_.forward(); }
                 else
                 {
-                    const lBreak = scanLineBreak8();
+                    const lBreak = scanLineBreak();
                     extraBreaks  = true;
                     reader_.sliceBuilder8.write(lBreak);
 
@@ -1849,7 +1849,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagHandleToSlice8(string name)(const Mark startMark)
+        void scanTagHandleToSlice(string name)(const Mark startMark)
             @system pure nothrow @nogc
         {
             dchar c = reader_.peek();
@@ -1887,7 +1887,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagURIToSlice8(string name)(const Mark startMark)
+        void scanTagURIToSlice(string name)(const Mark startMark)
             @trusted pure nothrow // @nogc
         {
             // Note: we do not check if URI is well-formed.
@@ -1902,7 +1902,7 @@ final class Scanner
                         auto chars = reader_.get8(length);
                         reader_.sliceBuilder8.write(chars);
                         length = 0;
-                        scanURIEscapesToSlice8!name(startMark);
+                        scanURIEscapesToSlice!name(startMark);
                         if(error_) { return; }
                     }
                     else { ++length; }
@@ -1929,7 +1929,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanURIEscapesToSlice8(string name)(const Mark startMark)
+        void scanURIEscapesToSlice(string name)(const Mark startMark)
             @system pure nothrow // @nogc
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
@@ -2018,7 +2018,7 @@ final class Scanner
         ///   '\u2028'    :   '\u2028'
         ///   '\u2029     :   '\u2029'
         ///   no break    :   '\0'
-        dchar scanLineBreak8() @safe pure nothrow @nogc
+        dchar scanLineBreak() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
 
