@@ -1156,8 +1156,8 @@ final class Scanner
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
 
-            reader_.sliceBuilder.begin();
-            scope(failure) { reader_.sliceBuilder.finish(); }
+            reader_.sliceBuilder8.begin();
+            scope(failure) { reader_.sliceBuilder8.finish(); }
             // Index where tag handle ends and tag suffix starts in the tag value
             // (slice) we will produce.
             uint handleEnd;
@@ -1167,7 +1167,7 @@ final class Scanner
                 reader_.forward(2);
 
                 handleEnd = 0;
-                scanTagURIToSlice!"tag"(startMark);
+                scanTagURIToSlice8!"tag"(startMark);
                 if(error_) { return Token.init; }
                 if(reader_.peek() != '>')
                 {
@@ -1181,7 +1181,7 @@ final class Scanner
             {
                 reader_.forward();
                 handleEnd = 0;
-                reader_.sliceBuilder.write('!');
+                reader_.sliceBuilder8.write('!');
             }
             else
             {
@@ -1201,25 +1201,25 @@ final class Scanner
 
                 if(useHandle)
                 {
-                    scanTagHandleToSlice!"tag"(startMark);
-                    handleEnd = cast(uint)reader_.sliceBuilder.length;
+                    scanTagHandleToSlice8!"tag"(startMark);
+                    handleEnd = cast(uint)reader_.sliceBuilder8.length;
                     if(error_) { return Token.init; }
                 }
                 else
                 {
                     reader_.forward();
-                    reader_.sliceBuilder.write('!');
-                    handleEnd = cast(uint)reader_.sliceBuilder.length;
+                    reader_.sliceBuilder8.write('!');
+                    handleEnd = cast(uint)reader_.sliceBuilder8.length;
                 }
 
-                scanTagURIToSlice!"tag"(startMark);
+                scanTagURIToSlice8!"tag"(startMark);
                 if(error_) { return Token.init; }
             }
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                const slice = reader_.sliceBuilder.finish();
-                return tagToken(startMark, reader_.mark, slice.utf32To8, handleEnd);
+                const slice = reader_.sliceBuilder8.finish();
+                return tagToken(startMark, reader_.mark, slice, handleEnd);
             }
 
             error("While scanning a tag", startMark, expected("' '", reader_.peek()),
