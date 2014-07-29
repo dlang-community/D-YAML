@@ -2024,23 +2024,6 @@ final class Scanner
         ///   '\u2028'    :   '\u2028'
         ///   '\u2029     :   '\u2029'
         ///   no break    :   '\0'
-        dchar scanLineBreak() @safe pure nothrow @nogc
-        {
-            const c = reader_.peek();
-
-            if(c == '\n' || c == '\r' || c == '\u0085')
-            {
-                if(reader_.prefix(2) == "\r\n"d) { reader_.forward(2); }
-                else { reader_.forward(); }
-                return '\n';
-            }
-            if(c == '\u2028' || c == '\u2029')
-            {
-                reader_.forward();
-                return c;
-            }
-            return '\0';
-        }
         dchar scanLineBreak8() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
