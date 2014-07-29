@@ -56,7 +56,7 @@ package:
 
 
 /// Marked exception thrown at scanner errors.
-/// 
+///
 /// See_Also: MarkedYAMLException
 class ScannerException : MarkedYAMLException
 {
@@ -755,18 +755,16 @@ final class Scanner
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
-        ///Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
+        /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe pure nothrow @nogc
         {
             return reader_.peek() == '-' &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
         }
 
-        /**
-         * Check if the next token is KEY(flow context):    '?'
-         *
-         * or KEY(block context):   '?' (' '|'\n')
-         */
+        /// Check if the next token is KEY(flow context):    '?'
+        /// 
+        /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe pure nothrow @nogc
         {
             return reader_.peek() == '?' &&
@@ -774,11 +772,9 @@ final class Scanner
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
         }
 
-        /**
-         * Check if the next token is VALUE(flow context):  ':'
-         *
-         * or VALUE(block context): ':' (' '|'\n')
-         */
+        /// Check if the next token is VALUE(flow context):  ':'
+        /// 
+        /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe pure nothrow @nogc
         {
             return reader_.peek() == ':' &&
@@ -786,22 +782,20 @@ final class Scanner
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
         }
 
-        /**
-         * Check if the next token is a plain scalar.
-         *
-         * A plain scalar may start with any non-space character except:
-         *   '-', '?', ':', ',', '[', ']', '{', '}',
-         *   '#', '&', '*', '!', '|', '>', '\'', '\"',
-         *   '%', '@', '`'.
-         *
-         * It may also start with
-         *   '-', '?', ':'
-         * if it is followed by a non-space character.
-         *
-         * Note that we limit the last rule to the block context (except the
-         * '-' character) because we want the flow context to be space
-         * independent.
-         */
+        /// Check if the next token is a plain scalar.
+        ///
+        /// A plain scalar may start with any non-space character except:
+        ///   '-', '?', ':', ',', '[', ']', '{', '}',
+        ///   '#', '&', '*', '!', '|', '>', '\'', '\"',
+        ///   '%', '@', '`'.
+        ///
+        /// It may also start with
+        ///   '-', '?', ':'
+        /// if it is followed by a non-space character.
+        ///
+        /// Note that we limit the last rule to the block context (except the
+        /// '-' character) because we want the flow context to be space
+        /// independent.
         bool checkPlain() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
