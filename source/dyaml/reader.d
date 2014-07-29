@@ -294,6 +294,9 @@ final class Reader
                 }
                 else if(c != '\uFEFF') { ++column_; }
             }
+
+            lastDecodedBufferOffset_ = bufferOffset8_;
+            lastDecodedCharOffset_ = 0;
         }
 
         /// Used to build slices of read data in Reader; to avoid allocations.
