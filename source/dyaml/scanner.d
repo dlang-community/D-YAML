@@ -927,25 +927,25 @@ final class Scanner
             reader_.forward();
 
             // Scan directive name
-            reader_.sliceBuilder.begin();
-            scanDirectiveNameToSlice(startMark);
+            reader_.sliceBuilder8.begin();
+            scanDirectiveNameToSlice8(startMark);
             if(error_) { return Token.init; }
-            const name = reader_.sliceBuilder.finish();
+            const name = reader_.sliceBuilder8.finish();
 
             reader_.sliceBuilder.begin();
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
-            if(name == "YAML"d)     { scanYAMLDirectiveValueToSlice(startMark); }
-            else if(name == "TAG"d) { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
+            if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
+            else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
             if(error_) { return Token.init; }
             const value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
 
             DirectiveType directive;
-            if(name == "YAML"d)     { directive = DirectiveType.YAML; }
-            else if(name == "TAG"d) { directive = DirectiveType.TAG; }
+            if(name == "YAML")     { directive = DirectiveType.YAML; }
+            else if(name == "TAG") { directive = DirectiveType.TAG; }
             else
             {
                 directive = DirectiveType.Reserved;
@@ -966,10 +966,10 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveNameToSlice(const Mark startMark) @system pure nothrow @nogc
+        void scanDirectiveNameToSlice8(const Mark startMark) @system pure nothrow @nogc
         {
             // Scan directive name.
-            scanAlphaNumericToSlice!"a directive"(startMark);
+            scanAlphaNumericToSlice8!"a directive"(startMark);
             if(error_) { return; }
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
