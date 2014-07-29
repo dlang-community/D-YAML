@@ -95,29 +95,6 @@ char[] printNoGC(S...)(char[] buffer, S args) @safe pure nothrow @nogc
 }
 
 
-/// Write a dchar to a character buffer without decoding or using the GC.
-///
-/// Params:
-///
-/// c   = The dchar to write. Will be written as ASCII if it is in ASCII or "<unknown"
-///       if it's not.
-/// buf = The buffer to write to. Must be large enough to store "<unknown>"
-///
-/// Returns: Slice of buf containing the written dchar.
-char[] writeDCharTo(dchar c, char[] buf) @safe pure nothrow @nogc
-{
-    const unknown = "'unknown'";
-    assert(buf.length > unknown.length, "Too small buffer for writeDCharTo");
-    if(c < 128) 
-    {
-        buf[0] = buf[2] = '\'';
-        buf[1] = cast(char)c; 
-        return buf[0 .. 3];
-    }
-    buf[0 .. unknown.length] = unknown[] ;
-    return buf[0 .. unknown.length];
-}
-
 /// A UFCS utility function to write a dchar to an AppenderNoGCFixed using writeDCharTo.
 ///
 /// The char $(B must) be a valid dchar.
