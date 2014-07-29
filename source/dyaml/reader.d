@@ -192,38 +192,26 @@ final class Reader
         /// Note: This gets only a "view" into the internal buffer,
         ///       which get invalidated after other Reader calls.
         ///
-        /// Params:  length = Number of characters to get. May reach past the end of the
-        ///                   buffer; in that case the returned slice will be shorter.
+        /// Params:  length = Number of characters (code points, not bytes) to get. May
+        ///                   reach past the end of the buffer; in that case the
+        ///                   returned slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        dchar[] prefix(size_t length) @safe pure nothrow @nogc
-        {
-            return slice(0, length);
-        }
         char[] prefix8(const size_t length) @safe pure nothrow @nogc
         {
             return slice8(length);
         }
 
-        /// Get a slice view of the internal buffer.
+        /// Get a slice view of the internal buffer, starting at the current position.
         ///
         /// Note: This gets only a "view" into the internal buffer,
         ///       which get invalidated after other Reader calls.
         ///
-        /// Params:  start = Start of the slice relative to current position.
-        ///          end   = End of the slice relative to current position. May reach
-        ///                  past the end of the buffer; in that case the returned
-        ///                  slice will be shorter.
+        /// Params:  end = End of the slice relative to current position. May reach past
+        ///                the end of the buffer; in that case the returned slice will
+        ///                be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        dchar[] slice(size_t start, size_t end) @trusted pure nothrow @nogc
-        {
-            start += bufferOffset_;
-            end    = min(buffer_.length, end + bufferOffset_);
-            assert(end >= start, "Trying to read a slice that starts after its end");
-
-            return buffer_[start .. end];
-        }
         char[] slice8(const size_t end) @safe pure nothrow @nogc
         {
             // Fast path in case the caller has already peek()ed all the way to end.
@@ -260,15 +248,9 @@ final class Reader
 
         /// Get specified number of characters, moving buffer position beyond them.
         ///
-        /// Params:  length = Number or characters to get.
+        /// Params:  length = Number or characters (code points, not bytes) to get.
         ///
         /// Returns: Characters starting at current position.
-        dchar[] get(size_t length) @safe pure nothrow @nogc
-        {
-            auto result = prefix(length);
-            forward(length);
-            return result;
-        }
         char[] get8(const size_t length) @safe pure nothrow @nogc
         {
             auto result = prefix8(length);
@@ -650,7 +632,6 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
     struct Result
     {
         string errorMessage;
-
         dchar[] decoded;
     }
 
@@ -835,7 +816,7 @@ void testPeekPrefixForward(R)()
     assert(reader.peek(2) == 't');
     assert(reader.peek(3) == 'a');
     assert(reader.peek(4) == '\0');
-    assert(reader.prefix(4) == "data");
+    assert(reader.prefix8(4) == "data");
     // assert(reader.prefix(6) == "data\0");
     reader.forward(2);
     assert(reader.peek(1) == 'a');
