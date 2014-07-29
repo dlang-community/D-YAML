@@ -938,7 +938,6 @@ final class Scanner
             scanDirectiveIgnoredLine(startMark);
             if(error_) { return Token.init; }
 
-            //Storing directive name and value in a single string, separated by zero.
             return directiveToken(startMark, endMark, utf32To8(value),
                                   directive, tagHandleEnd);
         }
