@@ -853,14 +853,14 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanToNextBreakToSlice() @system pure nothrow @nogc
+        void scanToNextBreakToSlice8() @system pure nothrow @nogc
         {
             uint length = 0;
             while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
             {
                 ++length;
             }
-            reader_.sliceBuilder.write(reader_.get(length));
+            reader_.sliceBuilder8.write(reader_.get8(length));
         }
 
 
@@ -1230,23 +1230,23 @@ final class Scanner
             Mark endMark;
             uint indent = max(1, indent_ + 1);
 
-            reader_.sliceBuilder.begin();
-            alias Transaction = SliceBuilder.Transaction;
+            reader_.sliceBuilder8.begin();
+            alias Transaction = SliceBuilder8.Transaction;
             // Used to strip the last line breaks written to the slice at the end of the
             // scalar, which may be needed based on chomping.
-            Transaction breaksTransaction = Transaction(reader_.sliceBuilder);
+            Transaction breaksTransaction = Transaction(reader_.sliceBuilder8);
             // Read the first indentation/line breaks before the scalar.
-            size_t startLen = reader_.sliceBuilder.length;
+            size_t startLen = reader_.sliceBuilder8.length;
             if(increment == int.min)
             {
-                auto indentation = scanBlockScalarIndentationToSlice();
+                auto indentation = scanBlockScalarIndentationToSlice8();
                 endMark = indentation[1];
                 indent  = max(indent, indentation[0]);
             }
             else
             {
                 indent += increment - 1;
-                endMark = scanBlockScalarBreaksToSlice(indent);
+                endMark = scanBlockScalarBreaksToSlice8(indent);
             }
 
             // int.max means there's no line break (int.max is outside UTF-32).
@@ -1258,16 +1258,17 @@ final class Scanner
                 breaksTransaction.commit();
                 const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
                 // This is where the 'interesting' non-whitespace data gets read.
-                scanToNextBreakToSlice();
-                lineBreak = scanLineBreak();
+                scanToNextBreakToSlice8();
+                lineBreak = scanLineBreak8();
+
 
                 // This transaction serves to rollback data read in the
                 // scanBlockScalarBreaksToSlice() call.
-                breaksTransaction = Transaction(reader_.sliceBuilder);
-                startLen = reader_.sliceBuilder.length;
+                breaksTransaction = Transaction(reader_.sliceBuilder8);
+                startLen = reader_.sliceBuilder8.length;
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
-                endMark = scanBlockScalarBreaksToSlice(indent);
+                endMark = scanBlockScalarBreaksToSlice8(indent);
 
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
@@ -1282,16 +1283,16 @@ final class Scanner
                     {
                         // No breaks were scanned; no need to insert the space in the
                         // middle of slice.
-                        if(startLen == reader_.sliceBuilder.length)
+                        if(startLen == reader_.sliceBuilder8.length)
                         {
-                            reader_.sliceBuilder.write(' ');
+                            reader_.sliceBuilder8.write(' ');
                         }
                     }
                     else
                     {
                         // We need to insert in the middle of the slice in case any line
                         // breaks were scanned.
-                        reader_.sliceBuilder.insert(lineBreak, startLen);
+                        reader_.sliceBuilder8.insert(lineBreak, startLen);
                     }
 
                     ////this is Clark Evans's interpretation (also in the spec
@@ -1303,7 +1304,7 @@ final class Scanner
                     //    {
                     //        if(!" \t"d.canFind(reader_.peek()))
                     //        {
-                    //            reader_.sliceBuilder.write(' ');
+                    //            reader_.sliceBuilder8.write(' ');
                     //        }
                     //        else
                     //        {
@@ -1313,7 +1314,7 @@ final class Scanner
                     //}
                     //else
                     //{
-                    //    reader_.sliceBuilder.insertBack(lineBreak, endLen - startLen);
+                    //    reader_.sliceBuilder8.insertBack(lineBreak, endLen - startLen);
                     //}
                 }
                 else
@@ -1334,19 +1335,19 @@ final class Scanner
                 // be inserted _before_ the other line breaks.
                 if(chomping == Chomping.Keep)
                 {
-                    reader_.sliceBuilder.insert(lineBreak, startLen);
+                    reader_.sliceBuilder8.insert(lineBreak, startLen);
                 }
                 // If chomping is not Keep, breaksTransaction was cancelled so we can
                 // directly write the first line break (as it isn't stripped - chomping
                 // is not Strip)
                 else
                 {
-                    reader_.sliceBuilder.write(lineBreak);
+                    reader_.sliceBuilder8.write(lineBreak);
                 }
             }
 
-            const slice = reader_.sliceBuilder.finish();
-            return scalarToken(startMark, endMark, slice.utf32To8, style);
+            const slice = reader_.sliceBuilder8.finish();
+            return scalarToken(startMark, endMark, slice, style);
         }
 
         /// Scan chomping and indentation indicators of a scalar token.
@@ -1439,7 +1440,7 @@ final class Scanner
 
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                scanLineBreak();
+                scanLineBreak8();
                 return;
             }
             error("While scanning a block scalar", startMark,
@@ -1450,7 +1451,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice()
+        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice8()
             @system pure nothrow @nogc
         {
             uint maxIndent;
@@ -1460,7 +1461,7 @@ final class Scanner
             {
                 if(reader_.peek() != ' ')
                 {
-                    reader_.sliceBuilder.write(scanLineBreak());
+                    reader_.sliceBuilder8.write(scanLineBreak8());
                     endMark = reader_.mark;
                     continue;
                 }
@@ -1475,7 +1476,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted pure nothrow @nogc
+        Mark scanBlockScalarBreaksToSlice8(const uint indent) @trusted pure nothrow @nogc
         {
             Mark endMark = reader_.mark;
 
@@ -1483,7 +1484,7 @@ final class Scanner
             {
                 while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
-                reader_.sliceBuilder.write(scanLineBreak());
+                reader_.sliceBuilder8.write(scanLineBreak8());
                 endMark = reader_.mark;
             }
 
