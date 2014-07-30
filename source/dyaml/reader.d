@@ -18,6 +18,7 @@ import std.exception;
 import std.stdio;
 import std.string;
 import std.system;
+import std.typecons;
 import std.utf;
 
 import tinyendian;
@@ -743,7 +744,38 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     {
         try
         {
-            result.utf8 = cast(char[])input.to!string;
+            // We can do UTF-32->UTF-8 in place because all UTF-8 sequences are 4 or
+            // less bytes.
+            static if(is(C == dchar))
+            {
+                char[4] encodeBuf;
+                auto utf8 = cast(char[])input;
+                auto length = 0;
+                foreach(dchar c; input)
+                {
+                    // ASCII
+                    if(c < 0x80)
+                    {
+                        utf8[length++] = cast(char)c;
+                        continue;
+                    }
+
+                    const encodeResult = encodeCharNoGC!(No.validated)(encodeBuf, c);
+                    if(encodeResult.errorMessage !is null)
+                    {
+                        result.errorMessage = encodeResult.errorMessage;
+                        return;
+                    }
+                    const bytes = encodeResult.bytes;
+                    utf8[length .. length + bytes] = encodeBuf[0 .. bytes];
+                    length += bytes;
+                }
+                result.utf8 = utf8[0 .. length];
+            }
+            else
+            {
+                result.utf8 = cast(char[])input.to!string;
+            }
         }
         catch(ConvException e) { result.errorMessage = e.msg; }
         catch(UTFException e)  { result.errorMessage = e.msg; }
