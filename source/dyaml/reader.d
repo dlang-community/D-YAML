@@ -27,7 +27,6 @@ import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
 import dyaml.nogcutil;
-import dyaml.streamcompat;
 
 
 
@@ -90,6 +89,7 @@ final class Reader
 
 
     public:
+        import dyaml.streamcompat;
         import std.stream;
         /// Construct a Reader.
         ///
@@ -97,10 +97,48 @@ final class Reader
         ///
         /// Throws:  ReaderException if the stream is invalid, on a UTF decoding error
         ///          or if there are nonprintable unicode characters illegal in YAML.
-        this(Stream stream) @trusted //!nothrow
+        deprecated("use Reader(ubyte[])") this(Stream stream) @trusted //!nothrow
         {
-            auto streamBytes = streamToBytesGC(stream);
+            auto streamBytes  = streamToBytesGC(stream);
             auto endianResult = fixUTFByteOrder(streamBytes);
+            if(endianResult.bytesStripped > 0)
+            {
+                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
+                                          "to 2 or 4 bytes, respectively");
+            }
+
+            version(unittest) { endian_ = endianResult.endian; }
+            encoding_ = endianResult.encoding;
+
+            auto utf8Result = toUTF8(endianResult.array, endianResult.encoding);
+            const msg = utf8Result.errorMessage;
+            if(msg !is null)
+            {
+                throw new ReaderException("Error when converting to UTF-8: " ~ msg);
+            }
+
+            buffer_ = utf8Result.utf8;
+
+            characterCount_ = utf8Result.characterCount;
+            // Check that all characters in buffer are printable.
+            enforce(isPrintableValidUTF8(buffer_),
+                    new ReaderException("Special unicode characters are not allowed"));
+
+            this.sliceBuilder = SliceBuilder(this);
+        }
+
+        /// Construct a Reader.
+        ///
+        /// Params:  buffer = Buffer with YAML data. This may be e.g. the entire
+        ///                   contents of a file or a string. $(B will) be modified by
+        ///                   the Reader and other parts of D:YAML (D:YAML tries to
+        ///                   reuse the buffer to minimize memory allocations)
+        ///
+        /// Throws:  ReaderException on a UTF decoding error or if there are 
+        ///          nonprintable Unicode characters illegal in YAML.
+        this(ubyte[] buffer) @trusted pure //!nothrow
+        {
+            auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
             {
                 throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
