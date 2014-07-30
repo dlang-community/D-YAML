@@ -55,14 +55,14 @@ final class Reader
 {
     private:
         // Buffer of currently loaded characters.
-        char[] buffer8_ = null;
+        char[] buffer_ = null;
 
         // Current position within buffer. Only data after this position can be read.
-        size_t bufferOffset8_ = 0;
+        size_t bufferOffset_ = 0;
 
         // Index of the current character in the buffer.
         size_t charIndex_ = 0;
-        // Number of characters (code points) in buffer8_.
+        // Number of characters (code points) in buffer_.
         size_t characterCount_ = 0;
 
         // Current line in file.
@@ -79,7 +79,7 @@ final class Reader
             Endian endian_;
         }
 
-        // Index to buffer8_ where the last decoded character starts.
+        // Index to buffer_ where the last decoded character starts.
         size_t lastDecodedBufferOffset_ = 0;
         // Offset, relative to charIndex_, of the last decoded character,
         // in code points, not chars.
@@ -119,11 +119,11 @@ final class Reader
                 throw new ReaderException("Error when converting to UTF-8: " ~ msg);
             }
 
-            buffer8_ = utf8Result.utf8;
+            buffer_ = utf8Result.utf8;
 
             characterCount_ = utf8Result.characterCount;
             // Check that all characters in buffer are printable.
-            enforce(isPrintableValidUTF8(buffer8_),
+            enforce(isPrintableValidUTF8(buffer_),
                     new ReaderException("Special unicode characters are not allowed"));
 
             this.sliceBuilder = SliceBuilder(this);
@@ -155,19 +155,19 @@ final class Reader
             {
                 ++decodeCount_;
                 ++lastDecodedCharOffset_;
-                const char b = buffer8_[lastDecodedBufferOffset_];
+                const char b = buffer_[lastDecodedBufferOffset_];
                 // ASCII
                 if(b < 0x80)
                 {
                     ++lastDecodedBufferOffset_;
                     return b;
                 }
-                return decodeValidUTF8NoGC(buffer8_, lastDecodedBufferOffset_);
+                return decodeValidUTF8NoGC(buffer_, lastDecodedBufferOffset_);
             }
 
             // 'Slow' path where we decode everything up to the requested character.
             lastDecodedCharOffset_   = 0;
-            lastDecodedBufferOffset_ = bufferOffset8_;
+            lastDecodedBufferOffset_ = bufferOffset_;
             dchar d;
             while(lastDecodedCharOffset_ <= index)
             {
@@ -207,20 +207,20 @@ final class Reader
             // Fast path in case the caller has already peek()ed all the way to end.
             if(end == lastDecodedCharOffset_)
             {
-                return buffer8_[bufferOffset8_ .. lastDecodedBufferOffset_];
+                return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
             }
 
             lastDecodedCharOffset_   = 0;
-            lastDecodedBufferOffset_ = bufferOffset8_;
+            lastDecodedBufferOffset_ = bufferOffset_;
 
             // 'Slow' path - decode everything up to end.
             while(lastDecodedCharOffset_ < end &&
-                  lastDecodedBufferOffset_ < buffer8_.length)
+                  lastDecodedBufferOffset_ < buffer_.length)
             {
                 decodeNext();
             }
 
-            return buffer8_[bufferOffset8_ .. lastDecodedBufferOffset_];
+            return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
         }
 
         /// Get the next character, moving buffer position beyond it.
@@ -259,7 +259,7 @@ final class Reader
             {
                 const c = decodeAndAdvanceCurrent();
                 // New line. (can compare with '\n' without decoding since it's ASCII)
-                if(search.canFind(c) || (c == '\r' && buffer8_[bufferOffset8_] != '\n'))
+                if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
                     column_ = 0;
@@ -267,7 +267,7 @@ final class Reader
                 else if(c != '\uFEFF') { ++column_; }
             }
 
-            lastDecodedBufferOffset_ = bufferOffset8_;
+            lastDecodedBufferOffset_ = bufferOffset_;
             lastDecodedCharOffset_ = 0;
         }
 
@@ -296,10 +296,10 @@ private:
         // Does not advance the buffer position. Used in peek() and slice().
         dchar decodeNext() @safe pure nothrow @nogc
         {
-            assert(lastDecodedBufferOffset_ < buffer8_.length,
+            assert(lastDecodedBufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of a string");
             ++decodeCount_;
-            const char b = buffer8_[lastDecodedBufferOffset_];
+            const char b = buffer_[lastDecodedBufferOffset_];
             ++lastDecodedCharOffset_;
             // ASCII
             if(b < 0x80)
@@ -308,27 +308,27 @@ private:
                 return b;
             }
 
-            return decodeValidUTF8NoGC(buffer8_, lastDecodedBufferOffset_);
+            return decodeValidUTF8NoGC(buffer_, lastDecodedBufferOffset_);
         }
 
-        // Decode the character starting at bufferOffset8_ and move to the next
+        // Decode the character starting at bufferOffset_ and move to the next
         // character.
         //
         // Used in forward().
         dchar decodeAndAdvanceCurrent() @safe pure nothrow @nogc
         {
-            assert(bufferOffset8_ < buffer8_.length,
+            assert(bufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of a string");
-            const b = buffer8_[bufferOffset8_];
+            const b = buffer_[bufferOffset_];
             ++charIndex_;
             ++decodeCount_;
             if(b < 0x80)
             {
-                ++bufferOffset8_;
+                ++bufferOffset_;
                 return b;
             }
 
-            return decodeValidUTF8NoGC(buffer8_, bufferOffset8_);
+            return decodeValidUTF8NoGC(buffer_, bufferOffset_);
         }
 }
 
@@ -348,9 +348,9 @@ private:
     // Reader this builder works in.
     Reader reader_;
 
-    // Start of the slice om reader_.buffer8_ (size_t.max while no slice being build)
+    // Start of the slice om reader_.buffer_ (size_t.max while no slice being build)
     size_t start_ = size_t.max;
-    // End of the slice om reader_.buffer8_ (size_t.max while no slice being build)
+    // End of the slice om reader_.buffer_ (size_t.max while no slice being build)
     size_t end_   = size_t.max;
 
     // Stack of slice ends to revert to (see Transaction)
@@ -363,7 +363,7 @@ private:
     @safe pure nothrow const @nogc invariant()
     {
         if(!inProgress) { return; }
-        assert(end_ <= reader_.bufferOffset8_, "Slice ends after buffer position");
+        assert(end_ <= reader_.bufferOffset_, "Slice ends after buffer position");
         assert(start_ <= end_, "Slice start after slice end");
     }
 
@@ -391,8 +391,8 @@ public:
         assert(!inProgress, "Beginning a slice while another slice is being built");
         assert(endStackUsed_ == 0, "Slice stack not empty at slice begin");
 
-        start_ = reader_.bufferOffset8_;
-        end_   = reader_.bufferOffset8_;
+        start_ = reader_.bufferOffset_;
+        end_   = reader_.bufferOffset_;
     }
 
     /// Finish building a slice and return it.
@@ -407,7 +407,7 @@ public:
         assert(inProgress, "finish called without begin");
         assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
 
-        const result = reader_.buffer8_[start_ .. end_];
+        const result = reader_.buffer_[start_ .. end_];
         start_ = end_ = size_t.max;
         return cast(string)result;
     }
@@ -423,12 +423,12 @@ public:
     void write(char[] str) @system pure nothrow @nogc
     {
         assert(inProgress, "write called without begin");
-        assert(end_ <= reader_.bufferOffset8_,
+        assert(end_ <= reader_.bufferOffset_,
                "AT START: Slice ends after buffer position");
 
         // If str starts at the end of the slice (is a string returned by a Reader
         // method), just extend the slice to contain str.
-        if(str.ptr == reader_.buffer8_.ptr + end_)
+        if(str.ptr == reader_.buffer_.ptr + end_)
         {
             end_ += str.length;
         }
@@ -436,7 +436,7 @@ public:
         // by a Reader method and point to buffer. So we need to memmove.
         else
         {
-            core.stdc.string.memmove(reader_.buffer8_.ptr + end_, cast(char*)str.ptr,
+            core.stdc.string.memmove(reader_.buffer_.ptr + end_, cast(char*)str.ptr,
                                      str.length * char.sizeof);
             end_ += str.length;
         }
@@ -452,14 +452,14 @@ public:
         assert(inProgress, "write called without begin");
         if(c < 0x80)
         {
-            reader_.buffer8_[end_++] = cast(char)c;
+            reader_.buffer_[end_++] = cast(char)c;
             return;
         }
 
         // We need to encode a non-ASCII dchar into UTF-8
         char[4] encodeBuf;
         const bytes = encodeValidCharNoGC(encodeBuf, c);
-        reader_.buffer8_[end_ .. end_ + bytes] = encodeBuf[0 .. bytes];
+        reader_.buffer_[end_ .. end_ + bytes] = encodeBuf[0 .. bytes];
         end_ += bytes;
     }
 
@@ -489,11 +489,11 @@ public:
 
         if(movedLength > 0)
         {
-            core.stdc.string.memmove(reader_.buffer8_.ptr + point + bytes,
-                                     reader_.buffer8_.ptr + point,
+            core.stdc.string.memmove(reader_.buffer_.ptr + point + bytes,
+                                     reader_.buffer_.ptr + point,
                                      movedLength * char.sizeof);
         }
-        reader_.buffer8_[point .. point + bytes] = encodeBuf[0 .. bytes];
+        reader_.buffer_[point .. point + bytes] = encodeBuf[0 .. bytes];
         end_ += bytes;
     }
 
