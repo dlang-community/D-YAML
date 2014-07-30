@@ -47,10 +47,8 @@ class ReaderException : YAMLException
     }
 }
 
-/// Lazily reads and decodes data from a buffer, only storing as much as needed at any
-/// moment.
-///
-/// Adds a '\0' to the end of the data.
+/// Provides an API to read characters from a UTF-8 buffer and build slices into that
+/// buffer to avoid allocations (see SliceBuilder).
 final class Reader
 {
     private:
@@ -132,9 +130,10 @@ final class Reader
         /// Get character at specified index relative to current position.
         ///
         /// Params:  index = Index of the character to get relative to current position
-        ///                  in the buffer.
+        ///                  in the buffer. Can point outside of the buffer; In that
+        ///                  case, '\0' will be returned.
         ///
-        /// Returns: Character at specified position.
+        /// Returns: Character at specified position or '\0' if outside of the buffer.
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
