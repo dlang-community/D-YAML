@@ -111,28 +111,22 @@ final class Reader
             version(unittest) { endian_ = endianResult.endian; }
             encoding_ = endianResult.encoding;
 
-            auto decodeResult = decodeUTF(endianResult.array, endianResult.encoding);
-
-            const msg = decodeResult.errorMessage;
+            auto utf8Result = toUTF8(endianResult.array, endianResult.encoding);
+            const msg = utf8Result.errorMessage;
             if(msg !is null)
             {
-                throw new ReaderException("UTF decoding error: " ~ msg);
+                throw new ReaderException("Error when converting to UTF-8: " ~ msg);
             }
 
-            auto buffer = decodeResult.decoded;
-            // Check that excluding any trailing zeroes, all character in buffer are 
-            // printable.
-            auto noZeros = buffer;
-            while(!noZeros.empty && noZeros.back == '\0') { noZeros.popBack(); }
-            enforce(printable(noZeros[]),
-                    new ReaderException("Special unicode characters are not allowed"));
+            buffer8_ = utf8Result.utf8;
 
-            //TEMP (UTF-8 will be the default)
-            buffer8_ = cast(char[])buffer.to!string;
             const validateResult = buffer8_.validateUTF8NoGC;
             enforce(validateResult.valid,
-                    new ReaderException(validateResult.msg ~ 
+                    new ReaderException(validateResult.msg ~
                                         validateResult.sequence.to!string));
+            // Check that all characters in buffer are printable.
+            enforce(isPrintableValidUTF8(buffer8_),
+                    new ReaderException("Special unicode characters are not allowed"));
             characterCount_ = validateResult.characterCount;
 
             this.sliceBuilder = SliceBuilder(this);
@@ -710,15 +704,84 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 }
 
 
-/// Determine if all characters in an array are printable.
-///
-/// Params:  chars = Characters to check.
-///
-/// Returns: True if all the characters are printable, false otherwise.
-bool printable(const dchar[] chars) @safe pure nothrow @nogc
+// Convert a UTF-8/16/32 buffer to UTF-8, in-place if possible.
+//
+// Params:
+//
+// input    = Buffer with UTF-8/16/32 data to decode. May be overwritten by the 
+//            conversion, in which case the result will be a slice of this buffer.
+// encoding = Encoding of input.
+//
+// Returns:
+//
+// A struct with the following members:
+//
+// $(D string errorMessage) In case of an error, the error message is stored here. If
+//                          there was no error, errorMessage is NULL. Always check this
+//                          first.
+// $(D char[] utf8)         input converted to UTF-8. May be a slice of input.
+auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 {
-    foreach(c; chars)
+    // Documented in function ddoc.
+    struct Result
     {
+        string errorMessage;
+        char[] utf8;
+    }
+
+    Result result;
+
+    // Encode input_ into UTF-8 if it's encoded as UTF-16 or UTF-32.
+    //
+    // Params:
+    //
+    // buffer = The input buffer to encode.
+    // result = A Result struct to put encoded result and any error messages to.
+    //
+    // On error, result.errorMessage will be set.
+    static void encode(C)(C[] input, ref Result result) @trusted pure nothrow
+    {
+        try
+        {
+            result.utf8 = cast(char[])input.to!string;
+        }
+        catch(ConvException e) { result.errorMessage = e.msg; }
+        catch(UTFException e)  { result.errorMessage = e.msg; }
+        catch(Exception e)
+        {
+            assert(false, "Unexpected exception in encode(): " ~ e.msg);
+        }
+    }
+
+    final switch(encoding)
+    {
+        case UTFEncoding.UTF_8:  result.utf8 = cast(char[])input; break;
+        case UTFEncoding.UTF_16:
+            assert(input.length % 2 == 0, "UTF-16 buffer size must be even");
+            encode(cast(wchar[])input, result);
+            break;
+        case UTFEncoding.UTF_32:
+            assert(input.length % 4 == 0, "UTF-32 buffer size must be a multiple of 4");
+            encode(cast(dchar[])input, result);
+            break;
+    }
+
+    if(result.errorMessage !is null) { return result; }
+
+    return result;
+}
+
+/// Determine if all characters (code points, not bytes) in a string are printable,
+/// except for one or more trailing zeroes.
+///
+/// Params:
+///
+/// chars =
+bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
+{
+    for(size_t b = 0; b < chars.length;)
+    {
+        const dchar c = chars[b] < 0x80 ? chars[b++] : decodeValidUTF8NoGC(chars, b);
         if(!((c == 0x09 || c == 0x0A || c == 0x0D || c == 0x85) ||
              (c >= 0x20 && c <= 0x7E) ||
              (c >= 0xA0 && c <= '\uD7FF') ||
