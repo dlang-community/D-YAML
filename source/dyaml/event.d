@@ -74,7 +74,7 @@ struct Event
     ScalarStyle scalarStyle = ScalarStyle.Invalid;
     union
     {
-        ///Should the tag be implicitly resolved? 
+        ///Should the tag be implicitly resolved?
         bool implicit;
         /**
          * Is this document event explicit?
@@ -106,7 +106,7 @@ struct Event
  *          end      = End position of the event in the file/stream.
  *          anchor   = Anchor, if this is an alias event.
  */
-Event event(EventID id)(const Mark start, const Mark end, const Anchor anchor = Anchor()) 
+Event event(EventID id)(const Mark start, const Mark end, const Anchor anchor = Anchor())
     pure @trusted nothrow
 {
     Event result;
@@ -150,7 +150,7 @@ Event collectionStartEvent(EventID id)
  *          end      = End position of the event in the file/stream.
  *          encoding = Encoding of the stream.
  */
-Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding) 
+Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding)
     pure @trusted nothrow
 {
     Event result;
@@ -210,20 +210,18 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
     return result;
 }
 
-/**
- * Construct a scalar event.
- *
- * Params:  start    = Start position of the event in the file/stream.
- *          end      = End position of the event in the file/stream.
- *          anchor   = Anchor of the scalar, if any.
- *          tag      = Tag of the scalar, if specified.
- *          implicit = Should the tag be implicitly resolved?
- *          value    = String value of the scalar.
- *          style    = Scalar style.
- */
-Event scalarEvent(const Mark start, const Mark end, const Anchor anchor, const Tag tag, 
-                  const Tuple!(bool, bool) implicit, const string value, 
-                  const ScalarStyle style = ScalarStyle.Invalid) pure @trusted nothrow
+/// Construct a scalar event.
+///
+/// Params:  start    = Start position of the event in the file/stream.
+///          end      = End position of the event in the file/stream.
+///          anchor   = Anchor of the scalar, if any.
+///          tag      = Tag of the scalar, if specified.
+///          implicit = Should the tag be implicitly resolved?
+///          value    = String value of the scalar.
+///          style    = Scalar style.
+Event scalarEvent(const Mark start, const Mark end, const Anchor anchor, const Tag tag,
+                  const Tuple!(bool, bool) implicit, const string value,
+                  const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
 {
     Event result;
     result.value       = value;

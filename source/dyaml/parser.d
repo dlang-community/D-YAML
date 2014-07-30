@@ -945,7 +945,7 @@ final class Parser
         }
 
         ///Return an empty scalar.
-        Event processEmptyScalar(const Mark mark) const pure @safe nothrow
+        Event processEmptyScalar(const Mark mark) @safe pure nothrow const @nogc
         {
             return scalarEvent(mark, mark, Anchor(), Tag(), tuple(true, false), "");
         }
