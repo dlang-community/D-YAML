@@ -80,7 +80,7 @@ final class Reader
 
         // Index to buffer8_ where the last decoded character starts.
         size_t lastDecodedBufferOffset_ = 0;
-        // Offset, relative to charIndex_, of the last decoded character, 
+        // Offset, relative to charIndex_, of the last decoded character,
         // in code points, not chars.
         size_t lastDecodedCharOffset_ = 0;
 
@@ -145,9 +145,9 @@ final class Reader
         {
             if(characterCount_ <= charIndex_ + index)
             {
-                // XXX This is risky; revert this and the 'risky' change in UTF decoder
-                // if any bugs are introduced. We rely on the assumption that Reader
-                // only uses peek() to detect the of buffer. The test suite passes.
+                // XXX This is risky; revert this if bugs are introduced. We rely on
+                // the assumption that Reader only uses peek() to detect end of buffer.
+                // The test suite passes.  
                 // throw new ReaderException("Trying to read past the end of the buffer");
                 return '\0';
             }
@@ -160,7 +160,7 @@ final class Reader
                 ++lastDecodedCharOffset_;
                 const char b = buffer8_[lastDecodedBufferOffset_];
                 // ASCII
-                if(b < 0x80) 
+                if(b < 0x80)
                 {
                     ++lastDecodedBufferOffset_;
                     return b;
@@ -297,7 +297,7 @@ private:
         // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
         //
         // Does not advance the buffer position. Used in peek() and slice().
-        dchar decodeNext() @safe pure nothrow @nogc 
+        dchar decodeNext() @safe pure nothrow @nogc
         {
             assert(lastDecodedBufferOffset_ < buffer8_.length,
                    "Attempted to decode past the end of a string");
@@ -328,7 +328,7 @@ private:
             if(b < 0x80)
             {
                 ++bufferOffset8_;
-                return b; 
+                return b;
             }
 
             return decodeValidUTF8NoGC(buffer8_, bufferOffset8_);
@@ -337,7 +337,7 @@ private:
 
 /// Used to build slices of already read data in Reader buffer, avoiding allocations.
 ///
-/// Usually these slices point to unchanged Reader data, but sometimes the data is 
+/// Usually these slices point to unchanged Reader data, but sometimes the data is
 /// changed due to how YAML interprets certain characters/strings.
 ///
 /// See begin() documentation.
@@ -534,7 +534,7 @@ public:
             builder_.push();
         }
 
-        /// Commit changes to the slice. 
+        /// Commit changes to the slice.
         ///
         /// Ends the transaction - can only be called once, and removes the possibility
         /// to revert slice state.
