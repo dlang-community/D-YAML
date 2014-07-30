@@ -121,14 +121,10 @@ final class Reader
 
             buffer8_ = utf8Result.utf8;
 
-            const validateResult = buffer8_.validateUTF8NoGC;
-            enforce(validateResult.valid,
-                    new ReaderException(validateResult.msg ~
-                                        validateResult.sequence.to!string));
+            characterCount_ = utf8Result.characterCount;
             // Check that all characters in buffer are printable.
             enforce(isPrintableValidUTF8(buffer8_),
                     new ReaderException("Special unicode characters are not allowed"));
-            characterCount_ = validateResult.characterCount;
 
             this.sliceBuilder = SliceBuilder(this);
         }
@@ -616,10 +612,11 @@ private:
 //
 // A struct with the following members:
 //
-// $(D string errorMessage) In case of an error, the error message is stored here. If
-//                          there was no error, errorMessage is NULL. Always check this
-//                          first.
-// $(D char[] utf8)         input converted to UTF-8. May be a slice of input.
+// $(D string errorMessage)   In case of an error, the error message is stored here. If
+//                            there was no error, errorMessage is NULL. Always check
+//                            this first.
+// $(D char[] utf8)           input converted to UTF-8. May be a slice of input.
+// $(D size_t characterCount) Number of characters (code points) in input.
 auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 {
     // Documented in function ddoc.
@@ -627,6 +624,7 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     {
         string errorMessage;
         char[] utf8;
+        size_t characterCount;
     }
 
     Result result;
@@ -639,55 +637,57 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     // result = A Result struct to put encoded result and any error messages to.
     //
     // On error, result.errorMessage will be set.
-    static void encode(C)(C[] input, ref Result result) @safe pure nothrow
+    static void encode(C)(C[] input, ref Result result) @safe pure
     {
-        try
+        // We can do UTF-32->UTF-8 in place because all UTF-8 sequences are 4 or
+        // less bytes.
+        static if(is(C == dchar))
         {
-            // We can do UTF-32->UTF-8 in place because all UTF-8 sequences are 4 or
-            // less bytes.
-            static if(is(C == dchar))
+            char[4] encodeBuf;
+            auto utf8 = cast(char[])input;
+            auto length = 0;
+            foreach(dchar c; input)
             {
-                char[4] encodeBuf;
-                auto utf8 = cast(char[])input;
-                auto length = 0;
-                foreach(dchar c; input)
+                ++result.characterCount;
+                // ASCII
+                if(c < 0x80)
                 {
-                    // ASCII
-                    if(c < 0x80)
-                    {
-                        utf8[length++] = cast(char)c;
-                        continue;
-                    }
-
-                    const encodeResult = encodeCharNoGC!(No.validated)(encodeBuf, c);
-                    if(encodeResult.errorMessage !is null)
-                    {
-                        result.errorMessage = encodeResult.errorMessage;
-                        return;
-                    }
-                    const bytes = encodeResult.bytes;
-                    utf8[length .. length + bytes] = encodeBuf[0 .. bytes];
-                    length += bytes;
+                    utf8[length++] = cast(char)c;
+                    continue;
                 }
-                result.utf8 = utf8[0 .. length];
+
+                const encodeResult = encodeCharNoGC!(No.validated)(encodeBuf, c);
+                if(encodeResult.errorMessage !is null)
+                {
+                    result.errorMessage = encodeResult.errorMessage;
+                    return;
+                }
+                const bytes = encodeResult.bytes;
+                utf8[length .. length + bytes] = encodeBuf[0 .. bytes];
+                length += bytes;
             }
-            // Unfortunately we can't do UTF-16 in place so we just use std.conv.to
-            else
-            {
-                result.utf8 = input.to!(char[]);
-            }
+            result.utf8 = utf8[0 .. length];
         }
-        catch(ConvException e) { result.errorMessage = e.msg; }
-        catch(UTFException e)  { result.errorMessage = e.msg; }
-        catch(Exception e)
+        // Unfortunately we can't do UTF-16 in place so we just use std.conv.to
+        else
         {
-            assert(false, "Unexpected exception in encode(): " ~ e.msg);
+            result.characterCount = std.utf.count(input);
+            result.utf8 = input.to!(char[]);
         }
     }
 
-    final switch(encoding)
+    try final switch(encoding)
     {
-        case UTFEncoding.UTF_8:  result.utf8 = cast(char[])input; break;
+        case UTFEncoding.UTF_8:
+            result.utf8 = cast(char[])input;
+            const validateResult = result.utf8.validateUTF8NoGC();
+            if(!validateResult.valid)
+            {
+                result.errorMessage = "UTF-8 validation error: " ~ validateResult.msg ~
+                                      validateResult.sequence.to!string;
+            }
+            result.characterCount = validateResult.characterCount;
+            break;
         case UTFEncoding.UTF_16:
             assert(input.length % 2 == 0, "UTF-16 buffer size must be even");
             encode(cast(wchar[])input, result);
@@ -697,8 +697,12 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
             encode(cast(dchar[])input, result);
             break;
     }
-
-    if(result.errorMessage !is null) { return result; }
+    catch(ConvException e) { result.errorMessage = e.msg; }
+    catch(UTFException e)  { result.errorMessage = e.msg; }
+    catch(Exception e)
+    {
+        assert(false, "Unexpected exception in encode(): " ~ e.msg);
+    }
 
     return result;
 }
