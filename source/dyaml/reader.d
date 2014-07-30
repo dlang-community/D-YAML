@@ -740,7 +740,7 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     // result = A Result struct to put encoded result and any error messages to.
     //
     // On error, result.errorMessage will be set.
-    static void encode(C)(C[] input, ref Result result) @trusted pure nothrow
+    static void encode(C)(C[] input, ref Result result) @safe pure nothrow
     {
         try
         {
@@ -772,9 +772,10 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
                 }
                 result.utf8 = utf8[0 .. length];
             }
+            // Unfortunately we can't do UTF-16 in place so we just use std.conv.to
             else
             {
-                result.utf8 = cast(char[])input.to!string;
+                result.utf8 = input.to!(char[]);
             }
         }
         catch(ConvException e) { result.errorMessage = e.msg; }
