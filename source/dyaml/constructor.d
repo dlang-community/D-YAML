@@ -849,10 +849,9 @@ Node.Pair[] constructMap(ref Node node)
 }
 
 
-//Unittests
+// Unittests
 private:
 
-import std.stream;
 import dyaml.loader;
 
 struct MyStruct
@@ -870,28 +869,27 @@ struct MyStruct
 
 MyStruct constructMyStructScalar(ref Node node)
 {
-    //Guaranteed to be string as we construct from scalar.
+    // Guaranteed to be string as we construct from scalar.
     auto parts = node.as!string().split(":");
     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
 }
 
 MyStruct constructMyStructSequence(ref Node node)
 {
-    //node is guaranteed to be sequence.
+    // node is guaranteed to be sequence.
     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
 }
 
 MyStruct constructMyStructMapping(ref Node node)
 {
-    //node is guaranteed to be mapping.
+    // node is guaranteed to be mapping.
     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct 1:2:3";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct 1:2:3".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
     loader.constructor = constructor;
@@ -902,9 +900,8 @@ unittest
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct [1, 2, 3]";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct [1, 2, 3]".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
     loader.constructor = constructor;
@@ -915,9 +912,8 @@ unittest
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct {x: 1, y: 2, z: 3}";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct {x: 1, y: 2, z: 3}".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
     loader.constructor = constructor;
