@@ -11,15 +11,15 @@ import dyaml.testcommon;
 import dyaml.reader;
 
 
-// Try reading entire stream through Reader, expecting an error (the stream is invalid).
+// Try reading entire file through Reader, expecting an error (the file is invalid).
 //
 // Params:  verbose = Print verbose output?
 //          data    = Stream to read.
-void runReader(const bool verbose, Stream stream)
+void runReader(const bool verbose, void[] fileData)
 {
     try
     {
-        auto reader = new Reader(stream);
+        auto reader = new Reader(cast(ubyte[])fileData);
         while(reader.peek() != '\0') { reader.forward(); }
     }
     catch(ReaderException e)
@@ -31,15 +31,14 @@ void runReader(const bool verbose, Stream stream)
 }
 
 
-/// Stream error unittest. Tries to read invalid input streams, expecting errors.
+/// Stream error unittest. Tries to read invalid input files, expecting errors.
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
 void testStreamError(bool verbose, string errorFilename)
 {
-    auto file = new File(errorFilename);
-    scope(exit) { file.close(); }
-    runReader(verbose, file);
+    import std.file;
+    runReader(verbose, std.file.read(errorFilename));
 }
 
 unittest
