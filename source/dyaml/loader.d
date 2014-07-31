@@ -9,7 +9,8 @@ module dyaml.loader;
 
 
 import std.exception;
-import std.stream;
+import std.file;
+import std.string;
 
 import dyaml.composer;
 import dyaml.constructor;
@@ -112,11 +113,14 @@ struct Loader
         this(string filename) @trusted
         {
             name_ = filename;
-            try { this(new File(filename)); }
-            catch(StreamException e)
+            try
             {
-                throw new YAMLException("Unable to open file " ~ filename ~
-                                        " for YAML loading: " ~ e.msg);
+                this(std.file.read(filename)); 
+            }
+            catch(FileException e)
+            {
+                throw new YAMLException("Unable to open file %s for YAML loading: %s"
+                                        .format(filename, e.msg));
             }
         }
 
@@ -128,34 +132,69 @@ struct Loader
         ///
         /// Throws:
         ///
-        /// YAMLException if data could not be parsed (e.g. a decoding error)
+        /// YAMLException if data could not be read (e.g. a decoding error)
+        deprecated("Loader.fromString(string) is deprecated. Use Loader.fromString(char[]) instead.")
         static Loader fromString(string data)
         {
-            return Loader(new MemoryStream(cast(char[])data));
+            return Loader(cast(ubyte[])data.dup);
         }
         unittest
         {
             assert(Loader.fromString("42").load().as!int == 42);
         }
 
+        import std.stream;
         /// Construct a Loader to load YAML from a _stream.
         ///
         /// Params:  stream = Stream to read from. Must be readable and seekable.
         ///
         /// Throws:  YAMLException if stream could not be read.
+        deprecated("Loader(Stream) is deprecated. Use Loader(ubyte[]) instead.")
         this(Stream stream) @safe
         {
             try
             {
-                reader_      = new Reader(stream);
-                scanner_     = new Scanner(reader_);
-                parser_      = new Parser(scanner_);
-                resolver_    = new Resolver();
-                constructor_ = new Constructor();
+                import dyaml.streamcompat;
+                auto streamBytes  = streamToBytesGC(stream);
+                reader_           = new Reader(streamBytes);
+                scanner_          = new Scanner(reader_);
+                parser_           = new Parser(scanner_);
+                resolver_         = new Resolver();
+                constructor_      = new Constructor();
             }
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to open stream " ~ name_ ~
+                                        " for YAML loading: " ~ e.msg);
+            }
+        }
+
+        /// Construct a Loader to load YAML from a buffer.
+        ///
+        /// Params: yamlData = Buffer with YAML data to load. This may be e.g. a file
+        ///                    loaded to memory or a string with YAML data. Note that
+        ///                    buffer $(B will) be overwritten, as D:YAML minimizes
+        ///                    memory allocations by reusing the input _buffer.
+        ///
+        /// D:YAML looks for byte-order-makrs YAML files encoded in UTF-16/UTF-32
+        /// (and sometimes UTF-8) use to specify the encoding and endianness, so it
+        /// should be enough to load an entire file to a buffer and pass it to D:YAML,
+        /// regardless of Unicode encoding.
+        ///
+        /// Throws:  YAMLException if yamlData contains data illegal in YAML.
+        this(void[] yamlData) @safe
+        {
+            try
+            {
+                reader_           = new Reader(cast(ubyte[])yamlData);
+                scanner_          = new Scanner(reader_);
+                parser_           = new Parser(scanner_);
+                resolver_         = new Resolver();
+                constructor_      = new Constructor();
+            }
+            catch(YAMLException e)
+            {
+                throw new YAMLException("Unable to open " ~ name_ ~
                                         " for YAML loading: " ~ e.msg);
             }
         }
@@ -318,13 +357,13 @@ struct Loader
 
 unittest
 {
-    import std.stream;
     import std.stdio;
 
     string yaml_input = "red:   '#ff0000'\n"
                         "green: '#00ff00'\n"
                         "blue:  '#0000ff'";
 
+    import std.stream;
     auto colors = Loader(new MemoryStream(cast(char[])yaml_input)).load();
 
     foreach(string color, string value; colors)
