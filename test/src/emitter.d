@@ -1,5 +1,5 @@
 
-//          Copyright Ferdinand Majerech 2011.
+//          Copyright Ferdinand Majerech 2011-2014.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -18,14 +18,12 @@ import dyaml.testcommon;
 import dyaml.token;
 
 
-/**
- * Determine if events in events1 are equivalent to events in events2.
- *
- * Params:  events1 = First event array to compare.
- *          events2 = Second event array to compare.
- *
- * Returns: true if the events are equivalent, false otherwise.
- */
+/// Determine if events in events1 are equivalent to events in events2.
+///
+/// Params:  events1 = First event array to compare.
+///          events2 = Second event array to compare.
+///
+/// Returns: true if the events are equivalent, false otherwise.
 bool compareEvents(Event[] events1, Event[] events2)
 {
     if(events1.length != events2.length){return false;}
@@ -38,10 +36,10 @@ bool compareEvents(Event[] events1, Event[] events2)
         //Different event types.
         if(e1.id != e2.id){return false;}
         //Different anchor (if applicable).
-        if([EventID.SequenceStart, 
-            EventID.MappingStart, 
-            EventID.Alias, 
-            EventID.Scalar].canFind(e1.id) 
+        if([EventID.SequenceStart,
+            EventID.MappingStart,
+            EventID.Alias,
+            EventID.Scalar].canFind(e1.id)
             && e1.anchor != e2.anchor)
         {
             return false;
@@ -54,7 +52,7 @@ bool compareEvents(Event[] events1, Event[] events2)
         if(e1.id == EventID.Scalar)
         {
             //Different scalar tag (if applicable).
-            if(![e1.implicit, e1.implicit_2, e2.implicit, e2.implicit_2].canFind(true) 
+            if(![e1.implicit, e1.implicit_2, e2.implicit, e2.implicit_2].canFind(true)
                && e1.tag != e2.tag)
             {
                 return false;
@@ -69,16 +67,14 @@ bool compareEvents(Event[] events1, Event[] events2)
     return true;
 }
 
-/**
- * Test emitter by getting events from parsing a file, emitting them, parsing
- * the emitted result and comparing events from parsing the emitted result with
- * originally parsed events.
- * 
- * Params:  verbose           = Print verbose output?
- *          dataFilename      = YAML file to parse.
- *          canonicalFilename = Canonical YAML file used as dummy to determine
- *                              which data files to load.
- */
+/// Test emitter by getting events from parsing a file, emitting them, parsing
+/// the emitted result and comparing events from parsing the emitted result with
+/// originally parsed events.
+///
+/// Params:  verbose           = Print verbose output?
+///          dataFilename      = YAML file to parse.
+///          canonicalFilename = Canonical YAML file used as dummy to determine
+///                              which data files to load.
 void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilename)
 {
     //Must exist due to Anchor, Tags reference counts.
@@ -102,14 +98,12 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
     assert(compareEvents(events, newEvents));
 }
 
-/**
- * Test emitter by getting events from parsing a canonical YAML file, emitting
- * them both in canonical and normal format, parsing the emitted results and 
- * comparing events from parsing the emitted result with originally parsed events.
- * 
- * Params:  verbose           = Print verbose output?
- *          canonicalFilename = Canonical YAML file to parse.
- */
+/// Test emitter by getting events from parsing a canonical YAML file, emitting
+/// them both in canonical and normal format, parsing the emitted results and
+/// comparing events from parsing the emitted result with originally parsed events.
+///
+/// Params:  verbose           = Print verbose output?
+///          canonicalFilename = Canonical YAML file to parse.
 void testEmitterOnCanonical(bool verbose, string canonicalFilename)
 {
     //Must exist due to Anchor, Tags reference counts.
@@ -123,7 +117,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
         dumper.emit(events);
         if(verbose)
         {
-            writeln("OUTPUT (canonical=", canonical, "):\n", 
+            writeln("OUTPUT (canonical=", canonical, "):\n",
                     cast(string)emitStream.data);
         }
         auto loader2        = Loader(new MemoryStream(emitStream.data));
@@ -135,16 +129,14 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
     }
 }
 
-/**
- * Test emitter by getting events from parsing a file, emitting them with all
- * possible scalar and collection styles, parsing the emitted results and
- * comparing events from parsing the emitted result with originally parsed events.
- * 
- * Params:  verbose           = Print verbose output?
- *          dataFilename      = YAML file to parse.
- *          canonicalFilename = Canonical YAML file used as dummy to determine
- *                              which data files to load.
- */
+/// Test emitter by getting events from parsing a file, emitting them with all
+/// possible scalar and collection styles, parsing the emitted results and
+/// comparing events from parsing the emitted result with originally parsed events.
+///
+/// Params:  verbose           = Print verbose output?
+///          dataFilename      = YAML file to parse.
+///          canonicalFilename = Canonical YAML file used as dummy to determine
+///                              which data files to load.
 void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilename)
 {
     foreach(filename; [dataFilename, canonicalFilename])
@@ -154,7 +146,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
         auto events = cast(Event[])loader.parse();
         foreach(flowStyle; [CollectionStyle.Block, CollectionStyle.Flow])
         {
-            foreach(style; [ScalarStyle.Literal, ScalarStyle.Folded, 
+            foreach(style; [ScalarStyle.Literal, ScalarStyle.Folded,
                             ScalarStyle.DoubleQuoted, ScalarStyle.SingleQuoted,
                             ScalarStyle.Plain])
             {
@@ -169,16 +161,16 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                     }
                     else if(event.id == EventID.SequenceStart)
                     {
-                        event = sequenceStartEvent(Mark(), Mark(), event.anchor, 
+                        event = sequenceStartEvent(Mark(), Mark(), event.anchor,
                                                    event.tag, event.implicit, flowStyle);
                     }
                     else if(event.id == EventID.MappingStart)
                     {
-                        event = mappingStartEvent(Mark(), Mark(), event.anchor, 
+                        event = mappingStartEvent(Mark(), Mark(), event.anchor,
                                                   event.tag, event.implicit, flowStyle);
                     }
                     styledEvents ~= event;
-                }                     
+                }
                 auto emitStream = new MemoryStream;
                 Dumper(emitStream).emit(styledEvents);
                 if(verbose)
