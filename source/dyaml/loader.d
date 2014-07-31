@@ -167,8 +167,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to open stream " ~ name_ ~
-                                        " for YAML loading: " ~ e.msg);
+                throw new YAMLException("Unable to open stream %s for YAML loading: %s"
+                                        .format(name_, e.msg));
             }
         }
 
@@ -189,16 +189,16 @@ struct Loader
         {
             try
             {
-                reader_           = new Reader(cast(ubyte[])yamlData);
-                scanner_          = new Scanner(reader_);
-                parser_           = new Parser(scanner_);
-                resolver_         = new Resolver();
-                constructor_      = new Constructor();
+                reader_      = new Reader(cast(ubyte[])yamlData);
+                scanner_     = new Scanner(reader_);
+                parser_      = new Parser(scanner_);
+                resolver_    = new Resolver();
+                constructor_ = new Constructor();
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to open " ~ name_ ~
-                                        " for YAML loading: " ~ e.msg);
+                throw new YAMLException("Unable to open %s for YAML loading: %s"
+                                        .format(name_, e.msg));
             }
         }
 
@@ -254,8 +254,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to load YAML from %s : %s"
+                                        .format(name_, e.msg));
             }
         }
 
@@ -312,8 +312,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to load YAML from %s : %s "
+                                        .format(name_, e.msg));
             }
         }
 
@@ -352,8 +352,8 @@ struct Loader
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to parse YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to parse YAML from stream %s : %s "
+                                        .format(name_, e.msg));
             }
         }
 }
