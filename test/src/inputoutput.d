@@ -1,5 +1,5 @@
 
-//          Copyright Ferdinand Majerech 2011.
+//          Copyright Ferdinand Majerech 2011-2014.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -16,13 +16,11 @@ import dyaml.testcommon;
 
 alias std.system.endian endian;
 
-/**
- * Get an UTF-16 byte order mark.
- *
- * Params:  wrong = Get the incorrect BOM for this system.
- *
- * Returns: UTF-16 byte order mark.
- */
+/// Get an UTF-16 byte order mark.
+/// 
+/// Params:  wrong = Get the incorrect BOM for this system.
+/// 
+/// Returns: UTF-16 byte order mark.
 wchar bom16(bool wrong = false) pure
 {
     wchar little  = *(cast(wchar*)ByteOrderMarks[BOM.UTF16LE]);
@@ -31,13 +29,11 @@ wchar bom16(bool wrong = false) pure
     return endian == Endian.littleEndian ? big : little;
 }
 
-/**
- * Get an UTF-32 byte order mark.
- *
- * Params:  wrong = Get the incorrect BOM for this system.
- *
- * Returns: UTF-32 byte order mark.
- */
+/// Get an UTF-32 byte order mark.
+/// 
+/// Params:  wrong = Get the incorrect BOM for this system.
+/// 
+/// Returns: UTF-32 byte order mark.
 dchar bom32(bool wrong = false) pure
 {
     dchar little = *(cast(dchar*)ByteOrderMarks[BOM.UTF32LE]);
@@ -46,12 +42,10 @@ dchar bom32(bool wrong = false) pure
     return endian == Endian.littleEndian ? big : little;
 }
 
-/**
- * Unicode input unittest. Tests various encodings.
- *
- * Params:  verbose         = Print verbose output?
- *          unicodeFilename = File name to read from.
- */
+/// Unicode input unittest. Tests various encodings.
+/// 
+/// Params:  verbose         = Print verbose output?
+///          unicodeFilename = File name to read from.
 void testUnicodeInput(bool verbose, string unicodeFilename)
 {
     string data     = readText(unicodeFilename);
@@ -68,12 +62,10 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
     }
 }
 
-/**
- * Unicode input error unittest. Tests various encodings with incorrect BOMs.
- *
- * Params:  verbose         = Print verbose output?
- *          unicodeFilename = File name to read from.
- */
+/// Unicode input error unittest. Tests various encodings with incorrect BOMs.
+/// 
+/// Params:  verbose         = Print verbose output?
+///          unicodeFilename = File name to read from.
 void testUnicodeInputErrors(bool verbose, string unicodeFilename)
 {
     string data = readText(unicodeFilename);
