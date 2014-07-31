@@ -124,15 +124,6 @@ struct Loader
             }
         }
 
-        /// Construct a Loader to load YAML from a string.
-        ///
-        /// Params:  data = String to load YAML from.
-        ///
-        /// Returns: Loader loading YAML from given string.
-        ///
-        /// Throws:
-        ///
-        /// YAMLException if data could not be read (e.g. a decoding error)
         deprecated("Loader.fromString(string) is deprecated. Use Loader.fromString(char[]) instead.")
         static Loader fromString(string data)
         {
@@ -144,11 +135,6 @@ struct Loader
         }
 
         import std.stream;
-        /// Construct a Loader to load YAML from a _stream.
-        ///
-        /// Params:  stream = Stream to read from. Must be readable and seekable.
-        ///
-        /// Throws:  YAMLException if stream could not be read.
         deprecated("Loader(Stream) is deprecated. Use Loader(ubyte[]) instead.")
         this(Stream stream) @safe
         {
