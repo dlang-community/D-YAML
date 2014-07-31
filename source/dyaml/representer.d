@@ -22,7 +22,6 @@ import std.datetime;
 import std.exception;
 import std.format;
 import std.math;
-import std.stream;
 import std.typecons;
 import std.string;
 
@@ -676,6 +675,8 @@ Node representMyClass(ref Node node, Representer representer) @system
     //Representing as a scalar, with custom tag to specify this data type.
     return representer.representScalar("!myclass.tag", scalar);
 }
+
+import std.stream;
 
 unittest
 {

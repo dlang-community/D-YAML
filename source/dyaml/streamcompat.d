@@ -24,7 +24,7 @@ ubyte[] streamToBytesGC(Stream stream) @trusted nothrow
     }
 }
 
-/// Read all data from a std.stream.Stream into an array of bytes.
+/// Read all data from a Stream into an array of bytes.
 ///
 /// Params:
 ///

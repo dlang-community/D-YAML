@@ -95,14 +95,12 @@ auto fixUTFByteOrder(ubyte[] array)
         None      = ubyte.max
     }
 
-    // From std.stream
+    // These 2 are from std.stream
     static immutable ubyte[][5] byteOrderMarks = [ [0xEF, 0xBB, 0xBF],
                                                    [0xFF, 0xFE],
                                                    [0xFE, 0xFF],
                                                    [0xFF, 0xFE, 0x00, 0x00],
                                                    [0x00, 0x00, 0xFE, 0xFF] ];
-
-    // From std.stream
     static immutable Endian[5] bomEndian = [ std.system.endian,
                                              Endian.littleEndian,
                                              Endian.bigEndian,
