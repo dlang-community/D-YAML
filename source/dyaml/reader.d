@@ -89,44 +89,6 @@ final class Reader
 
 
     public:
-        import dyaml.streamcompat;
-        import std.stream;
-        /// Construct a Reader.
-        ///
-        /// Params:  stream = Input stream. Must be readable and seekable.
-        ///
-        /// Throws:  ReaderException if the stream is invalid, on a UTF decoding error
-        ///          or if there are nonprintable unicode characters illegal in YAML.
-        deprecated("use Reader(ubyte[])") this(Stream stream) @trusted //!nothrow
-        {
-            auto streamBytes  = streamToBytesGC(stream);
-            auto endianResult = fixUTFByteOrder(streamBytes);
-            if(endianResult.bytesStripped > 0)
-            {
-                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
-                                          "to 2 or 4 bytes, respectively");
-            }
-
-            version(unittest) { endian_ = endianResult.endian; }
-            encoding_ = endianResult.encoding;
-
-            auto utf8Result = toUTF8(endianResult.array, endianResult.encoding);
-            const msg = utf8Result.errorMessage;
-            if(msg !is null)
-            {
-                throw new ReaderException("Error when converting to UTF-8: " ~ msg);
-            }
-
-            buffer_ = utf8Result.utf8;
-
-            characterCount_ = utf8Result.characterCount;
-            // Check that all characters in buffer are printable.
-            enforce(isPrintableValidUTF8(buffer_),
-                    new ReaderException("Special unicode characters are not allowed"));
-
-            this.sliceBuilder = SliceBuilder(this);
-        }
-
         /// Construct a Reader.
         ///
         /// Params:  buffer = Buffer with YAML data. This may be e.g. the entire
