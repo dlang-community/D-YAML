@@ -129,9 +129,26 @@ struct Loader
         {
             return Loader(cast(ubyte[])data.dup);
         }
+
+        /// Construct a Loader to load YAML from a string (char []).
+        ///
+        /// Params:  data = String to load YAML from. $(B will) be overwritten during
+        ///                 parsing as D:YAML reuses memory. Use data.dup if you don't
+        ///                 want to modify the original string.
+        ///
+        /// Returns: Loader loading YAML from given string.
+        ///
+        /// Throws:
+        ///
+        /// YAMLException if data could not be read (e.g. a decoding error)
+        static Loader fromString(char[] data) @safe
+        {
+            return Loader(cast(ubyte[])data);
+        }
+        ///
         unittest
         {
-            assert(Loader.fromString("42").load().as!int == 42);
+            assert(Loader.fromString(cast(char[])"42").load().as!int == 42);
         }
 
         import std.stream;
