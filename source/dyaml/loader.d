@@ -360,17 +360,15 @@ struct Loader
 
 unittest
 {
-    import std.stdio;
-
     string yaml_input = "red:   '#ff0000'\n"
                         "green: '#00ff00'\n"
                         "blue:  '#0000ff'";
 
-    import std.stream;
-    auto colors = Loader(new MemoryStream(cast(char[])yaml_input)).load();
+    auto colors = Loader(cast(void[])yaml_input).load();
 
     foreach(string color, string value; colors)
     {
+        import std.stdio;
         writeln(color, " is ", value, " in HTML/CSS");
     }
 }
