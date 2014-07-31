@@ -90,7 +90,7 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
         writeln("OUTPUT:\n", cast(string)emitStream.data);
     }
 
-    auto loader2        = Loader(new MemoryStream(emitStream.data));
+    auto loader2        = Loader(emitStream.data.dup);
     loader2.name        = "TEST";
     loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
@@ -120,7 +120,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
             writeln("OUTPUT (canonical=", canonical, "):\n",
                     cast(string)emitStream.data);
         }
-        auto loader2        = Loader(new MemoryStream(emitStream.data));
+        auto loader2        = Loader(emitStream.data.dup);
         loader2.name        = "TEST";
         loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
@@ -179,7 +179,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                             to!string(style), ")");
                     writeln(emitStream.data);
                 }
-                auto loader2        = Loader(new MemoryStream(emitStream.data));
+                auto loader2        = Loader(emitStream.data.dup);
                 loader2.name        = "TEST";
                 loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;
