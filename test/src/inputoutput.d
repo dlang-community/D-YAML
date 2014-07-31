@@ -51,13 +51,13 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
 
-    Node output = Loader(new MemoryStream(to!(char[])(data))).load();
+    Node output = Loader(cast(void[])data.to!(char[])).load();
     assert(output.as!string == expected);
 
-    foreach(stream; [new MemoryStream(cast(byte[])(bom16() ~ to!(wchar[])(data))),
-                     new MemoryStream(cast(byte[])(bom32() ~ to!(dchar[])(data)))])    
+    foreach(buffer; [cast(void[])(bom16() ~ data.to!(wchar[])), 
+                     cast(void[])(bom32() ~ data.to!(dchar[]))])
     {
-        output = Loader(stream).load();
+        output = Loader(buffer).load();
         assert(output.as!string == expected);
     }
 }
@@ -69,15 +69,15 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
 void testUnicodeInputErrors(bool verbose, string unicodeFilename)
 {
     string data = readText(unicodeFilename);
-    foreach(stream; [new MemoryStream(cast(byte[])(to!(wchar[])(data))),
-                     new MemoryStream(cast(byte[])(to!(wchar[])(data))),
-                     new MemoryStream(cast(byte[])(bom16(true) ~ to!(wchar[])(data))),
-                     new MemoryStream(cast(byte[])(bom32(true) ~ to!(dchar[])(data)))])
+    foreach(buffer; [cast(void[])(data.to!(wchar[])),
+                     cast(void[])(data.to!(dchar[])),
+                     cast(void[])(bom16(true) ~ data.to!(wchar[])),
+                     cast(void[])(bom32(true) ~ data.to!(dchar[]))])
     {
-        try{Loader(stream).load();}
+        try { Loader(buffer).load(); }
         catch(YAMLException e)
         {
-            if(verbose){writeln(typeid(e).toString(), "\n", e);}
+            if(verbose) { writeln(typeid(e).toString(), "\n", e); }
             continue;
         }
         assert(false, "Expected an exception");
