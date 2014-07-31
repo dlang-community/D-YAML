@@ -53,7 +53,7 @@ import dyaml.token;
 /// }
 /// --------------------
 ///
-/// Load YAML from memory:
+/// Load YAML from a string:
 /// --------------------
 /// char[] yaml_input = "red:   '#ff0000'\n"
 ///                     "green: '#00ff00'\n"
@@ -65,6 +65,22 @@ import dyaml.token;
 /// {
 ///     import std.stdio;
 ///     writeln(color, " is ", value, " in HTML/CSS");
+/// }
+/// --------------------
+///
+/// Load a file into a buffer in memory and then load YAML from that buffer:
+/// --------------------
+/// try
+/// {
+///     import std.file;
+///     void[] buffer = std.file.read("file.yaml");
+///     auto yamlNode = Loader(buffer);
+///
+///     // Read data from yamlNode here...
+/// }
+/// catch(FileException e)
+/// {
+///     writeln("Failed to read file 'file.yaml'");
 /// }
 /// --------------------
 ///
