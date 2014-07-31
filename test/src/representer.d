@@ -15,14 +15,12 @@ import dyaml.testcommon;
 import dyaml.testconstructor;
 
 
-/**
- * Representer unittest.
- *
- * Params:  verbose      = Print verbose output?
- *          codeFilename = File name to determine test case from.
- *                         Nothing is read from this file, it only exists
- *                         to specify that we need a matching unittest.
- */
+/// Representer unittest.
+///
+/// Params:  verbose      = Print verbose output?
+///          codeFilename = File name to determine test case from.
+///                         Nothing is read from this file, it only exists
+///                         to specify that we need a matching unittest.
 void testRepresenterTypes(bool verbose, string codeFilename)
 {
     string baseName = codeFilename.baseName.stripExtension;
@@ -57,12 +55,11 @@ void testRepresenterTypes(bool verbose, string codeFilename)
         dumper.dump(expectedNodes);
 
         output = cast(string)emitStream.data;
-        auto loadStream  = new MemoryStream(emitStream.data);
         auto constructor = new Constructor;
         constructor.addConstructorMapping("!tag1", &constructClass);
         constructor.addConstructorScalar("!tag2", &constructStruct);
 
-        auto loader        = Loader(loadStream);
+        auto loader        = Loader(emitStream.data.dup);
         loader.name        = "TEST";
         loader.constructor = constructor;
         readNodes          = loader.loadAll();
