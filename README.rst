@@ -20,9 +20,7 @@ YAML. To start using it in your project, see the
 tutorial.
  
 D:YAML is still a work in progress. Its API is not stable and there might be 
-compatibility breaking changes. For instance, currently some D:YAML API 
-functions depend on the ``std.stream`` module in Phobos. This module is expected 
-to be rewritten in future and D:YAML will change accordingly.
+compatibility breaking changes.
 
 
 --------
@@ -35,7 +33,7 @@ Features
 * No external dependencies.
 * Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
   are parsed correctly.
-* Reads from and writes to YAML files as well as memory or user defined streams.
+* Reads from and writes from/to YAML files or in-memory buffers.
 * UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian 
   (plain ASCII also works as it is a subset of UTF-8).
 * Support for both block (Python-like, based on indentation) and flow 
