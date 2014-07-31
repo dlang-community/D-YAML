@@ -7,6 +7,8 @@
 module dyaml.testerrors;
 
 
+import std.file;
+
 import dyaml.testcommon;
 
 
@@ -16,11 +18,10 @@ import dyaml.testcommon;
 ///          errorFilename = File name to read from.
 void testLoaderError(bool verbose, string errorFilename)
 {
-    auto file = new File(errorFilename);
-    scope(exit){file.close();}
+    auto buffer = std.file.read(errorFilename);
 
     Node[] nodes;
-    try{nodes = Loader(file).loadAll();}
+    try { nodes = Loader(buffer).loadAll(); }
     catch(YAMLException e)
     {
         if(verbose) { writeln(typeid(e).toString(), "\n", e); }
@@ -35,16 +36,12 @@ void testLoaderError(bool verbose, string errorFilename)
 ///          errorFilename = File name to read from.
 void testLoaderErrorString(bool verbose, string errorFilename)
 {
-    //Load file to a buffer, then pass that to the YAML loader.
-    auto file = new File(errorFilename);
-    scope(exit){file.close();}
-    ubyte[] buffer;
-    buffer.length = file.available;
-    file.read(buffer);
+    // Load file to a buffer, then pass that to the YAML loader.
+    auto buffer = std.file.read(errorFilename);
 
     try
     {
-        auto nodes = Loader(new MemoryStream(buffer)).loadAll();
+        auto nodes = Loader(buffer).loadAll();
     }
     catch(YAMLException e)
     {
