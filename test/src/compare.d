@@ -11,20 +11,17 @@ import dyaml.testcommon;
 import dyaml.token;
 
 
-/**
- * Test parser by comparing output from parsing two equivalent YAML files.
- *
- * Params:  verbose           = Print verbose output?
- *          dataFilename      = YAML file to parse.
- *          canonicalFilename = Another file to parse, in canonical YAML format.
- */
+/// Test parser by comparing output from parsing two equivalent YAML files.
+/// 
+/// Params:  verbose           = Print verbose output?
+///          dataFilename      = YAML file to parse.
+///          canonicalFilename = Another file to parse, in canonical YAML format.
 void testParser(bool verbose, string dataFilename, string canonicalFilename)
 {
     auto dataEvents = Loader(dataFilename).parse();
     auto canonicalEvents = Loader(canonicalFilename).parse();
 
     assert(dataEvents.length == canonicalEvents.length);
-           
 
     foreach(e; 0 .. dataEvents.length)
     {
@@ -33,13 +30,11 @@ void testParser(bool verbose, string dataFilename, string canonicalFilename)
 }
 
 
-/**
- * Test loader by comparing output from loading two equivalent YAML files.
- *
- * Params:  verbose           = Print verbose output?
- *          dataFilename      = YAML file to load.
- *          canonicalFilename = Another file to load, in canonical YAML format.
- */
+/// Test loader by comparing output from loading two equivalent YAML files.
+/// 
+/// Params:  verbose           = Print verbose output?
+///          dataFilename      = YAML file to load.
+///          canonicalFilename = Another file to load, in canonical YAML format.
 void testLoader(bool verbose, string dataFilename, string canonicalFilename)
 {
     auto data = Loader(dataFilename).loadAll();
