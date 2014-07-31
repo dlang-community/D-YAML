@@ -1,5 +1,5 @@
 
-//          Copyright Ferdinand Majerech 2011.
+//          Copyright Ferdinand Majerech 2011-2014
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -10,12 +10,10 @@ module dyaml.testerrors;
 import dyaml.testcommon;
 
 
-/**
- * Loader error unittest from file stream.
- *
- * Params:  verbose       = Print verbose output?
- *          errorFilename = File name to read from.
- */
+/// Loader error unittest from file stream.
+///
+/// Params:  verbose       = Print verbose output?
+///          errorFilename = File name to read from.
 void testLoaderError(bool verbose, string errorFilename)
 {
     auto file = new File(errorFilename);
@@ -25,18 +23,16 @@ void testLoaderError(bool verbose, string errorFilename)
     try{nodes = Loader(file).loadAll();}
     catch(YAMLException e)
     {
-        if(verbose){writeln(typeid(e).toString(), "\n", e);}
+        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
         return;
     }
     assert(false, "Expected an exception");
 }
 
-/**
- * Loader error unittest from string.
- *
- * Params:  verbose       = Print verbose output?
- *          errorFilename = File name to read from.
- */
+/// Loader error unittest from string.
+///
+/// Params:  verbose       = Print verbose output?
+///          errorFilename = File name to read from.
 void testLoaderErrorString(bool verbose, string errorFilename)
 {
     //Load file to a buffer, then pass that to the YAML loader.
@@ -52,42 +48,38 @@ void testLoaderErrorString(bool verbose, string errorFilename)
     }
     catch(YAMLException e)
     {
-        if(verbose){writeln(typeid(e).toString(), "\n", e);}
+        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
         return;
     }
     assert(false, "Expected an exception");
 }
 
-/**
- * Loader error unittest from filename.
- *
- * Params:  verbose       = Print verbose output?
- *          errorFilename = File name to read from.
- */
+/// Loader error unittest from filename.
+///
+/// Params:  verbose       = Print verbose output?
+///          errorFilename = File name to read from.
 void testLoaderErrorFilename(bool verbose, string errorFilename)
 {
-    try{auto nodes = Loader(errorFilename).loadAll();}
+    try { auto nodes = Loader(errorFilename).loadAll(); }
     catch(YAMLException e)
     {
-        if(verbose){writeln(typeid(e).toString(), "\n", e);}
+        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
         return;
     }
-    assert(false, "testLoaderErrorSingle(" ~ to!string(verbose) ~ 
+    assert(false, "testLoaderErrorSingle(" ~ verbose.to!string ~
                   ", " ~ errorFilename ~ ") Expected an exception");
 }
 
-/**
- * Loader error unittest loading a single document from a file.
- *
- * Params:  verbose       = Print verbose output?
- *          errorFilename = File name to read from.
- */
+/// Loader error unittest loading a single document from a file.
+///
+/// Params:  verbose       = Print verbose output?
+///          errorFilename = File name to read from.
 void testLoaderErrorSingle(bool verbose, string errorFilename)
 {
-    try{auto nodes = Loader(errorFilename).load();}
+    try { auto nodes = Loader(errorFilename).load(); }
     catch(YAMLException e)
     {
-        if(verbose){writeln(typeid(e).toString(), "\n", e);}
+        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
         return;
     }
     assert(false, "Expected an exception");
