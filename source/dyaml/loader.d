@@ -55,17 +55,15 @@ import dyaml.token;
 ///
 /// Load YAML from memory:
 /// --------------------
-/// import std.stream;
-/// import std.stdio;
-///
-/// string yaml_input = "red:   '#ff0000'\n"
+/// char[] yaml_input = "red:   '#ff0000'\n"
 ///                     "green: '#00ff00'\n"
-///                     "blue:  '#0000ff'";
+///                     "blue:  '#0000ff'".dup;
 ///
 /// auto colors = Loader.fromString(yaml_input).load();
 ///
 /// foreach(string color, string value; colors)
 /// {
+///     import std.stdio;
 ///     writeln(color, " is ", value, " in HTML/CSS");
 /// }
 /// --------------------
@@ -73,14 +71,14 @@ import dyaml.token;
 /// Use a custom constructor/resolver to support custom data types and/or implicit tags:
 /// --------------------
 /// auto constructor = new Constructor();
-/// auto resolver = new Resolver();
+/// auto resolver    = new Resolver();
 ///
-/// //Add constructor functions / resolver expressions here...
+/// // Add constructor functions / resolver expressions here...
 ///
 /// auto loader = Loader("file.yaml");
 /// loader.constructor = constructor;
-/// loader.resolver = resolver;
-/// auto rootNode = loader.load(node);
+/// loader.resolver    = resolver;
+/// auto rootNode      = loader.load(node);
 /// --------------------
 struct Loader
 {
@@ -360,11 +358,11 @@ struct Loader
 
 unittest
 {
-    string yaml_input = "red:   '#ff0000'\n"
+    char[] yaml_input = "red:   '#ff0000'\n"
                         "green: '#00ff00'\n"
-                        "blue:  '#0000ff'";
+                        "blue:  '#0000ff'".dup;
 
-    auto colors = Loader(cast(void[])yaml_input).load();
+    auto colors = Loader.fromString(yaml_input).load();
 
     foreach(string color, string value; colors)
     {
