@@ -768,13 +768,12 @@ bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
 
 // Unittests.
 
-import std.stream;
 void testEndian(R)()
 {
     writeln(typeid(R).toString() ~ ": endian unittest");
     void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
     {
-        auto reader = new R(new MemoryStream(data));
+        auto reader = new R(data);
         assert(reader.encoding == encoding_expected);
         assert(reader.endian_ == endian_expected);
     }
@@ -786,9 +785,10 @@ void testEndian(R)()
 
 void testPeekPrefixForward(R)()
 {
+    import std.stream;
     writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
     ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
-    auto reader = new R(new MemoryStream(data));
+    auto reader = new R(data);
     assert(reader.peek() == 'd');
     assert(reader.peek(1) == 'a');
     assert(reader.peek(2) == 't');
@@ -803,13 +803,14 @@ void testPeekPrefixForward(R)()
 
 void testUTF(R)()
 {
+    import std.stream;
     writeln(typeid(R).toString() ~ ": UTF formats unittest");
     dchar[] data = cast(dchar[])"data";
     void utf_test(T)(T[] data, BOM bom)
     {
         ubyte[] bytes = ByteOrderMarks[bom] ~
-                        (cast(ubyte*)data.ptr)[0 .. data.length * T.sizeof];
-        auto reader = new R(new MemoryStream(bytes));
+                        (cast(ubyte[])data)[0 .. data.length * T.sizeof];
+        auto reader = new R(bytes);
         assert(reader.peek() == 'd');
         assert(reader.peek(1) == 'a');
         assert(reader.peek(2) == 't');
@@ -825,7 +826,7 @@ void test1Byte(R)()
     writeln(typeid(R).toString() ~ ": 1 byte file unittest");
     ubyte[] data = [97];
 
-    auto reader = new R(new MemoryStream(data));
+    auto reader = new R(data);
     assert(reader.peek() == 'a');
     assert(reader.peek(1) == '\0');
     // assert(collectException(reader.peek(2)));
