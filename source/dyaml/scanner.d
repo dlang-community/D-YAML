@@ -472,7 +472,7 @@ final class Scanner
             removePossibleSimpleKey();
             allowSimpleKey_ = false;
 
-            const directive = scanDirective();
+            auto directive = scanDirective();
             throwIfError();
             tokens_.push(directive);
         }
@@ -656,7 +656,7 @@ final class Scanner
             // No simple keys after ALIAS/ANCHOR.
             allowSimpleKey_ = false;
 
-            const anchor = scanAnchor(id);
+            auto anchor = scanAnchor(id);
             throwIfError();
             tokens_.push(anchor);
         }
@@ -704,7 +704,7 @@ final class Scanner
             allowSimpleKey_ = false;
 
             // Scan and add SCALAR.
-            const scalar = scanFlowScalar(quotes);
+            auto scalar = scanFlowScalar(quotes);
             throwIfError();
             tokens_.push(scalar);
         }
@@ -721,7 +721,7 @@ final class Scanner
             // No simple keys after plain scalars. But note that scanPlain() will
             // change this flag if the scan is finished at the beginning of the line.
             allowSimpleKey_ = false;
-            const plain = scanPlain();
+            auto plain = scanPlain();
             throwIfError();
 
             // Scan and add SCALAR. May change allowSimpleKey_
@@ -915,7 +915,7 @@ final class Scanner
             if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
             else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
             if(error_) { return Token.init; }
-            const value = reader_.sliceBuilder.finish();
+            char[] value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
 
@@ -1099,7 +1099,7 @@ final class Scanner
             if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark); }
             else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
             // On error, value is discarded as we return immediately
-            const value = reader_.sliceBuilder.finish();
+            char[] value = reader_.sliceBuilder.finish();
             if(error_)   { return Token.init; }
 
             if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
@@ -1193,7 +1193,7 @@ final class Scanner
 
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                const slice = reader_.sliceBuilder.finish();
+                char[] slice = reader_.sliceBuilder.finish();
                 return tagToken(startMark, reader_.mark, slice, handleEnd);
             }
 
@@ -1340,7 +1340,7 @@ final class Scanner
                 }
             }
 
-            const slice = reader_.sliceBuilder.finish();
+            char[] slice = reader_.sliceBuilder.finish();
             return scalarToken(startMark, endMark, slice, style);
         }
 
@@ -1780,7 +1780,7 @@ final class Scanner
             }
 
             spacesTransaction.__dtor();
-            const slice = reader_.sliceBuilder.finish();
+            char[] slice = reader_.sliceBuilder.finish();
 
             return scalarToken(startMark, endMark, slice, ScalarStyle.Plain);
         }
@@ -2055,4 +2055,3 @@ string utf32To8(C)(C[] str) @safe pure nothrow
     catch(ConvException e) { assert(false, "Unexpected invalid UTF-32 string"); }
     catch(Exception e)     { assert(false, "Unexpected exception during UTF-8 encoding"); }
 }
-

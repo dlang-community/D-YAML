@@ -65,7 +65,10 @@ struct Token
 
     // 16B
     /// Value of the token, if any.
-    string value;
+    ///
+    /// Values are char[] instead of string, as Parser may still change them in a few
+    /// cases. Parser casts values to strings when producing Events.
+    char[] value;
     // 4B
     /// Start position of the token in file/stream.
     Mark startMark;
@@ -102,7 +105,7 @@ static assert(Token.sizeof <= 32, "Token has unexpected size");
 ///          end       = End position of the token.
 ///          value     = Value of the token.
 ///          directive = Directive type (YAML or TAG in YAML 1.1).
-Token directiveToken(const Mark start, const Mark end, const string value, 
+Token directiveToken(const Mark start, const Mark end, char[] value, 
                      DirectiveType directive, const uint nameEnd)
 {
     return Token(value, start, end, TokenID.Directive, ScalarStyle.init, Encoding.init,
@@ -147,7 +150,7 @@ alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
 ///          value        = Value of the token.
 ///          valueDivider = A hack for TagToken to store 2 values in value; the first
 ///                         value goes up to valueDivider, the second after it.
-Token simpleValueToken(TokenID id)(const Mark start, const Mark end, const string value,
+Token simpleValueToken(TokenID id)(const Mark start, const Mark end, char[] value,
                                    const uint valueDivider = uint.max)
 {
     return Token(value, start, end, id, ScalarStyle.Invalid, Encoding.init,
@@ -165,7 +168,7 @@ alias simpleValueToken!(TokenID.Anchor) anchorToken;
 ///          end   = End position of the token.
 ///          value = Value of the token.
 ///          style = Style of the token.
-Token scalarToken(const Mark start, const Mark end, const string value, const ScalarStyle style)
+Token scalarToken(const Mark start, const Mark end, char[] value, const ScalarStyle style)
 {
     return Token(value, start, end, TokenID.Scalar, style);
 }
