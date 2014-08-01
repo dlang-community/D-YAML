@@ -20,7 +20,6 @@ import std.exception;
 import std.string;
 import std.typecons;
 import std.traits : Unqual;
-import std.utf;
 
 import dyaml.fastcharsearch;
 import dyaml.escapes;
@@ -1942,11 +1941,24 @@ final class Scanner
             //
             // This is probably slow, but simple and URI escapes are extremely uncommon
             // in YAML.
+            //
+            // Returns the number of bytes used by the dchar in bytes on success,
+            // size_t.max on failure.
             static size_t getDchar(char[] bytes, Reader reader_)
             {
-                import std.utf;
                 size_t nextChar;
-                const c = std.utf.decode(bytes[], nextChar);
+                dchar c;
+                if(bytes[0] < 0x80)
+                {
+                    c = bytes[0];
+                    ++nextChar;
+                }
+                else
+                {
+                    const decoded = decodeUTF8NoGC!(No.validated)(bytes[], nextChar);
+                    if(decoded.errorMessage !is null) { return size_t.max; }
+                    c = decoded.decoded;
+                }
                 reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)
                 {
@@ -1957,54 +1969,49 @@ final class Scanner
             }
 
             enum contextMsg = "While scanning a " ~ name;
-            try
+            while(reader_.peek() == '%')
             {
-                while(reader_.peek() == '%')
+                reader_.forward();
+                if(bytesUsed == bytes.length)
                 {
-                    reader_.forward();
-                    if(bytesUsed == bytes.length)
+                    bytesUsed = getDchar(bytes[], reader_);
+                    if(bytesUsed == size_t.max)
                     {
-                        bytesUsed = getDchar(bytes[], reader_);
+                        error(contextMsg, startMark, 
+                                "Invalid UTF-8 data encoded in URI escape sequence",
+                                reader_.mark);
+                        return;
                     }
-
-                    char b = 0;
-                    uint mult = 16;
-                    // Converting 2 hexadecimal digits to a byte.
-                    foreach(k; 0 .. 2)
-                    {
-                        const dchar c = reader_.peek(k);
-                        if(!c.isHexDigit)
-                        {
-                            auto msg = expected("URI escape sequence of 2 hexadecimal "
-                                                "numbers", c);
-                            error(contextMsg, startMark, msg, reader_.mark);
-                            return;
-                        }
-
-                        uint digit;
-                        if(c - '0' < 10)     { digit = c - '0'; }
-                        else if(c - 'A' < 6) { digit = c - 'A'; }
-                        else if(c - 'a' < 6) { digit = c - 'a'; }
-                        else                 { assert(false); }
-                        b += mult * digit;
-                        mult /= 16;
-                    }
-                    bytes[bytesUsed++] = b;
-
-                    reader_.forward(2);
                 }
 
-                bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
+                char b = 0;
+                uint mult = 16;
+                // Converting 2 hexadecimal digits to a byte.
+                foreach(k; 0 .. 2)
+                {
+                    const dchar c = reader_.peek(k);
+                    if(!c.isHexDigit)
+                    {
+                        auto msg = expected("URI escape sequence of 2 hexadecimal "
+                                            "numbers", c);
+                        error(contextMsg, startMark, msg, reader_.mark);
+                        return;
+                    }
+
+                    uint digit;
+                    if(c - '0' < 10)     { digit = c - '0'; }
+                    else if(c - 'A' < 6) { digit = c - 'A'; }
+                    else if(c - 'a' < 6) { digit = c - 'a'; }
+                    else                 { assert(false); }
+                    b += mult * digit;
+                    mult /= 16;
+                }
+                bytes[bytesUsed++] = b;
+
+                reader_.forward(2);
             }
-            catch(UTFException e)
-            {
-                error(contextMsg, startMark, e.msg, mark);
-                return;
-            }
-            catch(Exception e)
-            {
-                assert(false, "Unexpected exception in scanURIEscapesToSlice");
-            }
+
+            bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
         }
 
 
