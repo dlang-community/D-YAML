@@ -1,14 +1,20 @@
 {
-"name": "dyaml",
-"description": "YAML parser and emitter",
-"authors": [
-    "Ferdinand Majerech"
-],
-"libs": [],
-"targetType": "staticLibrary",
-"importPaths": ["source"],
-"license": "Boost 1.0",
-"dependencies": {},
-"homepage": "https://github.com/kiith-sa/D-YAML",
-"copyright": "Copyright © 2011-2014, Ferdinand Majerech"
+    "name": "dyaml",
+    "description": "YAML parser and emitter",
+    "authors": [ "Ferdinand Majerech" ],
+    "libs": [],
+    "targetType": "staticLibrary",
+    "importPaths": ["source"],
+    "license": "Boost 1.0",
+    "dependencies": {},
+    "homepage": "https://github.com/kiith-sa/D-YAML",
+    "copyright": "Copyright © 2011-2014, Ferdinand Majerech",
+
+    "buildTypes":
+    {
+        "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
+        "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
+        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] },
+    },
+
 }

@@ -7,4 +7,10 @@
     {
         "dyaml": { "version" : "~>0.5.0", "path" : "../../"},
     },
+    "buildTypes":
+    {
+        "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
+        "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
+        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] }
+    }
 }
