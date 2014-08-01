@@ -762,7 +762,7 @@ final class Scanner
         }
 
         /// Check if the next token is KEY(flow context):    '?'
-        /// 
+        ///
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe pure nothrow @nogc
         {
@@ -772,7 +772,7 @@ final class Scanner
         }
 
         /// Check if the next token is VALUE(flow context):  ':'
-        /// 
+        ///
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe pure nothrow @nogc
         {
@@ -1052,7 +1052,8 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectivePrefixToSlice(const Mark startMark) @system pure nothrow
+        void scanTagDirectivePrefixToSlice(const Mark startMark)
+            @system pure nothrow @nogc
         {
             scanTagURIToSlice!"directive"(startMark);
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
@@ -1125,7 +1126,7 @@ final class Scanner
         /// Scan a tag token.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanTag() @trusted pure nothrow
+        Token scanTag() @trusted pure nothrow @nogc
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1887,7 +1888,7 @@ final class Scanner
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagURIToSlice(string name)(const Mark startMark)
-            @trusted pure nothrow // @nogc
+            @trusted pure nothrow @nogc
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
@@ -1929,7 +1930,7 @@ final class Scanner
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanURIEscapesToSlice(string name)(const Mark startMark)
-            @system pure nothrow // @nogc
+            @system pure nothrow @nogc
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
@@ -1977,7 +1978,7 @@ final class Scanner
                     bytesUsed = getDchar(bytes[], reader_);
                     if(bytesUsed == size_t.max)
                     {
-                        error(contextMsg, startMark, 
+                        error(contextMsg, startMark,
                                 "Invalid UTF-8 data encoded in URI escape sequence",
                                 reader_.mark);
                         return;
