@@ -1,0 +1,10 @@
+{
+    "name": "yaml_stats",
+    "targetType": "executable",
+    "sourceFiles": ["yaml_stats.d"],
+    "mainSourceFile": "yaml_stats.d",
+    "dependencies":
+    {
+        "dyaml": { "version" : "~>0.5.0", "path" : "../../"},
+    },
+}

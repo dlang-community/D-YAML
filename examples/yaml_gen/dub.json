@@ -1,0 +1,10 @@
+{
+    "name": "yaml_gen",
+    "targetType": "executable",
+    "sourceFiles": ["yaml_gen.d"],
+    "mainSourceFile": "yaml_gen.d",
+    "dependencies":
+    {
+        "dyaml": { "version" : "~>0.5.0", "path" : "../../"},
+    },
+}
