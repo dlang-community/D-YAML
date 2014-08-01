@@ -12,14 +12,14 @@ void help()
 {
     string help =
         "D:YAML benchmark\n"
-        "Copyright (C) 2011 Ferdinand Majerech\n"
+        "Copyright (C) 2011-2014 Ferdinand Majerech\n"
         "Usage: yaml_bench [OPTION ...] [YAML_FILE]\n"
         "\n"
         "Loads and optionally extracts data and/or dumps a YAML file.\n"
         "\n"
         "Available options:\n"
         " -h --help          Show this help information.\n"
-        " -g --get           Extract data from the file (using Node.get()).\n"
+        " -g --get           Extract data from the file (using Node.as()).\n"
         " -d --dump          Dump the loaded data (to YAML_FILE.dump).\n"
         " -r --runs=NUM      Repeat the benchmark NUM times.\n";
     writeln(help);

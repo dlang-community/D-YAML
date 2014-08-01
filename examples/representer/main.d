@@ -27,7 +27,7 @@ Node representColor(ref Node node, Representer representer)
    string scalar;
    foreach(channel; [color.red, color.green, color.blue])
    {
-       scalar ~= hex[channel / 16]; 
+       scalar ~= hex[channel / 16];
        scalar ~= hex[channel % 16];
    }
 
@@ -43,6 +43,7 @@ void main()
        representer.addRepresenter!Color(&representColor);
 
        auto resolver = new Resolver;
+       import std.regex;
        resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                     "0123456789abcdefABCDEF");
 
@@ -50,8 +51,8 @@ void main()
        dumper.representer = representer;
        dumper.resolver    = resolver;
 
-       auto document = Node([Color(255, 0, 0), 
-                             Color(0, 255, 0), 
+       auto document = Node([Color(255, 0, 0),
+                             Color(0, 255, 0),
                              Color(0, 0, 255)]);
 
        dumper.dump(document);

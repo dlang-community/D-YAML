@@ -1,4 +1,3 @@
-import std.ascii;
 import std.stdio;
 import std.string;
 import dyaml.all;
@@ -32,6 +31,7 @@ Color constructColorScalar(ref Node node)
     //Get value of a hex digit.
     uint hex(char c)
     {
+        import std.ascii;
         if(!std.ascii.isHexDigit(c))
         {
             throw new Exception("Invalid color: " ~ value);
@@ -83,9 +83,9 @@ void main()
 
        auto root = loader.load();
 
-       if(root["scalar-red"].as!Color == red && 
-          root["mapping-red"].as!Color == red && 
-          root["scalar-orange"].as!Color == orange && 
+       if(root["scalar-red"].as!Color     == red &&
+          root["mapping-red"].as!Color    == red &&
+          root["scalar-orange"].as!Color  == orange &&
           root["mapping-orange"].as!Color == orange)
        {
            writeln("SUCCESS");
