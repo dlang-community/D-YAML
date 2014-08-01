@@ -40,7 +40,7 @@ package class ConstructorException : YAMLException
     ///          start = Start position of the error context.
     ///          end   = End position of the error context.
     this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
-        @safe
+        @safe pure nothrow
     {
         super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
               file, line);
@@ -105,7 +105,7 @@ final class Constructor
         }
 
         /// Destroy the constructor.
-        pure @safe nothrow ~this()
+        @nogc pure @safe nothrow ~this()
         {
             fromScalar_.destroy();
             fromScalar_ = null;
@@ -309,10 +309,10 @@ final class Constructor
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
-            static type = is(T : string)       ? "scalar"   :
-                          is(T == Node[])      ? "sequence" :
-                          is(T == Node.Pair[]) ? "mapping"  :
-                                                 "ERROR";
+            enum type = is(T : string)       ? "scalar"   :
+                        is(T == Node[])      ? "sequence" :
+                        is(T == Node.Pair[]) ? "mapping"  :
+                                               "ERROR";
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function from " ~ type ~
                               " for tag " ~ tag.get(), start, end));
@@ -347,7 +347,7 @@ final class Constructor
          *          ctor = Constructor function.
          */
         auto addConstructor(T)(const Tag tag, T function(ref Node) ctor)
-            @trusted nothrow
+            @safe pure nothrow
         {
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
@@ -364,7 +364,7 @@ final class Constructor
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
-        @property auto delegates(T)() pure @safe nothrow
+        @property auto delegates(T)() @safe pure nothrow @nogc
         {
             static if(is(T : string))          {return &fromScalar_;}
             else static if(is(T : Node[]))     {return &fromSequence_;}
@@ -375,19 +375,19 @@ final class Constructor
 
 
 /// Construct a _null _node.
-YAMLNull constructNull(ref Node node)
+YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc 
 {
     return YAMLNull();
 }
 
 /// Construct a merge _node - a _node that merges another _node into a mapping.
-YAMLMerge constructMerge(ref Node node)
+YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc 
 {
     return YAMLMerge();
 }
 
 /// Construct a boolean _node.
-bool constructBool(ref Node node)
+bool constructBool(ref Node node) @safe
 {
     static yes = ["yes", "true", "on"];
     static no = ["no", "false", "off"];
@@ -843,8 +843,7 @@ Node.Pair[] constructMap(ref Node node)
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
-                new Exception("Duplicate entry in a map: "
-                              ~ pair.key.debugString()));
+                new Exception("Duplicate entry in a map: " ~ pair.key.debugString()));
         keys.insert(pair.key);
     }
     return pairs;
