@@ -8,10 +8,15 @@
 /examples/getting_started/main.obj
 /cdc.obj
 /unittest
+
 # Backups #
 ###########
 *~
 *.sw*
+
+# dub #
+#######
+*.dub*
 
 # Compiled source #
 ###################
