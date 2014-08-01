@@ -1,25 +1,28 @@
 ==========
-D:YAML 0.4
+D:YAML 0.5
 ==========
 
+**Note**: D:YAML 0.5 brings some **breaking changes**. See the
+`changelog <https://github.com/kiith-sa/D-YAML/blob/master/CHANGES.rst>`_.
+
 ------------
-Introduction 
+Introduction
 ------------
 
 D:YAML is an open source YAML parser and emitter library for the D programming
-language.  It is 
-(`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_) 
-compliant to the YAML 1.1 specification. D:YAML is based on 
+language.  It is
+(`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_)
+compliant to the YAML 1.1 specification. D:YAML is based on
 `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. It has no external
-dependencies, it only needs a D compiler and Phobos (standard library). It is 
+dependencies, it only needs a D compiler and Phobos (standard library). It is
 written in D2 and there are no plans for D1 support.
 
-D:YAML is designed to be easy to use while supporting the full feature set of 
-YAML. To start using it in your project, see the 
-`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
+D:YAML is designed to be easy to use while supporting the full feature set of
+YAML. To start using it in your project, see the
+`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_
 tutorial.
- 
-D:YAML is still a work in progress. Its API is not stable and there might be 
+
+D:YAML is still a work in progress. Its API is not stable and there might be
 compatibility breaking changes.
 
 
@@ -34,19 +37,20 @@ Features
 * Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
   are parsed correctly.
 * Reads from and writes from/to YAML files or in-memory buffers.
-* UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian 
+* UTF-8, UTF-16 and UTF-32 encodings are supported, both big and little endian
   (plain ASCII also works as it is a subset of UTF-8).
-* Support for both block (Python-like, based on indentation) and flow 
+* Support for both block (Python-like, based on indentation) and flow
   (JSON-like, based on bracing) constructs.
 * Support for YAML anchors and aliases.
 * Support for default values in mappings.
-* Support for custom tags (data types), and implicit tag resolution for custom 
+* Support for custom tags (data types), and implicit tag resolution for custom
   scalar tags.
-* All tags (data types) described at http://yaml.org/type/ are supported, with 
+* All tags (data types) described at http://yaml.org/type/ are supported, with
   the exception of ``tag:yaml.org,2002:yaml``, which is used to represent YAML
   code in YAML.
 * Remembers YAML style information between loading and dumping if possible.
-* There is no support for recursive data structures. 
+* Reuses input memory and uses slices to minimize memory allocations.
+* There is no support for recursive data structures.
   There are no plans to implement this at the moment.
 
 
@@ -70,9 +74,9 @@ Directory        Contents
 Installing and tutorial
 -----------------------
 
-See the 
-`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_ 
-tutorial and other tutorials that can be found at the 
+See the
+`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_
+tutorial and other tutorials that can be found at the
 `GitHub wiki <https://github.com/kiith-sa/D-YAML/wiki>`_
 and in the ``doc/html/tutorials/`` directory in the package.
 
@@ -81,11 +85,11 @@ and in the ``doc/html/tutorials/`` directory in the package.
 License
 -------
 
-D:YAML is released under the terms of the 
+D:YAML is released under the terms of the
 `Boost Software License 1.0 <http://www.boost.org/LICENSE_1_0.txt>`_.
 This license allows you to use the source code in your own projects, open source
-or proprietary, and to modify it to suit your needs. However, in source 
-distributions, you have to preserve the license headers in the source code and 
+or proprietary, and to modify it to suit your needs. However, in source
+distributions, you have to preserve the license headers in the source code and
 the accompanying license file.
 
 Full text of the license can be found in file ``LICENSE_1_0.txt`` and is also
@@ -124,7 +128,7 @@ D:YAML was created by Ferdinand Majerech aka Kiith-Sa kiithsacmp[AT]gmail.com .
 
 Parts of code based on `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov.
 
-D:YAML uses a modified version of the 
+D:YAML uses a modified version of the
 `CDC build script <http://www.dsource.org/projects/cdc>`_.
 
 D:YAML was created using Vim and DMD on Debian and Ubuntu Linux as a YAML parsing

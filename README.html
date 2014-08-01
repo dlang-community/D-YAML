@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
-<title>D:YAML 0.4</title>
+<title>D:YAML 0.5</title>
 <style type="text/css">
 
 /*
@@ -338,9 +338,11 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="d-yaml-0-4">
-<h1 class="title">D:YAML 0.4</h1>
+<div class="document" id="d-yaml-0-5">
+<h1 class="title">D:YAML 0.5</h1>
 
+<p><strong>Note</strong>: D:YAML 0.5 brings some <strong>breaking changes</strong>. See the
+<a class="reference external" href="https://github.com/kiith-sa/D-YAML/blob/master/CHANGES.rst">changelog</a>.</p>
 <div class="section" id="introduction">
 <h1>Introduction</h1>
 <p>D:YAML is an open source YAML parser and emitter library for the D programming
@@ -379,6 +381,7 @@ scalar tags.</li>
 the exception of <tt class="docutils literal">tag:yaml.org,2002:yaml</tt>, which is used to represent YAML
 code in YAML.</li>
 <li>Remembers YAML style information between loading and dumping if possible.</li>
+<li>Reuses input memory and uses slices to minimize memory allocations.</li>
 <li>There is no support for recursive data structures.
 There are no plans to implement this at the moment.</li>
 </ul>
