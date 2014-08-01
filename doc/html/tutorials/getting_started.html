@@ -48,18 +48,18 @@
             
   <div class="section" id="getting-started">
 <h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
-<p>Welcome to D:YAML! D:YAML is a <a class="reference external" href="http://en.wikipedia.org/wiki/YAML">YAML</a>
-parser library for the <a class="reference external" href="http://dlang.org">D programming language</a>.
-This tutorial will explain how to set D:YAML up and use it in your projects.</p>
-<p>This is meant to be the <strong>simplest possible</strong> introduction to D:YAML. Some of
-this information might already be known to you. Only basic usage is covered.</p>
+<p>Welcome to D:YAML! D:YAML is a <a class="reference external" href="http://en.wikipedia.org/wiki/YAML">YAML</a> parser
+library for the <a class="reference external" href="http://dlang.org">D programming language</a>.  This tutorial will
+explain how to set D:YAML up and use it in your projects.</p>
+<p>This is meant to be the <strong>simplest possible</strong> introduction to D:YAML. Some of this
+information might already be known to you. Only basic usage is covered.</p>
 <div class="section" id="setting-up">
 <h2>Setting up<a class="headerlink" href="#setting-up" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="install-the-dmd-compiler">
 <h3>Install the DMD compiler<a class="headerlink" href="#install-the-dmd-compiler" title="Permalink to this headline">¶</a></h3>
-<p>Digital Mars D compiler, or DMD, is the most commonly used D compiler. You can
-find its newest version <a class="reference external" href="http://dlang.org/download.html">here</a>.
-Download the version of DMD for your operating system and install it.</p>
+<p>Digital Mars D compiler, or DMD, is the most commonly used D compiler. You can find its
+newest version <a class="reference external" href="http://dlang.org/download.html">here</a>.  Download the version of DMD
+for your operating system and install it.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Other D compilers exist, such as
@@ -67,42 +67,26 @@ Download the version of DMD for your operating system and install it.</p>
 <a class="reference external" href="http://bitbucket.org/goshawk/gdc/wiki/Home">LDC</a>.</p>
 </div>
 </div>
-<div class="section" id="download-and-compile-d-yaml">
-<h3>Download and compile D:YAML<a class="headerlink" href="#download-and-compile-d-yaml" title="Permalink to this headline">¶</a></h3>
-<p>The newest version of D:YAML can be found
-<a class="reference external" href="https://github.com/Kiith-Sa/D-YAML">here</a>. Download a source archive, extract
-it, and move to the extracted directory.</p>
-<p>D:YAML uses a modified version of the <a class="reference external" href="http://dsource.org/projects/cdc/">CDC</a>
-script for compilation. To compile D:YAML, you first need to build CDC.
-Do this by typing the following command into the console:</p>
-<div class="highlight-python"><div class="highlight"><pre>dmd cdc.d
-</pre></div>
-</div>
-<p>Now compile D:YAML with CDC.
-To do this on Unix/Linux, use the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre>./cdc
-</pre></div>
-</div>
-<p>On Windows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">cdc</span><span class="o">.</span><span class="n">exe</span>
-</pre></div>
-</div>
-<p>This will compile the library to a file called <tt class="docutils literal"><span class="pre">libdyaml.a</span></tt> on Unix/Linux or
-<tt class="docutils literal"><span class="pre">libdyaml.lib</span></tt> on Windows.</p>
+<div class="section" id="install-dub">
+<h3>Install dub<a class="headerlink" href="#install-dub" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="http://code.dlang.org/about">dub</a> is a build system and package manager for D.
+It is the standard way to manage D projects and their dependencies, compilation and so
+on.</p>
+<p>DMD may include DUB in future releases, but at this point we need to install it
+separately. See
+<a class="reference external" href="https://github.com/D-Programming-Language/dub#installation">installation instructions</a>.</p>
 </div>
 </div>
 <div class="section" id="your-first-d-yaml-project">
 <h2>Your first D:YAML project<a class="headerlink" href="#your-first-d-yaml-project" title="Permalink to this headline">¶</a></h2>
-<p>Create a directory for your project and in that directory, create a file called
-<tt class="docutils literal"><span class="pre">input.yaml</span></tt> with the following contents:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">Hello World</span> <span class="p-Indicator">:</span>
-    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Hello</span>
-    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">World</span>
+<p>Create a directory for your project and in that directory, create a new file named
+<tt class="docutils literal"><span class="pre">input.yaml</span></tt> and paste this code into the file:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">Hello World</span> <span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="nv">Hello</span><span class="p-Indicator">,</span> <span class="nv">World</span><span class="p-Indicator">]</span>
 <span class="l-Scalar-Plain">Answer</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">42</span>
 </pre></div>
 </div>
 <p>This will serve as input for our example.</p>
-<p>Now we need to parse it. Create a file called <tt class="docutils literal"><span class="pre">main.d</span></tt>. Paste following code
+<p>Now we need to parse it. Create a new file with name <tt class="docutils literal"><span class="pre">main.d</span></tt>. Paste following code
 into the file:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">stdio</span><span class="p">;</span>
 <span class="k">import</span> <span class="n">yaml</span><span class="p">;</span>
@@ -126,62 +110,70 @@ into the file:</p>
 </div>
 <div class="section" id="explanation-of-the-code">
 <h3>Explanation of the code<a class="headerlink" href="#explanation-of-the-code" title="Permalink to this headline">¶</a></h3>
-<p>First, we import the <em>yaml</em> module. This is the only D:YAML module you
-need to import - it automatically imports all needed modules.</p>
-<p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is a struct
-used for parsing YAML documents. The <em>load()</em> method loads the file as
-<strong>one</strong> YAML document, or throws <em>YAMLException</em>, D:YAML exception type, if the
-file could not be parsed or does not contain exactly one document. Note that we
-don&#8217;t do any error checking here in order to keep the example as simple as
-possible.</p>
-<p><em>Node</em> represents a node in a YAML document. It can be a sequence (array),
-mapping (associative array) or a scalar (value). Here the root node is a
-mapping, and we use the index operator to get subnodes with keys &#8220;Hello World&#8221;
-and &#8220;Answer&#8221;. We iterate over the first, as it is a sequence, and use the
-<em>Node.as()</em> method on the second to read its value as an integer.</p>
-<p>You can iterate over a mapping or sequence as if it was an associative or normal
-array. If you try to iterate over a scalar, it will throw a <em>YAMLException</em>.</p>
-<p>You can iterate over subnodes using <em>Node</em> as the iterated type, or specify
-the type subnodes are expected to have. D:YAML will automatically convert
-iterated subnodes to that type if possible. Here we specify the <em>string</em> type,
-so we iterate over the &#8220;Hello World&#8221; sequence as an array of strings. If it is
-not possible to convert to iterated type, a <em>YAMLException</em> is thrown. For
-instance, if we specified <em>int</em> here, we would get an error, as &#8220;Hello&#8221;
+<p>First, we import the <em>dyaml.all</em> module. This is the only D:YAML module you need to
+import - it automatically imports all needed modules.</p>
+<p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is a struct used for
+parsing YAML documents. The <em>load()</em> method loads the file as <strong>one</strong> YAML document, or
+throws <em>YAMLException</em>, D:YAML exception type, if the file could not be parsed or
+contains more than one document.  Note that we don&#8217;t do any error checking here in order
+to keep the example as simple as possible.</p>
+<p><em>Node</em> represents a node in a YAML document. It can be a sequence (array), mapping
+(associative array) or a scalar (value). Here the root node is a mapping, and we use the
+index operator to get subnodes with keys &#8220;Hello World&#8221; and &#8220;Answer&#8221;. We iterate over the
+former, as it is a sequence, and use the <em>Node.as()</em> method on the latter to read its
+value as an integer.</p>
+<p>You can iterate over a mapping or sequence as if it was an associative or normal array,
+respectively.  If you try to iterate over a scalar, it will throw a <em>YAMLException</em>.</p>
+<p>You can iterate using <em>Node</em> as the iterated type, or specify the type iterated nodes
+are expected to have. D:YAML will automatically convert to that type if possible. Here
+we specify the <em>string</em> type, so we iterate over the &#8220;Hello World&#8221; sequence as an array
+of strings. If it is not possible to convert to iterated type, a <em>YAMLException</em> is
+thrown. For instance, if we specified <em>int</em> here, we would get an error, as &#8220;Hello&#8221;
 cannot be converted to an integer.</p>
-<p>The <em>Node.as()</em> method is used to read value of a scalar node as specified type.
-D:YAML will try to return the scalar as this type, converting if needed,
-throwing <em>YAMLException</em> if not possible.</p>
-<p>Finally we dump the document we just read to <tt class="docutils literal"><span class="pre">output.yaml</span></tt> with the
-<em>Dumper.dump()</em> method. <em>Dumper</em> is a struct used to dump YAML documents.
-The <em>dump()</em> method writes one or more documents to a file, throwing
-<em>YAMLException</em> if the file could not be written to.</p>
-<p>D:YAML doesn&#8217;t preserve style information in documents, so even though
-<tt class="docutils literal"><span class="pre">output.yaml</span></tt> will contain the same data as <tt class="docutils literal"><span class="pre">input.yaml</span></tt>, it might be
-formatted differently. Comments are not preserved, either.</p>
+<p>The <em>Node.as()</em> method is used to read value of a scalar node as specified type.  If the
+scalar does not have the specified type, D:YAML will try to convert it, throwing
+<em>YAMLException</em> if not possible.</p>
+<p>Finally we dump the document we just read to <tt class="docutils literal"><span class="pre">output.yaml</span></tt> with the <em>Dumper.dump()</em>
+method. <em>Dumper</em> is a struct used to dump YAML documents.  The <em>dump()</em> method writes
+one or more documents to a file, throwing <em>YAMLException</em> if the file could not be
+written to.</p>
+<p>D:YAML tries to preserve style information in documents so e.g.  <tt class="docutils literal"><span class="pre">[Hello,</span> <span class="pre">World]</span></tt> is
+not turned into:</p>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">-</span> <span class="pre">Hello</span></tt></div>
+<div class="line"><tt class="docutils literal"><span class="pre">-</span> <span class="pre">World</span></tt></div>
+</div>
+<p>However, comments are not preserved and neither are any extra formatting whitespace that
+doesn&#8217;t affect the meaning of YAML contents.</p>
 </div>
 <div class="section" id="compiling">
 <h3>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h3>
-<p>To compile your project, DMD needs to know which directories contain the
-imported modules and the library. You also need to tell it to link with D:YAML.
-The import directory should be the <tt class="docutils literal"><span class="pre">source</span></tt> subdirectory of the D:YAML
-directory. You can specify it using the <tt class="docutils literal"><span class="pre">-I</span></tt> option of DMD. The library
-directory should point to the compiled library. On Unix/Linux you can specify
-it using the <tt class="docutils literal"><span class="pre">-L-L</span></tt> option, and link with D:YAML using the <tt class="docutils literal"><span class="pre">-L-l</span></tt> option.
-On Windows, the import directory is used as the library directory. To link with
-the library on Windows, just add the path to it relative to the current
-directory.</p>
-<p>For example, if you extracted and compiled D:YAML in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml</span></tt>, your
-project is in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml-project</span></tt>, and you are currently in that
-directory, compile the project with the following command on Unix/Linux:</p>
-<div class="highlight-python"><div class="highlight"><pre>dmd -I../dyaml/source -L-L../dyaml -L-ldyaml main.d
+<p>We&#8217;re going to use dub, which we installed at the beginning, to compile our project.</p>
+<p>Create a file called <tt class="docutils literal"><span class="pre">dub.json</span></tt> with the following contents:</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;getting-started&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;targetType&quot;</span><span class="p">:</span> <span class="s2">&quot;executable&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;sourceFiles&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;main.d&quot;</span><span class="p">],</span>
+    <span class="nt">&quot;mainSourceFile&quot;</span><span class="p">:</span> <span class="s2">&quot;main.d&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;dependencies&quot;</span><span class="p">:</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;dyaml&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;version&quot;</span> <span class="p">:</span> <span class="s2">&quot;~&gt;0.5.0&quot;</span><span class="p">,</span> <span class="nt">&quot;path&quot;</span> <span class="p">:</span> <span class="s2">&quot;../../&quot;</span><span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
 </pre></div>
 </div>
-<p>And the following on Windows:</p>
-<div class="highlight-python"><div class="highlight"><pre>dmd -I../dyaml/source ../dyaml/libdyaml.lib main.d
+<p>This file tells dub that we&#8217;re building an executable called <tt class="docutils literal"><span class="pre">getting-started</span></tt> from
+a D source file <tt class="docutils literal"><span class="pre">main.d</span></tt>, and that our project depends on D:YAML 0.5.0 or any newer,
+bugfix release of D:YAML 0.5 . DUB will automatically find and download the correct
+version of D:YAML when the project is built.</p>
+<p>Now run the following command in your project&#8217;s directory:</p>
+<div class="highlight-python"><div class="highlight"><pre>dub build
 </pre></div>
 </div>
-<p>This will produce an executable called <tt class="docutils literal"><span class="pre">main</span></tt> or <tt class="docutils literal"><span class="pre">main.exe</span></tt> in your
-directory. When you run it, it should produce the following output:</p>
+<p>dub will automatically download D:YAML and compile it, and then then it will compile our
+program.  This will generate an executable called <tt class="docutils literal"><span class="pre">getting-started</span></tt> or
+<tt class="docutils literal"><span class="pre">getting-started.exe</span></tt> in your directory.  When you run it, it should produce the
+following output:</p>
 <div class="highlight-python"><div class="highlight"><pre>Hello
 World
 The answer is 42
@@ -190,8 +182,8 @@ The answer is 42
 </div>
 <div class="section" id="conclusion">
 <h3>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h3>
-<p>You should now have a basic idea about how to use D:YAML. To learn more, look at
-the <a class="reference external" href="../api/index.html">API documentation</a> and other tutorials. You can find code for this
+<p>You should now have a basic idea about how to use D:YAML. To learn more, look at the
+<a class="reference external" href="../api/index.html">API documentation</a> and other tutorials. You can find code for this
 example in the <tt class="docutils literal"><span class="pre">example/getting_started</span></tt> directory in the package.</p>
 </div>
 </div>
@@ -211,7 +203,7 @@ example in the <tt class="docutils literal"><span class="pre">example/getting_st
 <li><a class="reference internal" href="#">Getting started</a><ul>
 <li><a class="reference internal" href="#setting-up">Setting up</a><ul>
 <li><a class="reference internal" href="#install-the-dmd-compiler">Install the DMD compiler</a></li>
-<li><a class="reference internal" href="#download-and-compile-d-yaml">Download and compile D:YAML</a></li>
+<li><a class="reference internal" href="#install-dub">Install dub</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#your-first-d-yaml-project">Your first D:YAML project</a><ul>

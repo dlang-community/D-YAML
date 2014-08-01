@@ -306,6 +306,7 @@ such as the color being white.</p>
         <span class="n">representer</span><span class="p">.</span><span class="n">addRepresenter</span><span class="p">!</span><span class="n">Color</span><span class="p">(&amp;</span><span class="n">representColor</span><span class="p">);</span>
 
         <span class="k">auto</span> <span class="n">resolver</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Resolver</span><span class="p">;</span>
+        <span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">regex</span><span class="p">;</span>
         <span class="n">resolver</span><span class="p">.</span><span class="n">addImplicitResolver</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="n">std</span><span class="p">.</span><span class="n">regex</span><span class="p">.</span><span class="n">regex</span><span class="p">(</span><span class="s">&quot;[0-9a-fA-F]{6}&quot;</span><span class="p">),</span>
                                      <span class="s">&quot;0123456789abcdefABCDEF&quot;</span><span class="p">);</span>
 

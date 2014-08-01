@@ -302,6 +302,7 @@ such as the color being white.
            representer.addRepresenter!Color(&representColor);
 
            auto resolver = new Resolver;
+           import std.regex;
            resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                         "0123456789abcdefABCDEF");
 
