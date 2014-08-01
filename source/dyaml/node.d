@@ -178,11 +178,12 @@ private struct Pair
         }
 }
 
-/// YAML node.
-///
-/// This is a pseudo-dynamic type that can store any YAML value, including a
-/// sequence or mapping of nodes. You can get data from a Node directly or
-/// iterate over it if it's a collection.
+/** YAML node.
+ *
+ * This is a pseudo-dynamic type that can store any YAML value, including a
+ * sequence or mapping of nodes. You can get data from a Node directly or
+ * iterate over it if it's a collection.
+ */
 struct Node
 {
     public:
@@ -220,25 +221,26 @@ struct Node
         static assert(Node.sizeof <= 48, "Unexpected YAML node size");
 
     public:
-        /// Construct a Node from a value.
-        ///
-        /// Any type except for Node can be stored in a Node, but default YAML
-        /// types (integers, floats, strings, timestamps, etc.) will be stored
-        /// more efficiently. To create a node representing a null value,
-        /// construct it from YAMLNull.
-        ///
-        ///
-        /// Note that to emit any non-default types you store
-        /// in a node, you need a Representer to represent them in YAML -
-        /// otherwise emitting will fail.
-        ///
-        /// Params:  value = Value to store in the node.
-        ///          tag   = Overrides tag of the node when emitted, regardless
-        ///                  of tag determined by Representer. Representer uses
-        ///                  this to determine YAML data type when a D data type
-        ///                  maps to multiple different YAML data types. Tag must
-        ///                  be in full form, e.g. "tag:yaml.org,2002:int", not
-        ///                  a shortcut, like "!!int".
+        /** Construct a Node from a value.
+         *
+         * Any type except for Node can be stored in a Node, but default YAML
+         * types (integers, floats, strings, timestamps, etc.) will be stored
+         * more efficiently. To create a node representing a null value,
+         * construct it from YAMLNull.
+         *
+         *
+         * Note that to emit any non-default types you store
+         * in a node, you need a Representer to represent them in YAML -
+         * otherwise emitting will fail.
+         *
+         * Params:  value = Value to store in the node.
+         *          tag   = Overrides tag of the node when emitted, regardless
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type
+         *                  maps to multiple different YAML data types. Tag must
+         *                  be in full form, e.g. "tag:yaml.org,2002:int", not
+         *                  a shortcut, like "!!int".
+         */
         this(T)(T value, const string tag = null) @trusted
             if (isSomeString!T || (!isArray!T && !isAssociativeArray!T))
         {
@@ -272,30 +274,31 @@ struct Node
             }
         }
 
-        /// Construct a node from an _array.
-        ///
-        /// If _array is an _array of nodes or pairs, it is stored directly.
-        /// Otherwise, every value in the array is converted to a node, and
-        /// those nodes are stored.
-        ///
-        /// Params:  array = Values to store in the node.
-        ///          tag   = Overrides tag of the node when emitted, regardless
-        ///                  of tag determined by Representer. Representer uses
-        ///                  this to determine YAML data type when a D data type
-        ///                  maps to multiple different YAML data types.
-        ///                  This is used to differentiate between YAML sequences
-        ///                  ("!!seq") and sets ("!!set"), which both are
-        ///                  internally represented as an array_ of nodes. Tag
-        ///                  must be in full form, e.g. "tag:yaml.org,2002:set",
-        ///                  not a shortcut, like "!!set".
-        ///
-        /// Examples:
-        /// --------------------
-        /// // Will be emitted as a sequence (default for arrays)
-        /// auto seq = Node([1, 2, 3, 4, 5]);
-        /// // Will be emitted as a set (overriden tag)
-        /// auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
-        /// --------------------
+        /** Construct a node from an _array.
+         *
+         * If _array is an _array of nodes or pairs, it is stored directly.
+         * Otherwise, every value in the array is converted to a node, and
+         * those nodes are stored.
+         *
+         * Params:  array = Values to store in the node.
+         *          tag   = Overrides tag of the node when emitted, regardless
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type
+         *                  maps to multiple different YAML data types.
+         *                  This is used to differentiate between YAML sequences
+         *                  ("!!seq") and sets ("!!set"), which both are
+         *                  internally represented as an array_ of nodes. Tag
+         *                  must be in full form, e.g. "tag:yaml.org,2002:set",
+         *                  not a shortcut, like "!!set".
+         *
+         * Examples:
+         * --------------------
+         * // Will be emitted as a sequence (default for arrays)
+         * auto seq = Node([1, 2, 3, 4, 5]);
+         * // Will be emitted as a set (overriden tag)
+         * auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
+         * --------------------
+         */
         this(T)(T[] array, const string tag = null) @safe
             if (!isSomeString!(T[]))
         {
@@ -333,32 +336,33 @@ struct Node
             auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
         }
 
-        /// Construct a node from an associative _array.
-        ///
-        /// If keys and/or values of _array are nodes, they stored directly.
-        /// Otherwise they are converted to nodes and then stored.
-        ///
-        /// Params:  array = Values to store in the node.
-        ///          tag   = Overrides tag of the node when emitted, regardless
-        ///                  of tag determined by Representer. Representer uses
-        ///                  this to determine YAML data type when a D data type
-        ///                  maps to multiple different YAML data types.
-        ///                  This is used to differentiate between YAML unordered
-        ///                  mappings ("!!map"), ordered mappings ("!!omap"), and
-        ///                  pairs ("!!pairs") which are all internally
-        ///                  represented as an _array of node pairs. Tag must be
-        ///                  in full form, e.g. "tag:yaml.org,2002:omap", not a
-        ///                  shortcut, like "!!omap".
-        ///
-        /// Examples:
-        /// --------------------
-        /// // Will be emitted as an unordered mapping (default for mappings)
-        /// auto map   = Node([1 : "a", 2 : "b"]);
-        /// // Will be emitted as an ordered map (overriden tag)
-        /// auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
-        /// // Will be emitted as pairs (overriden tag)
-        /// auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
-        /// --------------------
+        /** Construct a node from an associative _array.
+         *
+         * If keys and/or values of _array are nodes, they stored directly.
+         * Otherwise they are converted to nodes and then stored.
+         *
+         * Params:  array = Values to store in the node.
+         *          tag   = Overrides tag of the node when emitted, regardless
+         *                  of tag determined by Representer. Representer uses
+         *                  this to determine YAML data type when a D data type
+         *                  maps to multiple different YAML data types.
+         *                  This is used to differentiate between YAML unordered
+         *                  mappings ("!!map"), ordered mappings ("!!omap"), and
+         *                  pairs ("!!pairs") which are all internally
+         *                  represented as an _array of node pairs. Tag must be
+         *                  in full form, e.g. "tag:yaml.org,2002:omap", not a
+         *                  shortcut, like "!!omap".
+         *
+         * Examples:
+         * --------------------
+         * // Will be emitted as an unordered mapping (default for mappings)
+         * auto map   = Node([1 : "a", 2 : "b"]);
+         * // Will be emitted as an ordered map (overriden tag)
+         * auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
+         * // Will be emitted as pairs (overriden tag)
+         * auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
+         * --------------------
+         */
         this(K, V)(V[K] array, const string tag = null) @safe
         {
             tag_ = Tag(tag);
@@ -387,41 +391,42 @@ struct Node
             auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
 
-        /// Construct a node from arrays of _keys and _values.
-        ///
-        /// Constructs a mapping node with key-value pairs from
-        /// _keys and _values, keeping their order. Useful when order
-        /// is important (ordered maps, pairs).
-        ///
-        ///
-        /// keys and values must have equal length.
-        ///
-        ///
-        /// If _keys and/or _values are nodes, they are stored directly/
-        /// Otherwise they are converted to nodes and then stored.
-        ///
-        /// Params:  keys   = Keys of the mapping, from first to last pair.
-        ///          values = Values of the mapping, from first to last pair.
-        ///          tag    = Overrides tag of the node when emitted, regardless
-        ///                   of tag determined by Representer. Representer uses
-        ///                   this to determine YAML data type when a D data type
-        ///                   maps to multiple different YAML data types.
-        ///                   This is used to differentiate between YAML unordered
-        ///                   mappings ("!!map"), ordered mappings ("!!omap"), and
-        ///                   pairs ("!!pairs") which are all internally
-        ///                   represented as an array of node pairs. Tag must be
-        ///                   in full form, e.g. "tag:yaml.org,2002:omap", not a
-        ///                   shortcut, like "!!omap".
-        ///
-        /// Examples:
-        /// --------------------
-        /// // Will be emitted as an unordered mapping (default for mappings)
-        /// auto map   = Node([1, 2], ["a", "b"]);
-        /// // Will be emitted as an ordered map (overriden tag)
-        /// auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
-        /// // Will be emitted as pairs (overriden tag)
-        /// auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
-        /// --------------------
+        /** Construct a node from arrays of _keys and _values.
+         *
+         * Constructs a mapping node with key-value pairs from
+         * _keys and _values, keeping their order. Useful when order
+         * is important (ordered maps, pairs).
+         *
+         *
+         * keys and values must have equal length.
+         *
+         *
+         * If _keys and/or _values are nodes, they are stored directly/
+         * Otherwise they are converted to nodes and then stored.
+         *
+         * Params:  keys   = Keys of the mapping, from first to last pair.
+         *          values = Values of the mapping, from first to last pair.
+         *          tag    = Overrides tag of the node when emitted, regardless
+         *                   of tag determined by Representer. Representer uses
+         *                   this to determine YAML data type when a D data type
+         *                   maps to multiple different YAML data types.
+         *                   This is used to differentiate between YAML unordered
+         *                   mappings ("!!map"), ordered mappings ("!!omap"), and
+         *                   pairs ("!!pairs") which are all internally
+         *                   represented as an array of node pairs. Tag must be
+         *                   in full form, e.g. "tag:yaml.org,2002:omap", not a
+         *                   shortcut, like "!!omap".
+         *
+         * Examples:
+         * --------------------
+         * // Will be emitted as an unordered mapping (default for mappings)
+         * auto map   = Node([1, 2], ["a", "b"]);
+         * // Will be emitted as an ordered map (overriden tag)
+         * auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
+         * // Will be emitted as pairs (overriden tag)
+         * auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
+         * --------------------
+         */
         this(K, V)(K[] keys, V[] values, const string tag = null) @safe
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
@@ -494,32 +499,25 @@ struct Node
         /// Return tag of the node.
         @property string tag()      const @safe nothrow {return tag_.get;}
 
-        /// Equality test.
-        ///
-        /// If T is Node, recursively compare all subnodes.
-        /// This might be quite expensive if testing entire documents.
-        ///
-        /// If T is not Node, get a value if type T from the node and test
-        /// equality with that.
-        ///
-        /// To test equality with a null YAML value, use YAMLNull.
-        ///
-        /// Examples:
-        /// --------------------
-        /// auto node = Node(42);
-        ///
-        /// assert(node == 42);
-        /// assert(node != "42");
-        /// assert(node != "43");
-        /// --------------------
-        ///
-        /// Params:  rhs = Variable to test equality with.
-        ///
-        /// Returns: true if equal, false otherwise.
+        /** Equality test.
+         *
+         * If T is Node, recursively compares all subnodes.
+         * This might be quite expensive if testing entire documents.
+         *
+         * If T is not Node, gets a value of type T from the node and tests
+         * equality with that.
+         *
+         * To test equality with a null YAML value, use YAMLNull.
+         *
+         * Params:  rhs = Variable to test equality with.
+         *
+         * Returns: true if equal, false otherwise.
+         */
         bool opEquals(T)(const auto ref T rhs) const @safe
         {
             return equals!(Yes.useTag)(rhs);
         }
+        ///
         unittest
         {
             auto node = Node(42);
@@ -535,48 +533,49 @@ struct Node
         /// Shortcut for get().
         alias get as;
 
-        /// Get the value of the node as specified type.
-        ///
-        /// If the specifed type does not match type in the node,
-        /// conversion is attempted. The stringConversion template
-        /// parameter can be used to disable conversion from non-string
-        /// types to strings.
-        ///
-        /// Numeric values are range checked, throwing if out of range of
-        /// requested type.
-        ///
-        /// Timestamps are stored as std.datetime.SysTime.
-        /// Binary values are decoded and stored as ubyte[].
-        ///
-        /// To get a null value, use get!YAMLNull . This is to
-        /// prevent getting null values for types such as strings or classes.
-        ///
-        /// $(BR)$(B Mapping default values:)
-        ///
-        /// $(PBR
-        /// The '=' key can be used to denote the default value of a mapping.
-        /// This can be used when a node is scalar in early versions of a program,
-        /// but is replaced by a mapping later. Even if the node is a mapping, the
-        /// get method can be used as if it was a scalar if it has a default value.
-        /// This way, new YAML files where the node is a mapping can still be read
-        /// by old versions of the program, which expect the node to be a scalar.
-        /// )
-        ///
-        /// Examples:
-        ///
-        /// Automatic type conversion:
-        /// --------------------
-        /// auto node = Node(42);
-        ///
-        /// assert(node.as!int == 42);
-        /// assert(node.as!string == "42");
-        /// assert(node.as!double == 42.0);
-        /// --------------------
-        ///
-        /// Returns: Value of the node as specified type.
-        ///
-        /// Throws:  NodeException if unable to convert to specified type, or if
-        ///          the value is out of range of requested type.
+        /** Get the value of the node as specified type.
+         *
+         * If the specifed type does not match type in the node,
+         * conversion is attempted. The stringConversion template
+         * parameter can be used to disable conversion from non-string
+         * types to strings.
+         *
+         * Numeric values are range checked, throwing if out of range of
+         * requested type.
+         *
+         * Timestamps are stored as std.datetime.SysTime.
+         * Binary values are decoded and stored as ubyte[].
+         *
+         * To get a null value, use get!YAMLNull . This is to
+         * prevent getting null values for types such as strings or classes.
+         *
+         * $(BR)$(B Mapping default values:)
+         *
+         * $(PBR
+         * The '=' key can be used to denote the default value of a mapping.
+         * This can be used when a node is scalar in early versions of a program,
+         * but is replaced by a mapping later. Even if the node is a mapping, the
+         * get method can be used as if it was a scalar if it has a default value.
+         * This way, new YAML files where the node is a mapping can still be read
+         * by old versions of the program, which expect the node to be a scalar.
+         * )
+         *
+         * Examples:
+         *
+         * Automatic type conversion:
+         * --------------------
+         * auto node = Node(42);
+         *
+         * assert(node.as!int == 42);
+         * assert(node.as!string == "42");
+         * assert(node.as!double == 42.0);
+         * --------------------
+         *
+         * Returns: Value of the node as specified type.
+         *
+         * Throws:  NodeException if unable to convert to specified type, or if
+         *          the value is out of range of requested type.
+         */
         @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)()
             @trusted if(!is(T == const))
         {
@@ -711,13 +710,14 @@ struct Node
             }
         }
 
-        /// If this is a collection, return its _length.
-        ///
-        /// Otherwise, throw NodeException.
-        ///
-        /// Returns: Number of elements in a sequence or key-value pairs in a mapping.
-        ///
-        /// Throws: NodeException if this is not a sequence nor a mapping.
+        /** If this is a collection, return its _length.
+         *
+         * Otherwise, throw NodeException.
+         *
+         * Returns: Number of elements in a sequence or key-value pairs in a mapping.
+         *
+         * Throws: NodeException if this is not a sequence nor a mapping.
+         */
         @property size_t length() const @safe
         {
             if(isSequence)    {return value_.get!(const Node[]).length;}
@@ -726,24 +726,25 @@ struct Node
                             startMark_);
         }
 
-        /// Get the element at specified index.
-        ///
-        /// If the node is a sequence, index must be integral.
-        ///
-        ///
-        /// If the node is a mapping, return the value corresponding to the first
-        /// key equal to index. containsKey() can be used to determine if a mapping
-        /// has a specific key.
-        ///
-        /// To get element at a null index, use YAMLNull for index.
-        ///
-        /// Params:  index = Index to use.
-        ///
-        /// Returns: Value corresponding to the index.
-        ///
-        /// Throws:  NodeException if the index could not be found,
-        ///          non-integral index is used with a sequence or the node is
-        ///          not a collection.
+        /** Get the element at specified index.
+         *
+         * If the node is a sequence, index must be integral.
+         *
+         *
+         * If the node is a mapping, return the value corresponding to the first
+         * key equal to index. containsKey() can be used to determine if a mapping
+         * has a specific key.
+         *
+         * To get element at a null index, use YAMLNull for index.
+         *
+         * Params:  index = Index to use.
+         *
+         * Returns: Value corresponding to the index.
+         *
+         * Throws:  NodeException if the index could not be found,
+         *          non-integral index is used with a sequence or the node is
+         *          not a collection.
+         */
         ref Node opIndex(T)(T index) @trusted
         {
             if(isSequence)
@@ -807,36 +808,31 @@ struct Node
             assertThrown!NodeException(nmap[14]);
         }
 
-        /// Determine if a collection contains specified value.
-        ///
-        /// If the node is a sequence, check if it contains the specified value.
-        /// If it's a mapping, check if it has a value that matches specified value.
-        ///
-        /// To check for a null value, use YAMLNull for rhs.
-        ///
-        /// Params:  rhs = Item to look for.
-        ///
-        /// Returns: true if rhs was found, false otherwise.
-        ///
-        /// Throws:  NodeException if the node is not a collection.
+        /** Determine if a collection contains specified value.
+         *
+         * If the node is a sequence, check if it contains the specified value.
+         * If it's a mapping, check if it has a value that matches specified value.
+         *
+         * Params:  rhs = Item to look for. Use YAMLNull to check for a null value.
+         *
+         * Returns: true if rhs was found, false otherwise.
+         *
+         * Throws:  NodeException if the node is not a collection.
+         */
         bool contains(T)(T rhs) const @safe
         {
             return contains_!(T, No.key, "contains")(rhs);
         }
 
 
-        /// Determine if a collection contains specified key.
-        ///
-        /// If the node is a mapping, check if it has a key
-        /// that matches specified key.
-        ///
-        /// To check for a null key, use YAMLNull for rhs.
-        ///
-        /// Params:  rhs = Item to look for.
-        ///
-        /// Returns: true if rhs was found, false otherwise.
-        ///
-        /// Throws:  NodeException if the node is not a mapping.
+        /** Determine if a mapping contains specified key.
+         *
+         * Params:  rhs = Key to look for. Use YAMLNull to check for a null key.
+         *
+         * Returns: true if rhs was found, false otherwise.
+         *
+         * Throws:  NodeException if the node is not a mapping.
+         */
         bool containsKey(T)(T rhs) const @safe
         {
             return contains_!(T, Yes.key, "containsKey")(rhs);
@@ -921,26 +917,27 @@ struct Node
                    "Node.opAssign() doesn't produce an equivalent copy");
         }
 
-        /// Set element at specified index in a collection.
-        ///
-        /// This method can only be called on collection nodes.
-        ///
-        /// If the node is a sequence, index must be integral.
-        ///
-        /// If the node is a mapping, sets the _value corresponding to the first
-        /// key matching index (including conversion, so e.g. "42" matches 42).
-        ///
-        /// If the node is a mapping and no key matches index, a new key-value
-        /// pair is added to the mapping. In sequences the index must be in
-        /// range. This ensures behavior siilar to D arrays and associative
-        /// arrays.
-        ///
-        /// To set element at a null index, use YAMLNull for index.
-        ///
-        /// Params:  index = Index of the value to set.
-        ///
-        /// Throws:  NodeException if the node is not a collection, index is out
-        ///          of range or if a non-integral index is used on a sequence node.
+        /** Set element at specified index in a collection.
+         *
+         * This method can only be called on collection nodes.
+         *
+         * If the node is a sequence, index must be integral.
+         *
+         * If the node is a mapping, sets the _value corresponding to the first
+         * key matching index (including conversion, so e.g. "42" matches 42).
+         *
+         * If the node is a mapping and no key matches index, a new key-value
+         * pair is added to the mapping. In sequences the index must be in
+         * range. This ensures behavior siilar to D arrays and associative
+         * arrays.
+         *
+         * To set element at a null index, use YAMLNull for index.
+         *
+         * Params:  index = Index of the value to set.
+         *
+         * Throws:  NodeException if the node is not a collection, index is out
+         *          of range or if a non-integral index is used on a sequence node.
+         */
         void opIndexAssign(K, V)(V value, K index) @safe
         {
             if(isSequence())
@@ -1005,13 +1002,14 @@ struct Node
             }
         }
 
-        /// Foreach over a sequence, getting each element as T.
-        ///
-        /// If T is Node, simply iterate over the nodes in the sequence.
-        /// Otherwise, convert each node to T during iteration.
-        ///
-        /// Throws:  NodeException if the node is not a sequence or an
-        ///          element could not be converted to specified type.
+        /** Foreach over a sequence, getting each element as T.
+         *
+         * If T is Node, simply iterate over the nodes in the sequence.
+         * Otherwise, convert each node to T during iteration.
+         *
+         * Throws:  NodeException if the node is not a sequence or an
+         *          element could not be converted to specified type.
+         */
         int opApply(T)(int delegate(ref T) dg) @trusted
         {
             enforce(isSequence,
@@ -1060,13 +1058,14 @@ struct Node
             assert(array2 == [11, 12, 13, 14]);
         }
 
-        /// Foreach over a mapping, getting each key/value as K/V.
-        ///
-        /// If the K and/or V is Node, simply iterate over the nodes in the mapping.
-        /// Otherwise, convert each key/value to T during iteration.
-        ///
-        /// Throws:  NodeException if the node is not a mapping or an
-        ///          element could not be converted to specified type.
+        /** Foreach over a mapping, getting each key/value as K/V.
+         *
+         * If the K and/or V is Node, simply iterate over the nodes in the mapping.
+         * Otherwise, convert each key/value to T during iteration.
+         *
+         * Throws:  NodeException if the node is not a mapping or an
+         *          element could not be converted to specified type.
+         */
         int opApply(K, V)(int delegate(ref K, ref V) dg) @trusted
         {
             enforce(isMapping,
@@ -1152,19 +1151,20 @@ struct Node
             }
         }
 
-        /// Add an element to a sequence.
-        ///
-        /// This method can only be called on sequence nodes.
-        ///
-        /// If value is a node, it is copied to the sequence directly. Otherwise
-        /// value is converted to a node and then stored in the sequence.
-        ///
-        /// $(P When emitting, all values in the sequence will be emitted. When
-        /// using the !!set tag, the user needs to ensure that all elements in
-        /// the sequence are unique, otherwise $(B invalid) YAML code will be
-        /// emitted.)
-        ///
-        /// Params:  value = Value to _add to the sequence.
+        /** Add an element to a sequence.
+         *
+         * This method can only be called on sequence nodes.
+         *
+         * If value is a node, it is copied to the sequence directly. Otherwise
+         * value is converted to a node and then stored in the sequence.
+         *
+         * $(P When emitting, all values in the sequence will be emitted. When
+         * using the !!set tag, the user needs to ensure that all elements in
+         * the sequence are unique, otherwise $(B invalid) YAML code will be
+         * emitted.)
+         *
+         * Params:  value = Value to _add to the sequence.
+         */
         void add(T)(T value) @safe
         {
             enforce(isSequence(),
@@ -1186,20 +1186,21 @@ struct Node
             }
         }
 
-        /// Add a key-value pair to a mapping.
-        ///
-        /// This method can only be called on mapping nodes.
-        ///
-        /// If key and/or value is a node, it is copied to the mapping directly.
-        /// Otherwise it is converted to a node and then stored in the mapping.
-        ///
-        /// $(P It is possible for the same key to be present more than once in a
-        /// mapping. When emitting, all key-value pairs will be emitted.
-        /// This is useful with the "!!pairs" tag, but will result in
-        /// $(B invalid) YAML with "!!map" and "!!omap" tags.)
-        ///
-        /// Params:  key   = Key to _add.
-        ///          value = Value to _add.
+        /** Add a key-value pair to a mapping.
+         *
+         * This method can only be called on mapping nodes.
+         *
+         * If key and/or value is a node, it is copied to the mapping directly.
+         * Otherwise it is converted to a node and then stored in the mapping.
+         *
+         * $(P It is possible for the same key to be present more than once in a
+         * mapping. When emitting, all key-value pairs will be emitted.
+         * This is useful with the "!!pairs" tag, but will result in
+         * $(B invalid) YAML with "!!map" and "!!omap" tags.)
+         *
+         * Params:  key   = Key to _add.
+         *          value = Value to _add.
+         */
         void add(K, V)(K key, V value) @safe
         {
             enforce(isMapping(),
@@ -1221,20 +1222,22 @@ struct Node
             }
         }
 
-        /// Determine whether a key is in a mapping, and access its value.
-        ///
-        /// This method can only be called on mapping nodes.
-        ///
-        /// Params:   key = Key to search for.
-        ///
-        /// Returns:  A pointer to the value (as a Node) corresponding to key,
-        ///           or null if not found.
-        ///
-        /// Note:     Any modification to the node can invalidate the returned
-        ///           pointer.
-        ///
-        /// See_Also: contains
-        Node* opBinaryRight(string op, K)(K key) @trusted if (op == "in")
+        /** Determine whether a key is in a mapping, and access its value.
+         *
+         * This method can only be called on mapping nodes.
+         *
+         * Params:   key = Key to search for.
+         *
+         * Returns:  A pointer to the value (as a Node) corresponding to key,
+         *           or null if not found.
+         *
+         * Note:     Any modification to the node can invalidate the returned
+         *           pointer.
+         *
+         * See_Also: contains
+         */
+        Node* opBinaryRight(string op, K)(K key) @system
+            if (op == "in")
         {
             enforce(isMapping, new Error("Trying to use 'in' on a " ~
                                          nodeTypeString ~ " node", startMark_));
@@ -1262,17 +1265,18 @@ struct Node
             assert(mapping["foo"] == Node("newfoo"));
         }
 
-        /// Remove first (if any) occurence of a value in a collection.
-        ///
-        /// This method can only be called on collection nodes.
-        ///
-        /// If the node is a sequence, the first node matching value is removed.
-        /// If the node is a mapping, the first key-value pair where _value
-        /// matches specified value is removed.
-        ///
-        /// Params:  rhs = Value to _remove.
-        ///
-        /// Throws:  NodeException if the node is not a collection.
+        /** Remove first (if any) occurence of a value in a collection.
+         *
+         * This method can only be called on collection nodes.
+         *
+         * If the node is a sequence, the first node matching value is removed.
+         * If the node is a mapping, the first key-value pair where _value
+         * matches specified value is removed.
+         *
+         * Params:  rhs = Value to _remove.
+         *
+         * Throws:  NodeException if the node is not a collection.
+         */
         void remove(T)(T rhs) @trusted
         {
             remove_!(T, No.key, "remove")(rhs);
@@ -1303,23 +1307,24 @@ struct Node
             }
         }
 
-        /// Remove element at the specified index of a collection.
-        ///
-        /// This method can only be called on collection nodes.
-        ///
-        /// If the node is a sequence, index must be integral.
-        ///
-        /// If the node is a mapping, remove the first key-value pair where
-        /// key matches index.
-        ///
-        /// If the node is a mapping and no key matches index, nothing is removed
-        /// and no exception is thrown. This ensures behavior siilar to D arrays
-        /// and associative arrays.
-        ///
-        /// Params:  index = Index to remove at.
-        ///
-        /// Throws:  NodeException if the node is not a collection, index is out
-        ///          of range or if a non-integral index is used on a sequence node.
+        /** Remove element at the specified index of a collection.
+         *
+         * This method can only be called on collection nodes.
+         *
+         * If the node is a sequence, index must be integral.
+         *
+         * If the node is a mapping, remove the first key-value pair where
+         * key matches index.
+         *
+         * If the node is a mapping and no key matches index, nothing is removed
+         * and no exception is thrown. This ensures behavior siilar to D arrays
+         * and associative arrays.
+         *
+         * Params:  index = Index to remove at.
+         *
+         * Throws:  NodeException if the node is not a collection, index is out
+         *          of range or if a non-integral index is used on a sequence node.
+         */
         void removeAt(T)(T index) @trusted
         {
             remove_!(T, Yes.key, "removeAt")(index);
@@ -1355,26 +1360,15 @@ struct Node
         }
 
         // Compute hash of the node.
-        hash_t toHash() const nothrow @safe
+        hash_t toHash() @safe nothrow const
         {
-            // Hack to allow const nothrow @safe.
-            // Should be rewritten once std.variant is fixed.
-            hash_t unsafeHash() nothrow @trusted
-            {
-                const tagHash = tag_.isNull ? 0 : tag_.toHash();
-                // Variant toHash is not nothrow at the moment, so we need to catch
-                // an exception that is never thrown.
-                try
-                {
-                    // Variant toHash is not const at the moment, so we need to const-cast.
-                    return tagHash + (cast(Value)value_).toHash();
-                }
-                catch(Exception e)
-                {
-                    assert(false, "Unexpected exception caught");
-                }
-            }
-            return unsafeHash();
+            const tagHash = tag_.isNull ? 0 : tag_.toHash();
+            // Variant toHash is not const at the moment, so we need to const-cast.
+            return tagHash + value_.toHash();
+        }
+        unittest
+        {
+            writeln("Node(42).toHash(): ", Node(42).toHash());
         }
 
     package:

@@ -51,19 +51,20 @@ package class ConstructorException : YAMLException
 
 private alias ConstructorException Error;
 
-/// Constructs YAML values.
-///
-/// Each YAML scalar, sequence or mapping has a tag specifying its data type.
-/// Constructor uses user-specifyable functions to create a node of desired
-/// data type from a scalar, sequence or mapping.
-///
-///
-/// Each of these functions is associated with a tag, and can process either
-/// a scalar, a sequence, or a mapping. The constructor passes each value to
-/// the function with corresponding tag, which then returns the resulting value
-/// that can be stored in a node.
-///
-/// If a tag is detected with no known constructor function, it is considered an error.
+/** Constructs YAML values.
+ *
+ * Each YAML scalar, sequence or mapping has a tag specifying its data type.
+ * Constructor uses user-specifyable functions to create a node of desired
+ * data type from a scalar, sequence or mapping.
+ *
+ *
+ * Each of these functions is associated with a tag, and can process either
+ * a scalar, a sequence, or a mapping. The constructor passes each value to
+ * the function with corresponding tag, which then returns the resulting value
+ * that can be stored in a node.
+ *
+ * If a tag is detected with no known constructor function, it is considered an error.
+ */
 final class Constructor
 {
     private:
@@ -116,72 +117,73 @@ final class Constructor
             fromMapping_ = null;
         }
 
-        /// Add a constructor function from scalar.
-        ///
-        /// The function must take a reference to $(D Node) to construct from.
-        /// The node contains a string for scalars, $(Node[]) for sequences and
-        /// $(Node.Pair[]) for mappings.
-        ///
-        /// Any exception thrown by this function will be caught by D:YAML and
-        /// its message will be added to a $(YAMLException) that will also tell
-        /// the user which type failed to construct, and position in the file.
-        ///
-        ///
-        /// The value returned by this function will be stored in the resulting node.
-        ///
-        /// Only one constructor function can be set for one tag.
-        ///
-        ///
-        /// Structs and classes must implement the $(D opCmp()) operator for D:YAML
-        /// support. The signature of the operator that must be implemented
-        /// is $(D const int opCmp(ref const MyStruct s)) for structs where
-        /// $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for
-        /// classes. Note that the class $(D opCmp()) should not alter the compared
-        /// values - it is not const for compatibility reasons.
-        ///
-        /// Params:  tag  = Tag for the function to handle.
-        ///          ctor = Constructor function.
-        ///
-        /// Example:
-        ///
-        /// --------------------
-        /// import std.string;
-        ///
-        /// import dyaml.all;
-        ///
-        /// struct MyStruct
-        /// {
-        ///     int x, y, z;
-        ///
-        ///     //Any D:YAML type must have a custom opCmp operator.
-        ///     //This is used for ordering in mappings.
-        ///     const int opCmp(ref const MyStruct s)
-        ///     {
-        ///         if(x != s.x){return x - s.x;}
-        ///         if(y != s.y){return y - s.y;}
-        ///         if(z != s.z){return z - s.z;}
-        ///         return 0;
-        ///     }
-        /// }
-        ///
-        /// MyStruct constructMyStructScalar(ref Node node)
-        /// {
-        ///     //Guaranteed to be string as we construct from scalar.
-        ///     //!mystruct x:y:z
-        ///     auto parts = node.as!string().split(":");
-        ///     // If this throws, the D:YAML will handle it and throw a YAMLException.
-        ///     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-        /// }
-        ///
-        /// void main()
-        /// {
-        ///     auto loader = Loader("file.yaml");
-        ///     auto constructor = new Constructor;
-        ///     constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-        ///     loader.constructor = constructor;
-        ///     Node node = loader.load();
-        /// }
-        /// --------------------
+        /** Add a constructor function from scalar.
+         *
+         * The function must take a reference to $(D Node) to construct from.
+         * The node contains a string for scalars, $(D Node[]) for sequences and
+         * $(D Node.Pair[]) for mappings.
+         *
+         * Any exception thrown by this function will be caught by D:YAML and
+         * its message will be added to a $(D YAMLException) that will also tell
+         * the user which type failed to construct, and position in the file.
+         *
+         *
+         * The value returned by this function will be stored in the resulting node.
+         *
+         * Only one constructor function can be set for one tag.
+         *
+         *
+         * Structs and classes must implement the $(D opCmp()) operator for D:YAML
+         * support. The signature of the operator that must be implemented
+         * is $(D const int opCmp(ref const MyStruct s)) for structs where
+         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for
+         * classes. Note that the class $(D opCmp()) should not alter the compared
+         * values - it is not const for compatibility reasons.
+         *
+         * Params:  tag  = Tag for the function to handle.
+         *          ctor = Constructor function.
+         *
+         * Example:
+         *
+         * --------------------
+         * import std.string;
+         *
+         * import dyaml.all;
+         *
+         * struct MyStruct
+         * {
+         *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }
+         * }
+         *
+         * MyStruct constructMyStructScalar(ref Node node)
+         * {
+         *     //Guaranteed to be string as we construct from scalar.
+         *     //!mystruct x:y:z
+         *     auto parts = node.as!string().split(":");
+         *     // If this throws, the D:YAML will handle it and throw a YAMLException.
+         *     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
+         * }
+         *
+         * void main()
+         * {
+         *     auto loader = Loader("file.yaml");
+         *     auto constructor = new Constructor;
+         *     constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
+         *     loader.constructor = constructor;
+         *     Node node = loader.load();
+         * }
+         * --------------------
+         */
         void addConstructorScalar(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
@@ -190,48 +192,49 @@ final class Constructor
             (*delegates!string)[t] = deleg;
         }
 
-        /// Add a constructor function from sequence.
-        ///
-        /// See_Also:    addConstructorScalar
-        ///
-        /// Example:
-        ///
-        /// --------------------
-        /// import std.string;
-        ///
-        /// import dyaml.all;
-        ///
-        /// struct MyStruct
-        /// {
-        ///     int x, y, z;
-        ///
-        ///     //Any D:YAML type must have a custom opCmp operator.
-        ///     //This is used for ordering in mappings.
-        ///     const int opCmp(ref const MyStruct s)
-        ///     {
-        ///         if(x != s.x){return x - s.x;}
-        ///         if(y != s.y){return y - s.y;}
-        ///         if(z != s.z){return z - s.z;}
-        ///         return 0;
-        ///     }
-        /// }
-        ///
-        /// MyStruct constructMyStructSequence(ref Node node)
-        /// {
-        ///     //node is guaranteed to be sequence.
-        ///     //!mystruct [x, y, z]
-        ///     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-        /// }
-        ///
-        /// void main()
-        /// {
-        ///     auto loader = Loader("file.yaml");
-        ///     auto constructor = new Constructor;
-        ///     constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-        ///     loader.constructor = constructor;
-        ///     Node node = loader.load();
-        /// }
-        /// --------------------
+        /** Add a constructor function from sequence.
+         *
+         * See_Also:    addConstructorScalar
+         *
+         * Example:
+         *
+         * --------------------
+         * import std.string;
+         *
+         * import dyaml.all;
+         *
+         * struct MyStruct
+         * {
+         *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }
+         * }
+         *
+         * MyStruct constructMyStructSequence(ref Node node)
+         * {
+         *     //node is guaranteed to be sequence.
+         *     //!mystruct [x, y, z]
+         *     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
+         * }
+         *
+         * void main()
+         * {
+         *     auto loader = Loader("file.yaml");
+         *     auto constructor = new Constructor;
+         *     constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
+         *     loader.constructor = constructor;
+         *     Node node = loader.load();
+         * }
+         * --------------------
+         */
         void addConstructorSequence(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
@@ -240,48 +243,49 @@ final class Constructor
             (*delegates!(Node[]))[t] = deleg;
         }
 
-        /// Add a constructor function from a mapping.
-        ///
-        /// See_Also:    addConstructorScalar
-        ///
-        /// Example:
-        ///
-        /// --------------------
-        /// import std.string;
-        ///
-        /// import dyaml.all;
-        ///
-        /// struct MyStruct
-        /// {
-        ///     int x, y, z;
-        ///
-        ///     //Any D:YAML type must have a custom opCmp operator.
-        ///     //This is used for ordering in mappings.
-        ///     const int opCmp(ref const MyStruct s)
-        ///     {
-        ///         if(x != s.x){return x - s.x;}
-        ///         if(y != s.y){return y - s.y;}
-        ///         if(z != s.z){return z - s.z;}
-        ///         return 0;
-        ///     }
-        /// }
-        ///
-        /// MyStruct constructMyStructMapping(ref Node node)
-        /// {
-        ///     //node is guaranteed to be mapping.
-        ///     //!mystruct {"x": x, "y": y, "z": z}
-        ///     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-        /// }
-        ///
-        /// void main()
-        /// {
-        ///     auto loader = Loader("file.yaml");
-        ///     auto constructor = new Constructor;
-        ///     constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-        ///     loader.constructor = constructor;
-        ///     Node node = loader.load();
-        /// }
-        /// --------------------
+        /** Add a constructor function from a mapping.
+         *
+         * See_Also:    addConstructorScalar
+         *
+         * Example:
+         *
+         * --------------------
+         * import std.string;
+         *
+         * import dyaml.all;
+         *
+         * struct MyStruct
+         * {
+         *     int x, y, z;
+         *
+         *     //Any D:YAML type must have a custom opCmp operator.
+         *     //This is used for ordering in mappings.
+         *     const int opCmp(ref const MyStruct s)
+         *     {
+         *         if(x != s.x){return x - s.x;}
+         *         if(y != s.y){return y - s.y;}
+         *         if(z != s.z){return z - s.z;}
+         *         return 0;
+         *     }
+         * }
+         *
+         * MyStruct constructMyStructMapping(ref Node node)
+         * {
+         *     //node is guaranteed to be mapping.
+         *     //!mystruct {"x": x, "y": y, "z": z}
+         *     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
+         * }
+         *
+         * void main()
+         * {
+         *     auto loader = Loader("file.yaml");
+         *     auto constructor = new Constructor;
+         *     constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
+         *     loader.constructor = constructor;
+         *     Node node = loader.load();
+         * }
+         * --------------------
+         */
         void addConstructorMapping(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
