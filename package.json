@@ -17,4 +17,25 @@
         "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] },
     },
 
+    "configurations":
+    [
+       {
+           "name": "unittest",
+           "targetName": "unittest",
+           "targetType": "executable",
+           "sourceFiles": ["unittest.d",
+                           "test/src/common.d",
+                           "test/src/compare.d",
+                           "test/src/constructor.d",
+                           "test/src/emitter.d",
+                           "test/src/errors.d",
+                           "test/src/inputoutput.d",
+                           "test/src/reader.d",
+                           "test/src/representer.d",
+                           "test/src/resolver.d",
+                           "test/src/tokens.d",
+                           ],
+           "mainSourceFile": "unittest.d",
+       }
+    ]
 }
