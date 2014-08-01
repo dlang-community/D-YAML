@@ -24,9 +24,8 @@ Download the version of DMD for your operating system and install it.
 
 .. note:: 
    Other D compilers exist, such as 
-   `GDC <http://bitbucket.org/goshawk/gdc/wiki/Home>`_ and 
-   `LDC <http://www.dsource.org/projects/ldc/>`_. Setting up with either one of
-   them should be similar to DMD, but they are not yet as stable as DMD.
+   `GDC <http://gdcproject.org/>`_ and 
+   `LDC <http://bitbucket.org/goshawk/gdc/wiki/Home>`_.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Download and compile D:YAML
@@ -77,7 +76,7 @@ into the file:
 .. code-block:: d
 
    import std.stdio;
-   import dyaml.all;
+   import yaml;
 
    void main()
    {

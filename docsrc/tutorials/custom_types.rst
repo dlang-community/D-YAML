@@ -78,6 +78,7 @@ CSS-like format, RRGGBB, or from a mapping, where we use the following format:
        //Get value of a hex digit.
        uint hex(char c)
        {
+           import std.ascii;
            if(!std.ascii.isHexDigit(c))
            {
                throw new Exception("Invalid color: " ~ value);
