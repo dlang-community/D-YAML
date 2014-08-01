@@ -427,10 +427,10 @@ dchar decodeValidUTF8NoGC(const(char[]) str, ref size_t index)
 ///          Otherwise a struct with a 'bytes' member specifying the number of bytes of
 ///          the endocded character, and a 'string errorMessage' member that is null
 ///          if there was no error and otherwise stores the error message.
-auto encodeCharNoGC(Flag!"validated" validated)(ref char[4] buf, dchar c) 
+auto encodeCharNoGC(Flag!"validated" validated)(ref char[4] buf, dchar c)
     @safe pure nothrow @nogc
 {
-    static if(!validated) struct Result 
+    static if(!validated) struct Result
     {
         size_t bytes;
         string errorMessage;
