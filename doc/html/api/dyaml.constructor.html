@@ -4,13 +4,13 @@
 <html lang='en'>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" >
-<title>dyaml.constructor - D:YAML 0.4 API documentation</title>
+<title>dyaml.constructor - D:YAML 0.5 API documentation</title>
 <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
 <body><div id="top">
 <div id="header">
-<img id="logo" alt="D:YAML logo" src="images/logo.png"><a id="main-heading" href="index.html">D:YAML 0.4 API documentation</a>
+<img id="logo" alt="D:YAML logo" src="images/logo.png"><a id="main-heading" href="index.html">D:YAML 0.5 API documentation</a>
 </div>
 </div>
 
@@ -25,7 +25,6 @@
 <ul><li><a href="index.html">Main page</a></li>
 <li><a href="dyaml.constructor.html">dyaml.constructor</a></li>
 <li><a href="dyaml.dumper.html">dyaml.dumper</a></li>
-<li><a href="dyaml.encoding.html">dyaml.encoding</a></li>
 <li><a href="dyaml.exception.html">dyaml.exception</a></li>
 <li><a href="dyaml.hacks.html">dyaml.hacks</a></li>
 <li><a href="dyaml.linebreak.html">dyaml.linebreak</a></li>
@@ -45,28 +44,7 @@
  nodes. This can be used to implement custom data types. A tutorial can be
  found <a href="../tutorials/custom_types.html">here</a>.</p>
 
-<dl><dt class="d_decl"><a name="ConstructorException"></a>class <a name="ConstructorException"></a><span class="ddoc_psymbol">ConstructorException</span>: dyaml.exception.YAMLException;
-</dt>
-<dd><p>Exception thrown at constructor errors.
-</p>
-<p>Can be thrown by custom constructor functions.</p>
-
-<dl><dt class="d_decl"><a name="ConstructorException.this"></a>@safe  this(string <b>msg</b>, Mark <b>start</b>, Mark <b>end</b>, string <b>file</b> = __FILE__, int <b>line</b> = __LINE__);
-</dt>
-<dd><p>Construct a ConstructorException.
-</p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>msg</b></td>
-<td valign=top>Error message.</td></tr>
-<tr><td valign=top>Mark <b>start</b></td>
-<td valign=top>Start position of the error context.</td></tr>
-<tr><td valign=top>Mark <b>end</b></td>
-<td valign=top>End position of the error context.</td></tr>
-</table></div>
-
-</dd>
-</dl>
-</dd>
-<dt class="d_decl"><a name="Constructor"></a>class <a name="Constructor"></a><span class="ddoc_psymbol">Constructor</span>;
+<dl><dt class="d_decl"><a name="Constructor"></a>class <a name="Constructor"></a><span class="ddoc_psymbol">Constructor</span>;
 </dt>
 <dd><p>Constructs YAML values.
 </p>
@@ -85,12 +63,18 @@
 
  If a tag is detected with no known constructor function, it is considered an error.</p>
 
-<dl><dt class="d_decl"><a name="Constructor.this"></a>nothrow @safe  this(const Flag!"useDefaultConstructors" <b>defaultConstructors</b> = Yes.useDefaultConstructors);
+<dl><dt class="d_decl"><a name="Constructor.this"></a>nothrow @safe this(const Flag!"useDefaultConstructors" <b>defaultConstructors</b> = Yes.useDefaultConstructors);
 </dt>
 <dd><p>Construct a Constructor.
 </p>
 <p>If you don't want to support default YAML tags/data types, you can use
- <b>defaultConstructors</b> to disable constructor functions for these.
+<br>
+
+<b>defaultConstructors</b> to disable constructor functions for these.
+<br>
+
+<br>
+
 
 </p>
 <b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Flag!"useDefaultConstructors" <b>defaultConstructors</b></td>
@@ -103,12 +87,12 @@
 <dd><p>Add a constructor function from scalar.
 </p>
 <p>The function must take a reference to <span class="d_inlinecode">Node</span> to construct from.
- The node contains a string for scalars,  for sequences and
-  for mappings.
+ The node contains a string for scalars, <span class="d_inlinecode">Node[]</span> for sequences and
+ <span class="d_inlinecode">Node.Pair[]</span> for mappings.
 <br>
 
  Any exception thrown by this function will be caught by D:YAML and
- its message will be added to a  that will also tell
+ its message will be added to a <span class="d_inlinecode">YAMLException</span> that will also tell
  the user which type failed to construct, and position in the file.
 <br>
 
@@ -160,7 +144,7 @@ MyStruct constructMyStructScalar(<span class="d_keyword">ref</span> Node node)
     <span class="d_comment">//Guaranteed to be string as we construct from scalar.
 </span>    <span class="d_comment">//!mystruct x:y:z
 </span>    <span class="d_keyword">auto</span> parts = node.as!string().split(<span class="d_string">":"</span>);
-    <span class="d_comment">//If this throws, the D:YAML will handle it and throw a YAMLException.
+    <span class="d_comment">// If this throws, the D:YAML will handle it and throw a YAMLException.
 </span>    <span class="d_keyword">return</span> MyStruct(to!<span class="d_keyword">int</span>(parts[0]), to!<span class="d_keyword">int</span>(parts[1]), to!<span class="d_keyword">int</span>(parts[2]));
 }
 
@@ -345,7 +329,7 @@ MyStruct constructMyStructMapping(<span class="d_keyword">ref</span> Node node)
 </div>
 
 <div id="copyright">
-Copyright &copy; Ferdinand Majerech 2011. Based on <a href="http://www.pyyaml.org">PyYAML</a> by Kirill Simonov. |
+Copyright &copy; Ferdinand Majerech 2011-2014. Based on <a href="http://www.pyyaml.org">PyYAML</a> by Kirill Simonov. |
 Page generated by AutoDDoc and <a href="http://www.digitalmars.com/d/2.0/ddoc.html">Ddoc</a>.
 </div>
 

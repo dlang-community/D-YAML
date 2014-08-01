@@ -4,13 +4,13 @@
 <html lang='en'>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" >
-<title>dyaml.loader - D:YAML 0.4 API documentation</title>
+<title>dyaml.loader - D:YAML 0.5 API documentation</title>
 <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
 <body><div id="top">
 <div id="header">
-<img id="logo" alt="D:YAML logo" src="images/logo.png"><a id="main-heading" href="index.html">D:YAML 0.4 API documentation</a>
+<img id="logo" alt="D:YAML logo" src="images/logo.png"><a id="main-heading" href="index.html">D:YAML 0.5 API documentation</a>
 </div>
 </div>
 
@@ -25,7 +25,6 @@
 <ul><li><a href="index.html">Main page</a></li>
 <li><a href="dyaml.constructor.html">dyaml.constructor</a></li>
 <li><a href="dyaml.dumper.html">dyaml.dumper</a></li>
-<li><a href="dyaml.encoding.html">dyaml.encoding</a></li>
 <li><a href="dyaml.exception.html">dyaml.exception</a></li>
 <li><a href="dyaml.hacks.html">dyaml.hacks</a></li>
 <li><a href="dyaml.linebreak.html">dyaml.linebreak</a></li>
@@ -51,7 +50,7 @@
  tags / data types.
 
 </p>
-<b>Examples:</b><div class="pbr">Load single YAML document from a file:
+<b>Examples:</b><div class="pbr"> Load single YAML document from a file:
 <pre class="d_code"><span class="d_keyword">auto</span> rootNode = <span class="d_psymbol">Loader</span>(<span class="d_string">"file.yaml"</span>).load();
 ...
 </pre>
@@ -73,37 +72,51 @@
 </pre>
 <br>
 
- Load YAML from memory:
-<pre class="d_code"><span class="d_keyword">import</span> std.stream;
-<span class="d_keyword">import</span> std.stdio;
-
-string yaml_input = <span class="d_string">"red:   '#ff0000'\n"</span>
+ Load YAML from a string:
+<pre class="d_code"><span class="d_keyword">char</span>[] yaml_input = <span class="d_string">"red:   '#ff0000'\n"</span>
                     <span class="d_string">"green: '#00ff00'\n"</span>
-                    <span class="d_string">"blue:  '#0000ff'"</span>;
+                    <span class="d_string">"blue:  '#0000ff'"</span>.dup;
 
 <span class="d_keyword">auto</span> colors = <span class="d_psymbol">Loader</span>.fromString(yaml_input).load();
 
 <span class="d_keyword">foreach</span>(string color, string value; colors)
 {
+    <span class="d_keyword">import</span> std.stdio;
     writeln(color, <span class="d_string">" is "</span>, value, <span class="d_string">" in HTML/CSS"</span>);
+}
+</pre>
+<br>
+
+ Load a file into a buffer in memory and then load YAML from that buffer:
+<pre class="d_code"><span class="d_keyword">try</span>
+{
+    <span class="d_keyword">import</span> std.file;
+    <span class="d_keyword">void</span>[] buffer = std.file.read(<span class="d_string">"file.yaml"</span>);
+    <span class="d_keyword">auto</span> yamlNode = <span class="d_psymbol">Loader</span>(buffer);
+
+    <span class="d_comment">// Read data from yamlNode here...
+</span>}
+<span class="d_keyword">catch</span>(FileException e)
+{
+    writeln(<span class="d_string">"Failed to read file 'file.yaml'"</span>);
 }
 </pre>
 <br>
 
  Use a custom constructor/resolver to support custom data types and/or implicit tags:
 <pre class="d_code"><span class="d_keyword">auto</span> constructor = <span class="d_keyword">new</span> Constructor();
-<span class="d_keyword">auto</span> resolver = <span class="d_keyword">new</span> Resolver();
+<span class="d_keyword">auto</span> resolver    = <span class="d_keyword">new</span> Resolver();
 
-<span class="d_comment">//Add constructor functions / resolver expressions here...
+<span class="d_comment">// Add constructor functions / resolver expressions here...
 </span>
 <span class="d_keyword">auto</span> loader = <span class="d_psymbol">Loader</span>(<span class="d_string">"file.yaml"</span>);
 loader.constructor = constructor;
-loader.resolver = resolver;
-<span class="d_keyword">auto</span> rootNode = loader.load(node);
+loader.resolver    = resolver;
+<span class="d_keyword">auto</span> rootNode      = loader.load(node);
 </pre>
 </div>
 
-<dl><dt class="d_decl"><a name="Loader.this"></a>@trusted  this(string <b>filename</b>);
+<dl><dt class="d_decl"><a name="Loader.this"></a>@trusted this(string <b>filename</b>);
 </dt>
 <dd><p>Construct a Loader to load YAML from a file.
 </p>
@@ -113,37 +126,56 @@ loader.resolver = resolver;
 <b>Throws:</b><div class="pbr">YAMLException if the file could not be opened or read.</div>
 
 </dd>
-<dt class="d_decl"><a name="Loader.fromString"></a>static Loader <a name="fromString"></a><span class="ddoc_psymbol">fromString</span>(string <b>data</b>);
+<dt class="d_decl"><a name="Loader.fromString"></a>static @safe Loader <a name="fromString"></a><span class="ddoc_psymbol">fromString</span>(char[] <b>data</b>);
 </dt>
-<dd><p>Construct a Loader to load YAML from a string.
+<dd><p>Construct a Loader to load YAML from a string (char []).
 </p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>string <b>data</b></td>
-<td valign=top>String to load YAML from.</td></tr>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>char[] <b>data</b></td>
+<td valign=top>String to load YAML from. <b>will</b> be overwritten during
+                 parsing as D:YAML reuses memory. Use <b>data</b>.dup if you don't
+                 want to modify the original string.</td></tr>
 </table></div>
-<b>Returns:</b><div class="pbr">Loader loading YAML from given string.</div>
+<b>Returns:</b><div class="pbr">Loader loading YAML from given string.
+
+</div>
+<b>Throws:</b><div class="pbr">YAMLException if <b>data</b> could not be read (e.g. a decoding error)</div>
+<b>Examples:</b><div class="pbr"><pre class="d_code">
+<span class="d_keyword">assert</span>(Loader.<span class="d_psymbol">fromString</span>(<span class="d_keyword">cast</span>(<span class="d_keyword">char</span>[])<span class="d_string">"42"</span>).load().as!<span class="d_keyword">int</span> == 42);
+</pre>
+</div>
+</dd>
+<dt class="d_decl"><a name="Loader.this"></a>@safe this(void[] <b>yamlData</b>);
+</dt>
+<dd><p>Construct a Loader to load YAML from a buffer.
+</p>
+<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>void[] <b>yamlData</b></td>
+<td valign=top>Buffer with YAML data to load. This may be e.g. a file
+                    loaded to memory or a string with YAML data. Note that
+                    buffer <b>will</b> be overwritten, as D:YAML minimizes
+                    memory allocations by reusing the input buffer.
+<br>
+
+<br>
+
+ Note that D:YAML looks for byte-order-marks YAML files encoded in
+ UTF-16/UTF-32 (and sometimes UTF-8) use to specify the encoding and
+ endianness, so it should be enough to load an entire file to a buffer and
+ pass it to D:YAML, regardless of Unicode encoding.</td></tr>
+</table></div>
+<b>Throws:</b><div class="pbr">YAMLException if <b>yamlData</b> contains data illegal in YAML.</div>
 
 </dd>
-<dt class="d_decl"><a name="Loader.this"></a>@safe  this(Stream <b>stream</b>);
-</dt>
-<dd><p>Construct a Loader to load YAML from a stream.
-</p>
-<b>Parameters:</b><div class="pbr"><table class=parms><tr><td valign=top>Stream <b>stream</b></td>
-<td valign=top>Stream to read from. Must be readable and seekable.</td></tr>
-</table></div>
-<b>Throws:</b><div class="pbr">YAMLException if <b>stream</b> could not be read.</div>
-
-</dd>
-<dt class="d_decl"><a name="Loader.name"></a>pure nothrow @property @safe void <a name="name"></a><span class="ddoc_psymbol">name</span>(string <a name="name"></a><span class="ddoc_psymbol">name</span>);
+<dt class="d_decl"><a name="Loader.name"></a>pure nothrow @nogc @safe void <a name="name"></a><span class="ddoc_psymbol">name</span>(string <a name="name"></a><span class="ddoc_psymbol">name</span>);
 </dt>
 <dd><p>Set stream name. Used in debugging messages.</p>
 
 </dd>
-<dt class="d_decl"><a name="Loader.resolver"></a>pure nothrow @property @safe void <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>(Resolver <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>);
+<dt class="d_decl"><a name="Loader.resolver"></a>pure nothrow @nogc @safe void <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>(Resolver <a name="resolver"></a><span class="ddoc_psymbol">resolver</span>);
 </dt>
 <dd><p>Specify custom Resolver to use.</p>
 
 </dd>
-<dt class="d_decl"><a name="Loader.constructor"></a>pure nothrow @property @safe void <a name="constructor"></a><span class="ddoc_psymbol">constructor</span>(Constructor <a name="constructor"></a><span class="ddoc_psymbol">constructor</span>);
+<dt class="d_decl"><a name="Loader.constructor"></a>pure nothrow @nogc @safe void <a name="constructor"></a><span class="ddoc_psymbol">constructor</span>(Constructor <a name="constructor"></a><span class="ddoc_psymbol">constructor</span>);
 </dt>
 <dd><p>Specify custom Constructor to use.</p>
 
@@ -165,14 +197,13 @@ loader.resolver = resolver;
           or on a YAML parsing error.</div>
 
 </dd>
-<dt class="d_decl"><a name="Loader.loadAll"></a>@safe Node[] <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span>();
+<dt class="d_decl"><a name="Loader.loadAll"></a>@trusted Node[] <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span>();
 </dt>
 <dd><p>Load all YAML documents.
 </p>
-<p>This is just a shortcut that iterates over all documents and returns
- them all at once. Calling <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span> after iterating over the node or
- vice versa will not return any documents, as they have all been parsed
- already.
+<p>This is just a shortcut that iterates over all documents and returns them
+ all at once. Calling <a name="loadAll"></a><span class="ddoc_psymbol">loadAll</span> after iterating over the node or vice versa
+ will not return any documents, as they have all been parsed already.
 <br>
 
  This can only be called once; this is enforced by contract.
@@ -204,7 +235,7 @@ loader.resolver = resolver;
 </div>
 
 <div id="copyright">
-Copyright &copy; Ferdinand Majerech 2011. Based on <a href="http://www.pyyaml.org">PyYAML</a> by Kirill Simonov. |
+Copyright &copy; Ferdinand Majerech 2011-2014. Based on <a href="http://www.pyyaml.org">PyYAML</a> by Kirill Simonov. |
 Page generated by AutoDDoc and <a href="http://www.digitalmars.com/d/2.0/ddoc.html">Ddoc</a>.
 </div>
 

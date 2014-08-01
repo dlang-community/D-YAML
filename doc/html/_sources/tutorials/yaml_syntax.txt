@@ -257,16 +257,16 @@ Implicit tags:
 This table shows D types stored in *yaml.Node* default YAML tags are converted to.
 Some of these might change in the future (especially !!map and !!set).
 
-======================  ================
+======================  ====================
 YAML tag                D type
-======================  ================
+======================  ====================
 !!null                  yaml.YAMLNull
 !!bool                  bool
 !!int                   long
 !!float                 real
 !!binary                ubyte[]
-!!timestamp             datetime.SysTime
-!!map, !!omap, !!pairs  Node.Pair[]
-!!seq, !!set            Node[]
+!!timestamp             std.datetime.SysTime
+!!map, !!omap, !!pairs  yaml.Node.Pair[]
+!!seq, !!set            yaml.Node[]
 !!str                   string 
-======================  ================
+======================  ====================

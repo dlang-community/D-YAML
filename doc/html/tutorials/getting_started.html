@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Getting started &mdash; D:YAML 0.4 documentation</title>
+    <title>Getting started &mdash; D:YAML 0.5 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -16,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="D:YAML 0.4 documentation" href="../index.html" />
+    <link rel="top" title="D:YAML 0.5 documentation" href="../index.html" />
     <link rel="next" title="Custom YAML data types" href="custom_types.html" />
     <link rel="prev" title="Welcome to D:YAML documentation!" href="../index.html" /> 
   </head>
@@ -39,7 +37,7 @@
         <li class="right" >
           <a href="../index.html" title="Welcome to D:YAML documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">D:YAML 0.4 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">D:YAML 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -65,9 +63,8 @@ Download the version of DMD for your operating system and install it.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Other D compilers exist, such as
-<a class="reference external" href="http://bitbucket.org/goshawk/gdc/wiki/Home">GDC</a> and
-<a class="reference external" href="http://www.dsource.org/projects/ldc/">LDC</a>. Setting up with either one of
-them should be similar to DMD, but they are not yet as stable as DMD.</p>
+<a class="reference external" href="http://gdcproject.org/">GDC</a> and
+<a class="reference external" href="http://bitbucket.org/goshawk/gdc/wiki/Home">LDC</a>.</p>
 </div>
 </div>
 <div class="section" id="download-and-compile-d-yaml">
@@ -78,11 +75,13 @@ it, and move to the extracted directory.</p>
 <p>D:YAML uses a modified version of the <a class="reference external" href="http://dsource.org/projects/cdc/">CDC</a>
 script for compilation. To compile D:YAML, you first need to build CDC.
 Do this by typing the following command into the console:</p>
-<div class="highlight-python"><pre>dmd cdc.d</pre>
+<div class="highlight-python"><div class="highlight"><pre>dmd cdc.d
+</pre></div>
 </div>
 <p>Now compile D:YAML with CDC.
 To do this on Unix/Linux, use the following command:</p>
-<div class="highlight-python"><pre>./cdc</pre>
+<div class="highlight-python"><div class="highlight"><pre>./cdc
+</pre></div>
 </div>
 <p>On Windows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">cdc</span><span class="o">.</span><span class="n">exe</span>
@@ -106,7 +105,7 @@ To do this on Unix/Linux, use the following command:</p>
 <p>Now we need to parse it. Create a file called <tt class="docutils literal"><span class="pre">main.d</span></tt>. Paste following code
 into the file:</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">stdio</span><span class="p">;</span>
-<span class="k">import</span> <span class="n">dyaml</span><span class="p">.</span><span class="n">all</span><span class="p">;</span>
+<span class="k">import</span> <span class="n">yaml</span><span class="p">;</span>
 
 <span class="kt">void</span> <span class="n">main</span><span class="p">()</span>
 <span class="p">{</span>
@@ -127,7 +126,7 @@ into the file:</p>
 </div>
 <div class="section" id="explanation-of-the-code">
 <h3>Explanation of the code<a class="headerlink" href="#explanation-of-the-code" title="Permalink to this headline">¶</a></h3>
-<p>First, we import the <em>dyaml.all</em> module. This is the only D:YAML module you
+<p>First, we import the <em>yaml</em> module. This is the only D:YAML module you
 need to import - it automatically imports all needed modules.</p>
 <p>Next we load the file using the <em>Loader.load()</em> method. <em>Loader</em> is a struct
 used for parsing YAML documents. The <em>load()</em> method loads the file as
@@ -174,16 +173,19 @@ directory.</p>
 <p>For example, if you extracted and compiled D:YAML in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml</span></tt>, your
 project is in <tt class="docutils literal"><span class="pre">/home/xxx/dyaml-project</span></tt>, and you are currently in that
 directory, compile the project with the following command on Unix/Linux:</p>
-<div class="highlight-python"><pre>dmd -I../dyaml/source -L-L../dyaml -L-ldyaml main.d</pre>
+<div class="highlight-python"><div class="highlight"><pre>dmd -I../dyaml/source -L-L../dyaml -L-ldyaml main.d
+</pre></div>
 </div>
 <p>And the following on Windows:</p>
-<div class="highlight-python"><pre>dmd -I../dyaml/source ../dyaml/libdyaml.lib main.d</pre>
+<div class="highlight-python"><div class="highlight"><pre>dmd -I../dyaml/source ../dyaml/libdyaml.lib main.d
+</pre></div>
 </div>
 <p>This will produce an executable called <tt class="docutils literal"><span class="pre">main</span></tt> or <tt class="docutils literal"><span class="pre">main.exe</span></tt> in your
 directory. When you run it, it should produce the following output:</p>
-<div class="highlight-python"><pre>Hello
+<div class="highlight-python"><div class="highlight"><pre>Hello
 World
-The answer is 42</pre>
+The answer is 42
+</pre></div>
 </div>
 </div>
 <div class="section" id="conclusion">
@@ -235,13 +237,13 @@ example in the <tt class="docutils literal"><span class="pre">example/getting_st
         <li class="right" >
           <a href="../index.html" title="Welcome to D:YAML documentation!"
              >previous</a> |</li>
-        <li><a href="../index.html">D:YAML 0.4 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">D:YAML 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2011-2014, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on May 19, 2014.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Last updated on Aug 01, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
