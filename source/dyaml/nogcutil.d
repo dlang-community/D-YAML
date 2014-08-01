@@ -306,6 +306,8 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
         }
 
         assert(fst & 0x80);
+        // starter must have at least 2 first bits set
+        if((fst & 0b1100_0000) != 0b1100_0000) { return invalidUTF(pstr[0 .. length]); }
         ubyte tmp = void;
         dchar d = fst; // upper control bits are masked out later
         fst <<= 1;
@@ -373,11 +375,13 @@ dchar decodeValidUTF8NoGC(const(char[]) str, ref size_t index)
     ubyte fst = pstr[0];
 
     assert(fst & 0x80);
+    enum invalidUTFMsg = "Invalid UTF-8 sequence in supposedly validated string";
+    // starter must have at least 2 first bits set
+    assert((fst & 0b1100_0000) == 0b1100_0000, invalidUTFMsg);
     ubyte tmp = void;
     dchar d = fst; // upper control bits are masked out later
     fst <<= 1;
 
-    enum invalidUTFMsg = "Invalid UTF-8 sequence in supposedly validated string";
     foreach (i; TypeTuple!(1, 2, 3))
     {
         assert(i != length, "Decoding out of bounds in supposedly validated UTF-8");
