@@ -352,7 +352,105 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
     return ValidateResult(true, characterCount);
 }
 
-/// @nogc version of std.utf.decode() for (char[]), but assumes str is valid UTF-8.
+/// @nogc version of std.utf.decode() for char[].
+///
+/// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
+/// force code using this function to be efficient.
+///
+/// Params:
+///
+/// validated = If ture, assume str is a valid UTF-8 string and don't generate any 
+///             error-checking code. If validated is true, str $(B must) be a valid
+///             character, otherwise undefined behavior will occur. Also affects the
+///             return type.
+/// str       = Will decode the first code point from this string. 
+/// index     = Index in str where the code point starts. Will be updated to point to
+///             the next code point.
+///
+/// Returns: If validated is true, the decoded character.
+///          Otherwise a struct with a 'decoded' member - the decoded character, and a 
+///          'string errorMessage' member that is null on success and otherwise stores
+///          the error message.
+auto decodeUTF8NoGC(Flag!"validated" validated)(const(char[]) str, ref size_t index)
+    @trusted pure nothrow @nogc
+{
+    static if(!validated) struct Result
+    {
+        dchar decoded;
+        string errorMessage;
+    }
+    else alias Result = dchar;
+
+    /// Dchar bitmask for different numbers of UTF-8 code units.
+    enum bitMask     = tuple((1 << 7) - 1, (1 << 11) - 1, (1 << 16) - 1, (1 << 21) - 1);
+
+    auto pstr = str.ptr + index;
+
+    immutable length = str.length - index;
+    ubyte fst = pstr[0];
+
+    assert(fst & 0x80);
+    enum invalidUTFMsg = "Invalid UTF-8 sequence";
+    static if(!validated) { enum invalidUTF = Result(cast(dchar)int.max, invalidUTFMsg); }
+
+    // starter must have at least 2 first bits set
+    static if(validated)
+    {
+        assert((fst & 0b1100_0000) == 0b1100_0000, invalidUTFMsg);
+    }
+    else if((fst & 0b1100_0000) != 0b1100_0000)
+    {
+        return invalidUTF;
+    }
+
+    ubyte tmp = void;
+    dchar d = fst; // upper control bits are masked out later
+    fst <<= 1;
+
+
+    foreach (i; TypeTuple!(1, 2, 3))
+    {
+        static if(validated) { assert(i != length, "Decoding out of bounds"); }
+        else if(i == length) { return Result(cast(dchar)int.max, "Decoding out of bounds"); }
+
+        tmp = pstr[i];
+        static if(validated)          { assert((tmp & 0xC0) == 0x80, invalidUTFMsg); }
+        else if((tmp & 0xC0) != 0x80) { return invalidUTF; }
+
+        d = (d << 6) | (tmp & 0x3F);
+        fst <<= 1;
+
+        if (!(fst & 0x80)) // no more bytes
+        {
+            d &= bitMask[i]; // mask out control bits
+
+            // overlong, could have been encoded with i bytes
+            static if(validated) { assert((d & ~bitMask[i - 1]) != 0, invalidUTFMsg); }
+            else if((d & ~bitMask[i - 1]) == 0) { return invalidUTF; }
+
+            // check for surrogates only needed for 3 bytes
+            static if (i == 2)
+            {
+                static if(validated)      { assert(isValidDchar(d), invalidUTFMsg); }
+                else if(!isValidDchar(d)) { return invalidUTF; }
+            }
+
+            index += i + 1;
+            static if (i == 3)
+            {
+                static if(validated)   { assert(d <= dchar.max, invalidUTFMsg); }
+                else if(d > dchar.max) { return invalidUTF; }
+            }
+
+            return Result(d);
+        }
+    }
+
+    static if(validated) { assert(false, invalidUTFMsg); }
+    else                 { return invalidUTF; }
+}
+
+/// @nogc version of std.utf.decode() for char[], but assumes str is valid UTF-8.
 ///
 /// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
 /// force code using this function to be efficient.
@@ -363,52 +461,7 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
 ///         otherwise undefined behavior WILL occur.
 /// index = Index in str where the code point starts. Will be updated to point to the
 ///         next code point.
-dchar decodeValidUTF8NoGC(const(char[]) str, ref size_t index)
-    @trusted pure nothrow @nogc
-{
-    /// Dchar bitmask for different numbers of UTF-8 code units.
-    enum bitMask = [(1 << 7) - 1, (1 << 11) - 1, (1 << 16) - 1, (1 << 21) - 1];
-
-    auto pstr = str.ptr + index;
-
-    immutable length = str.length - index;
-    ubyte fst = pstr[0];
-
-    assert(fst & 0x80);
-    enum invalidUTFMsg = "Invalid UTF-8 sequence in supposedly validated string";
-    // starter must have at least 2 first bits set
-    assert((fst & 0b1100_0000) == 0b1100_0000, invalidUTFMsg);
-    ubyte tmp = void;
-    dchar d = fst; // upper control bits are masked out later
-    fst <<= 1;
-
-    foreach (i; TypeTuple!(1, 2, 3))
-    {
-        assert(i != length, "Decoding out of bounds in supposedly validated UTF-8");
-        tmp = pstr[i];
-        assert((tmp & 0xC0) == 0x80, invalidUTFMsg);
-
-        d = (d << 6) | (tmp & 0x3F);
-        fst <<= 1;
-
-        if (!(fst & 0x80)) // no more bytes
-        {
-            d &= bitMask[i]; // mask out control bits
-
-            // overlong, could have been encoded with i bytes
-            assert((d & ~bitMask[i - 1]) != 0, invalidUTFMsg);
-
-            // check for surrogates only needed for 3 bytes
-            static if (i == 2) { assert(isValidDchar(d), invalidUTFMsg); }
-
-            index += i + 1;
-            static if (i == 3) { assert(d <= dchar.max, invalidUTFMsg); }
-            return d;
-        }
-    }
-
-    assert(false, invalidUTFMsg);
-}
+alias decodeValidUTF8NoGC = decodeUTF8NoGC!(Yes.validated);
 
 /// @nogc version of std.utf.encode() for char[].
 ///
