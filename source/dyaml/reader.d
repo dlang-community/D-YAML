@@ -682,8 +682,9 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
             const validateResult = result.utf8.validateUTF8NoGC();
             if(!validateResult.valid)
             {
-                result.errorMessage = "UTF-8 validation error: " ~ validateResult.msg ~
-                                      validateResult.sequence.to!string;
+                result.errorMessage = "UTF-8 validation error after character #" ~
+                                      validateResult.characterCount.to!string ~ ": " ~
+                                      validateResult.msg;
             }
             result.characterCount = validateResult.characterCount;
             break;
