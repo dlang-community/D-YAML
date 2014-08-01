@@ -27,7 +27,8 @@ class YAMLException : Exception
     }
 }
 
-/// Position in a YAML stream, used for error messages.
+package:
+// Position in a YAML stream, used for error messages.
 struct Mark
 {
     private:
@@ -47,7 +48,7 @@ struct Mark
         /// Get a string representation of the mark.
         string toString() @safe pure nothrow const
         {
-            /// Line/column numbers start at zero internally, make them start at 1.
+            // Line/column numbers start at zero internally, make them start at 1.
             static string clamped(ushort v) @safe pure nothrow
             {
                 return str(v + 1) ~ (v == ushort.max ? " or higher" : "");
@@ -58,7 +59,6 @@ struct Mark
 
 static assert(Mark.sizeof == 4, "Unexpected Mark size");
 
-package:
 // A struct storing parameters to the MarkedYAMLException constructor.
 struct MarkedYAMLExceptionData
 {

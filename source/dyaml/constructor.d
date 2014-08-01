@@ -31,9 +31,7 @@ import dyaml.tag;
 import dyaml.style;
 
 
-/// Exception thrown at constructor errors.
-///
-/// Can be thrown by custom constructor functions.
+// Exception thrown at constructor errors.
 package class ConstructorException : YAMLException
 {
     /// Construct a ConstructorException.
