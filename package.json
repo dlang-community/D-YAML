@@ -15,6 +15,9 @@
         "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
         "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
         "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] },
+        "debug-unittest": { "buildOptions": ["unittests", "debugMode", "debugInfoC"] },
+        "release-unittest": { "buildOptions": ["unittests", "releaseMode", "optimize", "inline", "noBoundsCheck"] },
+        "profile-unittest": { "buildOptions": ["unittests", "releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] }
     },
 
     "configurations":
