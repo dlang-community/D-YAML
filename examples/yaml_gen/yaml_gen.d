@@ -163,6 +163,7 @@ Node nodes(const bool root, Node range, const string tag, const bool set = false
     {
         while(!(totalNodes >= minNodesDocument))
         {
+            nodes.assumeSafeAppend;
             nodes ~= generateNode(randomType(types));
         }
     }
