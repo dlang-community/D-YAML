@@ -401,14 +401,14 @@ public:
     ///
     /// Returns a string; once a slice is finished it is definitive that its contents
     /// will not be changed.
-    string finish() @system pure nothrow @nogc
+    char[] finish() @system pure nothrow @nogc
     {
         assert(inProgress, "finish called without begin");
         assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
 
-        const result = reader_.buffer_[start_ .. end_];
+        auto result = reader_.buffer_[start_ .. end_];
         start_ = end_ = size_t.max;
-        return cast(string)result;
+        return result;
     }
 
     /// Write a string to the slice being built.
