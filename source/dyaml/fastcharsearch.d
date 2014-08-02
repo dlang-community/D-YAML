@@ -34,10 +34,12 @@ template FastCharSearch(dstring chars, uint tableSize = 256)
     private mixin(searchCode!(chars, tableSize)());
 }
 
-///Generate the search table and the canFind method.
-string searchCode(dstring chars, uint tableSize)() @safe pure nothrow
+/// Generate the search table and the canFind method.
+string searchCode(dstring chars, uint tableSize)() @safe pure //nothrow
 {
-    const tableSizeStr = to!string(tableSize);
+    import std.string;
+
+    const tableSizeStr = tableSize.to!string;
     ubyte[tableSize] table;
     table[] = 0;
 
@@ -46,51 +48,42 @@ string searchCode(dstring chars, uint tableSize)() @safe pure nothrow
 
     foreach(c; chars)
     {
-        if(c < tableSize){table[c] = 1;}
-        else             {specialChars ~= c;}
-    }
-
-    string tableCode()
-    {
-        string code = "static immutable ubyte table_[" ~ tableSizeStr ~ "] = [\n";
-        foreach(c; table[0 .. $ - 1])
-        {
-            code ~= c ? "true,\n" : "false,\n";
-        }
-        code ~= table[$ - 1] ? "true\n" : "false\n";
-        code ~= "];\n\n";
-        return code;
+        if(c < tableSize) { table[c] = 1; }
+        else              { specialChars ~= c; }
     }
 
     string specialCharsCode()
     {
-        string code;
-        foreach(c; specialChars[0 .. $ - 1])
-        {
-            code ~= "cast(uint)c == " ~ to!string(cast(uint)c) ~ " || ";
-        }
-        code ~= "cast(uint)c == " ~ to!string(cast(uint)specialChars[$ - 1]);
-
-        return code;
+        return specialChars.map!(c => q{cast(uint)c == %s}.format(cast(uint)c)).join(q{ || });
     }
 
-    string code = tableSize ? tableCode() : "";
+    const caseInTable = 
+    q{
+            if(c < %s)
+            {
+                return cast(immutable(bool))table_[c];
+            }
+    }.format(tableSize);
 
-    code ~= "bool canFind(in dchar c) pure @safe nothrow @nogc\n"
-            "{\n";
-
+    string code;
     if(tableSize)
     {
-        code ~= "    if(c < " ~ tableSizeStr ~ ")\n"
-                "    {\n"
-                "        return cast(immutable(bool))table_[c];\n"
-                "    }\n";
+        code ~= 
+        q{
+            static immutable ubyte table_[%s] = [
+            %s];
+        }.format(tableSize, table[].map!(c => c ? q{true} : q{false}).join(q{, }));
     }
+    code ~= 
+    q{
+        bool canFind(const dchar c) @safe pure nothrow @nogc 
+        {
+            %s
 
-    code ~= specialChars.length 
-            ? "    return " ~ specialCharsCode() ~ ";\n"
-            : "    return false;";
-    code ~= "}\n";
+            return %s;
+        }
+    }.format(tableSize ? caseInTable : "", 
+             specialChars.length ? specialCharsCode() : q{false});
 
     return code;
 }
