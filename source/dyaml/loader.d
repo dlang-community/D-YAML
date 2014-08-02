@@ -360,6 +360,21 @@ struct Loader
             }
         }
 
+        // Scan all tokens, throwing them away. Used for benchmarking.
+        void scanBench() @safe
+        {
+            try while(scanner_.checkToken())
+            {
+                scanner_.getToken();
+            }
+            catch(YAMLException e)
+            {
+                throw new YAMLException("Unable to scan YAML from stream " ~
+                                        name_ ~ " : " ~ e.msg);
+            }
+        }
+
+
         // Parse and return all events. Used for debugging.
         immutable(Event)[] parse() @safe
         {
