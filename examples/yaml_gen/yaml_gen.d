@@ -199,7 +199,12 @@ Node pairs(bool root, bool complex, Node range, string tag)
     {
         while(!(totalNodes >= minNodesDocument))
         {
-            keys ~= generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            const key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            // Maps can't contain duplicate keys
+            if(tag.endsWith("map") && keys.canFind(key)) { continue; }
+            keys.assumeSafeAppend;
+            values.assumeSafeAppend;
+            keys ~= key;
             values ~= generateNode(randomType(typesScalar ~ typesCollection));
         }
     }
@@ -210,9 +215,15 @@ Node pairs(bool root, bool complex, Node range, string tag)
 
         keys = new Node[pairs];
         values = new Node[pairs];
-        foreach(i; 0 .. pairs)
+        outer: foreach(i; 0 .. pairs)
         {
-            keys[i] = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            auto key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            // Maps can't contain duplicate keys
+            while(tag.endsWith("map") && keys[0 .. i].canFind(key)) 
+            {
+                key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            }
+            keys[i]   = key;
             values[i] = generateNode(randomType(typesScalar ~ typesCollection));
         }
     }
