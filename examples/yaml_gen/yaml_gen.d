@@ -1,6 +1,7 @@
 
 ///Random YAML generator. Used to generate benchmarking inputs.
 
+import std.algorithm;
 import std.conv;
 import std.datetime;
 import std.math;
@@ -9,9 +10,6 @@ import std.stdio;
 import std.string;
 import dyaml.all;
 
-
-immutable alphabet = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
-immutable digits   = "0123456789";
 
 Node config;
 Node function(bool)[string] generators;
@@ -65,7 +63,7 @@ real randomReal(const real min, const real max, const string distribution = "lin
     return min + (max - min) * randomNormalized(distribution);
 }
 
-char randomChar(const string chars)
+dchar randomChar(const dstring chars)
 {
     return chars[randomLong(0, chars.length - 1)];
 }
@@ -84,17 +82,19 @@ Node genString(bool root = false)
 {
     auto range = config["string"]["range"];
 
+    auto alphabet = config["string"]["alphabet"].as!dstring;
+
     const chars = randomLong(range["min"].as!uint, range["max"].as!uint,
                              range["dist"].as!string);
 
-    char[] result = new char[chars];
+    dchar[] result = new dchar[chars];
     result[0] = randomChar(alphabet);
     foreach(i; 1 .. chars)
     {
-        result[i] = randomChar(alphabet ~ digits);
+        result[i] = randomChar(alphabet);
     }
 
-    return Node(cast(string)result);
+    return Node(result.to!string);
 }
 
 Node genInt(bool root = false)

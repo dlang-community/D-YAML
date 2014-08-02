@@ -1,8 +1,8 @@
-root-type:              seq
+root-type:              map
 documents:              2
 complex-keys:           false
 collection-keys:        false
-min-nodes-per-document: 65536 
+min-nodes-per-document: 4096
 encoding:               utf-8
 indent:                 4
 text-width:             40
@@ -11,7 +11,8 @@ text-width:             40
 #we end up with extremely deeply nested structures
 
 string: 
-    probability: 10 
+    probability: 20
+    alphabet: " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_0123456789ábćčďéěǵǧȟíǐǰḱǩĺľḿńňóǒôäṕŕřśšť"
     range: {min: 1, max: 40, dist: cubic}
 int: 
     probability: 10 
