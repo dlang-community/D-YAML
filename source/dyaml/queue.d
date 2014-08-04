@@ -45,6 +45,10 @@ struct Queue(T)
         Node* last_ = null;
         /// Cursor pointing to the current node in iteration.
         Node* cursor_ = null;
+
+        /// The first element of a linked list of freed Nodes available for recycling.
+        Node* freeList_ = null;
+
         /// Length of the queue.
         size_t length_ = 0;
 
@@ -54,9 +58,15 @@ struct Queue(T)
         @disable int opCmp(ref Queue);
 
         /// Destroy the queue, deallocating all its elements.
-        @safe nothrow ~this()
+        @trusted nothrow ~this()
         {
             while(!empty) { pop(); }
+            while(freeList_ !is null)
+            {
+                auto toFree = freeList_;
+                freeList_   = toFree.next_;
+                free(toFree);
+            }
             cursor_ = last_ = first_ = null;
             length_ = 0;
         }
@@ -90,9 +100,19 @@ struct Queue(T)
         /// Push new item to the queue.
         void push(T item) @trusted nothrow
         {
-            Node* newLast = allocate!Node(item, cast(Node*)null);
+            Node* newLast;
+            if(freeList_ !is null)
+            {
+                newLast   = freeList_;
+                freeList_ = freeList_.next_;
+                *newLast  = Node(item, null);
+            }
+            else
+            {
+                newLast = allocate!Node(item, cast(Node*)null);
+            }
             if(last_ !is null) { last_.next_ = newLast; }
-            if(first_ is null) { first_ = newLast; }
+            if(first_ is null) { first_      = newLast; }
             last_ = newLast;
             ++length_;
         }
@@ -139,10 +159,13 @@ struct Queue(T)
         }
         body
         {
-            T result   = peek();
-            Node* temp = first_;
-            first_     = first_.next_;
-            free(temp);
+            T result     = peek();
+            Node* popped = first_;
+            first_       = first_.next_;
+
+            Node* oldFree   = freeList_;
+            freeList_       = popped;
+            freeList_.next_ = oldFree;
             if(--length_ == 0)
             {
                 assert(first_ is null);
