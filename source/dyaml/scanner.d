@@ -836,10 +836,8 @@ final class Scanner
         /// Scan and throw away all characters until next line break.
         void scanToNextBreak() @safe pure nothrow @nogc
         {
-            while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
-            {
-                reader_.forward();
-            }
+            mixin FastCharSearch!"\0\n\r\u0085\u2028\u2029"d search;
+            while(!search.canFind(reader_.peek())) { reader_.forward(); }
         }
 
         /// Scan all characters until next line break.
@@ -1137,6 +1135,7 @@ final class Scanner
             // (slice) we will produce.
             uint handleEnd;
 
+            mixin FastCharSearch!" \0\n\r\u0085\u2028\u2029"d search;
             if(c == '<')
             {
                 reader_.forward(2);
@@ -1163,7 +1162,7 @@ final class Scanner
                 uint length = 1;
                 bool useHandle = false;
 
-                while(!" \0\n\r\u0085\u2028\u2029"d.canFind(c))
+                while(!search.canFind(c))
                 {
                     if(c == '!')
                     {
@@ -1191,7 +1190,7 @@ final class Scanner
                 if(error_) { return Token.init; }
             }
 
-            if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            if(search.canFind(reader_.peek()))
             {
                 char[] slice = reader_.sliceBuilder.finish();
                 return tagToken(startMark, reader_.mark, slice, handleEnd);
@@ -1551,7 +1550,7 @@ final class Scanner
                     oldSliceLength = slice.length;
                 }
 
-                reader_.sliceBuilder.write(reader_.get(length));
+                reader_.sliceBuilder.write(reader_.get(numCodePoints));
 
                 c = reader_.peek();
                 if(quotes == SingleQuoted && c == '\'' && reader_.peek(1) == '\'')
@@ -1803,8 +1802,10 @@ final class Scanner
             char[] whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
+            mixin FastCharSearch!" \n\r\u0085\u2028\u2029"d search;
             // No newline after the spaces (if any)
-            if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
+            // (Excluding ' ' so we can use the same FastCharSearch as below)
+            if(!search.canFind(c) && c != ' ')
             {
                 // We have spaces, but no newline.
                 if(whitespaces.length > 0) { reader_.sliceBuilder.write(whitespaces); }
@@ -1828,7 +1829,7 @@ final class Scanner
             alias Transaction = SliceBuilder.Transaction;
             auto transaction = Transaction(reader_.sliceBuilder);
             if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
-            while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            while(search.canFind(reader_.peek()))
             {
                 if(reader_.peekByte() == ' ') { reader_.forward(); }
                 else
@@ -1898,7 +1899,8 @@ final class Scanner
             const startLen = reader_.sliceBuilder.length;
             {
                 uint length = 0;
-                while(c.isAlphaNum || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
+                mixin FastCharSearch!"-;/?:@&=+$,_.!~*\'()[]%"d search;
+                while(c.isAlphaNum || search.canFind(c))
                 {
                     if(c == '%')
                     {
