@@ -731,7 +731,7 @@ final class Scanner
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
         bool checkDirective() @safe pure nothrow @nogc
         {
-            return reader_.peek() == '%' && reader_.column == 0;
+            return reader_.peekByte() == '%' && reader_.column == 0;
         }
 
         /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
@@ -739,8 +739,8 @@ final class Scanner
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
-                   reader_.peek()     == '-'   &&
-                   reader_.prefix(3) == "---" &&
+                   reader_.peekByte() == '-'   &&
+                   reader_.prefix(3)  == "---" &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -749,8 +749,8 @@ final class Scanner
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
-                   reader_.peek()     == '.'   &&
-                   reader_.prefix(3) == "..." &&
+                   reader_.peekByte() == '.'   &&
+                   reader_.prefix(3)  == "..." &&
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
         }
 
@@ -806,7 +806,7 @@ final class Scanner
         /// Move to the next non-space character.
         void findNextNonSpace() @safe pure nothrow @nogc
         {
-            while(reader_.peek() == ' ') { reader_.forward(); }
+            while(reader_.peekByte() == ' ') { reader_.forward(); }
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
@@ -883,7 +883,7 @@ final class Scanner
             {
                 findNextNonSpace();
 
-                if(reader_.peek() == '#') { scanToNextBreak(); }
+                if(reader_.peekByte() == '#') { scanToNextBreak(); }
                 if(scanLineBreak() != '\0')
                 {
                     if(flowLevel_ == 0) { allowSimpleKey_ = true; }
@@ -1728,7 +1728,7 @@ final class Scanner
             alias Transaction = SliceBuilder.Transaction;
             Transaction spacesTransaction;
             // Stop at a comment.
-            while(reader_.peek() != '#')
+            while(reader_.peekByte() != '#')
             {
                 // Scan the entire plain scalar.
                 uint length = 0;
@@ -1796,7 +1796,7 @@ final class Scanner
 
             // Get as many plain spaces as there are.
             size_t length = 0;
-            while(reader_.peek(length) == ' ') { ++length; }
+            while(reader_.peekByte(length) == ' ') { ++length; }
             char[] whitespaces = reader_.get(length);
 
             dchar c = reader_.peek();
@@ -1827,7 +1827,7 @@ final class Scanner
             if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
             while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                if(reader_.peek() == ' ') { reader_.forward(); }
+                if(reader_.peekByte() == ' ') { reader_.forward(); }
                 else
                 {
                     const lBreak = scanLineBreak();
@@ -2028,12 +2028,23 @@ final class Scanner
         ///   no break    :   '\0'
         dchar scanLineBreak() @safe pure nothrow @nogc
         {
-            const c = reader_.peek();
-
-            if(c == '\n' || c == '\r' || c == '\u0085')
+            // Fast path for ASCII line breaks.
+            const b = reader_.peekByte();
+            if(b < 0x80)
             {
-                if(reader_.prefix(2) == "\r\n") { reader_.forward(2); }
-                else { reader_.forward(); }
+                if(b == '\n' || b == '\r')
+                {
+                    if(reader_.prefix(2) == "\r\n") { reader_.forward(2); }
+                    else { reader_.forward(); }
+                    return '\n';
+                }
+                return '\0';
+            }
+
+            const c = reader_.peek();
+            if(c == '\x85')
+            {
+                reader_.forward();
                 return '\n';
             }
             if(c == '\u2028' || c == '\u2029')
