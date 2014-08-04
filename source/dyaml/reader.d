@@ -325,8 +325,7 @@ private:
         dchar decodeNext() @safe pure nothrow @nogc
         {
             assert(lastDecodedBufferOffset_ < buffer_.length,
-                   "Attempted to decode past the end of a string");
-            ++decodeCount_;
+                   "Attempted to decode past the end of YAML buffer");
             const char b = buffer_[lastDecodedBufferOffset_];
             ++lastDecodedCharOffset_;
             // ASCII
