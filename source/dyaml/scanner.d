@@ -1527,25 +1527,28 @@ final class Scanner
 
                 mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
 
-                size_t length = 0;
+                size_t numCodePoints = 0;
                 // This is an optimized way of writing:
-                // while(!search.canFind(reader_.peek(length))) { ++length; }
-                outer: for(;;)
+                // while(!search.canFind(reader_.peek(numCodePoints))) { ++numCodePoints; }
+                outer: for(size_t oldSliceLength;;)
                 {
-                    const char[] slice = reader_.slice(length + 32);
-                    if(slice.length == length)
+                    // This will not necessarily make slice 32 chars longer, as not all
+                    // code points are 1 char.
+                    const char[] slice = reader_.slice(numCodePoints + 32);
+                    if(slice.length == oldSliceLength)
                     {
                         error("While reading a flow scalar", startMark,
                               "reached end of file", reader_.mark);
                         return;
                     }
-                    for(size_t i = length; i < slice.length;)
+                    for(size_t i = oldSliceLength; i < slice.length;)
                     {
                         // slice is UTF-8 - need to decode
                         const ch = slice[i] < 0x80 ? slice[i++] : decodeValidUTF8NoGC(slice, i);
                         if(search.canFind(ch)) { break outer; }
-                        ++length;
+                        ++numCodePoints;
                     }
+                    oldSliceLength = slice.length;
                 }
 
                 reader_.sliceBuilder.write(reader_.get(length));
