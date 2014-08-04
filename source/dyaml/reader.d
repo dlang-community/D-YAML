@@ -186,6 +186,25 @@ final class Reader
             return decodeNext();
         }
 
+        /// Get byte at specified index relative to current position.
+        ///
+        /// Params:  index = Index of the byte to get relative to current position
+        ///                  in the buffer. Can point outside of the buffer; In that
+        ///                  case, '\0' will be returned.
+        ///
+        /// Returns: Byte at specified position or '\0' if outside of the buffer.
+        char peekByte(const size_t index) @safe pure nothrow @nogc
+        {
+            return characterCount_ > (charIndex_ + index) ? buffer_[bufferOffset_ + index] : '\0';
+        }
+
+        /// Optimized version of peekByte() for the case where peek byte index is 0.
+        char peekByte() @safe pure nothrow @nogc
+        {
+            return characterCount_ > charIndex_ ? buffer_[bufferOffset_] : '\0';
+        }
+
+
         /// Get specified number of characters starting at current position.
         ///
         /// Note: This gets only a "view" into the internal buffer,
