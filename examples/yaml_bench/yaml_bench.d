@@ -108,15 +108,30 @@ void main(string[] args)
         import std.file;
         void[] fileInMemory;
         if(!reload) { fileInMemory = std.file.read(file); }
+        void[] fileWorkingCopy = fileInMemory.dup;
+
+        // Instead of constructing a resolver/constructor with each Loader,
+        // construct them once to remove noise when profiling.
+        auto resolver    = new Resolver();
+        auto constructor = new Constructor();
+
         while(runs--)
         {
+            // Loading the file rewrites the loaded buffer, so if we don't reload from
+            // disk, we need to use a copy of the originally loaded file.
             if(reload) { fileInMemory = std.file.read(file); }
+            else       { fileWorkingCopy[] = fileInMemory[]; }
+            void[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
             if(scanOnly)
             {
-                Loader(fileInMemory).scanBench();
+                auto loader = Loader(fileToLoad);
+                loader.scanBench();
                 continue;
             }
-            auto nodes = Loader(fileInMemory).loadAll();
+            auto loader        = Loader(fileToLoad);
+            loader.resolver    = resolver;
+            loader.constructor = constructor;
+            auto nodes = loader.loadAll();
             if(dump)
             {
                 Dumper(file ~ ".dump").dump(nodes);
