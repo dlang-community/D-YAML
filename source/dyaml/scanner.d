@@ -182,7 +182,7 @@ final class Scanner
         ///          any tokens left if no types specified, false otherwise.
         bool checkToken(const TokenID[] ids ...) @safe
         {
-            //Check if the next token is one of specified types.
+            // Check if the next token is one of specified types.
             while(needMoreTokens()) { fetchToken(); }
             if(!tokens_.empty)
             {
