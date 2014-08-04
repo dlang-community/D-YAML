@@ -798,9 +798,15 @@ final class Scanner
         bool checkPlain() @safe pure nothrow @nogc
         {
             const c = reader_.peek();
-            return !("-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029"d.canFind(c)) ||
-                    (!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)) &&
-                     (c == '-' || (flowLevel_ == 0 && "?:"d.canFind(c))));
+            mixin FastCharSearch!"-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029"d
+                searchPlainNotFirstChar;
+            if(!searchPlainNotFirstChar.canFind(c))
+            {
+                return true;
+            }
+            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d searchAllWhitespace;
+            return !searchAllWhitespace.canFind(reader_.peek(1)) &&
+                   (c == '-' || (flowLevel_ == 0 && (c == '?' || c == ':')));
         }
 
         /// Move to the next non-space character.
