@@ -96,7 +96,7 @@ final class Reader
         ///                   the Reader and other parts of D:YAML (D:YAML tries to
         ///                   reuse the buffer to minimize memory allocations)
         ///
-        /// Throws:  ReaderException on a UTF decoding error or if there are 
+        /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
         this(ubyte[] buffer) @trusted pure //!nothrow
         {
@@ -143,7 +143,9 @@ final class Reader
             {
                 // XXX This is risky; revert this if bugs are introduced. We rely on
                 // the assumption that Reader only uses peek() to detect end of buffer.
-                // The test suite passes.  
+                // The test suite passes.
+                // Revert this case here and in other peek() versions if this causes
+                // errors.
                 // throw new ReaderException("Trying to read past the end of the buffer");
                 return '\0';
             }
@@ -152,7 +154,6 @@ final class Reader
             // determine the length of some sequence.
             if(index == lastDecodedCharOffset_)
             {
-                ++decodeCount_;
                 ++lastDecodedCharOffset_;
                 const char b = buffer_[lastDecodedBufferOffset_];
                 // ASCII
@@ -208,7 +209,8 @@ final class Reader
         /// Get specified number of characters starting at current position.
         ///
         /// Note: This gets only a "view" into the internal buffer,
-        ///       which get invalidated after other Reader calls.
+        ///       which will get invalidated after other Reader calls. Use SliceBuilder
+        ///       to build slices for permanent use.
         ///
         /// Params:  length = Number of characters (code points, not bytes) to get. May
         ///                   reach past the end of the buffer; in that case the
@@ -626,12 +628,11 @@ private:
 
 private:
 
-
 // Convert a UTF-8/16/32 buffer to UTF-8, in-place if possible.
 //
 // Params:
 //
-// input    = Buffer with UTF-8/16/32 data to decode. May be overwritten by the 
+// input    = Buffer with UTF-8/16/32 data to decode. May be overwritten by the
 //            conversion, in which case the result will be a slice of this buffer.
 // encoding = Encoding of input.
 //
