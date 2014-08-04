@@ -26,7 +26,7 @@ void help()
         "    --reload        Reload the file from the diskl on every repeat\n"
         "                    By default, the file is loaded to memory once\n"
         "                    and repeatedly parsed from memory.\n"
-        " -s --scan-onlly    Do not execute the entire parsing process, only\n"
+        " -s --scan-only    Do not execute the entire parsing process, only\n"
         "                    scanning. Overrides '--dump'.\n";
     writeln(help);
 }
