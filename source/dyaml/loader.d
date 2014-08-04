@@ -179,8 +179,6 @@ struct Loader
                 reader_           = new Reader(streamBytes);
                 scanner_          = new Scanner(reader_);
                 parser_           = new Parser(scanner_);
-                resolver_         = new Resolver();
-                constructor_      = new Constructor();
             }
             catch(YAMLException e)
             {
@@ -211,8 +209,6 @@ struct Loader
                 reader_      = new Reader(cast(ubyte[])yamlData);
                 scanner_     = new Scanner(reader_);
                 parser_      = new Parser(scanner_);
-                resolver_    = new Resolver();
-                constructor_ = new Constructor();
             }
             catch(YAMLException e)
             {
@@ -267,6 +263,7 @@ struct Loader
         {
             try
             {
+                lazyInitConstructorResolver();
                 scope(exit) { done_ = true; }
                 auto composer = new Composer(parser_, resolver_, constructor_);
                 enforce(composer.checkNode(), new YAMLException("No YAML document to load"));
@@ -320,6 +317,7 @@ struct Loader
             scope(exit) { done_ = true; }
             try
             {
+                lazyInitConstructorResolver();
                 auto composer = new Composer(parser_, resolver_, constructor_);
 
                 int result = 0;
@@ -392,6 +390,14 @@ struct Loader
                 throw new YAMLException("Unable to parse YAML from stream %s : %s "
                                         .format(name_, e.msg));
             }
+        }
+
+        // Construct default constructor/resolver if the user has not yet specified
+        // their own.
+        void lazyInitConstructorResolver() @safe
+        {
+            if(resolver_ is null)    { resolver_    = new Resolver(); }
+            if(constructor_ is null) { constructor_ = new Constructor(); }
         }
 }
 
