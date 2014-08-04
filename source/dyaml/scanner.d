@@ -284,30 +284,33 @@ final class Scanner
             unwindIndent(reader_.column);
 
             // Get the next character.
-            const dchar c = reader_.peek();
+            const dchar c = reader_.peekByte();
 
             // Fetch the token.
-            if(c == '\0')                   { return fetchStreamEnd();         }
-            if(checkDirective())            { return fetchDirective();         }
-            if(checkDocumentStart())        { return fetchDocumentStart();     }
-            if(checkDocumentEnd())          { return fetchDocumentEnd();       }
+            if(c == '\0')            { return fetchStreamEnd();     }
+            if(checkDirective())     { return fetchDirective();     }
+            if(checkDocumentStart()) { return fetchDocumentStart(); }
+            if(checkDocumentEnd())   { return fetchDocumentEnd();   }
             // Order of the following checks is NOT significant.
-            if(c == '[')                    { return fetchFlowSequenceStart(); }
-            if(c == '{')                    { return fetchFlowMappingStart();  }
-            if(c == ']')                    { return fetchFlowSequenceEnd();   }
-            if(c == '}')                    { return fetchFlowMappingEnd();    }
-            if(c == ',')                    { return fetchFlowEntry();         }
-            if(checkBlockEntry())           { return fetchBlockEntry();        }
-            if(checkKey())                  { return fetchKey();               }
-            if(checkValue())                { return fetchValue();             }
-            if(c == '*')                    { return fetchAlias();             }
-            if(c == '&')                    { return fetchAnchor();            }
-            if(c == '!')                    { return fetchTag();               }
-            if(c == '|' && flowLevel_ == 0) { return fetchLiteral();           }
-            if(c == '>' && flowLevel_ == 0) { return fetchFolded();            }
-            if(c == '\'')                   { return fetchSingle();            }
-            if(c == '\"')                   { return fetchDouble();            }
-            if(checkPlain())                { return fetchPlain();             }
+            switch(c)
+            {
+                case '[':  return fetchFlowSequenceStart();
+                case '{':  return fetchFlowMappingStart();
+                case ']':  return fetchFlowSequenceEnd();
+                case '}':  return fetchFlowMappingEnd();
+                case ',':  return fetchFlowEntry();
+                case '!':  return fetchTag();
+                case '\'': return fetchSingle();
+                case '\"': return fetchDouble();
+                case '*':  return fetchAlias();
+                case '&':  return fetchAnchor();
+                case '?':  if(checkKey())        { return fetchKey();        } goto default;
+                case ':':  if(checkValue())      { return fetchValue();      } goto default;
+                case '-':  if(checkBlockEntry()) { return fetchBlockEntry(); } goto default;
+                case '|':  if(flowLevel_ == 0)   { return fetchLiteral();    } break;
+                case '>':  if(flowLevel_ == 0)   { return fetchFolded();     } break;
+                default:   if(checkPlain())      { return fetchPlain();      }
+            }
 
             throw new ScannerException("While scanning for the next token, found character "
                                        "\'%s\', index %s that cannot start any token"
@@ -757,8 +760,7 @@ final class Scanner
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe pure nothrow @nogc
         {
-            return reader_.peek() == '-' &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
+            return " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
         }
 
         /// Check if the next token is KEY(flow context):    '?'
@@ -766,8 +768,7 @@ final class Scanner
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe pure nothrow @nogc
         {
-            return reader_.peek() == '?' &&
-                   (flowLevel_ > 0 ||
+            return (flowLevel_ > 0 ||
                    " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
         }
 
@@ -776,9 +777,8 @@ final class Scanner
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe pure nothrow @nogc
         {
-            return reader_.peek() == ':' &&
-                   (flowLevel_ > 0 ||
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
+            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
+            return flowLevel_ > 0 || search.canFind(reader_.peek(1));
         }
 
         /// Check if the next token is a plain scalar.
