@@ -137,7 +137,7 @@ final class Reader
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(size_t index = 0) @safe pure nothrow @nogc
+        dchar peek(const size_t index) @safe pure nothrow @nogc
         {
             if(characterCount_ <= charIndex_ + index)
             {
@@ -174,6 +174,16 @@ final class Reader
             }
 
             return d;
+        }
+
+        /// Optimized version of peek() for the case where peek index is 0.
+        dchar peek() @safe pure nothrow @nogc
+        {
+            if(characterCount_ <= charIndex_) { return '\0'; }
+
+            lastDecodedCharOffset_   = 0;
+            lastDecodedBufferOffset_ = bufferOffset_;
+            return decodeNext();
         }
 
         /// Get specified number of characters starting at current position.
