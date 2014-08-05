@@ -193,7 +193,9 @@ struct Loader
          *                    loaded to memory or a string with YAML data. Note that
          *                    buffer $(B will) be overwritten, as D:YAML minimizes
          *                    memory allocations by reusing the input _buffer.
-         *
+         *                    $(B Must not be deleted or modified by the user  as long
+         *                    as nodes loaded by this Loader are in use!) - Nodes may
+         *                    refer to data in this buffer.
          *
          * Note that D:YAML looks for byte-order-marks YAML files encoded in
          * UTF-16/UTF-32 (and sometimes UTF-8) use to specify the encoding and
