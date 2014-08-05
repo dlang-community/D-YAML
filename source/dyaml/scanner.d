@@ -969,7 +969,7 @@ final class Scanner
             scanYAMLDirectiveNumberToSlice(startMark);
             if(error_) { return; }
 
-            if(reader_.peek() != '.')
+            if(reader_.peekByte() != '.')
             {
                 error("While scanning a directive", startMark,
                       expected("digit or '.'", reader_.peek()), reader_.mark);
@@ -1045,7 +1045,7 @@ final class Scanner
         {
             scanTagHandleToSlice!"directive"(startMark);
             if(error_) { return; }
-            if(reader_.peek() == ' ') { return; }
+            if(reader_.peekByte() == ' ') { return; }
             error("While scanning a directive handle", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
         }
@@ -1071,7 +1071,7 @@ final class Scanner
         void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
-            if(reader_.peek() == '#') { scanToNextBreak(); }
+            if(reader_.peekByte() == '#') { scanToNextBreak(); }
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
                 scanLineBreak();
@@ -1107,7 +1107,7 @@ final class Scanner
             if(error_)   { return Token.init; }
 
             if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
-               !"?:,]}%@"d.canFind(reader_.peek()))
+               !"?:,]}%@"d.canFind(reader_.peekByte()))
             {
                 enum anchorCtx = "While scanning an anchor";
                 enum aliasCtx  = "While scanning an alias";
@@ -1149,7 +1149,7 @@ final class Scanner
                 handleEnd = 0;
                 scanTagURIToSlice!"tag"(startMark);
                 if(error_) { return Token.init; }
-                if(reader_.peek() != '>')
+                if(reader_.peekByte() != '>')
                 {
                     error("While scanning a tag", startMark,
                           expected("'>'", reader_.peek()), reader_.mark);
@@ -1252,10 +1252,10 @@ final class Scanner
             dchar lineBreak = cast(dchar)int.max;
 
             // Scan the inner part of the block scalar.
-            while(reader_.column == indent && reader_.peek() != '\0')
+            while(reader_.column == indent && reader_.peekByte() != '\0')
             {
                 breaksTransaction.commit();
-                const bool leadingNonSpace = !" \t"d.canFind(reader_.peek());
+                const bool leadingNonSpace = !" \t"d.canFind(reader_.peekByte());
                 // This is where the 'interesting' non-whitespace data gets read.
                 scanToNextBreakToSlice();
                 lineBreak = scanLineBreak();
@@ -1272,13 +1272,13 @@ final class Scanner
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
                 // loop) will never roll back data written in this if() block.
-                if(reader_.column == indent && reader_.peek() != '\0')
+                if(reader_.column == indent && reader_.peekByte() != '\0')
                 {
                     // Unfortunately, folding rules are ambiguous.
 
                     // This is the folding according to the specification:
                     if(style == ScalarStyle.Folded && lineBreak == '\n' &&
-                       leadingNonSpace && !" \t"d.canFind(reader_.peek()))
+                       leadingNonSpace && !" \t"d.canFind(reader_.peekByte()))
                     {
                         // No breaks were scanned; no need to insert the space in the
                         // middle of slice.
@@ -1301,7 +1301,7 @@ final class Scanner
                     //{
                     //    if(startLen == endLen)
                     //    {
-                    //        if(!" \t"d.canFind(reader_.peek()))
+                    //        if(!" \t"d.canFind(reader_.peekByte()))
                     //        {
                     //            reader_.sliceBuilder.write(' ');
                     //        }
@@ -1435,7 +1435,7 @@ final class Scanner
         void scanBlockScalarIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
         {
             findNextNonSpace();
-            if(reader_.peek()== '#') { scanToNextBreak(); }
+            if(reader_.peekByte()== '#') { scanToNextBreak(); }
 
             if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
@@ -1458,7 +1458,7 @@ final class Scanner
 
             while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
             {
-                if(reader_.peek() != ' ')
+                if(reader_.peekByte() != ' ')
                 {
                     reader_.sliceBuilder.write(scanLineBreak());
                     endMark = reader_.mark;
@@ -1481,7 +1481,7 @@ final class Scanner
 
             for(;;)
             {
-                while(reader_.column < indent && reader_.peek() == ' ') { reader_.forward(); }
+                while(reader_.column < indent && reader_.peekByte() == ' ') { reader_.forward(); }
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
                 reader_.sliceBuilder.write(scanLineBreak());
                 endMark = reader_.mark;
@@ -1702,7 +1702,7 @@ final class Scanner
                 }
 
                 // Skip any whitespaces.
-                while(" \t"d.canFind(reader_.peek())) { reader_.forward(); }
+                while(" \t"d.canFind(reader_.peekByte())) { reader_.forward(); }
 
                 // Encountered a non-whitespace non-linebreak character, so we're done.
                 if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { break; }
@@ -1981,7 +1981,7 @@ final class Scanner
             }
 
             enum contextMsg = "While scanning a " ~ name;
-            while(reader_.peek() == '%')
+            while(reader_.peekByte() == '%')
             {
                 reader_.forward();
                 if(bytesUsed == bytes.length)
