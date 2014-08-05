@@ -30,6 +30,7 @@ package:
 /// implementing a range, as this is used only as a placeholder until Phobos gets a
 /// decent replacement.
 struct Queue(T)
+    if(!hasMember!(T, "__dtor"))
 {
     private:
         /// Linked list node containing one element and pointer to the next node.
@@ -217,7 +218,6 @@ void free(T)(T* ptr) @system nothrow
 {
     // GC doesn't need to care about any references in this struct anymore.
     static if(hasIndirections!T) { GC.removeRange(cast(void*)ptr); }
-    static if(hasMember!(T, "__dtor")) { (*ptr).destroy; }
     core.stdc.stdlib.free(ptr);
 }
 
