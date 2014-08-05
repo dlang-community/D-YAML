@@ -153,6 +153,14 @@ final class Scanner
         /// not.
         char[256] msgBuffer_;
 
+        /// Used to detect if a character is any whitespace plus '\0'
+        mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d searchAllWhitespace;
+        /// Used to detect if a character is any line break plus '\0'
+        mixin FastCharSearch!"\0\n\r\u0085\u2028\u2029"d searchAllBreaks;
+
+        /// Avoids compiler confusion of std.algorithm.canFind with FastCharSearch.
+        alias canFind = std.algorithm.canFind;
+
     public:
         /// Construct a Scanner using specified Reader.
         this(Reader reader) @safe nothrow
@@ -777,8 +785,7 @@ final class Scanner
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe pure nothrow @nogc
         {
-            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
-            return flowLevel_ > 0 || search.canFind(reader_.peek(1));
+            return flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1));
         }
 
         /// Check if the next token is a plain scalar.
@@ -804,7 +811,6 @@ final class Scanner
             {
                 return true;
             }
-            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d searchAllWhitespace;
             return !searchAllWhitespace.canFind(reader_.peek(1)) &&
                    (c == '-' || (flowLevel_ == 0 && (c == '?' || c == ':')));
         }
@@ -842,8 +848,7 @@ final class Scanner
         /// Scan and throw away all characters until next line break.
         void scanToNextBreak() @safe pure nothrow @nogc
         {
-            mixin FastCharSearch!"\0\n\r\u0085\u2028\u2029"d search;
-            while(!search.canFind(reader_.peek())) { reader_.forward(); }
+            while(!searchAllBreaks.canFind(reader_.peek())) { reader_.forward(); }
         }
 
         /// Scan all characters until next line break.
@@ -1729,8 +1734,6 @@ final class Scanner
             // document separators at the beginning of the line.
             // if(indent == 0) { indent = 1; }
 
-            mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d search;
-
             reader_.sliceBuilder.begin();
 
             alias Transaction = SliceBuilder.Transaction;
@@ -1748,7 +1751,11 @@ final class Scanner
                     for(;;)
                     {
                         const cNext = reader_.peek(length + 1);
-                        if(search.canFind(c) || (c == ':' && search.canFind(cNext))) { break; }
+                        if(searchAllWhitespace.canFind(c) ||
+                           (c == ':' && searchAllWhitespace.canFind(cNext)))
+                        {
+                            break;
+                        }
                         ++length;
                         c = cNext;
                     }
@@ -1758,14 +1765,17 @@ final class Scanner
                     for(;;)
                     {
                         c = reader_.peek(length);
-                        if(search.canFind(c) || ",:?[]{}"d.canFind(c)) { break; }
+                        if(searchAllWhitespace.canFind(c) || ",:?[]{}"d.canFind(c))
+                        {
+                            break;
+                        }
                         ++length;
                     }
                 }
 
                 // It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
-                   !search.canFind(reader_.peek(length + 1)) &&
+                   !searchAllWhitespace.canFind(reader_.peek(length + 1)) &&
                    !",[]{}"d.canFind(reader_.peek(length + 1)))
                 {
                     // This is an error; throw the slice away.
