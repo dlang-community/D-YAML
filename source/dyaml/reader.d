@@ -33,9 +33,6 @@ import dyaml.nogcutil;
 package:
 
 
-
-
-
 ///Exception thrown at Reader errors.
 class ReaderException : YAMLException
 {
