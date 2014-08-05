@@ -279,7 +279,7 @@ final class Reader
         /// Returns: Characters starting at current position.
         char[] get(const size_t length) @safe pure nothrow @nogc
         {
-            auto result = prefix(length);
+            auto result = slice(length);
             forward(length);
             return result;
         }
