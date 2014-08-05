@@ -291,7 +291,7 @@ final class Reader
         /// Move current position forward.
         ///
         /// Params:  length = Number of characters to move position forward.
-        void forward(size_t length = 1) @safe pure nothrow @nogc
+        void forward(size_t length) @safe pure nothrow @nogc
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
@@ -343,6 +343,49 @@ final class Reader
 
             lastDecodedBufferOffset_ = bufferOffset_;
             lastDecodedCharOffset_ = 0;
+        }
+
+        /// Move current position forward by one character.
+        void forward() @trusted pure nothrow @nogc
+        {
+            ++charIndex_;
+            lastDecodedBufferOffset_ = bufferOffset_;
+            lastDecodedCharOffset_ = 0;
+
+            // ASCII
+            if(upcomingASCII_ > 0)
+            {
+                --upcomingASCII_;
+                const c = buffer_[bufferOffset_++];
+
+                if(c == '\n' || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                {
+                    ++line_;
+                    column_ = 0;
+                    return;
+                }
+                ++column_;
+                return;
+            }
+
+            // UTF-8
+            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
+            assert(bufferOffset_ < buffer_.length,
+                   "Attempted to decode past the end of YAML buffer");
+            assert(buffer_[bufferOffset_] >= 0x80,
+                   "ASCII must be handled by preceding code");
+
+            const c = decodeValidUTF8NoGC(buffer_, bufferOffset_);
+
+            // New line. (can compare with '\n' without decoding since it's ASCII)
+            if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+            {
+                ++line_;
+                column_ = 0;
+            }
+            else if(c != '\uFEFF') { ++column_; }
+
+            checkASCII();
         }
 
         /// Used to build slices of read data in Reader; to avoid allocations.
