@@ -87,12 +87,6 @@ final class Reader
         // in code points, not chars.
         size_t lastDecodedCharOffset_ = 0;
 
-        // Number of character decodings done during the life of the Reader.
-        //
-        // Used for performance testing.
-        size_t decodeCount_ = 0;
-
-
     public:
         /// Construct a Reader.
         ///
