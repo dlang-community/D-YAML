@@ -119,7 +119,7 @@ struct Queue(T)
         }
 
         /// Insert a new item putting it to specified index in the linked list.
-        void insert(T item, in size_t idx) @trusted nothrow
+        void insert(T item, const size_t idx) @trusted nothrow
         in
         {
             assert(idx <= length_);
