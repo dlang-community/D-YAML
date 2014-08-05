@@ -47,3 +47,9 @@ ehthumbs.db
 Icon?
 Thumbs.db
 .directory
+
+# Profiling outputs #
+#####################
+perf.data
+perf.data.old
+callgrind.out.*
