@@ -1824,7 +1824,8 @@ final class Scanner
 
             static bool end(Reader reader_) @safe pure nothrow @nogc
             {
-                return ("---" == reader_.prefix(3) || "..." == reader_.prefix(3))
+                const prefix = reader_.prefix(3);
+                return ("---" == prefix || "..." == prefix)
                         && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
             }
 
