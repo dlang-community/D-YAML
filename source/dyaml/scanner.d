@@ -752,7 +752,7 @@ final class Scanner
             return reader_.column     == 0     &&
                    reader_.peekByte() == '-'   &&
                    reader_.prefix(3)  == "---" &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
+                   searchAllWhitespace.canFind(reader_.peek(3));
         }
 
         /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
@@ -762,13 +762,13 @@ final class Scanner
             return reader_.column     == 0     &&
                    reader_.peekByte() == '.'   &&
                    reader_.prefix(3)  == "..." &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
+                   searchAllWhitespace.canFind(reader_.peek(3));
         }
 
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe pure nothrow @nogc
         {
-            return " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1));
+            return searchAllWhitespace.canFind(reader_.peek(1));
         }
 
         /// Check if the next token is KEY(flow context):    '?'
@@ -776,8 +776,7 @@ final class Scanner
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe pure nothrow @nogc
         {
-            return (flowLevel_ > 0 ||
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(1)));
+            return (flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1)));
         }
 
         /// Check if the next token is VALUE(flow context):  ':'
@@ -858,7 +857,7 @@ final class Scanner
         void scanToNextBreakToSlice() @system pure nothrow @nogc
         {
             uint length = 0;
-            while(!"\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(length)))
+            while(!searchAllBreaks.canFind(reader_.peek(length)))
             {
                 ++length;
             }
@@ -1077,7 +1076,7 @@ final class Scanner
         {
             findNextNonSpace();
             if(reader_.peekByte() == '#') { scanToNextBreak(); }
-            if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            if(searchAllBreaks.canFind(reader_.peek()))
             {
                 scanLineBreak();
                 return;
@@ -1111,7 +1110,7 @@ final class Scanner
             char[] value = reader_.sliceBuilder.finish();
             if(error_)   { return Token.init; }
 
-            if(!" \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()) &&
+            if(!searchAllWhitespace.canFind(reader_.peek()) &&
                !"?:,]}%@"d.canFind(reader_.peekByte()))
             {
                 enum anchorCtx = "While scanning an anchor";
@@ -1162,7 +1161,7 @@ final class Scanner
                 }
                 reader_.forward();
             }
-            else if(" \t\0\n\r\u0085\u2028\u2029"d.canFind(c))
+            else if(searchAllWhitespace.canFind(c))
             {
                 reader_.forward();
                 handleEnd = 0;
@@ -1442,7 +1441,7 @@ final class Scanner
             findNextNonSpace();
             if(reader_.peekByte()== '#') { scanToNextBreak(); }
 
-            if("\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            if(searchAllBreaks.canFind(reader_.peek()))
             {
                 scanLineBreak();
                 return;
@@ -1699,7 +1698,7 @@ final class Scanner
                 // Instead of checking indentation, we check for document separators.
                 const prefix = reader_.prefix(3);
                 if((prefix == "---" || prefix == "...") &&
-                   " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3)))
+                   searchAllWhitespace.canFind(reader_.peek(3)))
                 {
                     error("While scanning a quoted scalar", startMark,
                           "found unexpected document separator", reader_.mark);
