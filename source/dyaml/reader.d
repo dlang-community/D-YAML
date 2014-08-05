@@ -145,6 +145,7 @@ final class Reader
         // Throws:  ReaderException if trying to read past the end of the buffer.
         dchar peek(const size_t index) @safe pure nothrow @nogc
         {
+            if(index < upcomingASCII_) { return buffer_[bufferOffset_ + index]; }
             if(characterCount_ <= charIndex_ + index)
             {
                 // XXX This is risky; revert this if bugs are introduced. We rely on
@@ -172,8 +173,9 @@ final class Reader
             }
 
             // 'Slow' path where we decode everything up to the requested character.
-            lastDecodedCharOffset_   = 0;
-            lastDecodedBufferOffset_ = bufferOffset_;
+            const asciiToTake = min(upcomingASCII_, index);
+            lastDecodedCharOffset_   = asciiToTake;
+            lastDecodedBufferOffset_ = bufferOffset_ + asciiToTake;
             dchar d;
             while(lastDecodedCharOffset_ <= index)
             {
@@ -186,6 +188,7 @@ final class Reader
         /// Optimized version of peek() for the case where peek index is 0.
         dchar peek() @safe pure nothrow @nogc
         {
+            if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
             if(characterCount_ <= charIndex_) { return '\0'; }
 
             lastDecodedCharOffset_   = 0;
@@ -246,8 +249,9 @@ final class Reader
                 return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
             }
 
-            lastDecodedCharOffset_   = 0;
-            lastDecodedBufferOffset_ = bufferOffset_;
+            const asciiToTake = min(upcomingASCII_, end, buffer_.length);
+            lastDecodedCharOffset_   = asciiToTake;
+            lastDecodedBufferOffset_ = bufferOffset_ + asciiToTake;
 
             // 'Slow' path - decode everything up to end.
             while(lastDecodedCharOffset_ < end &&
