@@ -211,13 +211,13 @@ final class Reader
 
         /// Get specified number of characters starting at current position.
         ///
-        /// Note: This gets only a "view" into the internal buffer,
-        ///       which will get invalidated after other Reader calls. Use SliceBuilder
-        ///       to build slices for permanent use.
+        /// Note: This gets only a "view" into the internal buffer, which will be
+        ///       invalidated after other Reader calls. Use SliceBuilder to build slices
+        ///       for permanent use.
         ///
-        /// Params:  length = Number of characters (code points, not bytes) to get. May
-        ///                   reach past the end of the buffer; in that case the
-        ///                   returned slice will be shorter.
+        /// Params: length = Number of characters (code points, not bytes) to get. May
+        ///                  reach past the end of the buffer; in that case the returned
+        ///                  slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
         char[] prefix(const size_t length) @safe pure nothrow @nogc
