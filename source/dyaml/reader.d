@@ -76,6 +76,11 @@ final class Reader
             Endian endian_;
         }
 
+        // The number of consecutive ASCII characters starting at bufferOffset_.
+        //
+        // Used to minimize UTF-8 decoding.
+        size_t upcomingASCII_ = 0;
+
         // Index to buffer_ where the last decoded character starts.
         size_t lastDecodedBufferOffset_ = 0;
         // Offset, relative to charIndex_, of the last decoded character,
@@ -320,6 +325,12 @@ final class Reader
         Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
 
 private:
+        // Update upcomingASCII_ (should be called forward()ing over a UTF-8 sequence)
+        void checkASCII() @safe pure nothrow @nogc
+        {
+            upcomingASCII_ = countASCII(buffer_[bufferOffset_ .. $]);
+        }
+
         // Decode the next character relative to
         // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
         //
