@@ -736,21 +736,111 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     return result;
 }
 
-/// Determine if all characters (code points, not bytes) in a string are printable,
-/// except for one or more trailing zeroes.
-///
-/// Params:
-///
-/// chars =
-bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
+/// Determine if all characters (code points, not bytes) in a string are printable.
+bool isPrintableValidUTF8(const char[] chars) @trusted pure nothrow @nogc
 {
-    for(size_t b = 0; b < chars.length;)
+    // This is oversized (only 128 entries are necessary) simply because having 256
+    // entries improves performance... for some reason (alignment?)
+    bool[256] printable = [false, false, false, false, false, false, false, false,
+                           false, true,  true,  false, false, true,  false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+                           true,  true,  true,  true, true,  true,  true,  true,
+
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false,
+                           false, false, false, false, false, false, false, false];
+
+    for(size_t index = 0; index < chars.length;)
     {
-        const dchar c = chars[b] < 0x80 ? chars[b++] : decodeValidUTF8NoGC(chars, b);
-        if(!((c == 0x09 || c == 0x0A || c == 0x0D || c == 0x85) ||
-             (c >= 0x20 && c <= 0x7E) ||
-             (c >= 0xA0 && c <= '\uD7FF') ||
-             (c >= '\uE000' && c <= '\uFFFD')))
+        // Fast path for ASCII.
+        // Both this while() block and the if() block below it are optimized, unrolled
+        // versions of the for() block below them; the while()/if() block could be
+        // removed without affecting logic, but both help increase performance.
+        size_t asciiCount = countASCII(chars[index .. $]);
+        // 8 ASCII iterations unrolled, looping while there are at most 8 ASCII chars.
+        while(asciiCount > 8)
+        {
+            const dchar b0 = chars[index];
+            const dchar b1 = chars[index + 1];
+            const dchar b2 = chars[index + 2];
+            const dchar b3 = chars[index + 3];
+            const dchar b4 = chars[index + 4];
+            const dchar b5 = chars[index + 5];
+            const dchar b6 = chars[index + 6];
+            const dchar b7 = chars[index + 7];
+
+            index += 8;
+            asciiCount -= 8;
+
+            const all = printable[b0] & printable[b1] & printable[b2] & printable[b3] &
+                        printable[b4] & printable[b5] & printable[b6] & printable[b1];
+            if(!all)
+            {
+                return false;
+            }
+        }
+        // 4 ASCII iterations unrolled
+        if(asciiCount > 4)
+        {
+            const char b0 = chars[index];
+            const char b1 = chars[index + 1];
+            const char b2 = chars[index + 2];
+            const char b3 = chars[index + 3];
+
+            index += 4;
+            asciiCount -= 4;
+
+            if(!printable[b0]) { return false; }
+            if(!printable[b1]) { return false; }
+            if(!printable[b2]) { return false; }
+            if(!printable[b3]) { return false; }
+        }
+        // Any remaining ASCII chars. This is really the only code needed to handle
+        // ASCII, the above if() and while() blocks are just an optimization.
+        for(; asciiCount > 0; --asciiCount)
+        {
+            const char b = chars[index];
+            ++index;
+            if(b >= 0x20)    { continue; }
+            if(printable[b]) { continue; }
+            return false;
+        }
+
+        if(index == chars.length) { break; }
+
+        // Not ASCII, need to decode.
+        const dchar c = decodeValidUTF8NoGC(chars, index);
+        // We now c is not ASCII, so only check for printable non-ASCII chars.
+        if(!(c == 0x85 || (c >= 0xA0 && c <= '\uD7FF') ||
+            (c >= '\uE000' && c <= '\uFFFD')))
         {
             return false;
         }
