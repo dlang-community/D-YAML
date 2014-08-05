@@ -31,7 +31,7 @@ package:
 // Position in a YAML stream, used for error messages.
 struct Mark
 {
-    private:
+    package:
         /// Line number.
         ushort line_;
         /// Column number.
@@ -42,7 +42,9 @@ struct Mark
         this(const uint line, const uint column) @safe pure nothrow @nogc
         {
             line_   = cast(ushort)min(ushort.max, line);
-            column_ = cast(ushort)min(ushort.max, column);
+            // This *will* overflow on extremely wide files but saves CPU time
+            // (mark ctor takes ~5% of time)
+            column_ = cast(ushort)column;
         }
 
         /// Get a string representation of the mark.
