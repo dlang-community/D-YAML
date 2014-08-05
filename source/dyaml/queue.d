@@ -101,17 +101,7 @@ struct Queue(T)
         /// Push new item to the queue.
         void push(T item) @trusted nothrow
         {
-            Node* newLast;
-            if(freeList_ !is null)
-            {
-                newLast   = freeList_;
-                freeList_ = freeList_.next_;
-                *newLast  = Node(item, null);
-            }
-            else
-            {
-                newLast = allocate!Node(item, cast(Node*)null);
-            }
+            Node* newLast = newNode(item, null);
             if(last_ !is null) { last_.next_ = newLast; }
             if(first_ is null) { first_      = newLast; }
             last_ = newLast;
@@ -128,26 +118,19 @@ struct Queue(T)
         {
             if(idx == 0)
             {
-                // Add after the first element - so this will be the next to pop.
-                first_ = allocate!Node(item, first_);
+                first_ = newNode(item, first_);
                 ++length_;
             }
-            else if(idx == length_)
-            {
-                // Adding before last added element, so we can just push.
-                push(item);
-            }
+            // Adding before last added element, so we can just push.
+            else if(idx == length_) { push(item); }
             else
             {
                 // Get the element before one we're inserting.
                 Node* current = first_;
-                foreach(i; 1 .. idx)
-                {
-                    current = current.next_;
-                }
+                foreach(i; 1 .. idx) { current = current.next_; }
 
                 // Insert a new node after current, and put current.next_ behind it.
-                current.next_ = allocate!Node(item, current.next_);
+                current.next_ = newNode(item, current.next_);
                 ++length_;
             }
         }
@@ -197,6 +180,22 @@ struct Queue(T)
         size_t length() @safe pure nothrow const @nogc
         {
             return length_;
+        }
+
+private:
+        /// Get a new (or recycled) node with specified item and next node pointer.
+        ///
+        /// Tries to reuse a node from freeList_, allocates a new node if not possible.
+        Node* newNode(ref T item, Node* next) @trusted nothrow
+        {
+            if(freeList_ !is null)
+            {
+                auto node = freeList_;
+                freeList_ = freeList_.next_;
+                *node     = Node(item, next);
+                return node;
+            }
+            return allocate!Node(item, next);
         }
 }
 
