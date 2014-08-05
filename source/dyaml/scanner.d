@@ -739,14 +739,16 @@ final class Scanner
             tokens_.push(plain);
         }
 
+    pure nothrow @nogc:
+
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
-        bool checkDirective() @safe pure nothrow @nogc
+        bool checkDirective() @safe
         {
             return reader_.peekByte() == '%' && reader_.column == 0;
         }
 
         /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
-        bool checkDocumentStart() @safe pure nothrow @nogc
+        bool checkDocumentStart() @safe
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
@@ -756,7 +758,7 @@ final class Scanner
         }
 
         /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
-        bool checkDocumentEnd() @safe pure nothrow @nogc
+        bool checkDocumentEnd() @safe
         {
             // Check one char first, then all 3, to prevent reading outside the buffer.
             return reader_.column     == 0     &&
@@ -766,7 +768,7 @@ final class Scanner
         }
 
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
-        bool checkBlockEntry() @safe pure nothrow @nogc
+        bool checkBlockEntry() @safe
         {
             return searchAllWhitespace.canFind(reader_.peek(1));
         }
@@ -774,7 +776,7 @@ final class Scanner
         /// Check if the next token is KEY(flow context):    '?'
         ///
         /// or KEY(block context):   '?' (' '|'\n')
-        bool checkKey() @safe pure nothrow @nogc
+        bool checkKey() @safe
         {
             return (flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1)));
         }
@@ -782,7 +784,7 @@ final class Scanner
         /// Check if the next token is VALUE(flow context):  ':'
         ///
         /// or VALUE(block context): ':' (' '|'\n')
-        bool checkValue() @safe pure nothrow @nogc
+        bool checkValue() @safe
         {
             return flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1));
         }
@@ -801,7 +803,7 @@ final class Scanner
         /// Note that we limit the last rule to the block context (except the
         /// '-' character) because we want the flow context to be space
         /// independent.
-        bool checkPlain() @safe pure nothrow @nogc
+        bool checkPlain() @safe
         {
             const c = reader_.peek();
             mixin FastCharSearch!"-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029"d
@@ -815,7 +817,7 @@ final class Scanner
         }
 
         /// Move to the next non-space character.
-        void findNextNonSpace() @safe pure nothrow @nogc
+        void findNextNonSpace() @safe
         {
             while(reader_.peekByte() == ' ') { reader_.forward(); }
         }
@@ -826,8 +828,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanAlphaNumericToSlice(string name)(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanAlphaNumericToSlice(string name)(const Mark startMark) @system
         {
             size_t length = 0;
             dchar c = reader_.peek();
@@ -845,7 +846,7 @@ final class Scanner
         }
 
         /// Scan and throw away all characters until next line break.
-        void scanToNextBreak() @safe pure nothrow @nogc
+        void scanToNextBreak() @safe
         {
             while(!searchAllBreaks.canFind(reader_.peek())) { reader_.forward(); }
         }
@@ -854,7 +855,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanToNextBreakToSlice() @system pure nothrow @nogc
+        void scanToNextBreakToSlice() @system
         {
             uint length = 0;
             while(!searchAllBreaks.canFind(reader_.peek(length)))
@@ -874,7 +875,7 @@ final class Scanner
         /// We do not yet support BOM inside the stream as the
         /// specification requires. Any such mark will be considered as a part
         /// of the document.
-        void scanToNextToken() @safe pure nothrow @nogc
+        void scanToNextToken() @safe
         {
             // TODO(PyYAML): We need to make tab handling rules more sane. A good rule is:
             //   Tabs cannot precede tokens
@@ -904,7 +905,7 @@ final class Scanner
         }
 
         /// Scan directive token.
-        Token scanDirective() @trusted pure nothrow
+        Token scanDirective() @trusted
         {
             Mark startMark = reader_.mark;
             // Skip the '%'.
@@ -948,7 +949,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveNameToSlice(const Mark startMark) @system pure nothrow @nogc
+        void scanDirectiveNameToSlice(const Mark startMark) @system
         {
             // Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
@@ -965,8 +966,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveValueToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanYAMLDirectiveValueToSlice(const Mark startMark) @system
         {
             findNextNonSpace();
 
@@ -999,8 +999,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveNumberToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanYAMLDirectiveNumberToSlice(const Mark startMark) @system
         {
             if(!isDigit(reader_.peek()))
             {
@@ -1024,8 +1023,7 @@ final class Scanner
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        uint scanTagDirectiveValueToSlice(const Mark startMark)
-            @system pure nothrow
+        uint scanTagDirectiveValueToSlice(const Mark startMark) @system
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder.length;
@@ -1044,8 +1042,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectiveHandleToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanTagDirectiveHandleToSlice(const Mark startMark) @system
         {
             scanTagHandleToSlice!"directive"(startMark);
             if(error_) { return; }
@@ -1060,8 +1057,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectivePrefixToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanTagDirectivePrefixToSlice(const Mark startMark) @system
         {
             scanTagURIToSlice!"directive"(startMark);
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
@@ -1072,7 +1068,7 @@ final class Scanner
         /// Scan (and ignore) ignored line after a directive.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
+        void scanDirectiveIgnoredLine(const Mark startMark) @safe
         {
             findNextNonSpace();
             if(reader_.peekByte() == '#') { scanToNextBreak(); }
@@ -1098,7 +1094,7 @@ final class Scanner
         /// Therefore we restrict aliases to ASCII alphanumeric characters.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanAnchor(const TokenID id) @trusted pure nothrow @nogc
+        Token scanAnchor(const TokenID id) @trusted
         {
             const startMark = reader_.mark;
             const dchar i = reader_.get();
@@ -1134,7 +1130,7 @@ final class Scanner
         /// Scan a tag token.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanTag() @trusted pure nothrow @nogc
+        Token scanTag() @trusted
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1214,7 +1210,7 @@ final class Scanner
         /// Scan a block scalar token with specified style.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanBlockScalar(const ScalarStyle style) @trusted pure nothrow @nogc
+        Token scanBlockScalar(const ScalarStyle style) @trusted
         {
             const startMark = reader_.mark;
 
@@ -1356,8 +1352,7 @@ final class Scanner
         /// Scan chomping and indentation indicators of a scalar token.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark)
-            @safe pure nothrow @nogc
+        Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark) @safe
         {
             auto chomping = Chomping.Clip;
             int increment = int.min;
@@ -1393,7 +1388,7 @@ final class Scanner
         ///
         /// c        = The character that may be a chomping indicator.
         /// chomping = Write the chomping value here, if detected.
-        bool getChomping(ref dchar c, ref Chomping chomping) @safe pure nothrow @nogc
+        bool getChomping(ref dchar c, ref Chomping chomping) @safe
         {
             if(!"+-"d.canFind(c)) { return false; }
             chomping = c == '+' ? Chomping.Keep : Chomping.Strip;
@@ -1415,8 +1410,7 @@ final class Scanner
         /// startMark = Mark for error messages.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool getIncrement(ref dchar c, ref int increment, const Mark startMark)
-            @safe pure nothrow @nogc
+        bool getIncrement(ref dchar c, ref int increment, const Mark startMark) @safe
         {
             if(!c.isDigit) { return false; }
             // Convert a digit to integer.
@@ -1436,7 +1430,7 @@ final class Scanner
         /// Scan (and ignore) ignored line in a block scalar.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanBlockScalarIgnoredLine(const Mark startMark) @safe pure nothrow @nogc
+        void scanBlockScalarIgnoredLine(const Mark startMark) @safe
         {
             findNextNonSpace();
             if(reader_.peekByte()== '#') { scanToNextBreak(); }
@@ -1454,8 +1448,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice()
-            @system pure nothrow @nogc
+        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice() @system
         {
             uint maxIndent;
             Mark endMark = reader_.mark;
@@ -1479,7 +1472,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted pure nothrow @nogc
+        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted
         {
             Mark endMark = reader_.mark;
 
@@ -1497,7 +1490,7 @@ final class Scanner
         /// Scan a qouted flow scalar token with specified quotes.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanFlowScalar(const ScalarStyle quotes) @trusted pure nothrow @nogc
+        Token scanFlowScalar(const ScalarStyle quotes) @trusted
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
@@ -1528,7 +1521,7 @@ final class Scanner
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
-            @system pure nothrow @nogc
+            @system
         {
             for(;;) with(ScalarStyle)
             {
@@ -1642,8 +1635,7 @@ final class Scanner
         /// spaces into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarSpacesToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanFlowScalarSpacesToSlice(const Mark startMark) @system
         {
             // Increase length as long as we see whitespace.
             size_t length = 0;
@@ -1688,8 +1680,7 @@ final class Scanner
         /// line breaks into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanFlowScalarBreaksToSlice(const Mark startMark)
-            @system pure nothrow @nogc
+        bool scanFlowScalarBreaksToSlice(const Mark startMark) @system
         {
             // True if at least one line break was found.
             bool anyBreaks;
@@ -1721,7 +1712,7 @@ final class Scanner
         /// Scan plain scalar token (no block, no quotes).
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanPlain() @trusted pure nothrow @nogc
+        Token scanPlain() @trusted
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
@@ -1818,7 +1809,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        void scanPlainSpacesToSlice(const Mark startMark) @system pure nothrow @nogc
+        void scanPlainSpacesToSlice(const Mark startMark) @system
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1882,8 +1873,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagHandleToSlice(string name)(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanTagHandleToSlice(string name)(const Mark startMark) @system
         {
             dchar c = reader_.peek();
             enum contextMsg = "While scanning a " ~ name;
@@ -1920,8 +1910,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagURIToSlice(string name)(const Mark startMark)
-            @trusted pure nothrow @nogc
+        void scanTagURIToSlice(string name)(const Mark startMark) @trusted
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
@@ -1963,8 +1952,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanURIEscapesToSlice(string name)(const Mark startMark)
-            @system pure nothrow @nogc
+        void scanURIEscapesToSlice(string name)(const Mark startMark) @system
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
@@ -2060,7 +2048,7 @@ final class Scanner
         ///   '\u2028'    :   '\u2028'
         ///   '\u2029     :   '\u2029'
         ///   no break    :   '\0'
-        dchar scanLineBreak() @safe pure nothrow @nogc
+        dchar scanLineBreak() @safe
         {
             // Fast path for ASCII line breaks.
             const b = reader_.peekByte();
