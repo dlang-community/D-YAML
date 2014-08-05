@@ -1739,16 +1739,28 @@ final class Scanner
             while(reader_.peekByte() != '#')
             {
                 // Scan the entire plain scalar.
-                uint length = 0;
-                dchar c;
-                for(;;)
+                size_t length = 0;
+                dchar c = void;
+                // Moved the if() out of the loop for optimization.
+                if(flowLevel_ == 0) 
                 {
                     c = reader_.peek(length);
-                    const bool done = search.canFind(c) || (flowLevel_ == 0 && c == ':' &&
-                                      search.canFind(reader_.peek(length + 1))) ||
-                                      (flowLevel_ > 0 && ",:?[]{}"d.canFind(c));
-                    if(done) { break; }
-                    ++length;
+                    for(;;)
+                    {
+                        const cNext = reader_.peek(length + 1);
+                        if(search.canFind(c) || (c == ':' && search.canFind(cNext))) { break; }
+                        ++length;
+                        c = cNext;
+                    }
+                }
+                else 
+                {
+                    for(;;)
+                    {
+                        c = reader_.peek(length);
+                        if(search.canFind(c) || ",:?[]{}"d.canFind(c)) { break; }
+                        ++length;
+                    }
                 }
 
                 // It's not clear what we should do with ':' in the flow context.
