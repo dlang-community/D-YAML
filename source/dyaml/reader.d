@@ -130,6 +130,7 @@ final class Reader
                     new ReaderException("Special unicode characters are not allowed"));
 
             this.sliceBuilder = SliceBuilder(this);
+            checkASCII();
         }
 
         /// Get character at specified index relative to current position.
@@ -300,6 +301,7 @@ final class Reader
                     column_ = 0;
                 }
                 else if(c != '\uFEFF') { ++column_; }
+                checkASCII();
             }
 
             lastDecodedBufferOffset_ = bufferOffset_;
