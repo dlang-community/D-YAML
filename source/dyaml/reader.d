@@ -225,6 +225,24 @@ final class Reader
             return slice(length);
         }
 
+        /// Get specified number of bytes, not code points, starting at current position.
+        ///
+        /// Note: This gets only a "view" into the internal buffer, which will be
+        ///       invalidated after other Reader calls. Use SliceBuilder to build slices
+        ///       for permanent use.
+        ///
+        /// Params: length = Number bytes (not code points) to get. May NOT reach past
+        ///                  the end of the buffer; should be used with peek() to avoid
+        ///                  this.
+        ///
+        /// Returns: Bytes starting at current position.
+        char[] prefixBytes(const size_t length) @safe pure nothrow @nogc
+        {
+            assert(length == 0 || bufferOffset_ + length < buffer_.length,
+                   "prefixBytes out of bounds");
+            return buffer_[bufferOffset_ .. bufferOffset_ + length];
+        }
+
         /// Get a slice view of the internal buffer, starting at the current position.
         ///
         /// Note: This gets only a "view" into the internal buffer,
