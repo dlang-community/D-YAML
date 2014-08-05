@@ -1643,8 +1643,8 @@ final class Scanner
         {
             // Increase length as long as we see whitespace.
             size_t length = 0;
-            while(" \t"d.canFind(reader_.peek(length))) { ++length; }
-            auto whitespaces = reader_.prefix(length);
+            while(" \t"d.canFind(reader_.peekByte(length))) { ++length; }
+            auto whitespaces = reader_.prefixBytes(length);
 
             // Can check the last byte without striding because '\0' is ASCII
             const c = reader_.peek(length);
@@ -1805,7 +1805,8 @@ final class Scanner
             // Get as many plain spaces as there are.
             size_t length = 0;
             while(reader_.peekByte(length) == ' ') { ++length; }
-            char[] whitespaces = reader_.get(length);
+            char[] whitespaces = reader_.prefixBytes(length);
+            reader_.forward(length);
 
             dchar c = reader_.peek();
             mixin FastCharSearch!" \n\r\u0085\u2028\u2029"d search;
