@@ -305,19 +305,19 @@ final class Reader
         SliceBuilder sliceBuilder;
 
         /// Get a string describing current buffer position, used for error messages.
-        final Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
+        Mark mark() @safe pure nothrow const @nogc { return Mark(line_, column_); }
 
         /// Get current line number.
-        final uint line() @safe pure nothrow const @nogc { return line_; }
+        uint line() @safe pure nothrow const @nogc { return line_; }
 
         /// Get current column number.
-        final uint column() @safe pure nothrow const @nogc { return column_; }
+        uint column() @safe pure nothrow const @nogc { return column_; }
 
         /// Get index of the current character in the buffer.
-        final size_t charIndex() @safe pure nothrow const @nogc { return charIndex_; }
+        size_t charIndex() @safe pure nothrow const @nogc { return charIndex_; }
 
         /// Get encoding of the input buffer.
-        final Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
+        Encoding encoding() @safe pure nothrow const @nogc { return encoding_; }
 
 private:
         // Decode the next character relative to
