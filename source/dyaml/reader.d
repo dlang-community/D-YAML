@@ -432,26 +432,6 @@ private:
 
             return decodeValidUTF8NoGC(buffer_, lastDecodedBufferOffset_);
         }
-
-        // Decode the character starting at bufferOffset_ and move to the next
-        // character.
-        //
-        // Used in forward().
-        dchar decodeAndAdvanceCurrent() @safe pure nothrow @nogc
-        {
-            assert(bufferOffset_ < buffer_.length,
-                   "Attempted to decode past the end of a string");
-            const b = buffer_[bufferOffset_];
-            ++charIndex_;
-            ++decodeCount_;
-            if(b < 0x80)
-            {
-                ++bufferOffset_;
-                return b;
-            }
-
-            return decodeValidUTF8NoGC(buffer_, bufferOffset_);
-        }
 }
 
 /// Used to build slices of already read data in Reader buffer, avoiding allocations.
