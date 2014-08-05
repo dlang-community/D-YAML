@@ -1007,7 +1007,7 @@ final class Scanner
 
             // Already found the first digit in the enforce(), so set length to 1.
             uint length = 1;
-            while(isDigit(reader_.peek(length))) { ++length; }
+            while(reader_.peek(length).isDigit) { ++length; }
 
             reader_.sliceBuilder.write(reader_.get(length));
         }
