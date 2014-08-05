@@ -295,9 +295,41 @@ final class Reader
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
-            for(; length > 0; --length)
+            while(length > 0)
             {
-                const c = decodeAndAdvanceCurrent();
+                auto asciiToTake = min(upcomingASCII_, length);
+                charIndex_     += asciiToTake;
+                length         -= asciiToTake;
+                upcomingASCII_ -= asciiToTake;
+
+                for(; asciiToTake > 0; --asciiToTake)
+                {
+                    const c = buffer_[bufferOffset_++];
+                    // c is ASCII, do we only need to check for ASCII line breaks.
+                    if(c == '\n' || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                    {
+                        ++line_;
+                        column_ = 0;
+                        continue;
+                    }
+                    ++column_;
+                }
+
+                // If we have used up all upcoming ASCII chars, the next char is 
+                // non-ASCII even after this returns, so upcomingASCII_ doesn't need to
+                // be updated - it's zero.
+                if(length == 0) { break; }
+
+                assert(upcomingASCII_ == 0,
+                       "Running unicode handling code but we haven't run out of ASCII chars");
+                assert(bufferOffset_ < buffer_.length,
+                       "Attempted to decode past the end of YAML buffer");
+                assert(buffer_[bufferOffset_] >= 0x80,
+                       "ASCII must be handled by preceding code");
+
+                ++charIndex_;
+                const c = decodeValidUTF8NoGC(buffer_, bufferOffset_);
+
                 // New line. (can compare with '\n' without decoding since it's ASCII)
                 if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
@@ -305,6 +337,7 @@ final class Reader
                     column_ = 0;
                 }
                 else if(c != '\uFEFF') { ++column_; }
+                --length;
                 checkASCII();
             }
 
