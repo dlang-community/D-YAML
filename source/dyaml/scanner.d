@@ -1744,7 +1744,7 @@ final class Scanner
                 size_t length = 0;
                 dchar c = void;
                 // Moved the if() out of the loop for optimization.
-                if(flowLevel_ == 0) 
+                if(flowLevel_ == 0)
                 {
                     c = reader_.peek(length);
                     for(;;)
@@ -1759,7 +1759,7 @@ final class Scanner
                         c = cNext;
                     }
                 }
-                else 
+                else
                 {
                     for(;;)
                     {
