@@ -5,7 +5,7 @@
     "mainSourceFile": "yaml_bench.d",
     "dependencies":
     {
-        "dyaml": { "version" : "~>0.5.0", "path" : "../../"},
+        "dyaml": { "version" : "~>0.5.0" },
     },
     "buildTypes":
     {
