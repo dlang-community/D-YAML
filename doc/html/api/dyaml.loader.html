@@ -153,8 +153,9 @@ loader.resolver    = resolver;
                     loaded to memory or a string with YAML data. Note that
                     buffer <b>will</b> be overwritten, as D:YAML minimizes
                     memory allocations by reusing the input buffer.
-<br>
-
+                    <b>Must not be deleted or modified by the user  as long
+                    as nodes loaded by this Loader are in use!</b> - Nodes may
+                    refer to data in this buffer.
 <br>
 
  Note that D:YAML looks for byte-order-marks YAML files encoded in

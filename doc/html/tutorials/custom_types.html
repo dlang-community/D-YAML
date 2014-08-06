@@ -221,6 +221,7 @@ be resolvable as any non-string YAML data type.</p>
 <div class="highlight-d"><div class="highlight"><pre><span class="c1">//code from the previous example...</span>
 
 <span class="k">auto</span> <span class="n">resolver</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Resolver</span><span class="p">;</span>
+<span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">regex</span><span class="p">;</span>
 <span class="n">resolver</span><span class="p">.</span><span class="n">addImplicitResolver</span><span class="p">(</span><span class="s">&quot;!color&quot;</span><span class="p">,</span> <span class="n">std</span><span class="p">.</span><span class="n">regex</span><span class="p">.</span><span class="n">regex</span><span class="p">(</span><span class="s">&quot;[0-9a-fA-F]{6}&quot;</span><span class="p">),</span>
                              <span class="s">&quot;0123456789abcdefABCDEF&quot;</span><span class="p">);</span>
 
@@ -377,7 +378,7 @@ directory of the D:YAML package.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2011-2014, Ferdinand Majerech. Based on PyYAML http://www.pyyaml.org by Kirill Simonov.
-      Last updated on Aug 01, 2014.
+      Last updated on Aug 06, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

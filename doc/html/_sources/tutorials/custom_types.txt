@@ -202,6 +202,7 @@ Add this to your code to add implicit resolution of ``!color``.
    //code from the previous example...
 
    auto resolver = new Resolver;
+   import std.regex;
    resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                 "0123456789abcdefABCDEF");
    
