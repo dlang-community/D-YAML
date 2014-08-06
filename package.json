@@ -5,7 +5,7 @@
     "libs": [],
     "importPaths": ["source"],
     "license": "Boost 1.0",
-    "dependencies": {},
+    "dependencies": { "tinyendian" : { "version" : "~>0.1.0" } },
     "homepage": "https://github.com/kiith-sa/D-YAML",
     "copyright": "Copyright © 2011-2014, Ferdinand Majerech",
 
