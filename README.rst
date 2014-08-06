@@ -13,9 +13,7 @@ D:YAML is an open source YAML parser and emitter library for the D programming
 language.  It is
 (`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_)
 compliant to the YAML 1.1 specification. D:YAML is based on
-`PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. It has no external
-dependencies, it only needs a D compiler and Phobos (standard library). It is
-written in D2 and there are no plans for D1 support.
+`PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. 
 
 D:YAML is designed to be easy to use while supporting the full feature set of
 YAML. To start using it in your project, see the
@@ -33,7 +31,6 @@ Features
 * Easy to use, high level API and detailed debugging messages.
 * Detailed API documentation and tutorials.
 * Code examples.
-* No external dependencies.
 * Supports all YAML 1.1 constructs. All examples from the YAML 1.1 specification
   are parsed correctly.
 * Reads from and writes from/to YAML files or in-memory buffers.
@@ -61,12 +58,12 @@ Directory structure
 ===============  =======================================================================
 Directory        Contents
 ===============  =======================================================================
-``./``           This README file, utility scripts, D:YAML sources outside any packages.
+``./``           This README, utility scripts.
 ``./doc``        Documentation.
 ``./docsrc``     Documentation sources.
-``./dyaml``      D:YAML source code.
-``./examples/``  Example D:YAML code.
-``./test``       Unittest code and data.
+``./source``     Source code.
+``./examples/``  Example projects using D:YAML.
+``./test``       Unittest data.
 ===============  =======================================================================
 
 
@@ -128,8 +125,5 @@ D:YAML was created by Ferdinand Majerech aka Kiith-Sa kiithsacmp[AT]gmail.com .
 
 Parts of code based on `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov.
 
-D:YAML uses a modified version of the
-`CDC build script <http://www.dsource.org/projects/cdc>`_.
-
-D:YAML was created using Vim and DMD on Debian and Ubuntu Linux as a YAML parsing
+D:YAML was created using Vim and DMD on Debian, Ubuntu and Linux Mint as a YAML parsing
 library for the `D programming language <http://www.dlang.org>`_.
