@@ -9,6 +9,8 @@ Breaking changes
 As many people have been using D:YAML from git master since the 0.4 release, each change
 is prefixed by the year the change was introduced.
 
+- ``2014`` The ``cdc.d`` build script has been removed; dub is now the only 'official'
+           way to build D:YAML.
 - ``2014`` Broke compatibility with all DMD versions before 2.066
 - ``2014`` ``Loader`` API depending on ``std.stream`` is now deprecated and will be
            removed in the next release.
@@ -50,18 +52,31 @@ Other improvements
   input, and UTF-32 inputs can be encoded into UTF-8 in-place without allocating.
   UTF-16 inputs still need an allocation. This also gets rid of all dchar[]->char[]
   conversions which were a significant source of GC allocations.
+- Various optimizations in ``Reader``/``Scanner``, especially for mostly-ASCII files 
+  containing plain scalars (most common YAML files). Measured speedup of ~80% when 
+  parsing mostly-ASCII 
+  files, slowdown of ~12% for mostly non-ASCII files (all tested files were UTF-8).
 - Less GC usage during YAML node construction.
-- The ``Scanner`` subsystems is now mostly ``@nogc``; it never allocates memory for
-  token values, using slices into the input buffer instead.
+- ``Scanner`` is now mostly ``@nogc``; it never allocates memory for token values, using
+  slices into the input buffer instead.
 - Custom, ``@nogc`` UTF decoding/encoding code based on ``std.utf`` to enable more use
   of ``@nogc`` in D:YAML internals and to improve performance.
-- Replaced ``std.stream.EndianStream`` with custom endian-fixing code.
+- Less memory allocations during scanning in general, including manual allocations.
+- Default ``Constructor``/``Resolver`` are now only constructed if the user doesn't 
+  specify their own.
+- Replaced ``std.stream.EndianStream`` with 
+  `tinyendian <https://github.com/kiith-sa/tinyendian>`_.
 - D:YAML is now a DUB package.
 - Removed static data structures such as default Constructor and Resolver.
 - Compile-time checks for size of data structures that should be small.
 - Better error messages.
 - Various refactoring changes, using more 'modern' D features, better tests.
-- Updated documentation, examples.
+- Updated documentation, examples to reflect changes in 0.5.
+- Updated the ``yaml_bench`` example/tool with options to keep the input file in memory
+  instead of reloading it for repeated parses, and to only benchmark scanning time
+  instead of the entire parser.
+- The ``yaml_gen`` example/tool can now generate strings from user-specified alphabets
+  which may contain non-ASCII characters.
 
 
 ^^^^^^^^

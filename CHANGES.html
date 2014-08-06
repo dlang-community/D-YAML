@@ -348,6 +348,12 @@ ul.auto-toc {
 <p>As many people have been using D:YAML from git master since the 0.4 release, each change
 is prefixed by the year the change was introduced.</p>
 <ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal">2014</tt> The <tt class="docutils literal">cdc.d</tt> build script has been removed; dub is now the only 'official'</dt>
+<dd><p class="first last">way to build D:YAML.</p>
+</dd>
+</dl>
+</li>
 <li><p class="first"><tt class="docutils literal">2014</tt> Broke compatibility with all DMD versions before 2.066</p>
 </li>
 <li><dl class="first docutils">
@@ -402,18 +408,31 @@ and to minimize internal exception handling during parsing.</li>
 input, and UTF-32 inputs can be encoded into UTF-8 in-place without allocating.
 UTF-16 inputs still need an allocation. This also gets rid of all dchar[]-&gt;char[]
 conversions which were a significant source of GC allocations.</li>
+<li>Various optimizations in <tt class="docutils literal">Reader</tt>/<tt class="docutils literal">Scanner</tt>, especially for mostly-ASCII files
+containing plain scalars (most common YAML files). Measured speedup of ~80% when
+parsing mostly-ASCII
+files, slowdown of ~12% for mostly non-ASCII files (all tested files were UTF-8).</li>
 <li>Less GC usage during YAML node construction.</li>
-<li>The <tt class="docutils literal">Scanner</tt> subsystems is now mostly <tt class="docutils literal">&#64;nogc</tt>; it never allocates memory for
-token values, using slices into the input buffer instead.</li>
+<li><tt class="docutils literal">Scanner</tt> is now mostly <tt class="docutils literal">&#64;nogc</tt>; it never allocates memory for token values, using
+slices into the input buffer instead.</li>
 <li>Custom, <tt class="docutils literal">&#64;nogc</tt> UTF decoding/encoding code based on <tt class="docutils literal">std.utf</tt> to enable more use
 of <tt class="docutils literal">&#64;nogc</tt> in D:YAML internals and to improve performance.</li>
-<li>Replaced <tt class="docutils literal">std.stream.EndianStream</tt> with custom endian-fixing code.</li>
+<li>Less memory allocations during scanning in general, including manual allocations.</li>
+<li>Default <tt class="docutils literal">Constructor</tt>/<tt class="docutils literal">Resolver</tt> are now only constructed if the user doesn't
+specify their own.</li>
+<li>Replaced <tt class="docutils literal">std.stream.EndianStream</tt> with
+<a class="reference external" href="https://github.com/kiith-sa/tinyendian">tinyendian</a>.</li>
 <li>D:YAML is now a DUB package.</li>
 <li>Removed static data structures such as default Constructor and Resolver.</li>
 <li>Compile-time checks for size of data structures that should be small.</li>
 <li>Better error messages.</li>
 <li>Various refactoring changes, using more 'modern' D features, better tests.</li>
-<li>Updated documentation, examples.</li>
+<li>Updated documentation, examples to reflect changes in 0.5.</li>
+<li>Updated the <tt class="docutils literal">yaml_bench</tt> example/tool with options to keep the input file in memory
+instead of reloading it for repeated parses, and to only benchmark scanning time
+instead of the entire parser.</li>
+<li>The <tt class="docutils literal">yaml_gen</tt> example/tool can now generate strings from user-specified alphabets
+which may contain non-ASCII characters.</li>
 </ul>
 </div>
 <div class="section" id="bugfixes">
