@@ -7,6 +7,9 @@
 module dyaml.testresolver;
 
 
+version(unittest)
+{
+
 import std.file;
 import std.string;
 
@@ -50,3 +53,5 @@ unittest
     writeln("D:YAML Resolver unittest");
     run("testImplicitResolver", &testImplicitResolver, ["data", "detect"]);
 }
+
+} // version(unittest)

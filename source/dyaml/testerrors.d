@@ -7,6 +7,9 @@
 module dyaml.testerrors;
 
 
+version(unittest)
+{
+
 import std.file;
 
 import dyaml.testcommon;
@@ -91,3 +94,5 @@ unittest
     run("testLoaderErrorFilename", &testLoaderErrorFilename, ["loader-error"]);
     run("testLoaderErrorSingle",   &testLoaderErrorSingle,   ["single-loader-error"]);
 }
+
+} // version(unittest)

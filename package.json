@@ -3,7 +3,6 @@
     "description": "YAML parser and emitter",
     "authors": [ "Ferdinand Majerech" ],
     "libs": [],
-    "targetType": "staticLibrary",
     "importPaths": ["source"],
     "license": "Boost 1.0",
     "dependencies": {},
@@ -15,30 +14,5 @@
         "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
         "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
         "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] },
-        "debug-unittest": { "buildOptions": ["unittests", "debugMode", "debugInfoC"] },
-        "release-unittest": { "buildOptions": ["unittests", "releaseMode", "optimize", "inline", "noBoundsCheck"] },
-        "profile-unittest": { "buildOptions": ["unittests", "releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] }
     },
-
-    "configurations":
-    [
-       {
-           "name": "unittest",
-           "targetName": "unittest",
-           "targetType": "executable",
-           "sourceFiles": ["unittest.d",
-                           "test/src/common.d",
-                           "test/src/compare.d",
-                           "test/src/constructor.d",
-                           "test/src/emitter.d",
-                           "test/src/errors.d",
-                           "test/src/inputoutput.d",
-                           "test/src/reader.d",
-                           "test/src/representer.d",
-                           "test/src/resolver.d",
-                           "test/src/tokens.d",
-                           ],
-           "mainSourceFile": "unittest.d",
-       }
-    ]
 }

@@ -7,6 +7,9 @@
 module dyaml.testinputoutput;
 
 
+version(unittest)
+{
+
 import std.array;
 import std.file;
 import std.system;
@@ -91,3 +94,5 @@ unittest
     run("testUnicodeInput", &testUnicodeInput, ["unicode"]);
     run("testUnicodeInputErrors", &testUnicodeInputErrors, ["unicode"]);
 }
+
+} // version(unittest)

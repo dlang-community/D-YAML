@@ -7,6 +7,9 @@
 module dyaml.testtokens;
 
 
+version(unittest)
+{
+
 import std.array;
 import std.file;
 
@@ -89,3 +92,5 @@ unittest
     run("testTokens",  &testTokens, ["data", "tokens"]);
     run("testScanner", &testScanner, ["data", "canonical"]);
 }
+
+} // version(unittest)

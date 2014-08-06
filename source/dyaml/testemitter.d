@@ -7,6 +7,9 @@
 module dyaml.testemitter;
 
 
+version(unittest)
+{
+
 import std.algorithm;
 import std.file;
 import std.range;
@@ -197,3 +200,5 @@ unittest
     run("testEmitterOnCanonical", &testEmitterOnCanonical, ["canonical"]);
     run("testEmitterStyles",      &testEmitterStyles,      ["data", "canonical"]);
 }
+
+} // version(unittest)

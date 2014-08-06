@@ -7,6 +7,9 @@
 module dyaml.testconstructor;
 
 
+version(unittest)
+{
+
 import std.datetime;
 import std.exception;
 import std.path;
@@ -433,3 +436,5 @@ unittest
     writeln("D:YAML Constructor unittest");
     run("testConstructor", &testConstructor, ["data", "code"]);
 }
+
+} // version(unittest)

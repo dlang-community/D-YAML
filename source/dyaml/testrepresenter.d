@@ -7,6 +7,9 @@
 module dyaml.testrepresenter;
 
 
+version(unittest)
+{
+
 import std.path;
 import std.exception;
 import std.typecons;
@@ -77,3 +80,5 @@ unittest
     writeln("D:YAML Representer unittest");
     run("testRepresenterTypes", &testRepresenterTypes, ["code"]);
 }
+
+} // version(unittest)

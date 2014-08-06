@@ -7,6 +7,9 @@
 module dyaml.testcompare;
 
 
+version(unittest)
+{
+
 import dyaml.testcommon;
 import dyaml.token;
 
@@ -65,3 +68,5 @@ unittest
     run("testParser", &testParser, ["data", "canonical"]);
     run("testLoader", &testLoader, ["data", "canonical"], ["test_loader_skip"]);
 }
+
+} // version(unittest)

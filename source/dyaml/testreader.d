@@ -7,6 +7,9 @@
 module dyaml.testreader;
 
 
+version(unittest)
+{
+
 import dyaml.testcommon;
 import dyaml.reader;
 
@@ -46,3 +49,5 @@ unittest
     writeln("D:YAML Reader unittest");
     run("testStreamError", &testStreamError, ["stream-error"]);
 }
+
+} // version(unittest)

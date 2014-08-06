@@ -6,6 +6,9 @@
 
 module dyaml.testcommon;
 
+version(unittest)
+{
+
 public import std.conv;
 public import std.stdio;
 public import std.stream;
@@ -201,3 +204,5 @@ void display(Result[] results, const bool verbose)
     if(failures > 0){writeln("FAILURES: ", failures);}
     if(errors > 0)  {writeln("ERRORS: ", errors);}
 }
+
+} // version(unittest)
