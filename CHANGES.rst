@@ -10,17 +10,17 @@ As many people have been using D:YAML from git master since the 0.4 release, eac
 is prefixed by the year the change was introduced.
 
 - ``2014`` The ``cdc.d`` build script has been removed; dub is now the only 'official'
-           way to build D:YAML.
+  way to build D:YAML.
 - ``2014`` Broke compatibility with all DMD versions before 2.066
 - ``2014`` ``Loader`` API depending on ``std.stream`` is now deprecated and will be
-           removed in the next release.
+  removed in the next release.
 - ``2014`` ``Loader.fromString(string)`` is now deprecated and replaced by
-           ``Loader.fromString(char[])``, which will reuse and overwrite the input during
-           parsing. The string overload will be removed in the next release.
+  ``Loader.fromString(char[])``, which will reuse and overwrite the input during
+  parsing. The string overload will be removed in the next release.
 - ``2012`` Values in D:YAML are less 'dynamic-typed'. E.g. removing ``"42"`` won't
-           also remove ``42``. Such automatic conversion still happens e.g. in a foreach
-           over a mapping with a string key. The ``Node.as()`` method has a template
-           parameter to disable automatic conversion from strings to other types.
+  also remove ``42``. Such automatic conversion still happens e.g. in a foreach
+  over a mapping with a string key. The ``Node.as()`` method has a template
+  parameter to disable automatic conversion from strings to other types.
 
 ^^^^^^^^^^^^^^^^
 API improvements

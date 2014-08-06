@@ -347,36 +347,19 @@ ul.auto-toc {
 <h2>Breaking changes</h2>
 <p>As many people have been using D:YAML from git master since the 0.4 release, each change
 is prefixed by the year the change was introduced.</p>
-<ul>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal">2014</tt> The <tt class="docutils literal">cdc.d</tt> build script has been removed; dub is now the only 'official'</dt>
-<dd><p class="first last">way to build D:YAML.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first"><tt class="docutils literal">2014</tt> Broke compatibility with all DMD versions before 2.066</p>
-</li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal">2014</tt> <tt class="docutils literal">Loader</tt> API depending on <tt class="docutils literal">std.stream</tt> is now deprecated and will be</dt>
-<dd><p class="first last">removed in the next release.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal">2014</tt> <tt class="docutils literal">Loader.fromString(string)</tt> is now deprecated and replaced by</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">Loader.fromString(char[])</span></tt>, which will reuse and overwrite the input during
-parsing. The string overload will be removed in the next release.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal">2012</tt> Values in D:YAML are less 'dynamic-typed'. E.g. removing <tt class="docutils literal">&quot;42&quot;</tt> won't</dt>
-<dd><p class="first last">also remove <tt class="docutils literal">42</tt>. Such automatic conversion still happens e.g. in a foreach
+<ul class="simple">
+<li><tt class="docutils literal">2014</tt> The <tt class="docutils literal">cdc.d</tt> build script has been removed; dub is now the only 'official'
+way to build D:YAML.</li>
+<li><tt class="docutils literal">2014</tt> Broke compatibility with all DMD versions before 2.066</li>
+<li><tt class="docutils literal">2014</tt> <tt class="docutils literal">Loader</tt> API depending on <tt class="docutils literal">std.stream</tt> is now deprecated and will be
+removed in the next release.</li>
+<li><tt class="docutils literal">2014</tt> <tt class="docutils literal">Loader.fromString(string)</tt> is now deprecated and replaced by
+<tt class="docutils literal"><span class="pre">Loader.fromString(char[])</span></tt>, which will reuse and overwrite the input during
+parsing. The string overload will be removed in the next release.</li>
+<li><tt class="docutils literal">2012</tt> Values in D:YAML are less 'dynamic-typed'. E.g. removing <tt class="docutils literal">&quot;42&quot;</tt> won't
+also remove <tt class="docutils literal">42</tt>. Such automatic conversion still happens e.g. in a foreach
 over a mapping with a string key. The <tt class="docutils literal">Node.as()</tt> method has a template
-parameter to disable automatic conversion from strings to other types.</p>
-</dd>
-</dl>
-</li>
+parameter to disable automatic conversion from strings to other types.</li>
 </ul>
 </div>
 <div class="section" id="api-improvements">
