@@ -18,7 +18,7 @@ compliant to the YAML 1.1 specification. D:YAML is based on
 D:YAML is designed to be easy to use while supporting the full feature set of
 YAML. To start using it in your project, see the
 `Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_
-tutorial.
+tutorial and the `API documentation <http://defenestrate.eu/docs/dyaml/>`_.
 
 D:YAML is still a work in progress. Its API is not stable and there might be
 compatibility breaking changes.
@@ -76,6 +76,7 @@ See the
 tutorial and other tutorials that can be found at the
 `GitHub wiki <https://github.com/kiith-sa/D-YAML/wiki>`_
 and in the ``doc/html/tutorials/`` directory in the package.
+For advanced usage, see the `API documentation <http://defenestrate.eu/docs/dyaml/>`_.
 
 
 -------
