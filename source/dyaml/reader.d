@@ -325,7 +325,7 @@ pure nothrow @nogc:
                     ++column_;
                 }
 
-                // If we have used up all upcoming ASCII chars, the next char is 
+                // If we have used up all upcoming ASCII chars, the next char is
                 // non-ASCII even after this returns, so upcomingASCII_ doesn't need to
                 // be updated - it's zero.
                 if(length == 0) { break; }
