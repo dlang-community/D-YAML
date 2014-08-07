@@ -144,7 +144,7 @@ Create a file called ``dub.json`` with the following contents:
        "mainSourceFile": "main.d",
        "dependencies":
        {
-           "dyaml": { "version" : "~>0.5.0", "path" : "../../"},
+           "dyaml": { "version" : "~>0.5.0" },
        },
    }
 
