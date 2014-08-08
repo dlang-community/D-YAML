@@ -6,7 +6,6 @@
 "libs": [],
 "targetType": "staticLibrary",
 "importPaths": ["source"],
-"version": "~master",
 "license": "Boost 1.0",
 "dependencies": {},
 "homepage": "http://dyaml.alwaysdata.net/",
