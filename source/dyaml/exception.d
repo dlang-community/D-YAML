@@ -20,7 +20,7 @@ alias to!string str;
 class YAMLException : Exception
 {
     /// Construct a YAMLException with specified message and position where it was thrown.
-    public this(string msg, string file = __FILE__, int line = __LINE__)
+    public this(string msg, string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super(msg, file, line);
@@ -79,7 +79,7 @@ abstract class MarkedYAMLException : YAMLException
 {
     // Construct a MarkedYAMLException with specified context and problem.
     this(string context, const Mark contextMark, string problem, const Mark problemMark,
-         string file = __FILE__, int line = __LINE__) @safe pure nothrow
+         string file = __FILE__, size_t line = __LINE__) @safe pure nothrow
     {
         const msg = context ~ '\n' ~
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
@@ -89,7 +89,7 @@ abstract class MarkedYAMLException : YAMLException
 
     // Construct a MarkedYAMLException with specified problem.
     this(string problem, const Mark problemMark,
-         string file = __FILE__, int line = __LINE__)
+         string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
@@ -107,7 +107,7 @@ abstract class MarkedYAMLException : YAMLException
 // See_Also: YAMLException
 template ExceptionCtors()
 {
-    public this(string msg, string file = __FILE__, int line = __LINE__)
+    public this(string msg, string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super(msg, file, line);
@@ -121,7 +121,7 @@ template MarkedExceptionCtors()
 {
     public:
         this(string context, const Mark contextMark, string problem, 
-             const Mark problemMark, string file = __FILE__, int line = __LINE__)
+             const Mark problemMark, string file = __FILE__, size_t line = __LINE__)
             @safe pure nothrow
         {
             super(context, contextMark, problem, problemMark,
@@ -129,7 +129,7 @@ template MarkedExceptionCtors()
         }
 
         this(string problem, const Mark problemMark,
-             string file = __FILE__, int line = __LINE__)
+             string file = __FILE__, size_t line = __LINE__)
             @safe pure nothrow
         {
             super(problem, problemMark, file, line);
