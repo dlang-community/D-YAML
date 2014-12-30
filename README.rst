@@ -2,7 +2,7 @@
 D:YAML 0.5
 ==========
 
-.. image:: https://raw.githubusercontent.com/kiith-sa/dyaml/master/code.dlang.org-shield.png
+.. image:: https://raw.githubusercontent.com/kiith-sa/D-YAML/master/code.dlang.org-shield.png
    :target: http://code.dlang.org
 
 **Note**: D:YAML 0.5 brings some **breaking changes**. See the
