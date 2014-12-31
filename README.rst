@@ -2,6 +2,7 @@
 D:YAML 0.5
 ==========
 
+.. image:: https://travis-ci.org/kiith-sa/D-YAML.svg?branch=master
 .. image:: https://raw.githubusercontent.com/kiith-sa/D-YAML/master/code.dlang.org-shield.png
    :target: http://code.dlang.org
 
