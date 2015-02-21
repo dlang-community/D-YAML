@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/>
+<script src="../../highlight.pack.js"></script>
+<title>Resolver</title>
+<base href="../../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.<a href=dyaml/resolver.html>resolver</a>.</small><span class="highlight">Resolver</span>
+</div>
+<div class="sidebar">
+<a href="dyaml/resolver.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/resolver.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li>dyaml.<a href="dyaml/constructor.html">constructor</a></li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li>dyaml.<a href="dyaml/loader.html">loader</a></li>
+<li>dyaml.<a href="dyaml/node.html">node</a></li>
+<li>dyaml.<a href="dyaml/representer.html">representer</a></li>
+<li><span class=" selected">dyaml.<a href="dyaml/resolver.html">resolver</a></span>
+</li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><div class="description"><pre><code>public final class Resolver
+</code></pre>
+<div class="section "><p>Resolves YAML tags (data types).
+</p>
+
+
+</div>
+<div class="section"><p>Can be used to implicitly resolve custom data types of scalar values.
+</p>
+
+
+</div>
+</div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers) @safe
+</code></pre>
+<div class="section "><p>Construct a Resolver.
+</p>
+
+
+</div>
+<div class="section"><p>If you don't want to implicitly resolve default YAML tags/data types,
+you can use defaultImplicitResolvers to disable default resolvers.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">defaultImplicitResolvers</td><td class="paramDoc"><p>Use default YAML implicit resolvers?
+</p>
+</td></tr>
+</table>
+</div>
+</div></div><a class="anchor" id="addImplicitResolver"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/resolver/Resolver.html#addImplicitResolver">addImplicitResolver</a>(
+    string tag, 
+    Regex!char regexp, 
+    string first) pure @safe
+</code></pre>
+<div class="section "><p>Add an implicit scalar resolver. 
+</p>
+
+
+</div>
+<div class="section"><p>If a scalar matches regexp and starts with any character in first, 
+its _tag is set to tag. If it matches more than one resolver _regexp
+resolvers added _first override ones added later. Default resolvers 
+override any user specified resolvers, but they can be disabled in
+Resolver constructor.
+</p>
+<p>If a scalar is not resolved to anything, it is assigned the default
+YAML _tag for strings.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Tag to resolve to.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">regexp</td><td class="paramDoc"><p>Regular expression the scalar must match to have this _tag.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">first</td><td class="paramDoc"><p>String of possible starting characters of the scalar.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Examples</h2>
+
+
+Resolve scalars starting with 'A' to !_tag :
+<pre><code>import std.regex;
+
+import dyaml.all;
+
+void main()
+{
+    auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.txt");
+    auto resolver = new <a href="dyaml/resolver/Resolver.html">Resolver</a>();
+    resolver.<a href="dyaml/resolver/Resolver.html#addImplicitResolver">addImplicitResolver</a>("!tag", std.regex.regex("A.*"), "A");
+    loader.resolver = resolver;
+    
+    //Note that we have no constructor from tag "!tag", so we can't
+    //actually load anything that resolves to <a href="dyaml/resolver/Resolver.html#this">this</a> tag.
+    //See <a href="dyaml/constructor/Constructor.html">Constructor</a> API documentation and tutorial for more information.
+
+    auto node = loader.load();
+}</code></pre>
+
+</div>
+</div></div><a class="anchor" id="defaultScalarTag"></a><div class="symbol"><div class="description"><pre><code>package @property Tag <a href="dyaml/resolver/Resolver.html#defaultScalarTag">defaultScalarTag</a>() const pure @safe nothrow
+</code></pre>
+<div class="section "><p>Return default scalar tag.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="defaultSequenceTag"></a><div class="symbol"><div class="description"><pre><code>package @property Tag <a href="dyaml/resolver/Resolver.html#defaultSequenceTag">defaultSequenceTag</a>() const pure @safe nothrow
+</code></pre>
+<div class="section "><p>Return default sequence tag.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="defaultMappingTag"></a><div class="symbol"><div class="description"><pre><code>package @property Tag <a href="dyaml/resolver/Resolver.html#defaultMappingTag">defaultMappingTag</a>() const pure @safe nothrow
+</code></pre>
+<div class="section "><p>Return default mapping tag.
+</p>
+
+
+</div>
+</div></div><div class="section members"><h2>Functions</h2><table><tr><td><a href="dyaml/resolver/Resolver.html#this">this</a></td><td></td><td><p>Construct a Resolver.
+</p>
+</td></tr><tr><td><a href="dyaml/resolver/Resolver.html#addImplicitResolver">addImplicitResolver</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Add an implicit scalar resolver. 
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/resolver/Resolver.html#defaultScalarTag">defaultScalarTag</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Return default scalar tag.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/resolver/Resolver.html#defaultSequenceTag">defaultSequenceTag</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Return default sequence tag.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/resolver/Resolver.html#defaultMappingTag">defaultMappingTag</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Return default mapping tag.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

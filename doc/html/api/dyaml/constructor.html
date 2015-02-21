@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../style.css"/>
+<script src="../highlight.pack.js"></script>
+<title>dyaml.constructor</title>
+<base href="../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.constructor</small>
+</div>
+<div class="sidebar">
+<a href="dyaml/constructor.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/constructor.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li><span class=" selected">dyaml.<a href="dyaml/constructor.html">constructor</a></span>
+</li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li>dyaml.<a href="dyaml/loader.html">loader</a></li>
+<li>dyaml.<a href="dyaml/node.html">node</a></li>
+<li>dyaml.<a href="dyaml/representer.html">representer</a></li>
+<li>dyaml.<a href="dyaml/resolver.html">resolver</a></li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><a class="anchor" id="constructNull"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/YAMLNull.html">YAMLNull</a> <a href="dyaml/constructor.html#constructNull">constructNull</a>(ref <a href="dyaml/node/Node.html">Node</a> node) @safe pure nothrow @nogc
+</code></pre>
+<div class="section "><p>Construct a _null _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructMerge"></a><div class="symbol"><div class="description"><pre><code>public YAMLMerge <a href="dyaml/constructor.html#constructMerge">constructMerge</a>(ref <a href="dyaml/node/Node.html">Node</a> node) @safe pure nothrow @nogc
+</code></pre>
+<div class="section "><p>Construct a merge _node - a _node that merges another _node into a mapping.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructBool"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/constructor.html#constructBool">constructBool</a>(ref <a href="dyaml/node/Node.html">Node</a> node) @safe
+</code></pre>
+<div class="section "><p>Construct a boolean _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructLong"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">long</a> <a href="dyaml/constructor.html#constructLong">constructLong</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct an integer (long) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructReal"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">real</a> <a href="dyaml/constructor.html#constructReal">constructReal</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a floating point (real) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructBinary"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">ubyte</a>[] <a href="dyaml/constructor.html#constructBinary">constructBinary</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a binary (base64) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructTimestamp"></a><div class="symbol"><div class="description"><pre><code>public SysTime <a href="dyaml/constructor.html#constructTimestamp">constructTimestamp</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a timestamp (SysTime) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructString"></a><div class="symbol"><div class="description"><pre><code>public string <a href="dyaml/constructor.html#constructString">constructString</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a string _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="getPairs"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>.Pair[] <a href="dyaml/constructor.html#getPairs">getPairs</a>(
+    string type, 
+    <a href="dyaml/node/Node.html">Node</a>[] nodes)
+</code></pre>
+<div class="section "><p>Convert a sequence of single-element mappings into a sequence of pairs.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructOrderedMap"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>.Pair[] <a href="dyaml/constructor.html#constructOrderedMap">constructOrderedMap</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructPairs"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>.Pair[] <a href="dyaml/constructor.html#constructPairs">constructPairs</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructSet"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>[] <a href="dyaml/constructor.html#constructSet">constructSet</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a set _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructSequence"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>[] <a href="dyaml/constructor.html#constructSequence">constructSequence</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct a sequence (array) _node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructMap"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>.Pair[] <a href="dyaml/constructor.html#constructMap">constructMap</a>(ref <a href="dyaml/node/Node.html">Node</a> node)
+</code></pre>
+<div class="section "><p>Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
+</p>
+
+
+</div>
+</div></div><div class="description"><div class="section "><p>Class that processes YAML mappings, sequences and scalars into nodes. This can be
+used to add custom data types. A tutorial can be found
+<a href="../tutorials/custom_types.html">here</a>.
+</p>
+
+
+</div>
+</div><div class="section members"><h2>Functions</h2><table><tr><td><a href="dyaml/constructor.html#constructNull">constructNull</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Construct a _null _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructMerge">constructMerge</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Construct a merge _node - a _node that merges another _node into a mapping.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructBool">constructBool</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Construct a boolean _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructLong">constructLong</a><span class="extrainfo"></span></td><td></td><td><p>Construct an integer (long) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructReal">constructReal</a><span class="extrainfo"></span></td><td></td><td><p>Construct a floating point (real) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructBinary">constructBinary</a><span class="extrainfo"></span></td><td></td><td><p>Construct a binary (base64) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructTimestamp">constructTimestamp</a><span class="extrainfo"></span></td><td></td><td><p>Construct a timestamp (SysTime) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructString">constructString</a><span class="extrainfo"></span></td><td></td><td><p>Construct a string _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#getPairs">getPairs</a><span class="extrainfo"></span></td><td></td><td><p>Convert a sequence of single-element mappings into a sequence of pairs.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructOrderedMap">constructOrderedMap</a><span class="extrainfo"></span></td><td></td><td><p>Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructPairs">constructPairs</a><span class="extrainfo"></span></td><td></td><td><p>Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructSet">constructSet</a><span class="extrainfo"></span></td><td></td><td><p>Construct a set _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructSequence">constructSequence</a><span class="extrainfo"></span></td><td></td><td><p>Construct a sequence (array) _node.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor.html#constructMap">constructMap</a><span class="extrainfo"></span></td><td></td><td><p>Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
+</p>
+</td></tr></table><h2>Classes</h2><table><tr><td><a href="dyaml/constructor/Constructor.html">Constructor</a></td><td></td><td><p>Constructs YAML values.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/>
+<script src="../../highlight.pack.js"></script>
+<title>Constructor</title>
+<base href="../../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.<a href=dyaml/constructor.html>constructor</a>.</small><span class="highlight">Constructor</span>
+</div>
+<div class="sidebar">
+<a href="dyaml/constructor.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/constructor.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li><span class=" selected">dyaml.<a href="dyaml/constructor.html">constructor</a></span>
+</li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li>dyaml.<a href="dyaml/loader.html">loader</a></li>
+<li>dyaml.<a href="dyaml/node.html">node</a></li>
+<li>dyaml.<a href="dyaml/representer.html">representer</a></li>
+<li>dyaml.<a href="dyaml/resolver.html">resolver</a></li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><div class="description"><pre><code>public final class Constructor
+</code></pre>
+<div class="section "><p>Constructs YAML values.
+</p>
+
+
+</div>
+<div class="section"><p>Each YAML scalar, sequence or mapping has a tag specifying its data type.
+ Constructor uses user-specifyable functions to create a node of desired
+ data type from a scalar, sequence or mapping.
+</p>
+<p> Each of these functions is associated with a tag, and can process either
+ a scalar, a sequence, or a mapping. The constructor passes each value to
+ the function with corresponding tag, which then returns the resulting value
+ that can be stored in a node.
+</p>
+<p> If a tag is detected with no known constructor function, it is considered an error.
+</p>
+
+
+</div>
+</div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(const Flag!"useDefaultConstructors" defaultConstructors = Yes.useDefaultConstructors) @safe nothrow
+</code></pre>
+<div class="section "><p>Construct a Constructor.
+</p>
+
+
+</div>
+<div class="section"><p>/// If you don't want to support default YAML tags/data types, you can use
+defaultConstructors to disable constructor functions for these.
+</p>
+<p>/// Params:  defaultConstructors = Use constructors for default YAML tags?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="addConstructorScalar"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/constructor/Constructor.html#addConstructorScalar">addConstructorScalar</a>(T)(
+    const string tag, 
+    T function(ref <a href="dyaml/node/Node.html">Node</a>) ctor) @safe nothrow
+</code></pre>
+<div class="section "><p>Add a constructor function from scalar.
+</p>
+
+
+</div>
+<div class="section"><p>The function must take a reference to <code class="d_inlinecode">Node</code> to construct from.
+ The node contains a string for scalars, <code class="d_inlinecode">Node[]</code> for sequences and
+ <code class="d_inlinecode">Node.Pair[]</code> for mappings.
+</p>
+<p> Any exception thrown by this function will be caught by D:YAML and
+ its message will be added to a <code class="d_inlinecode">YAMLException</code> that will also tell
+ the user which type failed to construct, and position in the file.
+</p>
+<p> The value returned by this function will be stored in the resulting node.
+</p>
+<p> Only one constructor function can be set for one tag.
+</p>
+<p> Structs and classes must implement the <code class="d_inlinecode">opCmp()</code> operator for D:YAML
+ support. The signature of the operator that must be implemented
+ is <code class="d_inlinecode">const int opCmp(ref const MyStruct s)</code> for structs where
+ <i>MyStruct</i> is the struct type, and <code class="d_inlinecode">int opCmp(Object o)</code> for
+ classes. Note that the class <code class="d_inlinecode">opCmp()</code> should not alter the compared
+ values - it is not const for compatibility reasons.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Tag for the function to handle.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">ctor</td><td class="paramDoc"><p>Constructor function.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Example</h2>
+
+
+ <pre><code> import std.string;
+
+ import dyaml.all;
+
+ struct MyStruct
+ {
+     int x, y, z;
+
+     //Any D:YAML type must have a custom opCmp operator.
+     //This is used for ordering in mappings.
+     const int opCmp(ref const MyStruct s)
+     {
+         if(x != s.x){return x - s.x;}
+         if(y != s.y){return y - s.y;}
+         if(z != s.z){return z - s.z;}
+         return 0;
+     }
+ }
+
+ MyStruct constructMyStructScalar(ref <a href="dyaml/node/Node.html">Node</a> node)
+ {
+     //Guaranteed to be string as we construct from scalar.
+     //!mystruct x:y:z
+     auto parts = node.as!string().split(":");
+     // If <a href="dyaml/constructor/Constructor.html#this">this</a> throws, the D:YAML will handle it and throw a <a href="dyaml/exception/YAMLException.html">YAMLException</a>.
+     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
+ }
+
+ void main()
+ {
+     auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml");
+     auto constructor = new <a href="dyaml/constructor/Constructor.html">Constructor</a>;
+     constructor.<a href="dyaml/constructor/Constructor.html#addConstructorScalar">addConstructorScalar</a>("!mystruct", &constructMyStructScalar);
+     loader.constructor = constructor;
+     <a href="dyaml/node/Node.html">Node</a> node = loader.load();
+ }
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="addConstructorSequence"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/constructor/Constructor.html#addConstructorSequence">addConstructorSequence</a>(T)(
+    const string tag, 
+    T function(ref <a href="dyaml/node/Node.html">Node</a>) ctor) @safe nothrow
+</code></pre>
+<div class="section "><p>Add a constructor function from sequence.
+</p>
+
+
+</div>
+<div class="section"><h2>Example</h2>
+
+
+ <pre><code> import std.string;
+
+ import dyaml.all;
+
+ struct MyStruct
+ {
+     int x, y, z;
+
+     //Any D:YAML type must have a custom opCmp operator.
+     //This is used for ordering in mappings.
+     const int opCmp(ref const MyStruct s)
+     {
+         if(x != s.x){return x - s.x;}
+         if(y != s.y){return y - s.y;}
+         if(z != s.z){return z - s.z;}
+         return 0;
+     }
+ }
+
+ MyStruct constructMyStructSequence(ref <a href="dyaml/node/Node.html">Node</a> node)
+ {
+     //node is guaranteed to be sequence.
+     //!mystruct [x, y, z]
+     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
+ }
+
+ void main()
+ {
+     auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml");
+     auto constructor = new <a href="dyaml/constructor/Constructor.html">Constructor</a>;
+     constructor.<a href="dyaml/constructor/Constructor.html#addConstructorSequence">addConstructorSequence</a>("!mystruct", &constructMyStructSequence);
+     loader.constructor = constructor;
+     <a href="dyaml/node/Node.html">Node</a> node = loader.load();
+ }
+</code></pre>
+
+</div>
+<div class="section seealso">
+<h2>See Also:</h2>
+<div class="seealso-content">
+<pre class="prettyprint"><code><a href="dyaml/constructor/Constructor.html#addConstructorScalar">addConstructorScalar</a>
+</code></pre>
+</div>
+</div>
+</div></div><a class="anchor" id="addConstructorMapping"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/constructor/Constructor.html#addConstructorMapping">addConstructorMapping</a>(T)(
+    const string tag, 
+    T function(ref <a href="dyaml/node/Node.html">Node</a>) ctor) @safe nothrow
+</code></pre>
+<div class="section "><p>Add a constructor function from a mapping.
+</p>
+
+
+</div>
+<div class="section"><h2>Example</h2>
+
+
+ <pre><code> import std.string;
+
+ import dyaml.all;
+
+ struct MyStruct
+ {
+     int x, y, z;
+
+     //Any D:YAML type must have a custom opCmp operator.
+     //This is used for ordering in mappings.
+     const int opCmp(ref const MyStruct s)
+     {
+         if(x != s.x){return x - s.x;}
+         if(y != s.y){return y - s.y;}
+         if(z != s.z){return z - s.z;}
+         return 0;
+     }
+ }
+
+ MyStruct constructMyStructMapping(ref <a href="dyaml/node/Node.html">Node</a> node)
+ {
+     //node is guaranteed to be mapping.
+     //!mystruct {"x": x, "y": y, "z": z}
+     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
+ }
+
+ void main()
+ {
+     auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml");
+     auto constructor = new <a href="dyaml/constructor/Constructor.html">Constructor</a>;
+     constructor.<a href="dyaml/constructor/Constructor.html#addConstructorMapping">addConstructorMapping</a>("!mystruct", &constructMyStructMapping);
+     loader.constructor = constructor;
+     <a href="dyaml/node/Node.html">Node</a> node = loader.load();
+ }
+</code></pre>
+
+</div>
+<div class="section seealso">
+<h2>See Also:</h2>
+<div class="seealso-content">
+<pre class="prettyprint"><code><a href="dyaml/constructor/Constructor.html#addConstructorScalar">addConstructorScalar</a>
+</code></pre>
+</div>
+</div>
+</div></div><div class="section members"><h2>Functions</h2><table><tr><td><a href="dyaml/constructor/Constructor.html#this">this</a></td><td></td><td><p>Construct a Constructor.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor/Constructor.html#addConstructorScalar">addConstructorScalar</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Add a constructor function from scalar.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor/Constructor.html#addConstructorSequence">addConstructorSequence</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Add a constructor function from sequence.
+</p>
+</td></tr><tr><td><a href="dyaml/constructor/Constructor.html#addConstructorMapping">addConstructorMapping</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Add a constructor function from a mapping.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

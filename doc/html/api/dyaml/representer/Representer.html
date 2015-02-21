@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/>
+<script src="../../highlight.pack.js"></script>
+<title>Representer</title>
+<base href="../../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.<a href=dyaml/representer.html>representer</a>.</small><span class="highlight">Representer</span>
+</div>
+<div class="sidebar">
+<a href="dyaml/representer.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/representer.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li>dyaml.<a href="dyaml/constructor.html">constructor</a></li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li>dyaml.<a href="dyaml/loader.html">loader</a></li>
+<li>dyaml.<a href="dyaml/node.html">node</a></li>
+<li><span class=" selected">dyaml.<a href="dyaml/representer.html">representer</a></span>
+</li>
+<li>dyaml.<a href="dyaml/resolver.html">resolver</a></li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><div class="description"><pre><code>public final class Representer
+</code></pre>
+<div class="section "><p>Represents YAML nodes as scalar, sequence and mapping nodes ready for output.
+</p>
+
+
+</div>
+<div class="section"><p>This class is used to add support for dumping of custom data types.
+</p>
+<p>It can also override default node formatting styles for output.
+</p>
+
+
+</div>
+</div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(const Flag!"useDefaultRepresenters" useDefaultRepresenters = Yes.useDefaultRepresenters) @safe pure
+</code></pre>
+<div class="section "><p>Construct a Representer.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">useDefaultRepresenters</td><td class="paramDoc"><p>Use default representer functions for default YAML types? This can be disabled to use custom representer functions for default types.
+</p>
+</td></tr>
+</table>
+</div>
+</div></div><a class="anchor" id="defaultScalarStyle"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/representer/Representer.html#defaultScalarStyle">defaultScalarStyle</a>(<a href="dyaml/style/ScalarStyle.html">ScalarStyle</a> style) pure @safe nothrow
+</code></pre>
+<div class="section "><p>Set default _style for scalars. If style is <code class="d_inlinecode">ScalarStyle.Invalid</code>, the _style is chosen automatically.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="defaultCollectionStyle"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/representer/Representer.html#defaultCollectionStyle">defaultCollectionStyle</a>(<a href="dyaml/style/CollectionStyle.html">CollectionStyle</a> style) pure @safe nothrow
+</code></pre>
+<div class="section "><p>Set default _style for collections. If style is <code class="d_inlinecode">CollectionStyle.Invalid</code>, the _style is chosen automatically. 
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="addRepresenter"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/representer/Representer.html#addRepresenter">addRepresenter</a>(T)(<a href="dyaml/node/Node.html">Node</a> function(
+    ref <a href="dyaml/node/Node.html">Node</a>, 
+    <a href="dyaml/representer/Representer.html">Representer</a>) representer) @trusted pure
+</code></pre>
+<div class="section "><p>Add a function to represent nodes with a specific data type.
+</p>
+
+
+</div>
+<div class="section"><p>The representer function takes references to a <code class="d_inlinecode">Node</code> storing the data
+type and to the <code class="d_inlinecode">Representer</code>. It returns the represented node and may
+throw a <code class="d_inlinecode">RepresenterException</code>. See the example for more information.
+</p>
+<p>Only one function may be specified for one data type. Default data 
+types already have representer functions unless disabled in the
+<code class="d_inlinecode">Representer</code> constructor.
+</p>
+<p>Structs and classes must implement the <code class="d_inlinecode">opCmp()</code> operator for D:YAML 
+support. The signature of the operator that must be implemented 
+is <code class="d_inlinecode">const int opCmp(ref const MyStruct s)</code> for structs where 
+<i>MyStruct</i> is the struct type, and <code class="d_inlinecode">int opCmp(Object o)</code> for 
+classes. Note that the class <code class="d_inlinecode">opCmp()</code> should not alter the compared
+values - it is not const for compatibility reasons.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">representer</td><td class="paramDoc"><p>Representer function to add.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Examples</h2>
+
+
+Representing a simple struct:
+<pre><code>import std.string;
+
+import dyaml.all;
+
+struct MyStruct
+{
+    int x, y, z;
+
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }
+}
+
+<a href="dyaml/node/Node.html">Node</a> representMyStruct(ref <a href="dyaml/node/Node.html">Node</a> node, <a href="dyaml/representer/Representer.html">Representer</a> representer)
+{ 
+    //The node is guaranteed to be MyStruct as we add representer for MyStruct.
+    auto value = node.as!MyStruct;
+    //Using custom scalar format, x:y:z.
+    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+    //Representing as a scalar, with custom tag to specify <a href="dyaml/representer/Representer.html#this">this</a> data type.
+    return representer.<a href="dyaml/representer/Representer.html#representScalar">representScalar</a>("!mystruct.tag", scalar);
+}
+
+void main()
+{
+    auto dumper = <a href="dyaml/dumper/Dumper.html">Dumper</a>("file.yaml");
+    auto representer = new <a href="dyaml/representer/Representer.html">Representer</a>;
+    representer.<a href="dyaml/representer/Representer.html#addRepresenter">addRepresenter</a>!MyStruct(&representMyStruct);
+    dumper.representer = representer;
+    dumper.dump(<a href="dyaml/node/Node.html">Node</a>(MyStruct(1,2,3)));
+}</code></pre>
+
+Representing a class:
+<pre><code>import std.string;
+
+import dyaml.all;
+
+class MyClass
+{
+    int x, y, z;
+
+    <a href="dyaml/representer/Representer.html#this">this</a>(int x, int y, int z)
+    {
+        <a href="dyaml/representer/Representer.html#this">this</a>.x = x; 
+        <a href="dyaml/representer/Representer.html#this">this</a>.y = y; 
+        <a href="dyaml/representer/Representer.html#this">this</a>.z = z;
+    }
+
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    override int opCmp(Object o)
+    {
+        MyClass s = cast(MyClass)o;
+        if(s is null){return -1;}
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }
+
+    ///Useful for <a href="dyaml/node/Node.html#as">Node.as</a>!string .
+    override string toString()
+    {
+        return format("MyClass(%s, %s, %s)", x, y, z);
+    }
+}
+
+//Same as representMyStruct.
+<a href="dyaml/node/Node.html">Node</a> representMyClass(ref <a href="dyaml/node/Node.html">Node</a> node, <a href="dyaml/representer/Representer.html">Representer</a> representer)
+{ 
+    //The node is guaranteed to be MyClass as we add representer for MyClass.
+    auto value = node.as!MyClass;
+    //Using custom scalar format, x:y:z.
+    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+    //Representing as a scalar, with custom tag to specify <a href="dyaml/representer/Representer.html#this">this</a> data type.
+    return representer.<a href="dyaml/representer/Representer.html#representScalar">representScalar</a>("!myclass.tag", scalar);
+}
+
+void main()
+{
+    auto dumper = <a href="dyaml/dumper/Dumper.html">Dumper</a>("file.yaml");
+    auto representer = new <a href="dyaml/representer/Representer.html">Representer</a>;
+    representer.<a href="dyaml/representer/Representer.html#addRepresenter">addRepresenter</a>!MyClass(&representMyClass);
+    dumper.representer = representer;
+    dumper.dump(<a href="dyaml/node/Node.html">Node</a>(new MyClass(1,2,3)));
+}</code></pre>
+
+</div>
+</div></div><a class="anchor" id="representScalar"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/representer/Representer.html#representScalar">representScalar</a>(
+    string tag, 
+    string scalar, 
+    <a href="dyaml/style/ScalarStyle.html">ScalarStyle</a> style = <a href="dyaml/style/ScalarStyle.html">ScalarStyle</a>.Invalid) @safe
+</code></pre>
+<div class="section "><p>Represent a _scalar with specified _tag.
+</p>
+
+
+</div>
+<div class="section"><p>This is used by representer functions that produce scalars.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Tag of the _scalar.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">scalar</td><td class="paramDoc"><p>Scalar value.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">style</td><td class="paramDoc"><p>Style of the _scalar. If invalid, default _style will be used. If the node was loaded before, previous _style will always be used.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> The represented node.
+</p>
+
+
+</div>
+<div class="section"><h2>Example</h2>
+
+<pre><code>struct MyStruct
+{
+    int x, y, z;
+
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }        
+}
+
+<a href="dyaml/node/Node.html">Node</a> representMyStruct(ref <a href="dyaml/node/Node.html">Node</a> node, <a href="dyaml/representer/Representer.html">Representer</a> representer)
+{ 
+    auto value = node.as!MyStruct;
+    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+    return representer.<a href="dyaml/representer/Representer.html#representScalar">representScalar</a>("!mystruct.tag", scalar);
+}</code></pre>
+
+</div>
+</div></div><a class="anchor" id="representSequence"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/representer/Representer.html#representSequence">representSequence</a>(
+    string tag, 
+    <a href="dyaml/node/Node.html">Node</a>[] sequence, 
+    <a href="dyaml/style/CollectionStyle.html">CollectionStyle</a> style = <a href="dyaml/style/CollectionStyle.html">CollectionStyle</a>.Invalid) @trusted
+</code></pre>
+<div class="section "><p>Represent a _sequence with specified _tag, representing children first.
+</p>
+
+
+</div>
+<div class="section"><p>This is used by representer functions that produce sequences.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Tag of the _sequence.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">sequence</td><td class="paramDoc"><p>Sequence of nodes.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">style</td><td class="paramDoc"><p>Style of the _sequence. If invalid, default _style will be used. If the node was loaded before, previous _style will always be used.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> The represented node.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  <code class="d_inlinecode">RepresenterException</code> if a child could not be represented.
+</p>
+
+
+</div>
+<div class="section"><h2>Example</h2>
+
+<pre><code>struct MyStruct
+{
+    int x, y, z;
+
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }        
+}
+
+<a href="dyaml/node/Node.html">Node</a> representMyStruct(ref <a href="dyaml/node/Node.html">Node</a> node, <a href="dyaml/representer/Representer.html">Representer</a> representer)
+{ 
+    auto value = node.as!MyStruct;
+    auto nodes = [<a href="dyaml/node/Node.html">Node</a>(value.x), <a href="dyaml/node/Node.html">Node</a>(value.y), <a href="dyaml/node/Node.html">Node</a>(value.z)];
+    //use flow style
+    return representer.<a href="dyaml/representer/Representer.html#representSequence">representSequence</a>("!mystruct.tag", nodes,
+                                         <a href="dyaml/style/CollectionStyle.html#Flow">CollectionStyle.Flow</a>);
+}</code></pre>
+
+</div>
+</div></div><a class="anchor" id="representMapping"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/representer/Representer.html#representMapping">representMapping</a>(
+    string tag, 
+    <a href="dyaml/node/Node.html">Node</a>.Pair[] pairs, 
+    <a href="dyaml/style/CollectionStyle.html">CollectionStyle</a> style = <a href="dyaml/style/CollectionStyle.html">CollectionStyle</a>.Invalid) @trusted
+</code></pre>
+<div class="section "><p>Represent a mapping with specified _tag, representing children first.
+</p>
+
+
+</div>
+<div class="section"><p>This is used by representer functions that produce mappings.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Tag of the mapping.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">pairs</td><td class="paramDoc"><p>Key-value _pairs of the mapping.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">style</td><td class="paramDoc"><p>Style of the mapping. If invalid, default _style will be used. If the node was loaded before, previous _style will always be used.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> The represented node.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  <code class="d_inlinecode">RepresenterException</code> if a child could not be represented.
+</p>
+
+
+</div>
+<div class="section"><h2>Example</h2>
+
+<pre><code>struct MyStruct
+{
+    int x, y, z;
+
+    //Any D:YAML type must have a custom opCmp operator.
+    //This is used for ordering in mappings.
+    const int opCmp(ref const MyStruct s)
+    {
+        if(x != s.x){return x - s.x;}
+        if(y != s.y){return y - s.y;}
+        if(z != s.z){return z - s.z;}
+        return 0;
+    }        
+}
+
+<a href="dyaml/node/Node.html">Node</a> representMyStruct(ref <a href="dyaml/node/Node.html">Node</a> node, <a href="dyaml/representer/Representer.html">Representer</a> representer)
+{ 
+    auto value = node.as!MyStruct;
+    auto pairs = [<a href="dyaml/node/Node.html">Node</a>.Pair("x", value.x), 
+                  <a href="dyaml/node/Node.html">Node</a>.Pair("y", value.y), 
+                  <a href="dyaml/node/Node.html">Node</a>.Pair("z", value.z)];
+    return representer.<a href="dyaml/representer/Representer.html#representMapping">representMapping</a>("!mystruct.tag", pairs);
+}</code></pre>
+
+</div>
+</div></div><div class="section members"><h2>Functions</h2><table><tr><td><a href="dyaml/representer/Representer.html#this">this</a></td><td></td><td><p>Construct a Representer.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/representer/Representer.html#defaultScalarStyle">defaultScalarStyle</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Set default _style for scalars. If style is <code class="d_inlinecode">ScalarStyle.Invalid</code>, the _style is chosen automatically.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/representer/Representer.html#defaultCollectionStyle">defaultCollectionStyle</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Set default _style for collections. If style is <code class="d_inlinecode">CollectionStyle.Invalid</code>, the _style is chosen automatically. 
+</p>
+</td></tr><tr><td><a href="dyaml/representer/Representer.html#addRepresenter">addRepresenter</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span>, <span class="attr-pure">pure</span></span></span></td><td></td><td><p>Add a function to represent nodes with a specific data type.
+</p>
+</td></tr><tr><td><a href="dyaml/representer/Representer.html#representScalar">representScalar</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Represent a _scalar with specified _tag.
+</p>
+</td></tr><tr><td><a href="dyaml/representer/Representer.html#representSequence">representSequence</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Represent a _sequence with specified _tag, representing children first.
+</p>
+</td></tr><tr><td><a href="dyaml/representer/Representer.html#representMapping">representMapping</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Represent a mapping with specified _tag, representing children first.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/>
+<script src="../../highlight.pack.js"></script>
+<title>Loader</title>
+<base href="../../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.<a href=dyaml/loader.html>loader</a>.</small><span class="highlight">Loader</span>
+</div>
+<div class="sidebar">
+<a href="dyaml/loader.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/loader.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li>dyaml.<a href="dyaml/constructor.html">constructor</a></li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li><span class=" selected">dyaml.<a href="dyaml/loader.html">loader</a></span>
+</li>
+<li>dyaml.<a href="dyaml/node.html">node</a></li>
+<li>dyaml.<a href="dyaml/representer.html">representer</a></li>
+<li>dyaml.<a href="dyaml/resolver.html">resolver</a></li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><div class="description"><pre><code>public struct Loader
+</code></pre>
+<div class="section "><p>Loads YAML documents from files or streams.
+</p>
+
+
+</div>
+<div class="section"><p>User specified Constructor and/or Resolver can be used to support new
+ tags / data types.
+</p>
+
+
+</div>
+<div class="section"><h2>Examples</h2>
+
+
+ Load single YAML document from a file:
+ <pre><code> auto rootNode = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml").<a href="dyaml/loader/Loader.html#load">load</a>();
+ ...
+</code></pre>
+
+ Load all YAML documents from a file:
+ <pre><code> auto nodes = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml").<a href="dyaml/loader/Loader.html#loadAll">loadAll</a>();
+ ...
+</code></pre>
+
+ Iterate over YAML documents in a file, lazily loading them:
+ <pre><code> auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml");
+
+ foreach(ref node; loader)
+ {
+     ...
+ }
+</code></pre>
+
+ Load YAML from a string:
+ <pre><code> char[] yaml_input = "red:   '#ff0000'\n"
+                     "green: '#00ff00'\n"
+                     "blue:  '#0000ff'".dup;
+
+ auto colors = <a href="dyaml/loader/Loader.html#fromString">Loader.fromString</a>(yaml_input).<a href="dyaml/loader/Loader.html#load">load</a>();
+
+ foreach(string color, string value; colors)
+ {
+     import std.stdio;
+     writeln(color, " is ", value, " in HTML/CSS");
+ }
+</code></pre>
+
+ Load a file into a buffer in memory and then load YAML from that buffer:
+ <pre><code> try
+ {
+     import std.file;
+     void[] buffer = std.file.read("file.yaml");
+     auto yamlNode = <a href="dyaml/loader/Loader.html">Loader</a>(buffer);
+
+     // Read data from yamlNode here...
+ }
+ catch(FileException e)
+ {
+     writeln("Failed to read file 'file.yaml'");
+ }
+</code></pre>
+
+ Use a custom constructor/resolver to support custom data types and/or implicit tags:
+ <pre><code> auto <a href="dyaml/loader/Loader.html#constructor">constructor</a> = new <a href="dyaml/constructor/Constructor.html">Constructor</a>();
+ auto <a href="dyaml/loader/Loader.html#resolver">resolver</a>    = new <a href="dyaml/resolver/Resolver.html">Resolver</a>();
+
+ // Add <a href="dyaml/loader/Loader.html#constructor">constructor</a> functions / <a href="dyaml/loader/Loader.html#resolver">resolver</a> expressions here...
+
+ auto loader = <a href="dyaml/loader/Loader.html">Loader</a>("file.yaml");
+ loader.<a href="dyaml/loader/Loader.html#constructor">constructor</a> = <a href="dyaml/loader/Loader.html#constructor">constructor</a>;
+ loader.<a href="dyaml/loader/Loader.html#resolver">resolver</a>    = <a href="dyaml/loader/Loader.html#resolver">resolver</a>;
+ auto rootNode      = loader.<a href="dyaml/loader/Loader.html#load">load</a>(node);
+</code></pre>
+
+</div>
+</div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(string filename) @trusted
+</code></pre>
+<div class="section "><p>Construct a Loader to load YAML from a file.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">filename</td><td class="paramDoc"><p>Name of the file to load from.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  YAMLException if the file could not be opened or read.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="fromString"></a><div class="symbol"><div class="description"><pre><code>public static <a href="dyaml/loader/Loader.html">Loader</a> <a href="dyaml/loader/Loader.html#fromString">fromString</a>(<a href="http://dlang.org/type.html#basic-data-types">char</a>[] data) @safe
+</code></pre>
+<div class="section "><p>Construct a Loader to load YAML from a string (char []).
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">data</td><td class="paramDoc"><p>String to load YAML from. <b>will</b> be overwritten during parsing as D:YAML reuses memory. Use data.dup if you don't want to modify the original string.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Loader loading YAML from given string.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p> YAMLException if data could not be read (e.g. a decoding error)
+</p>
+
+
+</div>
+<div class="section "><h2>Example</h2>
+<pre><code>assert(<a href="dyaml/loader/Loader.html#fromString">Loader.fromString</a>(cast(char[])"42").<a href="dyaml/loader/Loader.html#load">load</a>().as!int == 42);
+
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(<a href="http://dlang.org/type.html#basic-data-types">void</a>[] yamlData) @safe
+</code></pre>
+<div class="section "><p>Construct a Loader to load YAML from a buffer.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">yamlData</td><td class="paramDoc"><p>Buffer with YAML data to load. This may be e.g. a file loaded to memory or a string with YAML data. Note that buffer <b>will</b> be overwritten, as D:YAML minimizes memory allocations by reusing the input _buffer. <b>Must not be deleted or modified by the user as long as nodes loaded by this Loader are in use!</b> - Nodes may refer to data in this buffer. Note that D:YAML looks for byte-order-marks YAML files encoded in UTF-16/UTF-32 (and sometimes UTF-8) use to specify the encoding and endianness, so it should be enough to load an entire file to a buffer and pass it to D:YAML, regardless of Unicode encoding.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  YAMLException if yamlData contains data illegal in YAML.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="name"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/loader/Loader.html#name">name</a>(string name) pure @safe nothrow @nogc
+</code></pre>
+<div class="section "><p>Set stream _name. Used in debugging messages.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="resolver"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/loader/Loader.html#resolver">resolver</a>(<a href="dyaml/resolver/Resolver.html">Resolver</a> resolver) pure @safe nothrow @nogc
+</code></pre>
+<div class="section "><p>Specify custom Resolver to use.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="constructor"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/loader/Loader.html#constructor">constructor</a>(<a href="dyaml/constructor/Constructor.html">Constructor</a> constructor) pure @safe nothrow @nogc
+</code></pre>
+<div class="section "><p>Specify custom Constructor to use.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="load"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/loader/Loader.html#load">load</a>() @safe
+</code></pre>
+<div class="section "><p>Load single YAML document.
+</p>
+
+
+</div>
+<div class="section "><h2>Contracts</h2><pre><code>in
+{
+    assert (!done_, "<a href="dyaml/loader/Loader.html">Loader</a>: Trying to <a href="dyaml/loader/Loader.html#load">load</a> YAML twice");
+}
+</code></pre>
+
+</div>
+<div class="section"><p>If none or more than one YAML document is found, this throws a YAMLException.
+</p>
+<p> This can only be called once; this is enforced by contract.
+</p>
+
+
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Root node of the document.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  YAMLException if there wasn't exactly one document
+          or on a YAML parsing error.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="loadAll"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>[] <a href="dyaml/loader/Loader.html#loadAll">loadAll</a>() @trusted
+</code></pre>
+<div class="section "><p>Load all YAML documents.
+</p>
+
+
+</div>
+<div class="section"><p>This is just a shortcut that iterates over all documents and returns them
+ all at once. Calling loadAll after iterating over the node or vice versa
+ will not return any documents, as they have all been parsed already.
+</p>
+<p> This can only be called once; this is enforced by contract.
+</p>
+
+
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Array of root nodes of all documents in the file/stream.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  YAMLException on a parsing error.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opApply"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">int</a> <a href="dyaml/loader/Loader.html#opApply">opApply</a>(<a href="http://dlang.org/type.html#basic-data-types">int</a> delegate(ref <a href="dyaml/node/Node.html">Node</a>) dg) @trusted
+</code></pre>
+<div class="section "><p>Foreach over YAML documents.
+</p>
+
+
+</div>
+<div class="section "><h2>Contracts</h2><pre><code>in
+{
+    assert (!done_, "<a href="dyaml/loader/Loader.html">Loader</a>: Trying to <a href="dyaml/loader/Loader.html#load">load</a> YAML twice");
+}
+</code></pre>
+
+</div>
+<div class="section"><p>Parses documents lazily, when they are needed.
+</p>
+<p> Foreach over a Loader can only be used once; this is enforced by contract.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p> YAMLException on a parsing error.
+</p>
+
+
+</div>
+</div></div><div class="section members"><h2>Functions</h2><table><tr><td><a href="dyaml/loader/Loader.html#this">this</a></td><td></td><td><p>Construct a Loader to load YAML from a file.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-static">static</span></span></span><a href="dyaml/loader/Loader.html#fromString">fromString</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Construct a Loader to load YAML from a string (char []).
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#this">this</a></td><td></td><td><p>Construct a Loader to load YAML from a buffer.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#name">name</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Set stream _name. Used in debugging messages.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#resolver">resolver</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Specify custom Resolver to use.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#constructor">constructor</a><span class="extrainfo"><span class="method-attribs"><span class="attr-pure">pure</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Specify custom Constructor to use.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#load">load</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Load single YAML document.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#loadAll">loadAll</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Load all YAML documents.
+</p>
+</td></tr><tr><td><a href="dyaml/loader/Loader.html#opApply">opApply</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Foreach over YAML documents.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/>
+<script src="../../highlight.pack.js"></script>
+<title>Node</title>
+<base href="../../"/>
+<script src="search.js"></script>
+<script src="show_hide.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="breadcrumbs">
+<table id="results"></table>
+<a href="index.html" class="home">⌂</a><input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>dyaml.<a href=dyaml/node.html>node</a>.</small><span class="highlight">Node</span>
+</div>
+<div class="sidebar">
+<a href="dyaml/node.html#hide-toc" class="hide" id="hide-toc">&#171;</a>
+<a href="dyaml/node.html#show-toc" class="show" id="show-toc">&#187;</a>
+<div id="toc-id" class="toc">
+<ul><li><span class="package" onclick="show_hide('dyaml');">dyaml</span>
+<ul id="dyaml" style='display:block'>
+<li>dyaml.<a href="dyaml/constructor.html">constructor</a></li>
+<li>dyaml.<a href="dyaml/dumper.html">dumper</a></li>
+<li>dyaml.<a href="dyaml/exception.html">exception</a></li>
+<li>dyaml.<a href="dyaml/hacks.html">hacks</a></li>
+<li>dyaml.<a href="dyaml/linebreak.html">linebreak</a></li>
+<li>dyaml.<a href="dyaml/loader.html">loader</a></li>
+<li><span class=" selected">dyaml.<a href="dyaml/node.html">node</a></span>
+</li>
+<li>dyaml.<a href="dyaml/representer.html">representer</a></li>
+<li>dyaml.<a href="dyaml/resolver.html">resolver</a></li>
+<li>dyaml.<a href="dyaml/style.html">style</a></li>
+</ul>
+</li>
+
+</ul>
+</div></div>
+<div class="content">
+<div class="aggregate-symbol"><div class="description"><pre><code>public struct Node
+</code></pre>
+<div class="section "><p>YAML node.
+</p>
+
+
+</div>
+<div class="section"><p>This is a pseudo-dynamic type that can store any YAML value, including a
+ sequence or mapping of nodes. You can get data from a Node directly or
+ iterate over it if it's a collection.
+</p>
+
+
+</div>
+</div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(T)(
+    T value, 
+    const string tag = null) @trusted 
+if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
+</code></pre>
+<div class="section "><p>Construct a Node from a value.
+</p>
+
+
+</div>
+<div class="section"><p>Any type except for Node can be stored in a Node, but default YAML
+ types (integers, floats, strings, timestamps, etc.) will be stored
+ more efficiently. To create a node representing a null value,
+ construct it from YAMLNull.
+</p>
+<p> Note that to emit any non-default types you store
+ in a node, you need a Representer to represent them in YAML -
+ otherwise emitting will fail.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">value</td><td class="paramDoc"><p>Value to store in the node.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Overrides tag of the node when emitted, regardless of tag determined by Representer. Representer uses this to determine YAML data type when a D data type maps to multiple different YAML data types. Tag must be in full form, e.g. "tag:yaml.org,2002:int", not a shortcut, like "!!int".
+</p>
+</td></tr>
+</table>
+</div>
+</div></div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(T)(
+    T value, 
+    const string tag = null) @safe pure nothrow 
+if(scalarCtorNothrow!T)
+</code></pre>
+<div class="section "><p>Ditto.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(T)(
+    T[] array, 
+    const string tag = null) @safe 
+if(!isSomeString!(T[]))
+</code></pre>
+<div class="section "><p>Construct a node from an _array.
+</p>
+
+
+</div>
+<div class="section"><p>If _array is an _array of nodes or pairs, it is stored directly.
+ Otherwise, every value in the array is converted to a node, and
+ those nodes are stored.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">array</td><td class="paramDoc"><p>Values to store in the node.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Overrides tag of the node when emitted, regardless of tag determined by Representer. Representer uses this to determine YAML data type when a D data type maps to multiple different YAML data types. This is used to differentiate between YAML sequences ("!!seq") and sets ("!!set"), which both are internally represented as an array_ of nodes. Tag must be in full form, e.g. "tag:yaml.org,2002:set", not a shortcut, like "!!set".
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Examples</h2>
+
+ <pre><code> // Will be emitted <a href="dyaml/node/Node.html#as">as</a> a sequence (default for arrays)
+ auto seq = <a href="dyaml/node/Node.html">Node</a>([1, 2, 3, 4, 5]);
+ // Will be emitted <a href="dyaml/node/Node.html#as">as</a> a set (overriden <a href="dyaml/node/Node.html#tag">tag</a>)
+ auto set = <a href="dyaml/node/Node.html">Node</a>([1, 2, 3, 4, 5], "<a href="dyaml/node/Node.html#tag">tag</a>:yaml.org,2002:set");
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(K, V)(
+    V[K] array, 
+    const string tag = null) @safe
+</code></pre>
+<div class="section "><p>Construct a node from an associative _array.
+</p>
+
+
+</div>
+<div class="section"><p>If keys and/or values of _array are nodes, they stored directly.
+ Otherwise they are converted to nodes and then stored.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">array</td><td class="paramDoc"><p>Values to store in the node.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Overrides tag of the node when emitted, regardless of tag determined by Representer. Representer uses this to determine YAML data type when a D data type maps to multiple different YAML data types. This is used to differentiate between YAML unordered mappings ("!!map"), ordered mappings ("!!omap"), and pairs ("!!pairs") which are all internally represented as an _array of node pairs. Tag must be in full form, e.g. "tag:yaml.org,2002:omap", not a shortcut, like "!!omap".
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Examples</h2>
+
+ <pre><code> // Will be emitted <a href="dyaml/node/Node.html#as">as</a> an unordered mapping (default for mappings)
+ auto map   = <a href="dyaml/node/Node.html">Node</a>([1 : "a", 2 : "b"]);
+ // Will be emitted <a href="dyaml/node/Node.html#as">as</a> an ordered map (overriden <a href="dyaml/node/Node.html#tag">tag</a>)
+ auto omap  = <a href="dyaml/node/Node.html">Node</a>([1 : "a", 2 : "b"], "<a href="dyaml/node/Node.html#tag">tag</a>:yaml.org,2002:omap");
+ // Will be emitted <a href="dyaml/node/Node.html#as">as</a> pairs (overriden <a href="dyaml/node/Node.html#tag">tag</a>)
+ auto pairs = <a href="dyaml/node/Node.html">Node</a>([1 : "a", 2 : "b"], "<a href="dyaml/node/Node.html#tag">tag</a>:yaml.org,2002:pairs");
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="this"></a><div class="symbol"><div class="description"><pre><code>public this(K, V)(
+    K[] keys, 
+    V[] values, 
+    const string tag = null) @safe 
+if(!(isSomeString!(K[]) || isSomeString!(V[])))
+</code></pre>
+<div class="section "><p>Construct a node from arrays of _keys and _values.
+</p>
+
+
+</div>
+<div class="section "><h2>Contracts</h2><pre><code>in
+{
+    assert (keys.<a href="dyaml/node/Node.html#length">length</a> == values.<a href="dyaml/node/Node.html#length">length</a>, "Lengths of keys and values arrays to construct ""a YAML node from don't match");
+}
+</code></pre>
+
+</div>
+<div class="section"><p>Constructs a mapping node with key-value pairs from
+ _keys and _values, keeping their order. Useful when order
+ is important (ordered maps, pairs).
+</p>
+<p> keys and values must have equal length.
+</p>
+<p> If _keys and/or _values are nodes, they are stored directly/
+ Otherwise they are converted to nodes and then stored.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">keys</td><td class="paramDoc"><p>Keys of the mapping, from first to last pair.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">values</td><td class="paramDoc"><p>Values of the mapping, from first to last pair.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">tag</td><td class="paramDoc"><p>Overrides tag of the node when emitted, regardless of tag determined by Representer. Representer uses this to determine YAML data type when a D data type maps to multiple different YAML data types. This is used to differentiate between YAML unordered mappings ("!!map"), ordered mappings ("!!omap"), and pairs ("!!pairs") which are all internally represented as an array of node pairs. Tag must be in full form, e.g. "tag:yaml.org,2002:omap", not a shortcut, like "!!omap".
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Examples</h2>
+
+ <pre><code> // Will be emitted <a href="dyaml/node/Node.html#as">as</a> an unordered mapping (default for mappings)
+ auto map   = <a href="dyaml/node/Node.html">Node</a>([1, 2], ["a", "b"]);
+ // Will be emitted <a href="dyaml/node/Node.html#as">as</a> an ordered map (overriden <a href="dyaml/node/Node.html#tag">tag</a>)
+ auto omap  = <a href="dyaml/node/Node.html">Node</a>([1, 2], ["a", "b"], "<a href="dyaml/node/Node.html#tag">tag</a>:yaml.org,2002:omap");
+ // Will be emitted <a href="dyaml/node/Node.html#as">as</a> pairs (overriden <a href="dyaml/node/Node.html#tag">tag</a>)
+ auto pairs = <a href="dyaml/node/Node.html">Node</a>([1, 2], ["a", "b"], "<a href="dyaml/node/Node.html#tag">tag</a>:yaml.org,2002:pairs");
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="isValid"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isValid">isValid</a>() const @safe pure nothrow
+</code></pre>
+<div class="section "><p>Is this node valid (initialized)?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="isScalar"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isScalar">isScalar</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Is this node a scalar value?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="isSequence"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isSequence">isSequence</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Is this node a sequence?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="isMapping"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isMapping">isMapping</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Is this node a mapping?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="isUserType"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isUserType">isUserType</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Is this node a user defined type?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="isNull"></a><div class="symbol"><div class="description"><pre><code>public @property <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#isNull">isNull</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Is this node null?
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="tag"></a><div class="symbol"><div class="description"><pre><code>public @property string <a href="dyaml/node/Node.html#tag">tag</a>() const @safe nothrow
+</code></pre>
+<div class="section "><p>Return tag of the node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opEquals"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#opEquals">opEquals</a>(T)(const auto ref T rhs) const @safe
+</code></pre>
+<div class="section "><p>Equality test.
+</p>
+
+
+</div>
+<div class="section"><p>If T is Node, recursively compares all subnodes.
+ This might be quite expensive if testing entire documents.
+</p>
+<p> If T is not Node, gets a value of type T from the node and tests
+ equality with that.
+</p>
+<p> To test equality with a null YAML value, use YAMLNull.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">rhs</td><td class="paramDoc"><p>Variable to test equality with.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> true if equal, false otherwise.
+</p>
+
+
+</div>
+<div class="section "><h2>Example</h2>
+<pre><code>auto node = <a href="dyaml/node/Node.html">Node</a>(42);
+
+assert(node == 42);
+assert(node != "42");
+assert(node != "43");
+
+auto node2 = <a href="dyaml/node/Node.html">Node</a>(<a href="dyaml/node/YAMLNull.html">YAMLNull</a>());
+assert(node2 == <a href="dyaml/node/YAMLNull.html">YAMLNull</a>());
+
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="as"></a><div class="symbol"><div class="description"><pre><code>alias as = <a href="dyaml/node/Node.html#get">get</a>
+</code></pre>
+<div class="section "><p>Shortcut for get().
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="get"></a><div class="symbol"><div class="description"><pre><code>public @property T <a href="dyaml/node/Node.html#get">get</a>(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() @trusted 
+if(!is(T == const))
+</code></pre>
+<div class="section "><p>Get the value of the node as specified type.
+</p>
+
+
+</div>
+<div class="section"><p>If the specifed type does not match type in the node,
+ conversion is attempted. The stringConversion template
+ parameter can be used to disable conversion from non-string
+ types to strings.
+</p>
+<p> Numeric values are range checked, throwing if out of range of
+ requested type.
+</p>
+<p> Timestamps are stored as std.datetime.SysTime.
+ Binary values are decoded and stored as ubyte[].
+</p>
+<p> To get a null value, use get!YAMLNull . This is to
+ prevent getting null values for types such as strings or classes.
+</p>
+<p> <b>Mapping default values:</b>
+</p>
+
+
+</div>
+<div class="section"><h2>Examples</h2>
+
+
+ Automatic type conversion:
+ <pre><code> auto node = <a href="dyaml/node/Node.html">Node</a>(42);
+
+ assert(node.<a href="dyaml/node/Node.html#as">as</a>!int == 42);
+ assert(node.<a href="dyaml/node/Node.html#as">as</a>!string == "42");
+ assert(node.<a href="dyaml/node/Node.html#as">as</a>!double == 42.0);
+</code></pre>
+
+ 
+
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Value of the node as specified type.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if unable to convert to specified type, or if
+          the value is out of range of requested type.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="get"></a><div class="symbol"><div class="description"><pre><code>public @property T <a href="dyaml/node/Node.html#get">get</a>(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() const @trusted 
+if(is(T == const))
+</code></pre>
+<div class="section "><p>Ditto.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="length"></a><div class="symbol"><div class="description"><pre><code>public @property size_t <a href="dyaml/node/Node.html#length">length</a>() const @safe
+</code></pre>
+<div class="section "><p>If this is a collection, return its _length.
+</p>
+
+
+</div>
+<div class="section"><p>Otherwise, throw NodeException.
+</p>
+
+
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Number of elements in a sequence or key-value pairs in a mapping.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p> NodeException if this is not a sequence nor a mapping.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opIndex"></a><div class="symbol"><div class="description"><pre><code>public ref <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/node/Node.html#opIndex">opIndex</a>(T)(T index) @trusted
+</code></pre>
+<div class="section "><p>Get the element at specified index.
+</p>
+
+
+</div>
+<div class="section"><p>If the node is a sequence, index must be integral.
+</p>
+<p> If the node is a mapping, return the value corresponding to the first
+ key equal to index. containsKey() can be used to determine if a mapping
+ has a specific key.
+</p>
+<p> To get element at a null index, use YAMLNull for index.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">index</td><td class="paramDoc"><p>Index to use.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> Value corresponding to the index.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the index could not be found,
+          non-integral index is used with a sequence or the node is
+          not a collection.
+</p>
+
+
+</div>
+<div class="section "><h2>Example</h2>
+<pre><code>writeln("D:YAML <a href="dyaml/node/Node.html">Node</a> <a href="dyaml/node/Node.html#opIndex">opIndex</a> unittest");
+alias <a href="dyaml/node/Node.html">Node</a>.Value Value;
+alias <a href="dyaml/node/Node.html">Node</a>.Pair Pair;
+
+<a href="dyaml/node/Node.html">Node</a> narray = <a href="dyaml/node/Node.html">Node</a>([11, 12, 13, 14]);
+<a href="dyaml/node/Node.html">Node</a> nmap   = <a href="dyaml/node/Node.html">Node</a>(["11", "12", "13", "14"], [11, 12, 13, 14]);
+
+assert(narray[0].<a href="dyaml/node/Node.html#as">as</a>!int == 11);
+assert(null !is collectException(narray[42]));
+assert(nmap["11"].<a href="dyaml/node/Node.html#as">as</a>!int == 11);
+assert(nmap["14"].<a href="dyaml/node/Node.html#as">as</a>!int == 14);
+
+</code></pre>
+
+</div>
+</div></div><a class="anchor" id="contains"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#contains">contains</a>(T)(T rhs) const @safe
+</code></pre>
+<div class="section "><p>Determine if a collection contains specified value.
+</p>
+
+
+</div>
+<div class="section"><p>If the node is a sequence, check if it contains the specified value.
+ If it's a mapping, check if it has a value that matches specified value.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">rhs</td><td class="paramDoc"><p>Item to look for. Use YAMLNull to check for a null value.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> true if rhs was found, false otherwise.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a collection.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="containsKey"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">bool</a> <a href="dyaml/node/Node.html#containsKey">containsKey</a>(T)(T rhs) const @safe
+</code></pre>
+<div class="section "><p>Determine if a mapping contains specified key.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">rhs</td><td class="paramDoc"><p>Key to look for. Use YAMLNull to check for a null key.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p> true if rhs was found, false otherwise.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a mapping.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opAssign"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#opAssign">opAssign</a>(<a href="dyaml/node/Node.html">Node</a> rhs) @safe nothrow
+</code></pre>
+<div class="section "><p>Assignment (shallow copy) by value.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opAssign"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#opAssign">opAssign</a>(ref <a href="dyaml/node/Node.html">Node</a> rhs) @trusted nothrow
+</code></pre>
+<div class="section "><p>Assignment (shallow copy) by reference.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opIndexAssign"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#opIndexAssign">opIndexAssign</a>(K, V)(
+    V value, 
+    K index) @safe
+</code></pre>
+<div class="section "><p>Set element at specified index in a collection.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on collection nodes.
+</p>
+<p> If the node is a sequence, index must be integral.
+</p>
+<p> If the node is a mapping, sets the _value corresponding to the first
+ key matching index (including conversion, so e.g. "42" matches 42).
+</p>
+<p> If the node is a mapping and no key matches index, a new key-value
+ pair is added to the mapping. In sequences the index must be in
+ range. This ensures behavior siilar to D arrays and associative
+ arrays.
+</p>
+<p> To set element at a null index, use YAMLNull for index.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">index</td><td class="paramDoc"><p>Index of the value to set.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a collection, index is out
+          of range or if a non-integral index is used on a sequence node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opApply"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">int</a> <a href="dyaml/node/Node.html#opApply">opApply</a>(T)(<a href="http://dlang.org/type.html#basic-data-types">int</a> delegate(ref T) dg) @trusted
+</code></pre>
+<div class="section "><p>Foreach over a sequence, getting each element as T.
+</p>
+
+
+</div>
+<div class="section"><p>If T is Node, simply iterate over the nodes in the sequence.
+ Otherwise, convert each node to T during iteration.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a sequence or an
+          element could not be converted to specified type.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opApply"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">int</a> <a href="dyaml/node/Node.html#opApply">opApply</a>(K, V)(<a href="http://dlang.org/type.html#basic-data-types">int</a> delegate(
+    ref K, 
+    ref V) dg) @trusted
+</code></pre>
+<div class="section "><p>Foreach over a mapping, getting each key/value as K/V.
+</p>
+
+
+</div>
+<div class="section"><p>If the K and/or V is Node, simply iterate over the nodes in the mapping.
+ Otherwise, convert each key/value to T during iteration.
+</p>
+
+
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a mapping or an
+          element could not be converted to specified type.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="add"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#add">add</a>(T)(T value) @safe
+</code></pre>
+<div class="section "><p>Add an element to a sequence.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on sequence nodes.
+</p>
+<p> If value is a node, it is copied to the sequence directly. Otherwise
+ value is converted to a node and then stored in the sequence.
+</p>
+<p> <p>When emitting, all values in the sequence will be emitted. When
+ using the !!set tag, the user needs to ensure that all elements in
+ the sequence are unique, otherwise <b>invalid</b> YAML code will be
+ emitted.</p>
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">value</td><td class="paramDoc"><p>Value to _add to the sequence.
+</p>
+</td></tr>
+</table>
+</div>
+</div></div><a class="anchor" id="add"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#add">add</a>(K, V)(
+    K key, 
+    V value) @safe
+</code></pre>
+<div class="section "><p>Add a key-value pair to a mapping.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on mapping nodes.
+</p>
+<p> If key and/or value is a node, it is copied to the mapping directly.
+ Otherwise it is converted to a node and then stored in the mapping.
+</p>
+<p> <p>It is possible for the same key to be present more than once in a
+ mapping. When emitting, all key-value pairs will be emitted.
+ This is useful with the "!!pairs" tag, but will result in
+ <b>invalid</b> YAML with "!!map" and "!!omap" tags.</p>
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">key</td><td class="paramDoc"><p>Key to _add.
+</p>
+</td></tr>
+<tr class="param"><td class="paramName">value</td><td class="paramDoc"><p>Value to _add.
+</p>
+</td></tr>
+</table>
+</div>
+</div></div><a class="anchor" id="opBinaryRight"></a><div class="symbol"><div class="description"><pre><code>public <a href="dyaml/node/Node.html">Node</a>* <a href="dyaml/node/Node.html#opBinaryRight">opBinaryRight</a>(string op, K)(K key) @system 
+if(op == "in")
+</code></pre>
+<div class="section "><p>Determine whether a key is in a mapping, and access its value.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on mapping nodes.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">key</td><td class="paramDoc"><p>Key to search for.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Returns</h2>
+<p>  A pointer to the value (as a Node) corresponding to key,
+           or null if not found.
+</p>
+
+
+</div>
+<div class="section note"><h2>Note:</h2>
+<div class="note-content">
+<pre class="prettyprint"><code> Any modification to the node can invalidate the returned
+       pointer.
+</code></pre>
+</div>
+
+</div>
+<div class="section seealso">
+<h2>See Also:</h2>
+<div class="seealso-content">
+<p> contains
+</p>
+
+</div>
+</div>
+</div></div><a class="anchor" id="remove"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#remove">remove</a>(T)(T rhs) @trusted
+</code></pre>
+<div class="section "><p>Remove first (if any) occurence of a value in a collection.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on collection nodes.
+</p>
+<p> If the node is a sequence, the first node matching value is removed.
+ If the node is a mapping, the first key-value pair where _value
+ matches specified value is removed.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">rhs</td><td class="paramDoc"><p>Value to _remove.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a collection.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="removeAt"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">void</a> <a href="dyaml/node/Node.html#removeAt">removeAt</a>(T)(T index) @trusted
+</code></pre>
+<div class="section "><p>Remove element at the specified index of a collection.
+</p>
+
+
+</div>
+<div class="section"><p>This method can only be called on collection nodes.
+</p>
+<p> If the node is a sequence, index must be integral.
+</p>
+<p> If the node is a mapping, remove the first key-value pair where
+ key matches index.
+</p>
+<p> If the node is a mapping and no key matches index, nothing is removed
+ and no exception is thrown. This ensures behavior siilar to D arrays
+ and associative arrays.
+</p>
+
+
+</div>
+<div class="section"><h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">index</td><td class="paramDoc"><p>Index to remove at.
+</p>
+</td></tr>
+</table>
+</div>
+<div class="section"><h2>Throws</h2>
+<p>  NodeException if the node is not a collection, index is out
+          of range or if a non-integral index is used on a sequence node.
+</p>
+
+
+</div>
+</div></div><a class="anchor" id="opCmp"></a><div class="symbol"><div class="description"><pre><code>public <a href="http://dlang.org/type.html#basic-data-types">int</a> <a href="dyaml/node/Node.html#opCmp">opCmp</a>(ref const <a href="dyaml/node/Node.html">Node</a> node) const @safe
+</code></pre>
+<div class="section "><p>Compare with another _node.
+</p>
+
+
+</div>
+</div></div><div class="section members"><h2>Aliases</h2><table><tr><td><a href="dyaml/node/Node.html#as">as</a></td><td><pre><code><a href="dyaml/node/Node.html#get">get</a>
+</code></pre>
+</td><td><p>Shortcut for get().
+</p>
+</td></tr></table><h2>Functions</h2><table><tr><td><a href="dyaml/node/Node.html#this">this</a></td><td></td><td><p>Construct a Node from a value.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#this">this</a></td><td></td><td><p>Ditto.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#this">this</a></td><td></td><td><p>Construct a node from an _array.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#this">this</a></td><td></td><td><p>Construct a node from an associative _array.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#this">this</a></td><td></td><td><p>Construct a node from arrays of _keys and _values.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isValid">isValid</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node valid (initialized)?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isScalar">isScalar</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node a scalar value?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isSequence">isSequence</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node a sequence?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isMapping">isMapping</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node a mapping?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isUserType">isUserType</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node a user defined type?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#isNull">isNull</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Is this node null?
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#tag">tag</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Return tag of the node.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opEquals">opEquals</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Equality test.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#get">get</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Get the value of the node as specified type.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#get">get</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Ditto.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-property">@property</span></span></span><a href="dyaml/node/Node.html#length">length</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>If this is a collection, return its _length.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-ref">ref</span></span></span><a href="dyaml/node/Node.html#opIndex">opIndex</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Get the element at specified index.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#contains">contains</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Determine if a collection contains specified value.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#containsKey">containsKey</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Determine if a mapping contains specified key.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opAssign">opAssign</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Assignment (shallow copy) by value.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opAssign">opAssign</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Assignment (shallow copy) by reference.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opIndexAssign">opIndexAssign</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Set element at specified index in a collection.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opApply">opApply</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Foreach over a sequence, getting each element as T.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opApply">opApply</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Foreach over a mapping, getting each key/value as K/V.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#add">add</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Add an element to a sequence.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#add">add</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Add a key-value pair to a mapping.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opBinaryRight">opBinaryRight</a><span class="extrainfo"><span class="method-attribs"><span class="attr-system">@system</span></span></span></td><td></td><td><p>Determine whether a key is in a mapping, and access its value.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#remove">remove</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Remove first (if any) occurence of a value in a collection.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#removeAt">removeAt</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Remove element at the specified index of a collection.
+</p>
+</td></tr><tr><td><a href="dyaml/node/Node.html#opCmp">opCmp</a><span class="extrainfo"><span class="method-attribs"><span class="attr-const">const</span>, <span class="attr-safe">@safe</span></span></span></td><td></td><td><p>Compare with another _node.
+</p>
+</td></tr></table>
+</div>
+</div><script>hljs.initHighlightingOnLoad();</script>
+
+</div>
+<footer>
+Generated with <a href="https://github.com/kiith-sa/harbored-mod">harbored-mod</a>
+</footer>
+</div>
+</body>
+</html>

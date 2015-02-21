@@ -2,7 +2,7 @@
 Welcome to D:YAML documentation!
 ================================
 
-`API Documentation <api/index.html>`_
+API Documentation `(online) <http://ddocs.org/dyaml/~master/index.html>`_ `(local copy) <api/index.html>`_
 
 Tutorials:
 
