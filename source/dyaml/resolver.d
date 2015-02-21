@@ -34,14 +34,14 @@ import dyaml.tag;
 final class Resolver 
 {
     private:
-        ///Default tag to use for scalars.
+        // Default tag to use for scalars.
         Tag defaultScalarTag_;
-        ///Default tag to use for sequences.
+        // Default tag to use for sequences.
         Tag defaultSequenceTag_;
-        ///Default tag to use for mappings.
+        // Default tag to use for mappings.
         Tag defaultMappingTag_;
 
-        /**
+        /* 
          * Arrays of scalar resolver tuples indexed by starting character of a scalar.
          *
          * Each tuple stores regular expression the scalar must match,
@@ -222,7 +222,7 @@ final class Resolver
         @property Tag defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
 
     private:
-        ///Add default implicit resolvers.
+        // Add default implicit resolvers.
         void addImplicitResolvers() @safe
         {
             addImplicitResolver("tag:yaml.org,2002:bool",

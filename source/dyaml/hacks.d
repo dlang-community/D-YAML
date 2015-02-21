@@ -46,11 +46,12 @@ unittest
     assert(node.scalarStyleHack() == ScalarStyle.Invalid);
 }
 
-/// Get the collection style a YAML node had in the file it was loaded from.
-///
-/// May only be called on collection nodes (nodes where node.isScalar() != true).
-///
-/// See_Also: scalarStyleHack
+/** Get the collection style a YAML node had in the file it was loaded from.
+ *
+ * May only be called on collection nodes (nodes where node.isScalar() != true).
+ *
+ * See_Also: scalarStyleHack
+ */
 CollectionStyle collectionStyleHack(ref const(Node) node) @safe nothrow
 {
     assert(!node.isScalar, "Trying to get collection style of a scalar node");
@@ -64,12 +65,12 @@ unittest
 }
 
 
-/// Set the scalar style node should have when written to a file.
-///
-/// Setting the style might be useful when generating YAML or reformatting existing
-/// files.
-///
-/// May only be called on scalar nodes (nodes where node.isScalar() == true).
+/** Set the scalar style node should have when written to a file.
+ *
+ * Setting the style might be useful when generating YAML or reformatting existing files.
+ *
+ * May only be called on scalar nodes (nodes where node.isScalar() == true).
+ */
 void scalarStyleHack(ref Node node, const ScalarStyle rhs) @safe nothrow
 {
     assert(node.isScalar, "Trying to set scalar style of a non-scalar node");
@@ -84,12 +85,12 @@ unittest
     assert(node.scalarStyleHack() == ScalarStyle.DoubleQuoted);
 }
 
-/// Set the collection style node should have when written to a file.
-///
-/// Setting the style might be useful when generating YAML or reformatting existing
-/// files.
-///
-/// May only be called on collection nodes (nodes where node.isScalar() != true).
+/** Set the collection style node should have when written to a file.
+ *
+ * Setting the style might be useful when generating YAML or reformatting existing files.
+ *
+ * May only be called on collection nodes (nodes where node.isScalar() != true).
+ */
 void collectionStyleHack(ref Node node, const CollectionStyle rhs) @safe nothrow
 {
     assert(!node.isScalar, "Trying to set collection style of a scalar node");

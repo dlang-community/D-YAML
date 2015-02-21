@@ -118,7 +118,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 }
 
 
-/// Key-value pair of YAML nodes, used in mappings.
+// Key-value pair of YAML nodes, used in mappings.
 private struct Pair
 {
     public:
@@ -204,9 +204,9 @@ struct Node
         }
 
     private:
-        /// Stored value.
+        // Stored value.
         Value value_;
-        /// Start position of the node.
+        // Start position of the node.
         Mark startMark_;
 
     package:

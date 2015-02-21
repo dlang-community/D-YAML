@@ -5,7 +5,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * YAML _dumper.
+ * YAML dumper.
  *
  * Code based on $(LINK2 http://www.pyyaml.org, PyYAML).
  */
@@ -113,34 +113,34 @@ struct Dumper
     }
 
     private:
-        ///Resolver to resolve tags.
+        //Resolver to resolve tags.
         Resolver resolver_;
-        ///Representer to represent data types.
+        //Representer to represent data types.
         Representer representer_;
 
-        ///Stream to write to.
+        //Stream to write to.
         Stream stream_;
 
-        ///Write scalars in canonical form?
+        //Write scalars in canonical form?
         bool canonical_;
-        ///Indentation width.
+        //Indentation width.
         int indent_ = 2;
-        ///Preferred text width.
+        //Preferred text width.
         uint textWidth_ = 80;
-        ///Line break to use.
+        //Line break to use.
         LineBreak lineBreak_ = LineBreak.Unix;
-        ///Character encoding to use.
+        //Character encoding to use.
         Encoding encoding_ = Encoding.UTF_8;
-        ///YAML version string.
+        //YAML version string.
         string YAMLVersion_ = "1.1";
-        ///Tag directives to use.
+        //Tag directives to use.
         TagDirective[] tags_ = null;
-        ///Always write document start?
+        //Always write document start?
         Flag!"explicitStart" explicitStart_ = No.explicitStart;
-        ///Always write document end?
+        //Always write document end?
         Flag!"explicitEnd" explicitEnd_ = No.explicitEnd;
 
-        ///Name of the output file or stream, used in error messages.
+        //Name of the output file or stream, used in error messages.
         string name_ = "<unknown>";
 
     public:

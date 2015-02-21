@@ -66,11 +66,11 @@ private alias ConstructorException Error;
 final class Constructor
 {
     private:
-        /// Constructor functions from scalars.
+        // Constructor functions from scalars.
         Node.Value delegate(ref Node)[Tag] fromScalar_;
-        /// Constructor functions from sequences.
+        // Constructor functions from sequences.
         Node.Value delegate(ref Node)[Tag] fromSequence_;
-        /// Constructor functions from mappings.
+        // Constructor functions from mappings.
         Node.Value delegate(ref Node)[Tag] fromMapping_;
 
     public:

@@ -100,19 +100,19 @@ import dyaml.token;
 struct Loader
 {
     private:
-        /// Reads character data from a stream.
+        // Reads character data from a stream.
         Reader reader_;
-        /// Processes character data to YAML tokens.
+        // Processes character data to YAML tokens.
         Scanner scanner_;
-        /// Processes tokens to YAML events.
+        // Processes tokens to YAML events.
         Parser parser_;
-        /// Resolves tags (data types).
+        // Resolves tags (data types).
         Resolver resolver_;
-        /// Constructs YAML data types.
+        // Constructs YAML data types.
         Constructor constructor_;
-        /// Name of the input file or stream, used in error messages.
+        // Name of the input file or stream, used in error messages.
         string name_ = "<unknown>";
-        /// Are we done loading?
+        // Are we done loading?
         bool done_ = false;
 
     public:

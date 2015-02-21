@@ -12,8 +12,8 @@ module dyaml.style;
 enum ScalarStyle : ubyte
 {
     Invalid = 0,  /// Invalid (uninitialized) style
-    Literal,      /// | (Literal block style)
-    Folded,       /// > (Folded block style)
+    Literal,      /// `|` (Literal block style)
+    Folded,       /// `>` (Folded block style)
     Plain,        /// Plain scalar
     SingleQuoted, /// Single quoted scalar
     DoubleQuoted  /// Double quoted scalar

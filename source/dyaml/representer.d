@@ -48,11 +48,11 @@ class RepresenterException : YAMLException
 final class Representer
 {
     private:
-        ///Representer functions indexed by types.
+        // Representer functions indexed by types.
         Node function(ref Node, Representer)[TypeInfo] representers_;
-        ///Default style for scalar nodes.
+        // Default style for scalar nodes.
         ScalarStyle defaultScalarStyle_ = ScalarStyle.Invalid;
-        ///Default style for collection nodes.
+        // Default style for collection nodes.
         CollectionStyle defaultCollectionStyle_ = CollectionStyle.Invalid;
 
     public:
