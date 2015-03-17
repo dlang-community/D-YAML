@@ -602,7 +602,7 @@ struct MyStruct
 {
     int x, y, z;
 
-    const int opCmp(ref const MyStruct s) const pure @safe nothrow
+    int opCmp(ref const MyStruct s) const pure @safe nothrow
     {
         if(x != s.x){return x - s.x;}
         if(y != s.y){return y - s.y;}
