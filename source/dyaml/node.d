@@ -1804,7 +1804,7 @@ package:
 //
 // Params:  pairs   = Appender managing the array of pairs to merge into.
 //          toMerge = Pair to merge.
-void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, ref Node.Pair toMerge) @trusted
+void merge(ref Appender!(Node.Pair[]) pairs, ref Node.Pair toMerge) @trusted
 {
     foreach(ref pair; pairs.data)
     {
@@ -1820,7 +1820,7 @@ void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, ref Node.Pair toMerge) @
 //
 // Params:  pairs   = Appender managing the array of pairs to merge into.
 //          toMerge = Pairs to merge.
-void merge(ref Appender!(Node.Pair[], Node.Pair) pairs, Node.Pair[] toMerge) @trusted
+void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @trusted
 {
     bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
 
