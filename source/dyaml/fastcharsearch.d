@@ -70,7 +70,7 @@ string searchCode(dstring chars, uint tableSize)() @safe pure //nothrow
     {
         code ~= 
         q{
-            static immutable ubyte table_[%s] = [
+            static immutable ubyte[%s] table_ = [
             %s];
         }.format(tableSize, table[].map!(c => c ? q{true} : q{false}).join(q{, }));
     }

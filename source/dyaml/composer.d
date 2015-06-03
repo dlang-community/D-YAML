@@ -55,13 +55,13 @@ final class Composer
         ///We need one appender for each nesting level that involves
         ///a pair array, as the inner levels are processed as a
         ///part of the outer levels. Used as a stack.
-        Appender!(Node.Pair[], Node.Pair)[] pairAppenders_;
+        Appender!(Node.Pair[])[] pairAppenders_;
         ///Used to reduce allocations when creating node arrays.
         ///
         ///We need one appender for each nesting level that involves
         ///a node array, as the inner levels are processed as a
         ///part of the outer levels. Used as a stack.
-        Appender!(Node[], Node)[] nodeAppenders_;
+        Appender!(Node[])[] nodeAppenders_;
 
     public:
         /**

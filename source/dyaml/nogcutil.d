@@ -12,6 +12,7 @@ module dyaml.nogcutil;
 
 import std.traits;
 import std.typecons;
+import std.typetuple;
 import std.range;
 
 
