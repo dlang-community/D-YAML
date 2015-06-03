@@ -164,6 +164,8 @@ struct Dumper
                 throw new YAMLException("Unable to open file " ~ filename ~ 
                                         " for YAML dumping: " ~ e.msg);
             }
+            // need to destroy the File we constructed.
+            weOwnStream_ = true;
         }
 
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
@@ -175,9 +177,10 @@ struct Dumper
         }
 
         ///Destroy the Dumper.
-        pure @safe nothrow ~this()
+        @trusted ~this()
         {
             YAMLVersion_ = null;
+            if(weOwnStream_) { destroy(stream_); }
         }
 
         ///Set stream _name. Used in debugging messages.
