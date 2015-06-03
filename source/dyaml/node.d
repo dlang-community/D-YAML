@@ -220,6 +220,14 @@ struct Node
         static assert(Value.sizeof <= 24, "Unexpected YAML value size");
         static assert(Node.sizeof <= 48, "Unexpected YAML node size");
 
+        // If scalarCtorNothrow!T is true, scalar node ctor from T can be nothrow.
+        //
+        // TODO
+        // Eventually we should simplify this and make all Node constructors except from
+        // user values nothrow (and think even about those user values). 2014-08-28
+        enum scalarCtorNothrow(T) =
+            (is(Unqual!T == string) || isIntegral!T || isFloatingPoint!T) ||
+            (Value.allowed!T && (!is(Unqual!T == Value) && !isSomeString!T && !isArray!T && !isAssociativeArray!T));
     public:
         /** Construct a Node from a value.
          *
@@ -242,21 +250,31 @@ struct Node
          *                  a shortcut, like "!!int".
          */
         this(T)(T value, const string tag = null) @trusted
-            if (isSomeString!T || (!isArray!T && !isAssociativeArray!T))
+            if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
         {
             tag_ = Tag(tag);
 
             // No copyconstruction.
             static assert(!is(Unqual!T == Node));
 
-            // We can easily convert ints, floats, strings.
-            static if(isIntegral!T)          {value_ = Value(cast(long) value);}
-            else static if(isFloatingPoint!T){value_ = Value(cast(real) value);}
-            else static if(isSomeString!T)   {value_ = Value(to!string(value));}
-            // Other directly supported type.
-            else static if(Value.allowed!T)  {value_ = Value(value);}
+            enum unexpectedType = "Unexpected type in the non-nothrow YAML node constructor";
+            static if(isSomeString!T)             { value_ = Value(value.to!string); }
+            else static if(is(Unqual!T == Value)) { value_ = Value(value); }
+            else static if(Value.allowed!T)       { static assert(false, unexpectedType); }
             // User defined type.
-            else                             {value_ = userValue(value);}
+            else                                  { value_ = userValue(value); }
+        }
+        /// Ditto.
+        // Overload for types where we can make this nothrow.
+        this(T)(T value, const string tag = null) @safe pure nothrow
+            if(scalarCtorNothrow!T)
+        {
+            tag_   = Tag(tag);
+            // We can easily store ints, floats, strings.
+            static if(isIntegral!T)           { value_ = Value(cast(long)value); }
+            else static if(isFloatingPoint!T) { value_ = Value(cast(real)value); }
+            // User defined type or plain string.
+            else                              { value_ = Value(value); }
         }
         unittest
         {
@@ -271,6 +289,10 @@ struct Node
             {
                 auto node = Node(new class{int a = 5;});
                 assert(node.isUserType);
+            }
+            {
+                auto node = Node("string");
+                assert(node.as!string == "string");
             }
         }
 
