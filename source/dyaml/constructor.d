@@ -347,7 +347,7 @@ final class Constructor
          *          ctor = Constructor function.
          */
         auto addConstructor(T)(const Tag tag, T function(ref Node) ctor)
-            @safe pure nothrow
+            @safe nothrow
         {
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
@@ -859,7 +859,7 @@ struct MyStruct
 {
     int x, y, z;
 
-    const int opCmp(ref const MyStruct s) const pure @safe nothrow
+    const int opCmp(ref const MyStruct s) pure @safe nothrow
     {
         if(x != s.x){return x - s.x;}
         if(y != s.y){return y - s.y;}
