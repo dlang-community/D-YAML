@@ -120,6 +120,7 @@ struct Dumper
 
         //Stream to write to.
         Stream stream_;
+        bool weOwnStream_;
 
         //Write scalars in canonical form?
         bool canonical_;
