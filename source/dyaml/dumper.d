@@ -120,6 +120,8 @@ struct Dumper
 
         //Stream to write to.
         Stream stream_;
+        //True if this Dumper owns stream_ and needs to destroy it in the destructor.
+        bool weOwnStream_ = false;
 
         //Write scalars in canonical form?
         bool canonical_;
