@@ -266,7 +266,7 @@ struct Node
         }
         /// Ditto.
         // Overload for types where we can make this nothrow.
-        this(T)(T value, const string tag = null) @safe pure nothrow
+        this(T)(T value, const string tag = null) @trusted pure nothrow
             if(scalarCtorNothrow!T)
         {
             tag_   = Tag(tag);
@@ -321,7 +321,7 @@ struct Node
          * auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
          * --------------------
          */
-        this(T)(T[] array, const string tag = null) @safe
+        this(T)(T[] array, const string tag = null) @trusted
             if (!isSomeString!(T[]))
         {
             tag_ = Tag(tag);
@@ -385,7 +385,7 @@ struct Node
          * auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
          * --------------------
          */
-        this(K, V)(V[K] array, const string tag = null) @safe
+        this(K, V)(V[K] array, const string tag = null) @trusted
         {
             tag_ = Tag(tag);
 
@@ -449,7 +449,7 @@ struct Node
          * auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
          * --------------------
          */
-        this(K, V)(K[] keys, V[] values, const string tag = null) @safe
+        this(K, V)(K[] keys, V[] values, const string tag = null) @trusted
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
         {
@@ -740,7 +740,7 @@ struct Node
          *
          * Throws: NodeException if this is not a sequence nor a mapping.
          */
-        @property size_t length() const @safe
+        @property size_t length() const @trusted
         {
             if(isSequence)    {return value_.get!(const Node[]).length;}
             else if(isMapping){return value_.get!(const Pair[]).length;}
@@ -960,7 +960,7 @@ struct Node
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
          */
-        void opIndexAssign(K, V)(V value, K index) @safe
+        void opIndexAssign(K, V)(V value, K index) @trusted
         {
             if(isSequence())
             {
@@ -1187,7 +1187,7 @@ struct Node
          *
          * Params:  value = Value to _add to the sequence.
          */
-        void add(T)(T value) @safe
+        void add(T)(T value) @trusted
         {
             enforce(isSequence(),
                     new Error("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
@@ -1223,7 +1223,7 @@ struct Node
          * Params:  key   = Key to _add.
          *          value = Value to _add.
          */
-        void add(K, V)(K key, V value) @safe
+        void add(K, V)(K key, V value) @trusted
         {
             enforce(isMapping(),
                     new Error("Trying to add a key-value pair to a " ~
@@ -1405,7 +1405,7 @@ struct Node
         // Returns: Constructed node.
         static Node rawNode(Value value, const Mark startMark, const Tag tag,
                             const ScalarStyle scalarStyle,
-                            const CollectionStyle collectionStyle) @safe
+                            const CollectionStyle collectionStyle) @trusted
         {
             Node node;
             node.value_          = value;
@@ -1424,7 +1424,7 @@ struct Node
         }
 
         // Construct Node.Value from a type it can store directly (after casting if needed)
-        static Value value(T)(T value) @safe nothrow if(allowed!T)
+        static Value value(T)(T value) @system nothrow if(allowed!T)
         {
             static if(Value.allowed!T)
             {
@@ -1686,7 +1686,7 @@ struct Node
         }
 
         // Implementation of contains() and containsKey().
-        bool contains_(T, Flag!"key" key, string func)(T rhs) const @safe
+        bool contains_(T, Flag!"key" key, string func)(T rhs) const @trusted
         {
             static if(!key) if(isSequence)
             {
@@ -1751,7 +1751,7 @@ struct Node
         }
 
         // Get index of pair with key (or value, if key is false) matching index.
-        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @safe
+        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @trusted
         {
             const pairs = value_.get!(const Pair[])();
             const(Node)* node;
@@ -1792,7 +1792,7 @@ struct Node
         }
 
         // Const version of opIndex.
-        ref const(Node) indexConst(T)(T index) const @safe
+        ref const(Node) indexConst(T)(T index) const @trusted
         {
             if(isSequence)
             {

@@ -274,7 +274,7 @@ final class Representer
          * --------------------
          */
         Node representScalar(string tag, string scalar, 
-                             ScalarStyle style = ScalarStyle.Invalid) @safe
+                             ScalarStyle style = ScalarStyle.Invalid) @trusted
         {
             if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
             return Node.rawNode(Node.Value(scalar), Mark(), Tag(tag), style,
