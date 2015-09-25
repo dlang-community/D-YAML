@@ -1401,7 +1401,7 @@ struct ScalarWriter
                         {
                             //Write an escaped Unicode character.
                             const format = c <= 255   ? "\\x%02X":
-                                           c <= 65535 ? "\\u%04X": "\\u%08X";
+                                           c <= 65535 ? "\\u%04X": "\\U%08X";
                             formattedWrite(appender, format, cast(uint)c);
                         }
 
