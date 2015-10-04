@@ -114,11 +114,8 @@ final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
-        static TagDirective[] defaultTagDirectives_;
-        static this()
-        {
-            defaultTagDirectives_ = [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
-        }
+        static TagDirective[] defaultTagDirectives_ = 
+            [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Scanner providing YAML tokens.
         Scanner scanner_;
