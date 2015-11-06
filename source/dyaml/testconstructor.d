@@ -217,11 +217,10 @@ Node[] constructTimestamp()
 {
     alias DT = DateTime;
     alias ST = SysTime;
-    alias hnsecs = FracSec.from!"hnsecs";
-    return [Node([pair("canonical",        ST(DT(2001, 12, 15, 2, 59, 43), hnsecs(1000000), UTC())), 
-                  pair("valid iso8601",    ST(DT(2001, 12, 15, 2, 59, 43), hnsecs(1000000), UTC())),
-                  pair("space separated",  ST(DT(2001, 12, 15, 2, 59, 43), hnsecs(1000000), UTC())),
-                  pair("no time zone (Z)", ST(DT(2001, 12, 15, 2, 59, 43), hnsecs(1000000), UTC())),
+    return [Node([pair("canonical",        ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())), 
+                  pair("valid iso8601",    ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
+                  pair("space separated",  ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
+                  pair("no time zone (Z)", ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
                   pair("date (00:00:00Z)", ST(DT(2002, 12, 14), UTC()))])];
 }
 
@@ -281,14 +280,13 @@ Node[] timestampBugs()
 {
     alias DT = DateTime;
     alias ST = SysTime;
-    alias hnsecs = FracSec.from!"hnsecs";
     alias STZ = immutable SimpleTimeZone;
-    return [Node([Node(ST(DT(2001, 12, 15, 3, 29, 43),  hnsecs(1000000), UTC())), 
-                  Node(ST(DT(2001, 12, 14, 16, 29, 43), hnsecs(1000000), UTC())), 
-                  Node(ST(DT(2001, 12, 14, 21, 59, 43), hnsecs(10100), UTC())), 
+    return [Node([Node(ST(DT(2001, 12, 15, 3, 29, 43),  1000000.dur!"hnsecs", UTC())), 
+                  Node(ST(DT(2001, 12, 14, 16, 29, 43), 1000000.dur!"hnsecs", UTC())), 
+                  Node(ST(DT(2001, 12, 14, 21, 59, 43), 10100.dur!"hnsecs", UTC())), 
                   Node(ST(DT(2001, 12, 14, 21, 59, 43), new STZ(60.dur!"minutes"))), 
                   Node(ST(DT(2001, 12, 14, 21, 59, 43), new STZ(-90.dur!"minutes"))),
-                  Node(ST(DT(2005, 7, 8, 17, 35, 4),    hnsecs(5176000), UTC()))])];
+                  Node(ST(DT(2005, 7, 8, 17, 35, 4),    5176000.dur!"hnsecs", UTC()))])];
 }
 
 Node[] utf16be()
