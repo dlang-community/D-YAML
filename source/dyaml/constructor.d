@@ -609,7 +609,7 @@ SysTime constructTimestamp(ref Node node)
         {
             // No timezone.
             return SysTime(DateTime(year, month, day, hour, minute, second),
-                           FracSec.from!"hnsecs"(hectonanosecond), UTC());
+                           hectonanosecond.dur!"hnsecs", UTC());
         }
 
         // We have a timezone, so parse it.
@@ -625,7 +625,7 @@ SysTime constructTimestamp(ref Node node)
         const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
-                       FracSec.from!"hnsecs"(hectonanosecond),
+                       hectonanosecond.dur!"hnsecs",
                        new immutable SimpleTimeZone(tzOffset));
     }
     catch(ConvException e)
