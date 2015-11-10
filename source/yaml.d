@@ -4,15 +4,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module yaml;
+deprecated("Import dyaml instead") module yaml;
 
-public import dyaml.constructor;
-public import dyaml.dumper;
-public import dyaml.encoding;
-public import dyaml.exception;
-public import dyaml.linebreak;
-public import dyaml.loader;
-public import dyaml.representer;
-public import dyaml.resolver;
-public import dyaml.style;
-public import dyaml.node;
+public import dyaml;
