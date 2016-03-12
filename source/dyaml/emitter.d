@@ -67,6 +67,9 @@ align(4) struct ScalarAnalysis
 ///Quickly determines if a character is a newline.
 private mixin FastCharSearch!"\n\u0085\u2028\u2029"d newlineSearch_;
 
+// override the canFind added by the FastCharSearch mixins
+private alias canFind = std.algorithm.canFind;
+
 //Emits YAML events into a file/stream.
 struct Emitter 
 {
