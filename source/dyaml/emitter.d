@@ -18,12 +18,13 @@ import std.conv;
 import std.exception;
 import std.format;
 import std.range;
-import std.stream;
+//import std.stream;
 import std.string;
 import std.system;
 import std.typecons;
 import std.utf;
 
+import dyaml.stream;
 import dyaml.anchor;
 import dyaml.encoding;
 import dyaml.escapes;
@@ -81,7 +82,7 @@ struct Emitter
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
-        Stream stream_;
+        YStream stream_;
         ///Encoding can be overriden by STREAM-START.
         Encoding encoding_ = Encoding.UTF_8;
 
@@ -163,12 +164,12 @@ struct Emitter
         /**
          * Construct an emitter.
          *
-         * Params:  stream    = Stream to write to. Must be writable.
+         * Params:  stream    = YStream to write to. Must be writable.
          *          canonical = Write scalars in canonical form?
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(Stream stream, const bool canonical, const int indent, const int width, 
+        this(YStream stream, const bool canonical, const int indent, const int width, 
              const LineBreak lineBreak) @trusted
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
@@ -331,7 +332,7 @@ struct Emitter
         void expectStreamStart() @trusted
         {
             enforce(eventTypeIs(EventID.StreamStart),
-                    new Error("Expected StreamStart, but got " ~ event_.idString));
+                    new Error("Expected YStreamStart, but got " ~ event_.idString));
 
             encoding_ = event_.encoding;
             writeStreamStart();
@@ -350,7 +351,7 @@ struct Emitter
         void expectDocumentStart(Flag!"first" first)() @trusted
         {
             enforce(eventTypeIs(EventID.DocumentStart) || eventTypeIs(EventID.StreamEnd),
-                    new Error("Expected DocumentStart or StreamEnd, but got " 
+                    new Error("Expected DocumentStart or YStreamEnd, but got " 
                               ~ event_.idString));
 
             if(event_.id == EventID.DocumentStart)
