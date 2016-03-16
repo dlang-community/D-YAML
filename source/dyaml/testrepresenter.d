@@ -48,7 +48,9 @@ void testRepresenterTypes(bool verbose, string codeFilename)
             }
         }
 
-        auto emitStream  = new MemoryStream;
+		import dyaml.stream;
+
+        auto emitStream  = new YMemoryStream;
         auto representer = new Representer;
         representer.addRepresenter!TestClass(&representClass);
         representer.addRepresenter!TestStruct(&representStruct);

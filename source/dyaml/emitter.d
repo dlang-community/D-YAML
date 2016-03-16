@@ -253,7 +253,7 @@ struct Emitter
                     stream_.writeExact(buffer.ptr, buffer.length * dchar.sizeof);
                     break;
             }
-            catch(WriteException e)
+            catch(Exception e)
             {
                 throw new Error("Unable to write to stream: " ~ e.msg);
             }
