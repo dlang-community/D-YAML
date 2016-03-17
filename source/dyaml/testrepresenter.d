@@ -48,7 +48,7 @@ void testRepresenterTypes(bool verbose, string codeFilename)
             }
         }
 
-		import dyaml.stream;
+        import dyaml.stream;
 
         auto emitStream  = new YMemoryStream;
         auto representer = new Representer;
