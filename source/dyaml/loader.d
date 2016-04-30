@@ -24,7 +24,7 @@ import dyaml.scanner;
 import dyaml.token;
 
 
-/** Loads YAML documents from files or streams.
+/** Loads YAML documents from files or char[].
  *
  * User specified Constructor and/or Resolver can be used to support new
  * tags / data types.
@@ -140,12 +140,6 @@ struct Loader
             }
         }
 
-        deprecated("Loader.fromString(string) is deprecated. Use Loader.fromString(char[]) instead.")
-        static Loader fromString(string data)
-        {
-            return Loader(cast(ubyte[])data.dup);
-        }
-
         /** Construct a Loader to load YAML from a string (char []).
          *
          * Params:  data = String to load YAML from. $(B will) be overwritten during
@@ -166,25 +160,6 @@ struct Loader
         unittest
         {
             assert(Loader.fromString(cast(char[])"42").load().as!int == 42);
-        }
-
-        import std.stream;
-        deprecated("Loader(Stream) is deprecated. Use Loader(ubyte[]) instead.")
-        this(Stream stream) @safe
-        {
-            try
-            {
-                import dyaml.streamcompat;
-                auto streamBytes  = streamToBytesGC(stream);
-                reader_           = new Reader(streamBytes);
-                scanner_          = new Scanner(reader_);
-                parser_           = new Parser(scanner_);
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to open stream %s for YAML loading: %s"
-                                        .format(name_, e.msg));
-            }
         }
 
         /** Construct a Loader to load YAML from a buffer.

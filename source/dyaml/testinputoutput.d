@@ -15,6 +15,7 @@ import std.file;
 import std.system;
 
 import dyaml.testcommon;
+import dyaml.stream;
 
 
 alias std.system.endian endian;

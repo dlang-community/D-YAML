@@ -993,7 +993,7 @@ void testEndian(R)()
 
 void testPeekPrefixForward(R)()
 {
-    import std.stream;
+    import dyaml.stream;
     writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
     ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
     auto reader = new R(data);
@@ -1011,7 +1011,7 @@ void testPeekPrefixForward(R)()
 
 void testUTF(R)()
 {
-    import std.stream;
+    import dyaml.stream;
     writeln(typeid(R).toString() ~ ": UTF formats unittest");
     dchar[] data = cast(dchar[])"data";
     void utf_test(T)(T[] data, BOM bom)

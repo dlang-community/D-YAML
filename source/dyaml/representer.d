@@ -676,7 +676,7 @@ Node representMyClass(ref Node node, Representer representer) @system
     return representer.representScalar("!myclass.tag", scalar);
 }
 
-import std.stream;
+import dyaml.stream;
 
 unittest
 {
@@ -684,7 +684,7 @@ unittest
                 &representMyStructSeq, 
                 &representMyStructMap])
     {
-        auto dumper = Dumper(new MemoryStream());
+        auto dumper = Dumper(new YMemoryStream());
         auto representer = new Representer;
         representer.addRepresenter!MyStruct(r);
         dumper.representer = representer;
@@ -694,7 +694,7 @@ unittest
 
 unittest
 {
-    auto dumper = Dumper(new MemoryStream());
+    auto dumper = Dumper(new YMemoryStream());
     auto representer = new Representer;
     representer.addRepresenter!MyClass(&representMyClass);
     dumper.representer = representer;

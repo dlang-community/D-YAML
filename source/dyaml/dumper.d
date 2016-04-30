@@ -12,9 +12,10 @@
 module dyaml.dumper;
 
 
-import std.stream;
+//import std.stream;
 import std.typecons;
 
+import dyaml.stream;
 import dyaml.anchor;
 import dyaml.emitter;
 import dyaml.encoding;
@@ -59,7 +60,7 @@ import dyaml.tagdirective;
  * Write to memory:
  * --------------------
  * import std.stream;
- * auto stream = new MemoryStream();
+ * auto stream = new YMemoryStream();
  * auto node = Node([1, 2, 3, 4, 5]);
  * Dumper(stream).dump(node);
  * --------------------
@@ -83,20 +84,20 @@ struct Dumper
     unittest
     {
         auto node = Node([1, 2, 3, 4, 5]);
-        Dumper(new MemoryStream()).dump(node);
+        Dumper(new YMemoryStream()).dump(node);
     }
    
     unittest
     {
         auto node1 = Node([1, 2, 3, 4, 5]);
         auto node2 = Node("This document contains only one string");
-        Dumper(new MemoryStream()).dump(node1, node2);
+        Dumper(new YMemoryStream()).dump(node1, node2);
     }
        
     unittest
     {
-        import std.stream;
-        auto stream = new MemoryStream();
+        //import std.stream;
+        auto stream = new YMemoryStream();
         auto node = Node([1, 2, 3, 4, 5]);
         Dumper(stream).dump(node);
     }
@@ -106,7 +107,7 @@ struct Dumper
         auto node = Node([1, 2, 3, 4, 5]);
         auto representer = new Representer();
         auto resolver = new Resolver();
-        auto dumper = Dumper(new MemoryStream());
+        auto dumper = Dumper(new YMemoryStream());
         dumper.representer = representer;
         dumper.resolver = resolver;
         dumper.dump(node);
@@ -119,7 +120,7 @@ struct Dumper
         Representer representer_;
 
         //Stream to write to.
-        Stream stream_;
+        YStream stream_;
         //True if this Dumper owns stream_ and needs to destroy it in the destructor.
         bool weOwnStream_ = false;
 
@@ -160,8 +161,10 @@ struct Dumper
         this(string filename) @trusted
         {
             name_ = filename;
-            try{this(new File(filename, FileMode.OutNew));}
-            catch(StreamException e)
+            //try{this(new File(filename, FileMode.OutNew));}
+            try{this(new YFile(filename));}
+            //catch(StreamException e)
+            catch(Exception e)
             {
                 throw new YAMLException("Unable to open file " ~ filename ~ 
                                         " for YAML dumping: " ~ e.msg);
@@ -171,7 +174,7 @@ struct Dumper
         }
 
         ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
-        this(Stream stream) @safe
+        this(YStream stream) @safe
         {
             resolver_    = new Resolver();
             representer_ = new Representer();

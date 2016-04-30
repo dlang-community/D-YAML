@@ -15,6 +15,7 @@ import std.file;
 import std.range;
 import std.typecons;
 
+import dyaml.stream;
 import dyaml.dumper;
 import dyaml.event;
 import dyaml.testcommon;
@@ -83,7 +84,7 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader(dataFilename);
     auto events = cast(Event[])loader.parse();
-    auto emitStream = new MemoryStream;
+    auto emitStream = new YMemoryStream;
     Dumper(emitStream).emit(events);
 
     if(verbose)
@@ -114,7 +115,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
     auto events = cast(Event[])loader.parse();
     foreach(canonical; [false, true])
     {
-        auto emitStream = new MemoryStream;
+        auto emitStream = new YMemoryStream;
         auto dumper = Dumper(emitStream);
         dumper.canonical = canonical;
         dumper.emit(events);
@@ -174,7 +175,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
                     }
                     styledEvents ~= event;
                 }
-                auto emitStream = new MemoryStream;
+                auto emitStream = new YMemoryStream;
                 Dumper(emitStream).emit(styledEvents);
                 if(verbose)
                 {
