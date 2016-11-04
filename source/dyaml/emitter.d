@@ -54,7 +54,7 @@ class EmitterException : YAMLException
 private alias EmitterException Error;
 
 //Stores results of analysis of a scalar, determining e.g. what scalar style to use.
-align(4) struct ScalarAnalysis
+struct ScalarAnalysis
 {
     //Scalar itself.
     string scalar;
