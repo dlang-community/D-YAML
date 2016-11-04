@@ -110,7 +110,7 @@ final class Composer
         {
             //Get the root node of the next document.
             assert(!parser_.checkEvent(EventID.StreamEnd), 
-                   "Trying to get a node from Composer when there is no node to "
+                   "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
             return composeDocument();
@@ -120,14 +120,14 @@ final class Composer
         Node getSingleNode() @trusted
         {
             assert(!parser_.checkEvent(EventID.StreamEnd), 
-                   "Trying to get a node from Composer when there is no node to "
+                   "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
             Node document = composeDocument();
 
             //Ensure that the stream contains no more documents.
             enforce(parser_.checkEvent(EventID.StreamEnd),
-                    new ComposerException("Expected single document in the stream, "
+                    new ComposerException("Expected single document in the stream, " ~
                                           "but found another document.",
                                           parser_.getEvent().startMark));
 
@@ -292,11 +292,11 @@ final class Composer
             void error(Node node)
             {
                 //this is Composer, but the code is related to Constructor.
-                throw new ConstructorException("While constructing a mapping, "
-                                               "expected a mapping or a list of "
-                                               "mappings for merging, but found: " 
-                                               ~ node.type.toString() ~
-                                               " NOTE: line/column shows topmost parent "
+                throw new ConstructorException("While constructing a mapping, " ~
+                                               "expected a mapping or a list of " ~
+                                               "mappings for merging, but found: " ~
+                                               node.type.toString() ~
+                                               " NOTE: line/column shows topmost parent " ~
                                                "to which the content is being merged",
                                                startMark, endMark);
             }
