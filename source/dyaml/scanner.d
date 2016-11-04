@@ -320,7 +320,7 @@ final class Scanner
                 default:   if(checkPlain())      { return fetchPlain();      }
             }
 
-            throw new ScannerException("While scanning for the next token, found character "
+            throw new ScannerException("While scanning for the next token, found character " ~
                                        "\'%s\', index %s that cannot start any token"
                                        .format(c, to!int(c)), reader_.mark);
         }
@@ -368,7 +368,7 @@ final class Scanner
         {
             // Check if a simple key is required at the current position.
             const required = (flowLevel_ == 0 && indent_ == reader_.column);
-            assert(allowSimpleKey_ || !required, "A simple key is required only if it is "
+            assert(allowSimpleKey_ || !required, "A simple key is required only if it is " ~
                    "the first token in the current line. Therefore it is always allowed.");
 
             if(!allowSimpleKey_) { return; }
@@ -1606,7 +1606,7 @@ final class Scanner
                         if(overflow)
                         {
                             error("While scanning a double quoted scalar", startMark,
-                                  "overflow when parsing an escape sequence of "
+                                  "overflow when parsing an escape sequence of " ~
                                   "hexadecimal numbers.", reader_.mark);
                             return;
                         }
@@ -1773,7 +1773,7 @@ final class Scanner
                     reader_.sliceBuilder.finish();
                     reader_.forward(length);
                     error("While scanning a plain scalar", startMark,
-                          "found unexpected ':' . Please check "
+                          "found unexpected ':' . Please check " ~
                           "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
                           reader_.mark);
                     return Token.init;
@@ -2015,7 +2015,7 @@ final class Scanner
                     const dchar c = reader_.peek(k);
                     if(!c.isHexDigit)
                     {
-                        auto msg = expected("URI escape sequence of 2 hexadecimal "
+                        auto msg = expected("URI escape sequence of 2 hexadecimal " ~
                                             "numbers", c);
                         error(contextMsg, startMark, msg, reader_.mark);
                         return;

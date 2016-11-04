@@ -227,8 +227,12 @@ Event scalarEvent(const Mark start, const Mark end, const Anchor anchor, const T
     result.value       = value;
     result.startMark   = start;
     result.endMark     = end;
-    result.anchor      = anchor;
-    result.tag         = tag;
+
+    () @trusted {
+        result.anchor  = anchor;
+        result.tag     = tag;
+    }();
+
     result.id          = EventID.Scalar;
     result.scalarStyle = style;
     result.implicit    = implicit[0];

@@ -179,7 +179,7 @@ struct Loader
          *
          * Throws:  YAMLException if yamlData contains data illegal in YAML.
          */
-        this(void[] yamlData) @safe
+        this(void[] yamlData) @trusted
         {
             try
             {

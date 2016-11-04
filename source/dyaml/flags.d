@@ -52,17 +52,17 @@ struct Flags(names ...) if(names.length <= 8)
             foreach(index, name; names)
             {
                 string istr = to!string(index);
-                result ~= "\n"
-                          "@property bool " ~ name ~ "(bool value) pure @safe nothrow\n"
-                          "{\n"
-                          "    flags_ = value ? flags_ | (1 <<" ~ istr ~  ")\n"
-                          "                   : flags_ & (0xFF ^ (1 << " ~ istr ~"));\n"
-                          "    return value;\n"
-                          "}\n"
-                          "\n"
-                          "@property bool " ~ name ~ "() const pure @safe nothrow\n"
-                          "{\n"
-                          "    return (flags_ >> " ~ istr ~ ") & 1;\n"
+                result ~= "\n" ~
+                          "@property bool " ~ name ~ "(bool value) pure @safe nothrow\n" ~
+                          "{\n" ~
+                          "    flags_ = value ? flags_ | (1 <<" ~ istr ~  ")\n" ~
+                          "                   : flags_ & (0xFF ^ (1 << " ~ istr ~"));\n" ~
+                          "    return value;\n" ~
+                          "}\n" ~
+                          "\n" ~
+                          "@property bool " ~ name ~ "() const pure @safe nothrow\n" ~
+                          "{\n" ~
+                          "    return (flags_ >> " ~ istr ~ ") & 1;\n" ~
                           "}\n";
             }
             return result;

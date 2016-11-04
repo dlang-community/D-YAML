@@ -297,7 +297,7 @@ struct Dumper
             foreach(handle, prefix; tags)
             {
                 assert(handle.length >= 1 && handle[0] == '!' && handle[$ - 1] == '!',
-                       "A tag handle is empty or does not start and end with a "
+                       "A tag handle is empty or does not start and end with a " ~
                        "'!' character : " ~ handle);
                 assert(prefix.length >= 1, "A tag prefix is empty");
                 t ~= TagDirective(handle, prefix);
