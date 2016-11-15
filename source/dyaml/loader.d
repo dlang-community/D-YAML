@@ -380,9 +380,9 @@ struct Loader
 
 unittest
 {
-    char[] yaml_input = "red:   '#ff0000'\n"
-                        "green: '#00ff00'\n"
-                        "blue:  '#0000ff'".dup;
+    char[] yaml_input = ("red:   '#ff0000'\n" ~
+                        "green: '#00ff00'\n" ~
+                        "blue:  '#0000ff'").dup;
 
     auto colors = Loader.fromString(yaml_input).load();
 
