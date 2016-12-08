@@ -1631,6 +1631,7 @@ struct Node
             return (cast(nothrowType)&value_.type)();
         }
 
+    public:
         // Determine if the value stored by the node is of specified type.
         //
         // This only works for default YAML types, not for user defined types.
@@ -1639,7 +1640,6 @@ struct Node
             return this.type is typeid(Unqual!T);
         }
 
-    private:
         // Is the value a bool?
         alias isType!bool isBool;
 
@@ -1685,6 +1685,7 @@ struct Node
             else                             {return false;}
         }
 
+    private:
         // Implementation of contains() and containsKey().
         bool contains_(T, Flag!"key" key, string func)(T rhs) const @trusted
         {
