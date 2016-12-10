@@ -32,6 +32,7 @@ interface YStream
 {
     void writeExact(const void* buffer, size_t size);
     size_t write(const(ubyte)[] buffer);
+    size_t write(const(char)[] str);
     void flush();
     @property bool writeable();
 }
@@ -51,6 +52,11 @@ class YMemoryStream : YStream
         return buffer.length;
     }
 
+    size_t write(const(char)[] str)
+    {
+        return write(cast(const(ubyte)[])str);
+    }
+
     void flush() {}
 
     @property bool writeable() { return true; }
@@ -66,6 +72,18 @@ class YFile : YStream
         this.file = std.stdio.File(fn, "w");
     }
 
+    this(std.stdio.File file)
+    {
+        this.file = file;
+    }
+
+    unittest
+    {
+        import std.stdio : stdout;
+        auto stream = new YFile(stdout);
+        stream.write("Test writing to stdout through YFile stream\n");
+    }
+
     void writeExact(const void* buffer, size_t size)
     {
         this.file.rawWrite(cast(const) buffer[0 .. size]);
@@ -75,6 +93,11 @@ class YFile : YStream
     {
         this.file.rawWrite(buffer);
         return buffer.length;
+    }
+
+    size_t write(const(char)[] str)
+    {
+        return write(cast(const(ubyte)[])str);
     }
 
     void flush()
