@@ -72,3 +72,29 @@ class YFile : YStream {
 
 	@property bool writeable() { return true; }
 }
+
+unittest {
+	import dyaml.dumper, dyaml.loader, dyaml.node;
+	import std.file : readText, remove;
+
+	char[] test =  ("Hello World : [Hello, World]\n" ~
+					"Answer: 42").dup;
+	//Read the input.
+	Node expected = Loader.fromString(test).load();
+	assert(expected["Hello World"][0] == "Hello");
+	assert(expected["Hello World"][1] == "World");
+	assert(expected["Answer"].as!int == 42);
+
+	//Dump the loaded document to output.yaml.
+	Dumper("output.yaml").dump(expected);
+
+	// Load the file and verify that it was saved correctly.
+	Node actual = Loader("output.yaml").load();
+	assert(actual["Hello World"][0] == "Hello");
+	assert(actual["Hello World"][1] == "World");
+	assert(actual["Answer"].as!int == 42);
+	assert(actual == expected);
+
+	// Clean up.
+	remove("output.yaml");
+}
