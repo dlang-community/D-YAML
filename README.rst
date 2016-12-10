@@ -6,7 +6,7 @@ This is a fork of the D:YAML library by kiith-sa (https://github.com/kiith-sa/D-
 The intent of this fork is to provide a version suitable for use by dlang-tour, until
 fixes are accepted upstream.
 
-.. image:: https://travis-ci.org/dlang-tour/d-yaml-dlang-tour.svg?branch=master
+.. image:: https://travis-ci.org/dlang-tour/dyaml-dlang-tour.svg?branch=master
 .. image:: https://img.shields.io/dub/v/dyaml-dlang-tour.svg
    :target: http://code.dlang.org/packages/dyaml-dlang-tour
 
