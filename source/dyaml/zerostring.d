@@ -32,7 +32,7 @@ struct ZeroString(string TypeName)
                 return;
             }
 
-            str_ = (str ~ '\0').ptr;
+            str_ = &(str ~ '\0')[0];
         }
 
         ///Get the string.
