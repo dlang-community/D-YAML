@@ -2,9 +2,13 @@
 D:YAML 0.5
 ==========
 
-.. image:: https://travis-ci.org/kiith-sa/D-YAML.svg?branch=master
-.. image:: https://raw.githubusercontent.com/kiith-sa/D-YAML/master/code.dlang.org-shield.png
-   :target: http://code.dlang.org
+This is a fork of the D:YAML library by kiith-sa (https://github.com/kiith-sa/D-YAML).
+The intent of this fork is to provide a version suitable for use by dlang-tour, until
+fixes are accepted upstream.
+
+.. image:: https://travis-ci.org/dlang-tour/dyaml-dlang-tour.svg?branch=master
+.. image:: https://img.shields.io/dub/v/dyaml-dlang-tour.svg
+   :target: http://code.dlang.org/packages/dyaml-dlang-tour
 
 **Note**: D:YAML 0.5 brings some **breaking changes**. See the
 `changelog <https://github.com/kiith-sa/D-YAML/blob/master/CHANGES.rst>`_.

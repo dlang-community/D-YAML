@@ -352,7 +352,7 @@ final class Constructor
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
                    (tag in fromMapping_) is null,
-                   "Constructor function for tag " ~ tag.get ~ " is already "
+                   "Constructor function for tag " ~ tag.get ~ " is already " ~
                    "specified. Can't specify another one.");
 
 

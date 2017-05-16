@@ -99,7 +99,7 @@ final class Reader
             auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
             {
-                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned "
+                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned " ~
                                           "to 2 or 4 bytes, respectively");
             }
 

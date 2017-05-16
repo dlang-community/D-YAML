@@ -54,7 +54,7 @@ class EmitterException : YAMLException
 private alias EmitterException Error;
 
 //Stores results of analysis of a scalar, determining e.g. what scalar style to use.
-align(4) struct ScalarAnalysis
+struct ScalarAnalysis
 {
     //Scalar itself.
     string scalar;
@@ -228,7 +228,7 @@ struct Emitter
         int popIndent() @trusted
         {
             enforce(indents_.length > 0, 
-                    new YAMLException("Emitter: Need to pop an indent level but there"
+                    new YAMLException("Emitter: Need to pop an indent level but there" ~
                                       " are no indent levels left"));
             const result = indents_.back;
             indents_.length = indents_.length - 1;
@@ -490,7 +490,7 @@ struct Emitter
                      }
                      break;
                 default:
-                     throw new Error("Expected Alias, Scalar, SequenceStart or "
+                     throw new Error("Expected Alias, Scalar, SequenceStart or " ~
                                      "MappingStart, but got: " ~ event_.idString);
             }
         }
