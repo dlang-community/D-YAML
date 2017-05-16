@@ -2,16 +2,13 @@
 D:YAML 0.5
 ==========
 
-This is a fork of the D:YAML library by kiith-sa (https://github.com/kiith-sa/D-YAML).
-The intent of this fork is to provide a version suitable for use by dlang-tour, until
-fixes are accepted upstream.
-
-.. image:: https://travis-ci.org/dlang-tour/dyaml-dlang-tour.svg?branch=master
-.. image:: https://img.shields.io/dub/v/dyaml-dlang-tour.svg
-   :target: http://code.dlang.org/packages/dyaml-dlang-tour
+.. image:: https://travis-ci.org/dlang-community/D-YAML.svg?branch=master
+   :target: https://travis-ci.org/dlang-community/D-YAML
+.. image:: https://img.shields.io/dub/v/dyaml.svg
+   :target: http://code.dlang.org/packages/dyaml
 
 **Note**: D:YAML 0.5 brings some **breaking changes**. See the
-`changelog <https://github.com/kiith-sa/D-YAML/blob/master/CHANGES.rst>`_.
+`changelog <https://github.com/dlang-community/D-YAML/blob/master/CHANGES.rst>`_.
 
 ------------
 Introduction
@@ -19,13 +16,13 @@ Introduction
 
 D:YAML is an open source YAML parser and emitter library for the D programming
 language.  It is
-(`almost <https://github.com/kiith-sa/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_)
+(`almost <https://github.com/dlang-community/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification>`_)
 compliant to the YAML 1.1 specification. D:YAML is based on
 `PyYAML <http://www.pyyaml.org>`_ created by Kirill Simonov. 
 
 D:YAML is designed to be easy to use while supporting the full feature set of
 YAML. To start using it in your project, see the
-`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_
+`Getting Started <https://github.com/dlang-community/D-YAML/wiki/Getting-Started>`_
 tutorial and the `documentation <http://defenestrate.eu/docs/dyaml/>`_.
 
 D:YAML is still a work in progress. Its API is not stable and there might be
@@ -80,9 +77,9 @@ Installing and tutorial
 -----------------------
 
 See the
-`Getting Started <https://github.com/kiith-sa/D-YAML/wiki/Getting-Started>`_
+`Getting Started <https://github.com/dlang-community/D-YAML/wiki/Getting-Started>`_
 tutorial and other tutorials that can be found at the
-`GitHub wiki <https://github.com/kiith-sa/D-YAML/wiki>`_
+`GitHub wiki <https://github.com/dlang-community/D-YAML/wiki>`_
 and in the ``doc/html/tutorials/`` directory in the package.
 For advanced usage, see the `documentation <http://defenestrate.eu/docs/dyaml/>`_.
 
