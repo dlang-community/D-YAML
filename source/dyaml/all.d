@@ -16,3 +16,4 @@ public import dyaml.representer;
 public import dyaml.resolver;
 public import dyaml.style;
 public import dyaml.node;
+public import dyaml.stream;
