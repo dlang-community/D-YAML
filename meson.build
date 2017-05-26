@@ -3,7 +3,7 @@ project('D-YAML', 'd',
     subproject_dir: 'contrib/subprojects'
 )
 
-project_version      = '0.5.4'
+project_version      = '0.6.2'
 project_soversion    = '0'
 
 src_dir = include_directories('source/')
