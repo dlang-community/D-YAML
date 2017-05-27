@@ -1,14 +1,11 @@
-==========
-D:YAML 0.5
-==========
+======
+D:YAML
+======
 
 .. image:: https://travis-ci.org/dlang-community/D-YAML.svg?branch=master
    :target: https://travis-ci.org/dlang-community/D-YAML
 .. image:: https://img.shields.io/dub/v/dyaml.svg
    :target: http://code.dlang.org/packages/dyaml
-
-**Note**: D:YAML 0.5 brings some **breaking changes**. See the
-`changelog <https://github.com/dlang-community/D-YAML/blob/master/CHANGES.rst>`_.
 
 ------------
 Introduction
