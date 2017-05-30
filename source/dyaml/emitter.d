@@ -73,6 +73,12 @@ private alias canFind = std.algorithm.canFind;
 //Emits YAML events into a file/stream.
 struct Emitter 
 {
+
+    // disable moves /copy b/c state_ carries original this context
+    @disable this(this);
+    @disable opAssign(T)(auto ref T);
+    //
+
     private:
         alias dyaml.tagdirective.TagDirective TagDirective;
 
@@ -606,7 +612,7 @@ struct Emitter
         //Block sequence handlers.
 
         ///Handle a block sequence.
-        void expectBlockSequence() @safe
+        void expectBlockSequence() @trusted
         {
             const indentless = (context_ == Context.MappingNoSimpleKey ||
                                 context_ == Context.MappingSimpleKey) && !indentation_;
@@ -633,7 +639,7 @@ struct Emitter
         //Block mapping handlers.
 
         ///Handle a block mapping.
-        void expectBlockMapping() @safe
+        void expectBlockMapping() @trusted
         {
             increaseIndent(No.flow);
             state_ = &expectBlockMappingKey!(Yes.first);
