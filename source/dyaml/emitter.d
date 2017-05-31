@@ -208,6 +208,9 @@ struct Emitter
             while(!needMoreEvents())
             {
                 event_ = events_.pop();
+                // copy construction and move semantic can
+                // exceptionally lead to wrong delegate context.
+                state_.ptr = &this;
                 state_();
                 event_.destroy();
             }
@@ -606,7 +609,7 @@ struct Emitter
         //Block sequence handlers.
 
         ///Handle a block sequence.
-        void expectBlockSequence() @safe
+        void expectBlockSequence() @trusted
         {
             const indentless = (context_ == Context.MappingNoSimpleKey ||
                                 context_ == Context.MappingSimpleKey) && !indentation_;
@@ -633,7 +636,7 @@ struct Emitter
         //Block mapping handlers.
 
         ///Handle a block mapping.
-        void expectBlockMapping() @safe
+        void expectBlockMapping() @trusted
         {
             increaseIndent(No.flow);
             state_ = &expectBlockMappingKey!(Yes.first);
