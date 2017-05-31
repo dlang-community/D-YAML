@@ -73,12 +73,6 @@ private alias canFind = std.algorithm.canFind;
 //Emits YAML events into a file/stream.
 struct Emitter 
 {
-
-    // disable moves /copy b/c state_ carries original this context
-    @disable this(this);
-    @disable opAssign(T)(auto ref T);
-    //
-
     private:
         alias dyaml.tagdirective.TagDirective TagDirective;
 
@@ -214,6 +208,9 @@ struct Emitter
             while(!needMoreEvents())
             {
                 event_ = events_.pop();
+                // copy construction and move semantic can
+                // exceptionally lead to wrong delegate context.
+                state_.ptr = &this;
                 state_();
                 event_.destroy();
             }
