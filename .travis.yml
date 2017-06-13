@@ -30,4 +30,6 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -C build test -v; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -C build test; fi
   - dub build
-  - dub test
+  - dub test --build=unittest-cov
+after_success:
+ - bash <(curl -s https://codecov.io/bash)
