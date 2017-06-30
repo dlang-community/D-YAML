@@ -11,7 +11,7 @@ version(unittest)
 
 public import std.conv;
 public import std.stdio;
-public import dyaml.all;
+public import dyaml;
 
 import core.exception;
 import std.algorithm;
