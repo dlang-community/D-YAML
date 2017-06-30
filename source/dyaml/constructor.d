@@ -540,21 +540,21 @@ unittest
 /// Construct a binary (base64) _node.
 ubyte[] constructBinary(ref Node node)
 {
+    import std.ascii : newline;
+    import std.array : array;
+
     string value = node.as!string;
     // For an unknown reason, this must be nested to work (compiler bug?).
     try
     {
-        try{return Base64.decode(value.removechars("\n"));}
-        catch(Exception e)
-        {
-            throw new Exception("Unable to decode base64 value: " ~ e.msg);
-        }
+        return Base64.decode(value.representation.filter!(c => !newline.canFind(c)).array);
     }
-    catch(UTFException e)
+    catch(Base64Exception e)
     {
         throw new Exception("Unable to decode base64 value: " ~ e.msg);
     }
 }
+
 unittest
 {
     ubyte[] test = cast(ubyte[])"The Answer: 42";
@@ -564,6 +564,7 @@ unittest
     auto node = Node(input);
     auto value = constructBinary(node);
     assert(value == test);
+    assert(value == [84, 104, 101, 32, 65, 110, 115, 119, 101, 114, 58, 32, 52, 50]);
 }
 
 /// Construct a timestamp (SysTime) _node.
