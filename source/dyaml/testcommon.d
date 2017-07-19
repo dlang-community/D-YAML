@@ -34,7 +34,7 @@ package:
 void run(F ...)(string testName, void function(bool, F) testFunction, 
                 string[] unittestExt, string[] skipExt = [])
 {
-    immutable string dataDir = "test/data";
+    immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../test/data";
     auto testFilenames = findTestFilenames(dataDir);
     bool verbose = false;
 
