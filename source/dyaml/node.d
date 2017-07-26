@@ -200,6 +200,7 @@ struct Node
             enum allowed = isIntegral!T ||
                            isFloatingPoint!T ||
                            isSomeString!T ||
+                           is(Unqual!T == bool) ||
                            Value.allowed!T;
         }
 
@@ -226,7 +227,7 @@ struct Node
         // Eventually we should simplify this and make all Node constructors except from
         // user values nothrow (and think even about those user values). 2014-08-28
         enum scalarCtorNothrow(T) =
-            (is(Unqual!T == string) || isIntegral!T || isFloatingPoint!T) ||
+            (is(Unqual!T == string) || isIntegral!T || isFloatingPoint!T) || is(Unqual!T == bool) ||
             (Value.allowed!T && (!is(Unqual!T == Value) && !isSomeString!T && !isArray!T && !isAssociativeArray!T));
     public:
         /** Construct a Node from a value.
@@ -272,9 +273,10 @@ struct Node
             tag_   = Tag(tag);
             // We can easily store ints, floats, strings.
             static if(isIntegral!T)           { value_ = Value(cast(long)value); }
+            else static if(is(Unqual!T==bool)){ value_ = Value(cast(bool)value); }
             else static if(isFloatingPoint!T) { value_ = Value(cast(real)value); }
             // User defined type or plain string.
-            else                              { value_ = Value(value); }
+            else                              { value_ = Value(value);}
         }
         unittest
         {
@@ -648,15 +650,25 @@ struct Node
                     if(isInt())       {return to!T(value_.get!(const long));}
                     else if(isFloat()){return to!T(value_.get!(const real));}
                 }
-                else static if(isIntegral!T) if(isInt())
+                else static if(is(Unqual!T == bool))
                 {
-                    const temp = value_.get!(const long);
-                    enforce(temp >= T.min && temp <= T.max,
+                    const temp = value_.get!(const bool);
+                    return to!bool(temp);
+                }
+                else static if(isIntegral!T)
+                {
+                    if(isInt())
+                    {
+                        const temp = value_.get!(const long);
+                        enforce(temp >= T.min && temp <= T.max,
                             new Error("Integer value of type " ~ typeid(T).toString() ~
                                       " out of range. Value: " ~ to!string(temp), startMark_));
-                    return to!T(temp);
+                        return to!T(temp);
+                    }
+                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                        ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
-                throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                else throw new Error("Node stores unexpected type: " ~ type.toString() ~
                                 ". Expected: " ~ typeid(T).toString(), startMark_);
             }
             assert(false, "This code should never be reached");
@@ -719,6 +731,11 @@ struct Node
                     if(isInt())       {return to!T(value_.get!(const long));}
                     else if(isFloat()){return to!T(value_.get!(const real));}
                 }
+                else static if(is(Unqual!T == bool))
+                {
+                    const temp = value_.get!(const bool);
+                    return to!bool(temp);
+                }
                 else static if(isIntegral!T) if(isInt())
                 {
                     const temp = value_.get!(const long);
@@ -772,7 +789,7 @@ struct Node
             if(isSequence)
             {
                 checkSequenceIndex(index);
-                static if(isIntegral!T)
+                static if(isIntegral!T || is(Unqual!T == bool))
                 {
                     return cast(Node)value_.get!(Node[])[index];
                 }
@@ -966,7 +983,7 @@ struct Node
             {
                 // This ensures K is integral.
                 checkSequenceIndex(index);
-                static if(isIntegral!K)
+                static if(isIntegral!K || is(Unqual!K == bool))
                 {
                     auto nodes = value_.get!(Node[]);
                     static if(is(Unqual!V == Node)){nodes[index] = value;}
@@ -1434,6 +1451,10 @@ struct Node
             {
                 return Value(cast(long)(value));
             }
+            else static if (is(Unqual!T == bool))
+            {
+                return Value(cast(bool)(value));
+            }
             else static if(isFloatingPoint!T)
             {
                 return Value(cast(real)(value));
@@ -1682,6 +1703,7 @@ struct Node
             static if(isSomeString!T)        {return true;}
             else static if(isFloatingPoint!T){return isInt() || isFloat();}
             else static if(isIntegral!T)     {return isInt();}
+            else static if(is(Unqual!T==bool)){return isBool();}
             else                             {return false;}
         }
 
@@ -1764,6 +1786,7 @@ struct Node
 
                 bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) ||
                                  (isIntegral!T && node.isInt) ||
+                                 (is(Unqual!T==bool) && node.isBool) ||
                                  (isSomeString!T && node.isString) ||
                                  (node.isType!T);
                 if(typeMatch && *node == index)

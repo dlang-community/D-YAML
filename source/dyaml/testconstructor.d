@@ -83,10 +83,18 @@ Node[] constructBinary()
 
 Node[] constructBool()
 {
+    const(bool) a = true;
+    immutable(bool) b = true;
+    const bool aa = true;
+    immutable bool bb = true;
     return [Node([pair("canonical", true),
                   pair("answer",    false),
                   pair("logical",   true),
                   pair("option",    true),
+                  pair("constbool", a),
+                  pair("imutbool", b),
+                  pair("const_bool", aa),
+                  pair("imut_bool", bb),
                   pair("but", [pair("y", "is a string"), pair("n", "is a string")])])];
 }
 
