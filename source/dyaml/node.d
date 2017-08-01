@@ -1068,9 +1068,16 @@ struct Node
 
                 /* Input range functionality. */
                 bool empty() @property { return position >= subnodes.length; }
-                void popFront() { position++; }
+
+                void popFront() 
+                { 
+                    enforce(!empty, "Attempted to popFront an empty sequence");
+                    position++; 
+                }
+
                 T front() @property
                 {
+                    enforce(!empty, "Attempted to take the front of an empty sequence");
                     static if (is(Unqual!T == Node))
                         return subnodes[position];
                     else
@@ -1081,9 +1088,15 @@ struct Node
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() { subnodes = subnodes[0 .. $ - 1]; }
+                void popBack() 
+                { 
+                    enforce(!empty, "Attempted to popBack an empty sequence");
+                    subnodes = subnodes[0 .. $ - 1]; 
+                }
+
                 T back() 
                 {  
+                    enforce(!empty, "Attempted to take the back of an empty sequence");
                     static if (is(Unqual!T == Node))
                         return subnodes[$ - 1];
                     else
@@ -1144,15 +1157,34 @@ struct Node
 
                 /* Input range functionality. */
                 bool empty() { return position >= pairs.length; }
-                void popFront() { position++; }
-                Pair front() { return pairs[position]; }
+
+                void popFront() 
+                { 
+                    enforce(!empty, "Attempted to popFront an empty mapping");
+                    position++; 
+                }
+
+                Pair front() 
+                { 
+                    enforce(!empty, "Attempted to take the front of an empty mapping");
+                    return pairs[position]; 
+                }
 
                 /* Forward range functionality. */
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() { pairs = pairs[0 .. $ - 1]; }
-                Pair back() { return pairs[$ - 1]; }
+                void popBack() 
+                { 
+                    enforce(!empty, "Attempted to popBack an empty mapping");
+                    pairs = pairs[0 .. $ - 1]; 
+                }
+
+                Pair back() 
+                { 
+                    enforce(!empty, "Attempted to take the back of an empty mapping");
+                    return pairs[$ - 1]; 
+                }
 
                 /* Random-access range functionality. */
                 size_t length() const @property { return pairs.length; }
@@ -1243,7 +1275,6 @@ struct Node
 
             assert(m1.mappingValues.equal([2, 3]));
         }
-
 
         /** Foreach over a sequence, getting each element as T.
          *
