@@ -1067,9 +1067,9 @@ struct Node
                 }
 
                 /* Input range functionality. */
-                bool empty() { return position >= subnodes.length; }
+                bool empty() @property { return position >= subnodes.length; }
                 void popFront() { position++; }
-                T front()
+                T front() @property
                 {
                     static if (is(Unqual!T == Node))
                         return subnodes[position];
@@ -1091,6 +1091,7 @@ struct Node
                 }
 
                 /* Random-access range functionality. */
+                size_t length() const @property { return subnodes.length; }
                 T opIndex(size_t index)
                 {
                     static if (is(Unqual!T == Node))
@@ -1098,6 +1099,11 @@ struct Node
                     else
                         return subnodes[index].as!T;
                 }
+
+                static assert(isInputRange!Range);
+                static assert(isForwardRange!Range);
+                static assert(isBidirectionalRange!Range);
+                static assert(isRandomAccessRange!Range);
             }
             return Range(get!(Node[]));
         }
@@ -1149,7 +1155,13 @@ struct Node
                 Pair back() { return pairs[$ - 1]; }
 
                 /* Random-access range functionality. */
+                size_t length() const @property { return pairs.length; }
                 Pair opIndex(size_t index) { return pairs[index]; }
+
+                static assert(isInputRange!Range);
+                static assert(isForwardRange!Range);
+                static assert(isBidirectionalRange!Range);
+                static assert(isRandomAccessRange!Range);
             }
             return Range(get!(Node.Pair[]));
         }
