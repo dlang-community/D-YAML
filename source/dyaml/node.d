@@ -1041,6 +1041,198 @@ struct Node
             }
         }
 
+        /** Return a range object iterating over a sequence, getting each
+          * element as T.
+          * 
+          * If T is Node, simply iterate over the nodes in the sequence.
+          * Otherwise, convert each node to T during iteration.
+          *
+          * Throws: NodeException if the node is not a sequence or an element
+          *         could not be converted to specified type.
+          */
+        auto sequence(T = Node)() @trusted
+        {
+            enforce(isSequence,
+                    new Error("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
+                        startMark_));
+            struct Range
+            {
+                Node[] subnodes;
+                size_t position;
+
+                this(Node[] nodes)
+                {
+                    subnodes = nodes;
+                    position = 0;
+                }
+
+                /* Input range functionality. */
+                bool empty() { return position >= subnodes.length; }
+                void popFront() { position++; }
+                T front()
+                {
+                    static if (is(Unqual!T == Node))
+                        return subnodes[position];
+                    else
+                        return subnodes[position].as!T;
+                }
+
+                /* Forward range functionality. */
+                Range save() { return this; }
+
+                /* Bidirectional range functionality. */
+                void popBack() { subnodes = subnodes[0 .. $ - 1]; }
+                T back() 
+                {  
+                    static if (is(Unqual!T == Node))
+                        return subnodes[$ - 1];
+                    else
+                        return subnodes[$ - 1].as!T;
+                }
+
+                /* Random-access range functionality. */
+                T opIndex(size_t index)
+                {
+                    static if (is(Unqual!T == Node))
+                        return subnodes[index];
+                    else
+                        return subnodes[index].as!T;
+                }
+            }
+            return Range(get!(Node[]));
+        }
+        unittest
+        {
+            writeln("D:YAML Node sequence unittest");
+
+            Node n1 = Node([1, 2, 3, 4]);
+            int[int] array;
+            Node n2 = Node(array);
+
+            auto r = n1.sequence!int.map!(x => x * 10);
+            assert(r.equal([10, 20, 30, 40]));
+
+            assertThrown(n2.sequence);
+        }
+
+        /** Return a range object iterating over mapping's pairs.
+          *
+          * Throws: NodeException if the node is not a mapping.
+          *
+          */
+        auto mapping() @trusted
+        {
+            enforce(isMapping,
+                    new Error("Trying to 'mapping'-iterate over a " 
+                        ~ nodeTypeString ~ " node", startMark_));
+            struct Range
+            {
+                Node.Pair[] pairs;
+                size_t position;
+
+                this(Node.Pair[] pairs)
+                {
+                    this.pairs = pairs;
+                    position = 0;
+                }
+
+                /* Input range functionality. */
+                bool empty() { return position >= pairs.length; }
+                void popFront() { position++; }
+                Pair front() { return pairs[position]; }
+
+                /* Forward range functionality. */
+                Range save() { return this; }
+
+                /* Bidirectional range functionality. */
+                void popBack() { pairs = pairs[0 .. $ - 1]; }
+                Pair back() { return pairs[$ - 1]; }
+
+                /* Random-access range functionality. */
+                Pair opIndex(size_t index) { return pairs[index]; }
+            }
+            return Range(get!(Node.Pair[]));
+        }
+        unittest
+        {
+            writeln("D:YAML Node mapping unittest");
+
+            int[int] array;
+            Node n = Node(array);
+            n[1] = "foo";
+            n[2] = "bar";
+            n[3] = "baz";
+
+            string[int] test;
+            foreach (pair; n.mapping)
+                test[pair.key.as!int] = pair.value.as!string;
+
+            assert(test[1] == "foo");
+            assert(test[2] == "bar");
+            assert(test[3] == "baz");
+        }
+
+        /** Return a range object iterating over mapping's keys.
+          *
+          * If K is Node, simply iterate over the keys in the mapping.
+          * Otherwise, convert each key to T during iteration.
+          *
+          * Throws: NodeException if the nodes is not a mapping or an element
+          *         could not be converted to specified type.
+          */
+        auto mappingKeys(K = Node)() @trusted
+        {
+            enforce(isMapping,
+                    new Error("Trying to 'mappingKeys'-iterate over a " 
+                        ~ nodeTypeString ~ " node", startMark_));
+            static if (is(Unqual!K == Node))
+                return mapping.map!(pair => pair.key);
+            else
+                return mapping.map!(pair => pair.key.as!K);
+        }
+        unittest
+        {
+            writeln("D:YAML Node mappingKeys unittest");
+
+            int[int] array;
+            Node m1 = Node(array);
+            m1["foo"] = 2;
+            m1["bar"] = 3;
+
+            assert(m1.mappingKeys.equal(["foo", "bar"]));
+        }
+
+        /** Return a range object iterating over mapping's values.
+          *
+          * If V is Node, simply iterate over the values in the mapping.
+          * Otherwise, convert each key to V during iteration.
+          *
+          * Throws: NodeException if the nodes is not a mapping or an element
+          *         could not be converted to specified type.
+          */
+        auto mappingValues(V = Node)() @trusted
+        {
+            enforce(isMapping,
+                    new Error("Trying to 'mappingValues'-iterate over a " 
+                        ~ nodeTypeString ~ " node", startMark_));
+            static if (is(Unqual!V == Node))
+                return mapping.map!(pair => pair.value);
+            else
+                return mapping.map!(pair => pair.value.as!V);
+        }
+        unittest
+        {
+            writeln("D:YAML Node mappingValues unittest");
+
+            int[int] array;
+            Node m1 = Node(array);
+            m1["foo"] = 2;
+            m1["bar"] = 3;
+
+            assert(m1.mappingValues.equal([2, 3]));
+        }
+
+
         /** Foreach over a sequence, getting each element as T.
          *
          * If T is Node, simply iterate over the nodes in the sequence.
