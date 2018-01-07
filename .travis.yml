@@ -27,9 +27,9 @@ before_script:
   - export PATH=$PATH:$PWD/.ntmp
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then meson build && ninja -C build; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -C build test -v; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -C build test; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then meson build && ninja -j8 -C build; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -j8 -C build test -v; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -j8 -C build test; fi
   - dub build
   - dub test --build=unittest-cov
 after_success:
