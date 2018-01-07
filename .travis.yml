@@ -12,16 +12,6 @@ d:
  - ldc
  - ldc-beta
 
-before_install:
-  - export PATH="`pwd`/build:${PATH}"
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install python3 ninja; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build; fi
-  - pip3 install meson
-
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mkdir .ntmp && curl -L https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip -o .ntmp/ninja-linux.zip; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then unzip .ntmp/ninja-linux.zip -d .ntmp; fi
-
 before_script:
   - export PATH=$PATH:$PWD/.ntmp
 
