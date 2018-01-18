@@ -13,6 +13,7 @@ module dyaml.parser;
 
 import std.algorithm;
 import std.array;
+import std.ascii : isHexDigit;
 import std.container;
 import std.conv;
 import std.exception;
