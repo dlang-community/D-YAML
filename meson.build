@@ -1,6 +1,6 @@
 project('D-YAML', 'd',
     meson_version: '>=0.40.0',
-    subproject_dir: 'contrib/subprojects'
+    subproject_dir: 'contrib'
 )
 
 project_version      = '0.6.2'

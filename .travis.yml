@@ -13,22 +13,23 @@ d:
  - ldc-beta
 
 before_install:
+  - pyenv global system 3.6
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ninja python3; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pip3 install meson; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip3 install meson; fi
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mkdir .ntmp && curl -L https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip -o .ntmp/ninja-linux.zip; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mkdir .ntmp && curl -L https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip -o .ntmp/ninja-linux.zip; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then unzip .ntmp/ninja-linux.zip -d .ntmp; fi
 
 before_script:
   - export PATH=$PATH:$PWD/.ntmp
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then meson build && ninja -C build; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -C build test -v; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -C build test; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then meson build && ninja -j8 -C build; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -j8 -C build test -v; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -j8 -C build test; fi
   - dub build
   - dub test --build=unittest-cov
 after_success:
