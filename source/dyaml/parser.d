@@ -596,6 +596,7 @@ final class Parser
                     // Any hex digits are 1-byte so this works.
                     char[] hex = oldValue[0 .. hexLength];
                     oldValue = oldValue[hexLength .. $];
+                    import std.ascii : isHexDigit;
                     assert(!hex.canFind!(d => !d.isHexDigit),
                             "Scanner must ensure the hex string is valid");
 
