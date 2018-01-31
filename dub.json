@@ -11,8 +11,8 @@
 
     "buildTypes":
     {
-        "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
+        "debug": { "buildOptions": ["debugMode"] },
         "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
-        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] },
+        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck"] },
     },
 }
