@@ -1177,11 +1177,10 @@ struct Emitter
         void writeStreamStart() @system
         {
             immutable(ubyte)[] bom;
-            //Write BOM (always, even for UTF-8)
+            //Write BOM (except for UTF-8)
             final switch(encoding_)
             {
                 case Encoding.UTF_8:
-                    bom = ByteOrderMarks[BOM.UTF8];
                     break;
                 case Encoding.UTF_16:
                     bom = std.system.endian == Endian.littleEndian 
