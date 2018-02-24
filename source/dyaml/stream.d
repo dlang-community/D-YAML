@@ -134,3 +134,18 @@ unittest
     // Clean up.
     remove("output.yaml");
 }
+
+unittest // #88, #89
+{
+    import dyaml.dumper, dyaml.loader;
+    import std.file : remove, read;
+
+    enum fn = "output.yaml";
+    scope (exit) fn.remove;
+
+    auto dumper = Dumper(fn);
+    dumper.YAMLVersion = null; // supress directive
+    dumper.dump(Loader.fromString("Hello world".dup).load);
+
+    assert (cast (char[]) fn.read()[0..3] == "Hel");
+}
