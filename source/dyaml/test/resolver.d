@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testresolver;
+module dyaml.test.resolver;
 
 
 version(unittest)
@@ -13,7 +13,7 @@ version(unittest)
 import std.file;
 import std.string;
 
-import dyaml.testcommon;
+import dyaml.test.common;
 
 
 /**

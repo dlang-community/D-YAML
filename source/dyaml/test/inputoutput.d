@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testinputoutput;
+module dyaml.test.inputoutput;
 
 
 version(unittest)
@@ -14,16 +14,16 @@ import std.array;
 import std.file;
 import std.system;
 
-import dyaml.testcommon;
+import dyaml.test.common;
 import dyaml.stream;
 
 
 alias std.system.endian endian;
 
 /// Get an UTF-16 byte order mark.
-/// 
+///
 /// Params:  wrong = Get the incorrect BOM for this system.
-/// 
+///
 /// Returns: UTF-16 byte order mark.
 wchar bom16(bool wrong = false) pure
 {
@@ -34,9 +34,9 @@ wchar bom16(bool wrong = false) pure
 }
 
 /// Get an UTF-32 byte order mark.
-/// 
+///
 /// Params:  wrong = Get the incorrect BOM for this system.
-/// 
+///
 /// Returns: UTF-32 byte order mark.
 dchar bom32(bool wrong = false) pure
 {
@@ -47,7 +47,7 @@ dchar bom32(bool wrong = false) pure
 }
 
 /// Unicode input unittest. Tests various encodings.
-/// 
+///
 /// Params:  verbose         = Print verbose output?
 ///          unicodeFilename = File name to read from.
 void testUnicodeInput(bool verbose, string unicodeFilename)
@@ -58,7 +58,7 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
     Node output = Loader(cast(void[])data.to!(char[])).load();
     assert(output.as!string == expected);
 
-    foreach(buffer; [cast(void[])(bom16() ~ data.to!(wchar[])), 
+    foreach(buffer; [cast(void[])(bom16() ~ data.to!(wchar[])),
                      cast(void[])(bom32() ~ data.to!(dchar[]))])
     {
         output = Loader(buffer).load();
@@ -67,7 +67,7 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
 }
 
 /// Unicode input error unittest. Tests various encodings with incorrect BOMs.
-/// 
+///
 /// Params:  verbose         = Print verbose output?
 ///          unicodeFilename = File name to read from.
 void testUnicodeInputErrors(bool verbose, string unicodeFilename)

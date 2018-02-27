@@ -4,18 +4,18 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testcompare;
+module dyaml.test.compare;
 
 
 version(unittest)
 {
 
-import dyaml.testcommon;
+import dyaml.test.common;
 import dyaml.token;
 
 
 /// Test parser by comparing output from parsing two equivalent YAML files.
-/// 
+///
 /// Params:  verbose           = Print verbose output?
 ///          dataFilename      = YAML file to parse.
 ///          canonicalFilename = Another file to parse, in canonical YAML format.
@@ -34,7 +34,7 @@ void testParser(bool verbose, string dataFilename, string canonicalFilename)
 
 
 /// Test loader by comparing output from loading two equivalent YAML files.
-/// 
+///
 /// Params:  verbose           = Print verbose output?
 ///          dataFilename      = YAML file to load.
 ///          canonicalFilename = Another file to load, in canonical YAML format.

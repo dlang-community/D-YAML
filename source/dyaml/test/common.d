@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testcommon;
+module dyaml.test.common;
 
 version(unittest)
 {
@@ -31,10 +31,10 @@ package:
  *          unittestExt  = Extensions of data files needed for the unittest.
  *          skipExt      = Extensions that must not be used for the unittest.
  */
-void run(F ...)(string testName, void function(bool, F) testFunction, 
+void run(F ...)(string testName, void function(bool, F) testFunction,
                 string[] unittestExt, string[] skipExt = [])
 {
-    immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../test/data";
+    immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../../test/data";
     auto testFilenames = findTestFilenames(dataDir);
     bool verbose = false;
 
@@ -130,7 +130,7 @@ body
  *
  * Returns: Information about the results of the unittest.
  */
-Result execute(F ...)(const string testName, void function(bool, F) testFunction, 
+Result execute(F ...)(const string testName, void function(bool, F) testFunction,
                       string[] filenames, const bool verbose)
 {
     if(verbose)
@@ -155,7 +155,7 @@ Result execute(F ...)(const string testName, void function(bool, F) testFunction
         kind = (typeid(e) is typeid(AssertError)) ? TestStatus.Failure : TestStatus.Error;
         write((verbose ? to!string(e) : to!string(kind)) ~ " ");
     }
-    
+
     stdout.flush();
 
     return Result(testName, filenames, kind, info);
@@ -165,7 +165,7 @@ Result execute(F ...)(const string testName, void function(bool, F) testFunction
  * Display unittest results.
  *
  * Params:  results = Unittest results.
- *          verbose = Print verbose output? 
+ *          verbose = Print verbose output?
  */
 void display(Result[] results, const bool verbose)
 {
@@ -183,7 +183,7 @@ void display(Result[] results, const bool verbose)
     {
         if(verbose)
         {
-            writeln(result.name, "(" ~ result.filenames.join(", ") ~ "): ", 
+            writeln(result.name, "(" ~ result.filenames.join(", ") ~ "): ",
                     to!string(result.kind));
         }
 

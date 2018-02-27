@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testrepresenter;
+module dyaml.test.representer;
 
 
 version(unittest)
@@ -14,8 +14,8 @@ import std.path;
 import std.exception;
 import std.typecons;
 
-import dyaml.testcommon;
-import dyaml.testconstructor;
+import dyaml.test.common;
+import dyaml.test.constructor;
 
 
 /// Representer unittest.
@@ -27,7 +27,7 @@ import dyaml.testconstructor;
 void testRepresenterTypes(bool verbose, string codeFilename)
 {
     string baseName = codeFilename.baseName.stripExtension;
-    enforce((baseName in dyaml.testconstructor.expected) !is null,
+    enforce((baseName in dyaml.test.constructor.expected) !is null,
             new Exception("Unimplemented representer test: " ~ baseName));
 
     Node[] expectedNodes = expected[baseName];
