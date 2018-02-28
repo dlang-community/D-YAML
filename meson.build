@@ -10,7 +10,6 @@ src_dir = include_directories('source/')
 pkgc = import('pkgconfig')
 
 dyaml_src = [
-    'source/dyaml/all.d',
     'source/dyaml/anchor.d',
     'source/dyaml/composer.d',
     'source/dyaml/constructor.d',
@@ -51,8 +50,7 @@ dyaml_src = [
     'source/dyaml/test/tokens.d',
     'source/dyaml/token.d',
     'source/dyaml/unused.d',
-    'source/dyaml/zerostring.d',
-    'source/yaml.d'
+    'source/dyaml/zerostring.d'
 ]
 install_headers('source/yaml.d', subdir: 'd/yaml/')
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
