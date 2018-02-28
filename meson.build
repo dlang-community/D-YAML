@@ -52,7 +52,6 @@ dyaml_src = [
     'source/dyaml/unused.d',
     'source/dyaml/zerostring.d'
 ]
-install_headers('source/yaml.d', subdir: 'd/yaml/')
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
 tinyendian_dep = dependency('tinyendian', version: '>=0.1.2', required: false)
