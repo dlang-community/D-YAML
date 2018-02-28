@@ -926,7 +926,8 @@ bool isPrintableValidUTF8(const char[] chars) @trusted pure nothrow @nogc
         const dchar c = decodeValidUTF8NoGC(chars, index);
         // We now c is not ASCII, so only check for printable non-ASCII chars.
         if(!(c == 0x85 || (c >= 0xA0 && c <= '\uD7FF') ||
-            (c >= '\uE000' && c <= '\uFFFD')))
+            (c >= '\uE000' && c <= '\uFFFD') ||
+            (c >= '\U00010000' && c <= '\U0010FFFF')))
         {
             return false;
         }
