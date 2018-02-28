@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-module dyaml.testtokens;
+module dyaml.test.tokens;
 
 
 version(unittest)
@@ -13,7 +13,7 @@ version(unittest)
 import std.array;
 import std.file;
 
-import dyaml.testcommon;
+import dyaml.test.common;
 import dyaml.token;
 
 
