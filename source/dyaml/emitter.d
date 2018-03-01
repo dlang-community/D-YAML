@@ -498,7 +498,7 @@ struct Emitter
         ///Handle an alias.
         void expectAlias() @trusted
         {
-            enforce(event_.anchor != null, new Error("Anchor is not specified for alias"));
+            enforce(event_.anchor !is null, new Error("Anchor is not specified for alias"));
             processAnchor("*");
             state_ = popState();
         }
@@ -705,8 +705,8 @@ struct Emitter
             }
 
             const event = events_.peek();
-            const emptyScalar = event.id == EventID.Scalar && (event.anchor == null) &&
-                                (event.tag == null) && event.implicit && event.value == "";
+            const emptyScalar = event.id == EventID.Scalar && (event.anchor is null) &&
+                                (event.tag is null) && event.implicit && event.value == "";
             return emptyScalar;
         }
 
@@ -720,7 +720,7 @@ struct Emitter
                                     id == EventID.SequenceStart;
 
             if((id == EventID.Alias || scalar || collectionStart)
-               && (event_.anchor != null))
+               && (event_.anchor !is null))
             {
                 if(preparedAnchor_ is null)
                 {
@@ -729,7 +729,7 @@ struct Emitter
                 length += preparedAnchor_.length;
             }
 
-            if((scalar || collectionStart) && (event_.tag != null))
+            if((scalar || collectionStart) && (event_.tag !is null))
             {
                 if(preparedTag_ is null){preparedTag_ = prepareTag(event_.tag);}
                 length += preparedTag_.length;
@@ -782,7 +782,7 @@ struct Emitter
         ///Process and write an anchor/alias.
         void processAnchor(const string indicator) @trusted
         {
-            if(event_.anchor == null)
+            if(event_.anchor is null)
             {
                 preparedAnchor_ = null;
                 return;
@@ -807,25 +807,25 @@ struct Emitter
             if(event_.id == EventID.Scalar)
             {
                 if(style_ == ScalarStyle.Invalid){style_ = chooseScalarStyle();}
-                if((!canonical_ || (tag == null)) &&
+                if((!canonical_ || (tag is null)) &&
                    (style_ == ScalarStyle.Plain ? event_.implicit : event_.implicit_2))
                 {
                     preparedTag_ = null;
                     return;
                 }
-                if(event_.implicit && (tag == null))
+                if(event_.implicit && (tag is null))
                 {
                     tag = "!";
                     preparedTag_ = null;
                 }
             }
-            else if((!canonical_ || (tag == null)) && event_.implicit)
+            else if((!canonical_ || (tag is null)) && event_.implicit)
             {
                 preparedTag_ = null;
                 return;
             }
 
-            enforce(tag != null, new Error("Tag is not specified"));
+            enforce(tag !is null, new Error("Tag is not specified"));
             if(preparedTag_ is null){preparedTag_ = prepareTag(tag);}
             if(preparedTag_ !is null && preparedTag_ != "")
             {
@@ -946,7 +946,7 @@ struct Emitter
         ///Prepare tag for output.
         string prepareTag(in string tag) @trusted
         {
-            enforce(tag != null, new Error("Tag must not be empty"));
+            enforce(tag !is null, new Error("Tag must not be empty"));
 
             string tagString = tag;
             if(tagString == "!"){return tagString;}

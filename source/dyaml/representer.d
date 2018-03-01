@@ -439,7 +439,7 @@ final class Representer
             Node result = representers_[type](data, this);
 
             //Override tag if specified.
-            if(data.tag_ != null){result.tag_ = data.tag_;}
+            if(data.tag_ !is null){result.tag_ = data.tag_;}
 
             //Remember style if this was loaded before.
             if(data.scalarStyle != ScalarStyle.Invalid)

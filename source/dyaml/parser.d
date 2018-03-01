@@ -515,7 +515,7 @@ final class Parser
                                          implicit, CollectionStyle.Block);
             }
 
-            if(anchor != null || tag !is null)
+            if(anchor !is null || tag !is null)
             {
                 state_ = popState();
 

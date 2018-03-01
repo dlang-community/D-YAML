@@ -196,7 +196,7 @@ final class Composer
 
             immutable event = parser_.peekEvent();
             const anchor = event.anchor;
-            if((anchor != null) && (anchor in anchors_) !is null)
+            if((anchor !is null) && (anchor in anchors_) !is null)
             {
                 throw new ComposerException("Found duplicate anchor: " ~ anchor,
                                             event.startMark);
@@ -205,7 +205,7 @@ final class Composer
             Node result;
             //Associate the anchor, if any, with an uninitialized node.
             //used to detect duplicate and recursive anchors.
-            if(anchor != null)
+            if(anchor !is null)
             {
                 anchors_[anchor] = Node();
             }
@@ -224,7 +224,7 @@ final class Composer
             }
             else{assert(false, "This code should never be reached");}
 
-            if(anchor != null)
+            if(anchor !is null)
             {
                 anchors_[anchor] = result;
             }

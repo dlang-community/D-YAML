@@ -1634,7 +1634,7 @@ struct Node
         // Compute hash of the node.
         hash_t toHash() nothrow const
         {
-            const tagHash = (tag_ == null) ? 0 : tag_.hashOf();
+            const tagHash = (tag_ is null) ? 0 : tag_.hashOf();
             // Variant toHash is not const at the moment, so we need to const-cast.
             return tagHash + value_.toHash();
         }
@@ -1737,8 +1737,8 @@ struct Node
             // Compare tags - if equal or both null, we need to compare further.
             static if(useTag)
             {
-                const tagCmp = (tag_ == null) ? (rhs.tag_ == null) ? 0 : -1
-                                           : (rhs.tag_ == null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
+                const tagCmp = (tag_ is null) ? (rhs.tag_ is null) ? 0 : -1
+                                           : (rhs.tag_ is null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
                 if(tagCmp != 0){return tagCmp;}
             }
 

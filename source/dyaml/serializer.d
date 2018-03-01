@@ -137,7 +137,7 @@ struct Serializer
 
             if((node in anchors_) !is null)
             {
-                if(anchors_[node] == null)
+                if(anchors_[node] is null)
                 {
                     anchors_[node] = generateAnchor();
                 }

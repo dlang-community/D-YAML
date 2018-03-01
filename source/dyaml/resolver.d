@@ -145,7 +145,7 @@ final class Resolver
         string resolve(const NodeID kind, const string tag, const string value,
                     const bool implicit) @safe
         {
-            if((tag != null) && tag != "!"){return tag;}
+            if((tag !is null) && tag != "!"){return tag;}
 
             if(kind == NodeID.Scalar)
             {
