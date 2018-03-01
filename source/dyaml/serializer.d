@@ -15,14 +15,12 @@ import std.array;
 import std.format;
 import std.typecons;
 
-import dyaml.anchor;
 import dyaml.emitter;
 import dyaml.encoding;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.node;
 import dyaml.resolver;
-import dyaml.tag;
 import dyaml.tagdirective;
 import dyaml.token;
 
@@ -50,7 +48,7 @@ struct Serializer
 
         //TODO Use something with more deterministic memory usage.
         ///Nodes with assigned anchors.
-        Anchor[Node] anchors_;
+        string[Node] anchors_;
         ///Nodes with assigned anchors that are already serialized.
         bool[Node] serializedNodes_;
         ///ID of the last anchor generated.
@@ -105,7 +103,7 @@ struct Serializer
             emitter_.emit(documentEndEvent(Mark(), Mark(), explicitEnd_));
             serializedNodes_.destroy();
             anchors_.destroy();
-            Anchor[Node] emptyAnchors;
+            string[Node] emptyAnchors;
             anchors_ = emptyAnchors;
             lastAnchorID_ = 0;
         }
@@ -139,14 +137,14 @@ struct Serializer
 
             if((node in anchors_) !is null)
             {
-                if(anchors_[node].isNull())
+                if(anchors_[node] is null)
                 {
                     anchors_[node] = generateAnchor();
                 }
                 return;
             }
 
-            anchors_[node] = Anchor(null);
+            anchors_[node] = null;
             if(node.isSequence) foreach(ref Node item; node)
             {
                 anchorNode(item);
@@ -159,12 +157,12 @@ struct Serializer
         }
 
         ///Generate and return a new anchor.
-        Anchor generateAnchor() @trusted
+        string generateAnchor() @trusted
         {
             ++lastAnchorID_;
             auto appender = appender!string();
             formattedWrite(appender, "id%03d", lastAnchorID_);
-            return Anchor(appender.data);
+            return appender.data;
         }
 
         ///Serialize a node and all its subnodes.
@@ -173,7 +171,7 @@ struct Serializer
             //If the node has an anchor, emit an anchor (as aliasEvent) on the 
             //first occurrence, save it in serializedNodes_, and emit an alias 
             //if it reappears.
-            Anchor aliased = Anchor(null);
+            string aliased = null;
             if(anchorable(node) && (node in anchors_) !is null)
             {
                 aliased = anchors_[node];
@@ -189,8 +187,8 @@ struct Serializer
             {
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
-                const detectedTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, true);
-                const defaultTag = resolver_.resolve(NodeID.Scalar, Tag(null), value, false);
+                const detectedTag = resolver_.resolve(NodeID.Scalar, null, value, true);
+                const defaultTag = resolver_.resolve(NodeID.Scalar, null, value, false);
                 bool isDetected = node.tag_ == detectedTag;
                 bool isDefault = node.tag_ == defaultTag;
 

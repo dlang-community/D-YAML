@@ -16,7 +16,6 @@ import std.path;
 import std.string;
 import std.typecons;
 
-import dyaml.tag;
 import dyaml.test.common;
 
 

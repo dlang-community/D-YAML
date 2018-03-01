@@ -23,7 +23,6 @@ import std.utf;
 
 import dyaml.node;
 import dyaml.exception;
-import dyaml.tag;
 
 
 /**
@@ -35,11 +34,11 @@ final class Resolver
 {
     private:
         // Default tag to use for scalars.
-        Tag defaultScalarTag_;
+        string defaultScalarTag_;
         // Default tag to use for sequences.
-        Tag defaultSequenceTag_;
+        string defaultSequenceTag_;
         // Default tag to use for mappings.
-        Tag defaultMappingTag_;
+        string defaultMappingTag_;
 
         /* 
          * Arrays of scalar resolver tuples indexed by starting character of a scalar.
@@ -47,7 +46,7 @@ final class Resolver
          * Each tuple stores regular expression the scalar must match,
          * and tag to assign to it if it matches.
          */
-        Tuple!(Tag, Regex!char)[][dchar] yamlImplicitResolvers_;
+        Tuple!(string, Regex!char)[][dchar] yamlImplicitResolvers_;
 
     public:
         @disable bool opEquals(ref Resolver);
@@ -64,9 +63,9 @@ final class Resolver
         this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers) 
             @safe
         {
-            defaultScalarTag_   = Tag("tag:yaml.org,2002:str");
-            defaultSequenceTag_ = Tag("tag:yaml.org,2002:seq");
-            defaultMappingTag_  = Tag("tag:yaml.org,2002:map");
+            defaultScalarTag_   = "tag:yaml.org,2002:str";
+            defaultSequenceTag_ = "tag:yaml.org,2002:seq";
+            defaultMappingTag_  = "tag:yaml.org,2002:map";
             if(defaultImplicitResolvers){addImplicitResolvers();}
         }
 
@@ -125,7 +124,7 @@ final class Resolver
                 {
                     yamlImplicitResolvers_[c] = [];
                 }
-                yamlImplicitResolvers_[c] ~= tuple(Tag(tag), regexp);
+                yamlImplicitResolvers_[c] ~= tuple(tag, regexp);
             }
         }
 
@@ -143,10 +142,10 @@ final class Resolver
          *
          * Returns: Resolved tag.
          */
-        Tag resolve(const NodeID kind, const Tag tag, const string value, 
-                    const bool implicit) @safe 
+        string resolve(const NodeID kind, const string tag, const string value,
+                    const bool implicit) @safe
         {
-            if(!tag.isNull() && tag.get() != "!"){return tag;}
+            if((tag !is null) && tag != "!"){return tag;}
 
             if(kind == NodeID.Scalar)
             {
@@ -178,10 +177,10 @@ final class Resolver
 
             bool tagMatch(string tag, string[] values)
             {
-                Tag expected = Tag(tag);
+                string expected = tag;
                 foreach(value; values)
                 {
-                    Tag resolved = resolver.resolve(NodeID.Scalar, Tag(), value, true);
+                    string resolved = resolver.resolve(NodeID.Scalar, null, value, true);
                     if(expected != resolved)
                     {
                         return false;
@@ -213,13 +212,13 @@ final class Resolver
         }
 
         ///Return default scalar tag.
-        @property Tag defaultScalarTag()   const pure @safe nothrow {return defaultScalarTag_;}
+        @property string defaultScalarTag()   const pure @safe nothrow {return defaultScalarTag_;}
 
         ///Return default sequence tag.
-        @property Tag defaultSequenceTag() const pure @safe nothrow {return defaultSequenceTag_;}
+        @property string defaultSequenceTag() const pure @safe nothrow {return defaultSequenceTag_;}
 
         ///Return default mapping tag.
-        @property Tag defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
+        @property string defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
 
     private:
         // Add default implicit resolvers.

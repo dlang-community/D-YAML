@@ -14,11 +14,9 @@ import std.array;
 import std.conv;
 import std.typecons;
 
-import dyaml.anchor;
 import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
-import dyaml.tag;
 import dyaml.tagdirective;
 import dyaml.style;
 
@@ -60,9 +58,9 @@ struct Event
         struct
         {
             ///Anchor of the event, if any.
-            Anchor anchor;
+            string anchor;
             ///Tag of the event, if any.
-            Tag tag;
+            string tag;
         }
         ///Tag directives, if this is a DocumentStart.
         //TagDirectives tagDirectives;
@@ -96,7 +94,7 @@ struct Event
     ///Get string representation of the token ID.
     @property string idString() const @system {return to!string(id);}
 
-    static assert(Event.sizeof <= 48, "Event struct larger than expected");
+    static assert(Event.sizeof <= 64, "Event struct larger than expected");
 }
 
 /**
@@ -106,7 +104,7 @@ struct Event
  *          end      = End position of the event in the file/stream.
  *          anchor   = Anchor, if this is an alias event.
  */
-Event event(EventID id)(const Mark start, const Mark end, const Anchor anchor = Anchor())
+Event event(EventID id)(const Mark start, const Mark end, const string anchor = null)
     pure @trusted nothrow
 {
     Event result;
@@ -127,7 +125,7 @@ Event event(EventID id)(const Mark start, const Mark end, const Anchor anchor = 
  *          implicit = Should the tag be implicitly resolved?
  */
 Event collectionStartEvent(EventID id)
-    (const Mark start, const Mark end, const Anchor anchor, const Tag tag,
+    (const Mark start, const Mark end, const string anchor, const string tag,
      const bool implicit, const CollectionStyle style) pure @trusted nothrow
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
@@ -219,7 +217,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          implicit = Should the tag be implicitly resolved?
 ///          value    = String value of the scalar.
 ///          style    = Scalar style.
-Event scalarEvent(const Mark start, const Mark end, const Anchor anchor, const Tag tag,
+Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
                   const Tuple!(bool, bool) implicit, const string value,
                   const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
 {

@@ -18,13 +18,11 @@ import std.conv;
 import std.exception;
 import std.typecons;
 
-import dyaml.anchor;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.scanner;
 import dyaml.style;
 import dyaml.token;
-import dyaml.tag;
 import dyaml.tagdirective;
 
 
@@ -422,8 +420,8 @@ final class Parser
             {
                 const token = scanner_.getToken();
                 state_ = popState();
-                return aliasEvent(token.startMark, token.endMark, 
-                                  Anchor(cast(string)token.value));
+                return aliasEvent(token.startMark, token.endMark,
+                                  cast(string)token.value);
             }
 
             string anchor = null;
@@ -467,8 +465,8 @@ final class Parser
             {
                 state_ = &parseIndentlessSequenceEntry;
                 return sequenceStartEvent
-                    (startMark, scanner_.peekToken().endMark, Anchor(anchor),
-                     Tag(tag), implicit, CollectionStyle.Block);
+                    (startMark, scanner_.peekToken().endMark, anchor,
+                     tag, implicit, CollectionStyle.Block);
             }
 
             if(scanner_.checkToken(TokenID.Scalar))
@@ -481,7 +479,7 @@ final class Parser
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
-                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag),
+                return scalarEvent(startMark, token.endMark, anchor, tag,
                                    tuple(implicit, implicit_2), value, token.style);
             }
 
@@ -489,7 +487,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
+                return sequenceStartEvent(startMark, endMark, anchor, tag,
                                           implicit, CollectionStyle.Flow);
             }
 
@@ -497,7 +495,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
+                return mappingStartEvent(startMark, endMark, anchor, tag,
                                          implicit, CollectionStyle.Flow);
             }
 
@@ -505,7 +503,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
+                return sequenceStartEvent(startMark, endMark, anchor, tag,
                                           implicit, CollectionStyle.Block);
             }
 
@@ -513,11 +511,11 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
+                return mappingStartEvent(startMark, endMark, anchor, tag,
                                          implicit, CollectionStyle.Block);
             }
 
-            if(anchor != null || tag !is null)
+            if(anchor !is null || tag !is null)
             {
                 state_ = popState();
 
@@ -525,7 +523,7 @@ final class Parser
                 //but the second bool is never used after that - so we don't use it.
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
-                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag),
+                return scalarEvent(startMark, endMark, anchor, tag,
                                    tuple(implicit, false) , "");
             }
 
@@ -815,7 +813,7 @@ final class Parser
                     const token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
                     return mappingStartEvent(token.startMark, token.endMark,
-                                             Anchor(), Tag(), true, CollectionStyle.Flow);
+                                             null, null, true, CollectionStyle.Flow);
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
                 {
@@ -952,6 +950,6 @@ final class Parser
         ///Return an empty scalar.
         Event processEmptyScalar(const Mark mark) @safe pure nothrow const @nogc
         {
-            return scalarEvent(mark, mark, Anchor(), Tag(), tuple(true, false), "");
+            return scalarEvent(mark, mark, null, null, tuple(true, false), "");
         }
 }
