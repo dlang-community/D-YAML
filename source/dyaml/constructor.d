@@ -27,7 +27,6 @@ import std.utf;
 
 import dyaml.node;
 import dyaml.exception;
-import dyaml.tag;
 import dyaml.style;
 
 
@@ -67,11 +66,11 @@ final class Constructor
 {
     private:
         // Constructor functions from scalars.
-        Node.Value delegate(ref Node)[Tag] fromScalar_;
+        Node.Value delegate(ref Node)[string] fromScalar_;
         // Constructor functions from sequences.
-        Node.Value delegate(ref Node)[Tag] fromSequence_;
+        Node.Value delegate(ref Node)[string] fromSequence_;
         // Constructor functions from mappings.
-        Node.Value delegate(ref Node)[Tag] fromMapping_;
+        Node.Value delegate(ref Node)[string] fromMapping_;
 
     public:
         /// Construct a Constructor.
@@ -185,7 +184,7 @@ final class Constructor
         void addConstructorScalar(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
-            const t = Tag(tag);
+            const t = tag;
             auto deleg = addConstructor!T(t, ctor);
             (*delegates!string)[t] = deleg;
         }
@@ -236,7 +235,7 @@ final class Constructor
         void addConstructorSequence(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
-            const t = Tag(tag);
+            const t = tag;
             auto deleg = addConstructor!T(t, ctor);
             (*delegates!(Node[]))[t] = deleg;
         }
@@ -287,7 +286,7 @@ final class Constructor
         void addConstructorMapping(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
-            const t = Tag(tag);
+            const t = tag;
             auto deleg = addConstructor!T(t, ctor);
             (*delegates!(Node.Pair[]))[t] = deleg;
         }
@@ -304,7 +303,7 @@ final class Constructor
          *
          * Returns: Constructed node.
          */
-        Node node(T, U)(const Mark start, const Mark end, const Tag tag,
+        Node node(T, U)(const Mark start, const Mark end, const string tag,
                         T value, U style) @trusted
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
@@ -315,7 +314,7 @@ final class Constructor
                                                "ERROR";
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function from " ~ type ~
-                              " for tag " ~ tag.get(), start, end));
+                              " for tag " ~ tag, start, end));
 
             Node node = Node(value);
             try
@@ -346,13 +345,13 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor)
+        auto addConstructor(T)(const string tag, T function(ref Node) ctor)
             @safe nothrow
         {
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
                    (tag in fromMapping_) is null,
-                   "Constructor function for tag " ~ tag.get ~ " is already " ~
+                   "Constructor function for tag " ~ tag ~ " is already " ~
                    "specified. Can't specify another one.");
 
 

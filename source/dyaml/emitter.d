@@ -24,7 +24,6 @@ import std.typecons;
 import std.utf;
 
 import dyaml.stream;
-import dyaml.anchor;
 import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;
@@ -34,7 +33,6 @@ import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.queue;
 import dyaml.style;
-import dyaml.tag;
 import dyaml.tagdirective;
 
 
@@ -500,7 +498,7 @@ struct Emitter
         ///Handle an alias.
         void expectAlias() @trusted
         {
-            enforce(!event_.anchor.isNull(), new Error("Anchor is not specified for alias"));
+            enforce(event_.anchor != null, new Error("Anchor is not specified for alias"));
             processAnchor("*");
             state_ = popState();
         }
@@ -707,8 +705,8 @@ struct Emitter
             }
 
             const event = events_.peek();
-            const emptyScalar = event.id == EventID.Scalar && event.anchor.isNull() &&
-                                event.tag.isNull() && event.implicit && event.value == "";
+            const emptyScalar = event.id == EventID.Scalar && (event.anchor == null) &&
+                                (event.tag == null) && event.implicit && event.value == "";
             return emptyScalar;
         }
 
@@ -721,8 +719,8 @@ struct Emitter
             const collectionStart = id == EventID.MappingStart || 
                                     id == EventID.SequenceStart;
 
-            if((id == EventID.Alias || scalar || collectionStart) 
-               && !event_.anchor.isNull())
+            if((id == EventID.Alias || scalar || collectionStart)
+               && (event_.anchor != null))
             {
                 if(preparedAnchor_ is null)
                 {
@@ -731,7 +729,7 @@ struct Emitter
                 length += preparedAnchor_.length;
             }
 
-            if((scalar || collectionStart) && !event_.tag.isNull())
+            if((scalar || collectionStart) && (event_.tag != null))
             {
                 if(preparedTag_ is null){preparedTag_ = prepareTag(event_.tag);}
                 length += preparedTag_.length;
@@ -784,7 +782,7 @@ struct Emitter
         ///Process and write an anchor/alias.
         void processAnchor(const string indicator) @trusted
         {
-            if(event_.anchor.isNull())
+            if(event_.anchor == null)
             {
                 preparedAnchor_ = null;
                 return;
@@ -804,30 +802,30 @@ struct Emitter
         ///Process and write a tag.
         void processTag() @trusted
         {
-            Tag tag = event_.tag;
+            string tag = event_.tag;
 
             if(event_.id == EventID.Scalar)
             {
                 if(style_ == ScalarStyle.Invalid){style_ = chooseScalarStyle();}
-                if((!canonical_ || tag.isNull()) && 
+                if((!canonical_ || (tag == null)) &&
                    (style_ == ScalarStyle.Plain ? event_.implicit : event_.implicit_2))
                 {
                     preparedTag_ = null;
                     return;
                 }
-                if(event_.implicit && tag.isNull())
+                if(event_.implicit && (tag == null))
                 {
-                    tag = Tag("!");
+                    tag = "!";
                     preparedTag_ = null;
                 }
             }
-            else if((!canonical_ || tag.isNull()) && event_.implicit)
+            else if((!canonical_ || (tag == null)) && event_.implicit)
             {
                 preparedTag_ = null;
                 return;
             }
-            
-            enforce(!tag.isNull(), new Error("Tag is not specified"));
+
+            enforce(tag != null, new Error("Tag is not specified"));
             if(preparedTag_ is null){preparedTag_ = prepareTag(tag);}
             if(preparedTag_ !is null && preparedTag_ != "")
             {
@@ -946,11 +944,11 @@ struct Emitter
         }
 
         ///Prepare tag for output.
-        string prepareTag(in Tag tag) @trusted
+        string prepareTag(in string tag) @trusted
         {
-            enforce(!tag.isNull(), new Error("Tag must not be empty"));
+            enforce(tag != null, new Error("Tag must not be empty"));
 
-            string tagString = tag.get;
+            string tagString = tag;
             if(tagString == "!"){return tagString;}
             string handle = null;
             string suffix = tagString;
@@ -993,11 +991,11 @@ struct Emitter
         }
 
         ///Prepare anchor for output.
-        static string prepareAnchor(const Anchor anchor) @trusted
+        static string prepareAnchor(const string anchor) @trusted
         {
-            enforce(!anchor.isNull() && anchor.get != "",
+            enforce(anchor != "",
                     new Error("Anchor must not be empty"));
-            const str = anchor.get;
+            const str = anchor;
             foreach(const dchar c; str)
             {
                 enforce(isAlphaNum(c) || "-_"d.canFind(c),

@@ -17,7 +17,6 @@ import std.conv;
 import std.exception;
 import std.typecons;
 
-import dyaml.anchor;
 import dyaml.constructor;
 import dyaml.event;
 import dyaml.exception;
@@ -48,7 +47,7 @@ final class Composer
         ///Constructor constructing YAML values.
         Constructor constructor_;
         ///Nodes associated with anchors. Used by YAML aliases.
-        Node[Anchor] anchors_;
+        Node[string] anchors_;
 
         ///Used to reduce allocations when creating pair arrays.
         ///
@@ -182,14 +181,14 @@ final class Composer
                 immutable event = parser_.getEvent();
                 const anchor = event.anchor;
                 enforce((anchor in anchors_) !is null,
-                        new ComposerException("Found undefined alias: " ~ anchor.get,
+                        new ComposerException("Found undefined alias: " ~ anchor,
                                               event.startMark));
 
                 //If the node referenced by the anchor is uninitialized,
                 //it's not finished, i.e. we're currently composing it
                 //and trying to use it recursively here.
                 enforce(anchors_[anchor] != Node(),
-                        new ComposerException("Found recursive alias: " ~ anchor.get,
+                        new ComposerException("Found recursive alias: " ~ anchor,
                                               event.startMark));
 
                 return anchors_[anchor];
@@ -197,16 +196,16 @@ final class Composer
 
             immutable event = parser_.peekEvent();
             const anchor = event.anchor;
-            if(!anchor.isNull() && (anchor in anchors_) !is null)
+            if((anchor != null) && (anchor in anchors_) !is null)
             {
-                throw new ComposerException("Found duplicate anchor: " ~ anchor.get, 
+                throw new ComposerException("Found duplicate anchor: " ~ anchor,
                                             event.startMark);
             }
 
             Node result;
             //Associate the anchor, if any, with an uninitialized node.
             //used to detect duplicate and recursive anchors.
-            if(!anchor.isNull())
+            if(anchor != null)
             {
                 anchors_[anchor] = Node();
             }
@@ -225,7 +224,7 @@ final class Composer
             }
             else{assert(false, "This code should never be reached");}
 
-            if(!anchor.isNull())
+            if(anchor != null)
             {
                 anchors_[anchor] = result;
             }

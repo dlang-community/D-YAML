@@ -29,7 +29,6 @@ import dyaml.exception;
 import dyaml.node;
 import dyaml.serializer;
 import dyaml.style;
-import dyaml.tag;
 
 
 ///Exception thrown on Representer errors.
@@ -277,7 +276,7 @@ final class Representer
                              ScalarStyle style = ScalarStyle.Invalid) @trusted
         {
             if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
-            return Node.rawNode(Node.Value(scalar), Mark(), Tag(tag), style,
+            return Node.rawNode(Node.Value(scalar), Mark(), tag, style,
                                 CollectionStyle.Invalid);
         }
 
@@ -346,7 +345,7 @@ final class Representer
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
-            return Node.rawNode(Node.Value(value), Mark(), Tag(tag), 
+            return Node.rawNode(Node.Value(value), Mark(), tag,
                                 ScalarStyle.Invalid, style);
         }
 
@@ -423,7 +422,7 @@ final class Representer
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
-            return Node.rawNode(Node.Value(value), Mark(), Tag(tag), 
+            return Node.rawNode(Node.Value(value), Mark(), tag,
                                 ScalarStyle.Invalid, style);
         }
 
@@ -440,7 +439,7 @@ final class Representer
             Node result = representers_[type](data, this);
 
             //Override tag if specified.
-            if(!data.tag_.isNull()){result.tag_ = data.tag_;}
+            if(data.tag_ != null){result.tag_ = data.tag_;}
 
             //Remember style if this was loaded before.
             if(data.scalarStyle != ScalarStyle.Invalid)
@@ -527,7 +526,7 @@ Node representSysTime(ref Node node, Representer representer) @system
 Node representNodes(ref Node node, Representer representer) @safe
 {
     auto nodes = node.as!(Node[]);
-    if(node.tag_ == Tag("tag:yaml.org,2002:set"))
+    if(node.tag_ == "tag:yaml.org,2002:set")
     {
         ///YAML sets are mapping with null values.
         Node.Pair[] pairs;
@@ -537,7 +536,7 @@ Node representNodes(ref Node node, Representer representer) @safe
         {
             pairs[idx] = Node.Pair(key, representNull(dummy, representer));
         }
-        return representer.representMapping(node.tag_.get, pairs);
+        return representer.representMapping(node.tag_, pairs);
     }
     else
     {
@@ -574,15 +573,15 @@ Node representPairs(ref Node node, Representer representer) @system
         return nodes;
     }
 
-    if(node.tag_ == Tag("tag:yaml.org,2002:omap"))
+    if(node.tag_ == "tag:yaml.org,2002:omap")
     {
         enforce(!hasDuplicates(pairs),
                 new RepresenterException("Duplicate entry in an ordered map"));
-        return representer.representSequence(node.tag_.get, mapToSequence(pairs));
+        return representer.representSequence(node.tag_, mapToSequence(pairs));
     }
-    else if(node.tag_ == Tag("tag:yaml.org,2002:pairs"))
+    else if(node.tag_ == "tag:yaml.org,2002:pairs")
     {
-        return representer.representSequence(node.tag_.get, mapToSequence(pairs));
+        return representer.representSequence(node.tag_, mapToSequence(pairs));
     }
     else
     {

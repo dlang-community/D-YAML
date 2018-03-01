@@ -25,8 +25,6 @@ import std.variant;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.style;
-import dyaml.tag;
-
 
 /// Exception thrown at node related errors.
 class NodeException : YAMLException
@@ -212,14 +210,14 @@ struct Node
 
     package:
         // Tag of the node.
-        Tag tag_;
+        string tag_;
         // Node scalar style. Used to remember style this node was loaded with.
         ScalarStyle scalarStyle = ScalarStyle.Invalid;
         // Node collection style. Used to remember style this node was loaded with.
         CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
         static assert(Value.sizeof <= 24, "Unexpected YAML value size");
-        static assert(Node.sizeof <= 48, "Unexpected YAML node size");
+        static assert(Node.sizeof <= 56, "Unexpected YAML node size");
 
         // If scalarCtorNothrow!T is true, scalar node ctor from T can be nothrow.
         //
@@ -253,7 +251,7 @@ struct Node
         this(T)(T value, const string tag = null) @trusted
             if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
         {
-            tag_ = Tag(tag);
+            tag_ = tag;
 
             // No copyconstruction.
             static assert(!is(Unqual!T == Node));
@@ -270,7 +268,7 @@ struct Node
         this(T)(T value, const string tag = null) @trusted pure nothrow
             if(scalarCtorNothrow!T)
         {
-            tag_   = Tag(tag);
+            tag_   = tag;
             // We can easily store ints, floats, strings.
             static if(isIntegral!T)           { value_ = Value(cast(long)value); }
             else static if(is(Unqual!T==bool)){ value_ = Value(cast(bool)value); }
@@ -326,7 +324,7 @@ struct Node
         this(T)(T[] array, const string tag = null) @trusted
             if (!isSomeString!(T[]))
         {
-            tag_ = Tag(tag);
+            tag_ = tag;
 
             // Construction from raw node or pair array.
             static if(is(Unqual!T == Node) || is(Unqual!T == Node.Pair))
@@ -389,7 +387,7 @@ struct Node
          */
         this(K, V)(V[K] array, const string tag = null) @trusted
         {
-            tag_ = Tag(tag);
+            tag_ = tag;
 
             Node.Pair[] pairs;
             foreach(key, ref value; array){pairs ~= Pair(key, value);}
@@ -461,7 +459,7 @@ struct Node
         }
         body
         {
-            tag_ = Tag(tag);
+            tag_ = tag;
 
             Node.Pair[] pairs;
             foreach(i; 0 .. keys.length){pairs ~= Pair(keys[i], values[i]);}
@@ -521,7 +519,7 @@ struct Node
         }
 
         /// Return tag of the node.
-        @property string tag()      const @safe nothrow {return tag_.get;}
+        @property string tag()      const @safe nothrow {return tag_;}
 
         /** Equality test.
          *
@@ -1634,9 +1632,9 @@ struct Node
         }
 
         // Compute hash of the node.
-        hash_t toHash() @safe nothrow const
+        hash_t toHash() nothrow const
         {
-            const tagHash = tag_.isNull ? 0 : tag_.toHash();
+            const tagHash = (tag_ == null) ? 0 : tag_.hashOf();
             // Variant toHash is not const at the moment, so we need to const-cast.
             return tagHash + value_.toHash();
         }
@@ -1655,7 +1653,7 @@ struct Node
         //          collectionStyle = Collection style of the node.
         //
         // Returns: Constructed node.
-        static Node rawNode(Value value, const Mark startMark, const Tag tag,
+        static Node rawNode(Value value, const Mark startMark, const string tag,
                             const ScalarStyle scalarStyle,
                             const CollectionStyle collectionStyle) @trusted
         {
@@ -1739,8 +1737,8 @@ struct Node
             // Compare tags - if equal or both null, we need to compare further.
             static if(useTag)
             {
-                const tagCmp = tag_.isNull ? rhs.tag_.isNull ? 0 : -1
-                                           : rhs.tag_.isNull ? 1 : tag_.opCmp(rhs.tag_);
+                const tagCmp = (tag_ == null) ? (rhs.tag_ == null) ? 0 : -1
+                                           : (rhs.tag_ == null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
                 if(tagCmp != 0){return tagCmp;}
             }
 

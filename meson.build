@@ -10,7 +10,6 @@ src_dir = include_directories('source/')
 pkgc = import('pkgconfig')
 
 dyaml_src = [
-    'source/dyaml/anchor.d',
     'source/dyaml/composer.d',
     'source/dyaml/constructor.d',
     'source/dyaml/dumper.d',
@@ -36,7 +35,6 @@ dyaml_src = [
     'source/dyaml/serializer.d',
     'source/dyaml/stream.d',
     'source/dyaml/style.d',
-    'source/dyaml/tag.d',
     'source/dyaml/tagdirective.d',
     'source/dyaml/test/common.d',
     'source/dyaml/test/compare.d',
@@ -49,8 +47,7 @@ dyaml_src = [
     'source/dyaml/test/resolver.d',
     'source/dyaml/test/tokens.d',
     'source/dyaml/token.d',
-    'source/dyaml/unused.d',
-    'source/dyaml/zerostring.d'
+    'source/dyaml/unused.d'
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 

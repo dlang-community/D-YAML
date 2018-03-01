@@ -16,7 +16,6 @@ module dyaml.dumper;
 import std.typecons;
 
 import dyaml.stream;
-import dyaml.anchor;
 import dyaml.emitter;
 import dyaml.encoding;
 import dyaml.event;
