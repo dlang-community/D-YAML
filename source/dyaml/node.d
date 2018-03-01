@@ -1882,25 +1882,18 @@ struct Node
         // Get type of the node value (YAMLObject for user types).
         @property YAMLType type() const @trusted nothrow
         {
-            try
-            {
-                if (value_.type == typeid(YAMLNull)) return YAMLType.Null;
-                else if (value_.type == typeid(YAMLMerge)) return YAMLType.Merge;
-                else if (value_.type == typeid(bool)) return YAMLType.Boolean;
-                else if (value_.type == typeid(long)) return YAMLType.Integer;
-                else if (value_.type == typeid(real)) return YAMLType.Float;
-                else if (value_.type == typeid(ubyte[])) return YAMLType.Binary;
-                else if (value_.type == typeid(SysTime)) return YAMLType.Time;
-                else if (value_.type == typeid(string)) return YAMLType.String;
-                else if (value_.type == typeid(Node.Pair[])) return YAMLType.Mapping;
-                else if (value_.type == typeid(Node[])) return YAMLType.Sequence;
-                else if (value_.type == typeid(YAMLObject)) return YAMLType.UserType;
-                else assert(0, "Unknown type");
-            }
-            catch (Exception)
-            {
-                assert(0, "This should never happen.");
-            }
+            if (value_.type is typeid(YAMLNull)) return YAMLType.Null;
+            else if (value_.type is typeid(YAMLMerge)) return YAMLType.Merge;
+            else if (value_.type is typeid(bool)) return YAMLType.Boolean;
+            else if (value_.type is typeid(long)) return YAMLType.Integer;
+            else if (value_.type is typeid(real)) return YAMLType.Float;
+            else if (value_.type is typeid(ubyte[])) return YAMLType.Binary;
+            else if (value_.type is typeid(SysTime)) return YAMLType.Time;
+            else if (value_.type is typeid(string)) return YAMLType.String;
+            else if (value_.type is typeid(Node.Pair[])) return YAMLType.Mapping;
+            else if (value_.type is typeid(Node[])) return YAMLType.Sequence;
+            else if (value_.type is typeid(YAMLObject)) return YAMLType.UserType;
+            else assert(0, "Unknown type");
         }
 
     public:
@@ -1909,25 +1902,19 @@ struct Node
         // This only works for default YAML types, not for user defined types.
         @property bool isType(T)() const @trusted nothrow
         {
-            try {
-                final switch(YAMLTypeOf!T)
-                {
-                    case YAMLType.Integer: return isInt();
-                    case YAMLType.Boolean: return isBool();
-                    case YAMLType.Float: return isFloat();
-                    case YAMLType.String: return isString();
-                    case YAMLType.Merge: return type == YAMLType.Merge;
-                    case YAMLType.Null: return isNull();
-                    case YAMLType.Binary: return isBinary();
-                    case YAMLType.Sequence: return isSequence();
-                    case YAMLType.Mapping: return isMapping();
-                    case YAMLType.Time: return isTime();
-                    case YAMLType.UserType: return (type == YAMLType.UserType) && (value_.type == typeid(T));
-                }
-            }
-            catch (Exception)
+            final switch(YAMLTypeOf!T)
             {
-                assert(0, "This should never happen.");
+                case YAMLType.Integer: return isInt();
+                case YAMLType.Boolean: return isBool();
+                case YAMLType.Float: return isFloat();
+                case YAMLType.String: return isString();
+                case YAMLType.Merge: return type == YAMLType.Merge;
+                case YAMLType.Null: return isNull();
+                case YAMLType.Binary: return isBinary();
+                case YAMLType.Sequence: return isSequence();
+                case YAMLType.Mapping: return isMapping();
+                case YAMLType.Time: return isTime();
+                case YAMLType.UserType: return (type == YAMLType.UserType) && (value_.type is typeid(T));
             }
         }
 
