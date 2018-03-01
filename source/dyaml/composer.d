@@ -294,7 +294,7 @@ final class Composer
                 throw new ConstructorException("While constructing a mapping, " ~
                                                "expected a mapping or a list of " ~
                                                "mappings for merging, but found: " ~
-                                               node.type.toString() ~
+                                               node.type.text ~
                                                " NOTE: line/column shows topmost parent " ~
                                                "to which the content is being merged",
                                                startMark, endMark);
