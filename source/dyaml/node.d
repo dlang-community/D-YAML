@@ -1056,7 +1056,7 @@ struct Node
 
         /** Return a range object iterating over a sequence, getting each
           * element as T.
-          * 
+          *
           * If T is Node, simply iterate over the nodes in the sequence.
           * Otherwise, convert each node to T during iteration.
           *
@@ -1082,10 +1082,10 @@ struct Node
                 /* Input range functionality. */
                 bool empty() @property { return position >= subnodes.length; }
 
-                void popFront() 
-                { 
+                void popFront()
+                {
                     enforce(!empty, "Attempted to popFront an empty sequence");
-                    position++; 
+                    position++;
                 }
 
                 T front() @property
@@ -1101,14 +1101,14 @@ struct Node
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack()
+                {
                     enforce(!empty, "Attempted to popBack an empty sequence");
-                    subnodes = subnodes[0 .. $ - 1]; 
+                    subnodes = subnodes[0 .. $ - 1];
                 }
 
-                T back() 
-                {  
+                T back()
+                {
                     enforce(!empty, "Attempted to take the back of an empty sequence");
                     static if (is(Unqual!T == Node))
                         return subnodes[$ - 1];
@@ -1155,7 +1155,7 @@ struct Node
         auto mapping() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mapping'-iterate over a " 
+                    new Error("Trying to 'mapping'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             struct Range
             {
@@ -1171,32 +1171,32 @@ struct Node
                 /* Input range functionality. */
                 bool empty() { return position >= pairs.length; }
 
-                void popFront() 
-                { 
+                void popFront()
+                {
                     enforce(!empty, "Attempted to popFront an empty mapping");
-                    position++; 
+                    position++;
                 }
 
-                Pair front() 
-                { 
+                Pair front()
+                {
                     enforce(!empty, "Attempted to take the front of an empty mapping");
-                    return pairs[position]; 
+                    return pairs[position];
                 }
 
                 /* Forward range functionality. */
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack()
+                {
                     enforce(!empty, "Attempted to popBack an empty mapping");
-                    pairs = pairs[0 .. $ - 1]; 
+                    pairs = pairs[0 .. $ - 1];
                 }
 
-                Pair back() 
-                { 
+                Pair back()
+                {
                     enforce(!empty, "Attempted to take the back of an empty mapping");
-                    return pairs[$ - 1]; 
+                    return pairs[$ - 1];
                 }
 
                 /* Random-access range functionality. */
@@ -1240,7 +1240,7 @@ struct Node
         auto mappingKeys(K = Node)() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingKeys'-iterate over a " 
+                    new Error("Trying to 'mappingKeys'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!K == Node))
                 return mapping.map!(pair => pair.key);
@@ -1270,7 +1270,7 @@ struct Node
         auto mappingValues(V = Node)() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingValues'-iterate over a " 
+                    new Error("Trying to 'mappingValues'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!V == Node))
                 return mapping.map!(pair => pair.value);
@@ -1879,33 +1879,109 @@ struct Node
             assert(false);
         }
 
+        static size_t tLutOffset;
+        static void* tNull;
+        static void* tMerge;
+        static void* tBool;
+        static void* tLong;
+        static void* tReal;
+        static void* tUbyteA;
+        static void* tSysT;
+        static void* tString;
+        static void* tNodePr;
+        static void* tNode;
+        static void* tYObj;
+        static YAMLType[] tLUT;
+
+        static this()
+        {
+            void* max, min;
+
+            void addId(T)(ref void* target)
+            {
+                auto a = typeid(T);
+                target = *cast(void**) &a;
+                if (target > max) max = target;
+                if (target < min) min = target;
+            }
+
+            addId!YAMLNull(tNull);
+            addId!YAMLMerge(tMerge);
+            addId!bool(tBool);
+            addId!long(tLong);
+            addId!real(tReal);
+            addId!(ubyte[])(tUbyteA);
+            addId!SysTime(tSysT);
+            addId!string(tString);
+            addId!(Node.Pair[])(tNodePr);
+            addId!(Node[])(tNode);
+            addId!YAMLObject(tYObj);
+
+            tLUT.length = cast(size_t) (max - min);
+            tLutOffset = cast(size_t) min;
+
+            tLUT[cast(size_t) tNull] = YAMLType.Null;
+            tLUT[cast(size_t) tMerge] = YAMLType.Merge;
+            tLUT[cast(size_t) tBool] = YAMLType.Boolean;
+            tLUT[cast(size_t) tLong] = YAMLType.Integer;
+            tLUT[cast(size_t) tReal] = YAMLType.Float;
+            tLUT[cast(size_t) tUbyteA] = YAMLType.Binary;
+            tLUT[cast(size_t) tSysT] = YAMLType.Time;
+            tLUT[cast(size_t) tString] = YAMLType.String;
+            tLUT[cast(size_t) tNodePr] = YAMLType.Mapping;
+            tLUT[cast(size_t) tNode] = YAMLType.Sequence;
+            tLUT[cast(size_t) tYObj] = YAMLType.UserType;
+        }
+
         // Get type of the node value (YAMLObject for user types).
         @property YAMLType type() const @trusted nothrow
         {
-            if (value_.type is typeid(YAMLNull)) return YAMLType.Null;
-            else if (value_.type is typeid(YAMLMerge)) return YAMLType.Merge;
-            else if (value_.type is typeid(bool)) return YAMLType.Boolean;
-            else if (value_.type is typeid(long)) return YAMLType.Integer;
-            else if (value_.type is typeid(real)) return YAMLType.Float;
-            else if (value_.type is typeid(ubyte[])) return YAMLType.Binary;
-            else if (value_.type is typeid(SysTime)) return YAMLType.Time;
-            else if (value_.type is typeid(string)) return YAMLType.String;
-            else if (value_.type is typeid(Node.Pair[])) return YAMLType.Mapping;
-            else if (value_.type is typeid(Node[])) return YAMLType.Sequence;
-            else if (value_.type is typeid(YAMLObject)) return YAMLType.UserType;
-            else assert(0, "Unknown type");
+            auto a = value_.type;
+            const p = *cast(void**) &a;
+
+            return tLUT[cast(size_t)p - tLutOffset];
+
+            /*     if (p is tNull  ) return YAMLType.Null;
+            else if (p is tMerge ) return YAMLType.Merge;
+            else if (p is tBool  ) return YAMLType.Boolean;
+            else if (p is tLong  ) return YAMLType.Integer;
+            else if (p is tReal  ) return YAMLType.Float;
+            else if (p is tUbyteA) return YAMLType.Binary;
+            else if (p is tSysT  ) return YAMLType.Time;
+            else if (p is tString) return YAMLType.String;
+            else if (p is tNodePr) return YAMLType.Mapping;
+            else if (p is tNode  ) return YAMLType.Sequence;
+            else if (p is tYObj  ) return YAMLType.UserType;*/
+
+            //assert(0);
         }
 
     public:
         // Determine if the value stored by the node is of specified type.
         //
         // This only works for default YAML types, not for user defined types.
+        pragma(inline, false)
         @property bool isType(T)() const @trusted nothrow
         {
-            final switch(YAMLTypeOf!T)
-            {
-                case YAMLType.Integer: return isInt();
-                case YAMLType.Boolean: return isBool();
+            enum TT = YAMLTypeOf!T;
+
+                 static if (TT == YAMLType.Integer) return isInt();
+            else static if (TT == YAMLType.Boolean) return isBool();
+            else static if (TT == YAMLType.Float) return isFloat();
+            else static if (TT == YAMLType.String) return isString();
+            else static if (TT == YAMLType.Merge) return type == YAMLType.Merge;
+            else static if (TT == YAMLType.Null) return isNull();
+            else static if (TT == YAMLType.Binary) return isBinary();
+            else static if (TT == YAMLType.Sequence) return isSequence();
+            else static if (TT == YAMLType.Mapping) return isMapping();
+            else static if (TT == YAMLType.Time) return isTime();
+            else static if (TT == YAMLType.UserType) return (type == YAMLType.UserType) && (value_.type is typeid(T));
+            else static assert(0);
+
+
+            /*{
+                case : return isInt();
+                case YAMLType.Boolean:
                 case YAMLType.Float: return isFloat();
                 case YAMLType.String: return isString();
                 case YAMLType.Merge: return type == YAMLType.Merge;
@@ -1915,40 +1991,46 @@ struct Node
                 case YAMLType.Mapping: return isMapping();
                 case YAMLType.Time: return isTime();
                 case YAMLType.UserType: return (type == YAMLType.UserType) && (value_.type is typeid(T));
-            }
+            }*/
         }
 
         // Is the value a bool?
+        pragma(inline, false)
         @property bool isBool() const @safe nothrow
         {
             return type == YAMLType.Boolean;
         }
 
         // Is the value a raw binary buffer?
+        pragma(inline, false)
         @property bool isBinary() const @safe nothrow
         {
             return type == YAMLType.Binary;
         }
 
         // Is the value an integer?
+        pragma(inline, false)
         @property bool isInt() const @safe nothrow
         {
             return type == YAMLType.Integer;
         }
 
         // Is the value a floating point number?
+        pragma(inline, false)
         @property bool isFloat() const @safe nothrow
         {
             return type == YAMLType.Float;
         }
 
         // Is the value a string?
+        pragma(inline, false)
         @property bool isString() const @safe nothrow
         {
             return type == YAMLType.String;
         }
 
         // Is the value a timestamp?
+        pragma(inline, false)
         @property bool isTime() const @safe nothrow
         {
             return type == YAMLType.Time;
