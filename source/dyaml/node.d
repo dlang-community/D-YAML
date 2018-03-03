@@ -51,6 +51,21 @@ package enum NodeID : ubyte
     Mapping
 }
 
+package enum YAMLType
+{
+    Boolean,
+    Binary,
+    Integer,
+    Float,
+    String,
+    Time,
+    Merge,
+    Null,
+    Mapping,
+    Sequence,
+    UserType
+}
+
 /// Null YAML type. Used in nodes with _null values.
 struct YAMLNull
 {
@@ -497,25 +512,25 @@ struct Node
         /// Is this node a sequence?
         @property bool isSequence() const @safe nothrow
         {
-            return isType!(Node[]);
+            return type == YAMLType.Sequence;
         }
 
         /// Is this node a mapping?
         @property bool isMapping()  const @safe nothrow
         {
-            return isType!(Pair[]);
+            return type == YAMLType.Mapping;
         }
 
         /// Is this node a user defined type?
         @property bool isUserType() const @safe nothrow
         {
-            return isType!YAMLObject;
+            return type == YAMLType.UserType;
         }
 
         /// Is this node null?
         @property bool isNull()     const @safe nothrow
         {
-            return isType!YAMLNull;
+            return type == YAMLType.Null;
         }
 
         /// Return tag of the node.
@@ -607,11 +622,11 @@ struct Node
             static if(!allowed!T) if(isUserType)
             {
                 auto object = as!YAMLObject;
-                if(object.type is typeid(T))
+                if(auto casted = cast(YAMLContainer!T)object)
                 {
-                    return (cast(YAMLContainer!T)object).value_;
+                    return casted.value_;
                 }
-                throw new Error("Node stores unexpected type: " ~ object.type.toString() ~
+                throw new Error("Node stores unexpected type: " ~ object.type.text ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -624,7 +639,7 @@ struct Node
                 static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!string);}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new Error("Node stores unexpected type: " ~ type.text ~
                                     ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else
@@ -663,10 +678,10 @@ struct Node
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                         return to!T(temp);
                     }
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new Error("Node stores unexpected type: " ~ type.text ~
                         ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
-                else throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                else throw new Error("Node stores unexpected type: " ~ type.text ~
                                 ". Expected: " ~ typeid(T).toString(), startMark_);
             }
             assert(false, "This code should never be reached");
@@ -704,7 +719,7 @@ struct Node
                 static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!(const string));}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new Error("Node stores unexpected type: " ~ type.text ~
                                     ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
                 else
@@ -742,7 +757,7 @@ struct Node
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                throw new Error("Node stores unexpected type: " ~ type.text ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
@@ -1041,7 +1056,7 @@ struct Node
 
         /** Return a range object iterating over a sequence, getting each
           * element as T.
-          * 
+          *
           * If T is Node, simply iterate over the nodes in the sequence.
           * Otherwise, convert each node to T during iteration.
           *
@@ -1067,10 +1082,10 @@ struct Node
                 /* Input range functionality. */
                 bool empty() @property { return position >= subnodes.length; }
 
-                void popFront() 
-                { 
+                void popFront()
+                {
                     enforce(!empty, "Attempted to popFront an empty sequence");
-                    position++; 
+                    position++;
                 }
 
                 T front() @property
@@ -1086,14 +1101,14 @@ struct Node
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack()
+                {
                     enforce(!empty, "Attempted to popBack an empty sequence");
-                    subnodes = subnodes[0 .. $ - 1]; 
+                    subnodes = subnodes[0 .. $ - 1];
                 }
 
-                T back() 
-                {  
+                T back()
+                {
                     enforce(!empty, "Attempted to take the back of an empty sequence");
                     static if (is(Unqual!T == Node))
                         return subnodes[$ - 1];
@@ -1140,7 +1155,7 @@ struct Node
         auto mapping() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mapping'-iterate over a " 
+                    new Error("Trying to 'mapping'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             struct Range
             {
@@ -1156,32 +1171,32 @@ struct Node
                 /* Input range functionality. */
                 bool empty() { return position >= pairs.length; }
 
-                void popFront() 
-                { 
+                void popFront()
+                {
                     enforce(!empty, "Attempted to popFront an empty mapping");
-                    position++; 
+                    position++;
                 }
 
-                Pair front() 
-                { 
+                Pair front()
+                {
                     enforce(!empty, "Attempted to take the front of an empty mapping");
-                    return pairs[position]; 
+                    return pairs[position];
                 }
 
                 /* Forward range functionality. */
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack()
+                {
                     enforce(!empty, "Attempted to popBack an empty mapping");
-                    pairs = pairs[0 .. $ - 1]; 
+                    pairs = pairs[0 .. $ - 1];
                 }
 
-                Pair back() 
-                { 
+                Pair back()
+                {
                     enforce(!empty, "Attempted to take the back of an empty mapping");
-                    return pairs[$ - 1]; 
+                    return pairs[$ - 1];
                 }
 
                 /* Random-access range functionality. */
@@ -1225,7 +1240,7 @@ struct Node
         auto mappingKeys(K = Node)() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingKeys'-iterate over a " 
+                    new Error("Trying to 'mappingKeys'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!K == Node))
                 return mapping.map!(pair => pair.key);
@@ -1255,7 +1270,7 @@ struct Node
         auto mappingValues(V = Node)() @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingValues'-iterate over a " 
+                    new Error("Trying to 'mappingValues'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!V == Node))
                 return mapping.map!(pair => pair.value);
@@ -1755,8 +1770,7 @@ struct Node
             if(!v1){return v2 ? -1 : 0;}
             if(!v2){return 1;}
 
-            const typeCmp = type.opCmp(rhs.type);
-            if(typeCmp != 0){return typeCmp;}
+            if(type != rhs.type){return type - rhs.type;}
 
             static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
             {
@@ -1776,66 +1790,53 @@ struct Node
                 return 0;
             }
 
-            if(isSequence){return compareCollections!(Node[])(this, rhs);}
-            if(isMapping) {return compareCollections!(Pair[])(this, rhs);}
-            if(isString)
-            {
-                return std.algorithm.cmp(value_.get!(const string),
-                                         rhs.value_.get!(const string));
-            }
-            if(isInt)
-            {
-                return cmp(value_.get!(const long), rhs.value_.get!(const long));
-            }
-            if(isBool)
-            {
-                const b1 = value_.get!(const bool);
-                const b2 = rhs.value_.get!(const bool);
-                return b1 ? b2 ? 0 : 1
-                          : b2 ? -1 : 0;
-            }
-            if(isBinary)
-            {
-                const b1 = value_.get!(const ubyte[]);
-                const b2 = rhs.value_.get!(const ubyte[]);
-                return std.algorithm.cmp(b1, b2);
-            }
-            if(isNull)
-            {
-                return 0;
-            }
-            // Floats need special handling for NaNs .
-            // We consider NaN to be lower than any float.
-            if(isFloat)
-            {
-                const r1 = value_.get!(const real);
-                const r2 = rhs.value_.get!(const real);
-                if(isNaN(r1))
-                {
-                    return isNaN(r2) ? 0 : -1;
-                }
-                if(isNaN(r2))
-                {
-                    return 1;
-                }
-                // Fuzzy equality.
-                if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
-                {
+            final switch(type) {
+                case YAMLType.Boolean:
+                    const b1 = value_.get!(const bool);
+                    const b2 = rhs.value_.get!(const bool);
+                    return b1 ? b2 ? 0 : 1
+                              : b2 ? -1 : 0;
+                case YAMLType.Sequence:
+                    return compareCollections!(Node[])(this, rhs);
+                case YAMLType.Mapping:
+                    return compareCollections!(Pair[])(this, rhs);
+                case YAMLType.String:
+                    return std.algorithm.cmp(value_.get!(const string),
+                                             rhs.value_.get!(const string));
+                case YAMLType.Integer:
+                    return cmp(value_.get!(const long), rhs.value_.get!(const long));
+                case YAMLType.Binary:
+                    const b1 = value_.get!(const ubyte[]);
+                    const b2 = rhs.value_.get!(const ubyte[]);
+                    return std.algorithm.cmp(b1, b2);
+                case YAMLType.Null:
                     return 0;
-                }
-                return cmp(r1, r2);
+                case YAMLType.Merge:
+                    assert(0, "Something has gone terribly wrong.");
+                case YAMLType.Float:
+                    const r1 = value_.get!(const real);
+                    const r2 = rhs.value_.get!(const real);
+                    if(isNaN(r1))
+                    {
+                        return isNaN(r2) ? 0 : -1;
+                    }
+                    if(isNaN(r2))
+                    {
+                        return 1;
+                    }
+                    // Fuzzy equality.
+                    if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
+                    {
+                        return 0;
+                    }
+                    return cmp(r1, r2);
+                case YAMLType.Time:
+                    const t1 = value_.get!(const SysTime);
+                    const t2 = rhs.value_.get!(const SysTime);
+                    return cmp(t1, t2);
+                case YAMLType.UserType:
+                    return value_.get!(const YAMLObject).cmp(rhs.value_.get!(const YAMLObject));
             }
-            else if(isTime)
-            {
-                const t1 = value_.get!(const SysTime);
-                const t2 = rhs.value_.get!(const SysTime);
-                return cmp(t1, t2);
-            }
-            else if(isUserType)
-            {
-                return value_.get!(const YAMLObject).cmp(rhs.value_.get!(const YAMLObject));
-            }
-            assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
 
         // Get a string representation of the node tree. Used for debugging.
@@ -1873,49 +1874,172 @@ struct Node
             if(isScalar)
             {
                 return indent ~ "scalar(" ~
-                       (convertsTo!string ? get!string : type.toString()) ~ ")\n";
+                       (convertsTo!string ? get!string : type.text) ~ ")\n";
             }
             assert(false);
         }
 
-        // Get type of the node value (YAMLObject for user types).
-        @property TypeInfo type() const @trusted nothrow
+        static size_t tLutOffset;
+        static void* tNull;
+        static void* tMerge;
+        static void* tBool;
+        static void* tLong;
+        static void* tReal;
+        static void* tUbyteA;
+        static void* tSysT;
+        static void* tString;
+        static void* tNodePr;
+        static void* tNode;
+        static void* tYObj;
+        static YAMLType[] tLUT;
+
+        static this()
         {
-            alias TypeInfo delegate() const nothrow nothrowType;
-            return (cast(nothrowType)&value_.type)();
+            void* max, min;
+
+            void addId(T)(ref void* target)
+            {
+                auto a = typeid(T);
+                target = *cast(void**) &a;
+                if (target > max) max = target;
+                if (target < min) min = target;
+            }
+
+            addId!YAMLNull(tNull);
+            addId!YAMLMerge(tMerge);
+            addId!bool(tBool);
+            addId!long(tLong);
+            addId!real(tReal);
+            addId!(ubyte[])(tUbyteA);
+            addId!SysTime(tSysT);
+            addId!string(tString);
+            addId!(Node.Pair[])(tNodePr);
+            addId!(Node[])(tNode);
+            addId!YAMLObject(tYObj);
+
+            tLUT.length = cast(size_t) (max - min);
+            tLutOffset = cast(size_t) min;
+
+            tLUT[cast(size_t) tNull] = YAMLType.Null;
+            tLUT[cast(size_t) tMerge] = YAMLType.Merge;
+            tLUT[cast(size_t) tBool] = YAMLType.Boolean;
+            tLUT[cast(size_t) tLong] = YAMLType.Integer;
+            tLUT[cast(size_t) tReal] = YAMLType.Float;
+            tLUT[cast(size_t) tUbyteA] = YAMLType.Binary;
+            tLUT[cast(size_t) tSysT] = YAMLType.Time;
+            tLUT[cast(size_t) tString] = YAMLType.String;
+            tLUT[cast(size_t) tNodePr] = YAMLType.Mapping;
+            tLUT[cast(size_t) tNode] = YAMLType.Sequence;
+            tLUT[cast(size_t) tYObj] = YAMLType.UserType;
+        }
+
+        // Get type of the node value (YAMLObject for user types).
+        @property YAMLType type() const @trusted nothrow
+        {
+            auto a = value_.type;
+            const p = *cast(void**) &a;
+
+            return tLUT[cast(size_t)p - tLutOffset];
+
+            /*     if (p is tNull  ) return YAMLType.Null;
+            else if (p is tMerge ) return YAMLType.Merge;
+            else if (p is tBool  ) return YAMLType.Boolean;
+            else if (p is tLong  ) return YAMLType.Integer;
+            else if (p is tReal  ) return YAMLType.Float;
+            else if (p is tUbyteA) return YAMLType.Binary;
+            else if (p is tSysT  ) return YAMLType.Time;
+            else if (p is tString) return YAMLType.String;
+            else if (p is tNodePr) return YAMLType.Mapping;
+            else if (p is tNode  ) return YAMLType.Sequence;
+            else if (p is tYObj  ) return YAMLType.UserType;*/
+
+            //assert(0);
         }
 
     public:
         // Determine if the value stored by the node is of specified type.
         //
         // This only works for default YAML types, not for user defined types.
-        @property bool isType(T)() const @safe nothrow
+        pragma(inline, false)
+        @property bool isType(T)() const @trusted nothrow
         {
-            return this.type is typeid(Unqual!T);
+            enum TT = YAMLTypeOf!T;
+
+                 static if (TT == YAMLType.Integer) return isInt();
+            else static if (TT == YAMLType.Boolean) return isBool();
+            else static if (TT == YAMLType.Float) return isFloat();
+            else static if (TT == YAMLType.String) return isString();
+            else static if (TT == YAMLType.Merge) return type == YAMLType.Merge;
+            else static if (TT == YAMLType.Null) return isNull();
+            else static if (TT == YAMLType.Binary) return isBinary();
+            else static if (TT == YAMLType.Sequence) return isSequence();
+            else static if (TT == YAMLType.Mapping) return isMapping();
+            else static if (TT == YAMLType.Time) return isTime();
+            else static if (TT == YAMLType.UserType) return (type == YAMLType.UserType) && (value_.type is typeid(T));
+            else static assert(0);
+
+
+            /*{
+                case : return isInt();
+                case YAMLType.Boolean:
+                case YAMLType.Float: return isFloat();
+                case YAMLType.String: return isString();
+                case YAMLType.Merge: return type == YAMLType.Merge;
+                case YAMLType.Null: return isNull();
+                case YAMLType.Binary: return isBinary();
+                case YAMLType.Sequence: return isSequence();
+                case YAMLType.Mapping: return isMapping();
+                case YAMLType.Time: return isTime();
+                case YAMLType.UserType: return (type == YAMLType.UserType) && (value_.type is typeid(T));
+            }*/
         }
 
         // Is the value a bool?
-        alias isType!bool isBool;
+        pragma(inline, false)
+        @property bool isBool() const @safe nothrow
+        {
+            return type == YAMLType.Boolean;
+        }
 
         // Is the value a raw binary buffer?
-        alias isType!(ubyte[]) isBinary;
+        pragma(inline, false)
+        @property bool isBinary() const @safe nothrow
+        {
+            return type == YAMLType.Binary;
+        }
 
         // Is the value an integer?
-        alias isType!long isInt;
+        pragma(inline, false)
+        @property bool isInt() const @safe nothrow
+        {
+            return type == YAMLType.Integer;
+        }
 
         // Is the value a floating point number?
-        alias isType!real isFloat;
+        pragma(inline, false)
+        @property bool isFloat() const @safe nothrow
+        {
+            return type == YAMLType.Float;
+        }
 
         // Is the value a string?
-        alias isType!string isString;
+        pragma(inline, false)
+        @property bool isString() const @safe nothrow
+        {
+            return type == YAMLType.String;
+        }
 
         // Is the value a timestamp?
-        alias isType!SysTime isTime;
+        pragma(inline, false)
+        @property bool isTime() const @safe nothrow
+        {
+            return type == YAMLType.Time;
+        }
 
         // Does given node have the same type as this node?
-        bool hasEqualType(const ref Node node) const @safe
+        bool hasEqualType(const ref Node node) const @safe nothrow
         {
-            return this.type is node.type;
+            return type == node.type;
         }
 
         // Return a string describing node type (sequence, mapping or scalar)
@@ -2106,5 +2230,53 @@ void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @trusted
     foreach(ref pair; toMerge) if(!canFind!eq(pairs.data, pair))
     {
         pairs.put(pair);
+    }
+}
+
+
+template YAMLTypeOf(T) {
+    static if (is(Unqual!T == long))
+    {
+        enum YAMLTypeOf = YAMLType.Integer;
+    }
+    else static if (is(Unqual!T == real))
+    {
+        enum YAMLTypeOf = YAMLType.Float;
+    }
+    else static if (is(Unqual!T == string))
+    {
+        enum YAMLTypeOf = YAMLType.String;
+    }
+    else static if (is(Unqual!T == Node.Pair[]))
+    {
+        enum YAMLTypeOf = YAMLType.Mapping;
+    }
+    else static if (is(Unqual!T == Node[]))
+    {
+        enum YAMLTypeOf = YAMLType.Sequence;
+    }
+    else static if (is(Unqual!T == ubyte[]))
+    {
+        enum YAMLTypeOf = YAMLType.Binary;
+    }
+    else static if (is(Unqual!T == bool))
+    {
+        enum YAMLTypeOf = YAMLType.Boolean;
+    }
+    else static if (is(Unqual!T == SysTime))
+    {
+        enum YAMLTypeOf = YAMLType.Time;
+    }
+    else static if (is(Unqual!T == YAMLNull))
+    {
+        enum YAMLTypeOf = YAMLType.Null;
+    }
+    else static if (is(Unqual!T == YAMLMerge))
+    {
+        enum YAMLTypeOf = YAMLType.Merge;
+    }
+    else
+    {
+        enum YAMLTypeOf = YAMLType.UserType;
     }
 }

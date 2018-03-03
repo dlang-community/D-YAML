@@ -48,7 +48,7 @@ final class Representer
 {
     private:
         // Representer functions indexed by types.
-        Node function(ref Node, Representer)[TypeInfo] representers_;
+        Node function(ref Node, Representer)[Tuple!(YAMLType, TypeInfo)] representers_;
         // Default style for scalar nodes.
         ScalarStyle defaultScalarStyle_ = ScalarStyle.Invalid;
         // Default style for collection nodes.
@@ -225,10 +225,11 @@ final class Representer
         void addRepresenter(T)(Node function(ref Node, Representer) representer) 
             @trusted pure
         {
-            assert((typeid(T) in representers_) is null, 
+            enum type = tuple(YAMLTypeOf!T, (YAMLTypeOf!T == YAMLType.UserType) ? typeid(T) : typeid(void));
+            assert((type in representers_) is null,
                    "Representer function for data type " ~ T.stringof ~
                    " already specified. Can't specify another one");
-            representers_[typeid(T)] = representer;
+            representers_[type] = representer;
         }
 
         //If profiling shows a bottleneck on tag construction in these 3 methods,
@@ -431,13 +432,12 @@ final class Representer
         Node representData(ref Node data) @system
         {
             //User types are wrapped in YAMLObject.
-            auto type = data.isUserType ? data.as!YAMLObject.type : data.type;
+            auto type = tuple(data.type, data.isUserType ? data.as!YAMLObject.type : typeid(void));
 
             enforce((type in representers_) !is null,
-                    new RepresenterException("No representer function for type " 
-                                             ~ type.toString() ~ " , cannot represent."));
+                    new RepresenterException("No representer function for type "
+                                             ~ type.text ~ " , cannot represent."));
             Node result = representers_[type](data, this);
-
             //Override tag if specified.
             if(data.tag_ !is null){result.tag_ = data.tag_;}
 
