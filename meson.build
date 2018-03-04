@@ -73,3 +73,10 @@ pkgc.generate(name: 'dyaml',
               version: project_version,
               description: 'YAML parser and emitter for the D programming language.'
 )
+
+# Make D-YAML easy to use as subproject
+dyaml_dep = declare_dependency(
+    link_with: dyaml_lib,
+    include_directories: [src_dir],
+    dependencies: [tinyendian_dep]
+)
