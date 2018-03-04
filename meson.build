@@ -1,9 +1,9 @@
 project('D-YAML', 'd',
     meson_version: '>=0.40.0',
-    subproject_dir: 'contrib'
+    subproject_dir: 'contrib',
+    version: '0.6.2'
 )
 
-project_version      = '0.6.2'
 project_soversion    = '0'
 
 src_dir = include_directories('source/')
@@ -51,26 +51,20 @@ dyaml_src = [
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
-tinyendian_dep = dependency('tinyendian', version: '>=0.1.2', required: false)
-if not tinyendian_dep.found()
-    tinyendian_sp = subproject('tinyendian')
-    tinyendian_dep = declare_dependency(link_with: tinyendian_sp.get_variable('tinyendian_lib'),
-        include_directories: tinyendian_sp.get_variable('src_dir')
-    )
-endif
+tinyendian_dep = dependency('tinyendian', version: '>=0.1.2', fallback: ['tinyendian', 'tinyendian_dep'])
 
 dyaml_lib = library('dyaml',
         [dyaml_src],
         include_directories: [src_dir],
         dependencies: [tinyendian_dep],
         install: true,
-        version: project_version,
+        version: meson.project_version(),
         soversion: project_soversion
 )
 pkgc.generate(name: 'dyaml',
               libraries: dyaml_lib,
               subdirs: 'd/yaml/',
-              version: project_version,
+              version: meson.project_version(),
               description: 'YAML parser and emitter for the D programming language.'
 )
 
