@@ -432,7 +432,7 @@ final class Parser
             uint tagHandleEnd;
 
             //Get anchor/tag if detected. Return false otherwise.
-            bool get(const TokenID id, const Flag!"first" first, ref string target) @trusted
+            bool get(const TokenID id, const Flag!"first" first, ref string target) @safe
             {
                 if(!scanner_.checkToken(id)){return false;}
                 invalidMarks = false;
@@ -444,7 +444,7 @@ final class Parser
                     tagHandleEnd = token.valueDivider;
                 }
                 endMark = token.endMark;
-                target  = cast(string)token.value;
+                target  = token.value.idup;
                 return true;
             }
 
