@@ -25,10 +25,10 @@ alias std.system.endian endian;
 /// Params:  wrong = Get the incorrect BOM for this system.
 ///
 /// Returns: UTF-16 byte order mark.
-wchar bom16(bool wrong = false) pure
+wchar bom16(bool wrong = false) pure @safe
 {
-    wchar little  = *(cast(wchar*)ByteOrderMarks[BOM.UTF16LE]);
-    wchar big     = *(cast(wchar*)ByteOrderMarks[BOM.UTF16BE]);
+    wchar little = '\uFEFF';
+    wchar big = '\uFFFE';
     if(!wrong){return endian == Endian.littleEndian ? little : big;}
     return endian == Endian.littleEndian ? big : little;
 }
@@ -38,10 +38,10 @@ wchar bom16(bool wrong = false) pure
 /// Params:  wrong = Get the incorrect BOM for this system.
 ///
 /// Returns: UTF-32 byte order mark.
-dchar bom32(bool wrong = false) pure
+dchar bom32(bool wrong = false) pure @safe
 {
-    dchar little = *(cast(dchar*)ByteOrderMarks[BOM.UTF32LE]);
-    dchar big    = *(cast(dchar*)ByteOrderMarks[BOM.UTF32BE]);
+    dchar little = '\uFEFF';
+    dchar big = '\uFFFE';
     if(!wrong){return endian == Endian.littleEndian ? little : big;}
     return endian == Endian.littleEndian ? big : little;
 }
@@ -50,7 +50,7 @@ dchar bom32(bool wrong = false) pure
 ///
 /// Params:  verbose         = Print verbose output?
 ///          unicodeFilename = File name to read from.
-void testUnicodeInput(bool verbose, string unicodeFilename)
+void testUnicodeInput(bool verbose, string unicodeFilename) @safe
 {
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
@@ -70,7 +70,7 @@ void testUnicodeInput(bool verbose, string unicodeFilename)
 ///
 /// Params:  verbose         = Print verbose output?
 ///          unicodeFilename = File name to read from.
-void testUnicodeInputErrors(bool verbose, string unicodeFilename)
+void testUnicodeInputErrors(bool verbose, string unicodeFilename) @safe
 {
     string data = readText(unicodeFilename);
     foreach(buffer; [cast(void[])(data.to!(wchar[])),
@@ -81,7 +81,7 @@ void testUnicodeInputErrors(bool verbose, string unicodeFilename)
         try { Loader(buffer).load(); }
         catch(YAMLException e)
         {
-            if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+            printException(e, verbose);
             continue;
         }
         assert(false, "Expected an exception");
@@ -89,7 +89,7 @@ void testUnicodeInputErrors(bool verbose, string unicodeFilename)
 }
 
 
-unittest
+@safe unittest
 {
     writeln("D:YAML I/O unittest");
     run("testUnicodeInput", &testUnicodeInput, ["unicode"]);

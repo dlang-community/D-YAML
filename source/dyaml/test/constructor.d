@@ -23,7 +23,7 @@ import dyaml.test.common;
 Node[][string] expected;
 
 ///Initialize expected.
-static this()
+static this() @safe
 {
     expected["aliases-cdumper-bug"]         = constructAliasesCDumperBug();
     expected["construct-binary"]            = constructBinary();
@@ -64,15 +64,15 @@ Node.Pair pair(A, B)(A a, B b)
 
 ///Test cases:
 
-Node[] constructAliasesCDumperBug()
+Node[] constructAliasesCDumperBug() @safe
 {
     return [Node(["today", "today"])];
 }
 
-Node[] constructBinary()
+Node[] constructBinary() @safe
 {
-    auto canonical   = cast(ubyte[])"GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;";
-    auto generic     = cast(ubyte[])"GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;";
+    auto canonical   = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation;
+    auto generic     = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation;
     auto description = "The binary value above is a tiny arrow encoded as a gif image.";
 
     return [Node([pair("canonical",   canonical),
@@ -80,7 +80,7 @@ Node[] constructBinary()
                   pair("description", description)])];
 }
 
-Node[] constructBool()
+Node[] constructBool() @safe
 {
     const(bool) a = true;
     immutable(bool) b = true;
@@ -97,13 +97,13 @@ Node[] constructBool()
                   pair("but", [pair("y", "is a string"), pair("n", "is a string")])])];
 }
 
-Node[] constructCustom()
+Node[] constructCustom() @safe
 {
     return [Node([Node(new TestClass(1, 2, 3)),
                   Node(TestStruct(10))])];
 }
 
-Node[] constructFloat()
+Node[] constructFloat() @safe
 {
     return [Node([pair("canonical",         cast(real)685230.15),
                   pair("exponential",       cast(real)685230.15),
@@ -113,7 +113,7 @@ Node[] constructFloat()
                   pair("not a number",      real.nan)])];
 }
 
-Node[] constructInt()
+Node[] constructInt() @safe
 {
     return [Node([pair("canonical",   685230L),
                   pair("decimal",     685230L),
@@ -123,7 +123,7 @@ Node[] constructInt()
                   pair("sexagesimal", 685230L)])];
 }
 
-Node[] constructMap()
+Node[] constructMap() @safe
 {
     return [Node([pair("Block style",
                        [pair("Clark", "Evans"),
@@ -135,7 +135,7 @@ Node[] constructMap()
                         pair("Oren", "Ben-Kiki")])])];
 }
 
-Node[] constructMerge()
+Node[] constructMerge() @safe
 {
     return [Node([Node([pair("x", 1L), pair("y", 2L)]),
                   Node([pair("x", 0L), pair("y", 2L)]),
@@ -147,7 +147,7 @@ Node[] constructMerge()
                   Node([pair("x", 1L), pair("label", "center/big"), pair("r", 10L), pair("y", 2L)])])];
 }
 
-Node[] constructNull()
+Node[] constructNull() @safe
 {
     return [Node(YAMLNull()),
             Node([pair("empty", YAMLNull()),
@@ -162,7 +162,7 @@ Node[] constructNull()
                         Node(YAMLNull())])])];
 }
 
-Node[] constructOMap()
+Node[] constructOMap() @safe
 {
     return [Node([pair("Bestiary",
                        [pair("aardvark", "African pig-like ant eater. Ugly."),
@@ -173,7 +173,7 @@ Node[] constructOMap()
                                   pair("three", 3L)])])];
 }
 
-Node[] constructPairs()
+Node[] constructPairs() @safe
 {
     return [Node([pair("Block tasks",
                        Node([pair("meeting", "with team."),
@@ -185,7 +185,7 @@ Node[] constructPairs()
                              pair("meeting", "with boss")], "tag:yaml.org,2002:pairs"))])];
 }
 
-Node[] constructSeq()
+Node[] constructSeq() @safe
 {
     return [Node([pair("Block style",
                        [Node("Mercury"), Node("Venus"), Node("Earth"), Node("Mars"),
@@ -197,7 +197,7 @@ Node[] constructSeq()
                         Node("Pluto")])])];
 }
 
-Node[] constructSet()
+Node[] constructSet() @safe
 {
     return [Node([pair("baseball players",
                        [Node("Mark McGwire"), Node("Sammy Sosa"), Node("Ken Griffey")]),
@@ -205,22 +205,22 @@ Node[] constructSet()
                        [Node("Boston Red Sox"), Node("Detroit Tigers"), Node("New York Yankees")])])];
 }
 
-Node[] constructStrASCII()
+Node[] constructStrASCII() @safe
 {
     return [Node("ascii string")];
 }
 
-Node[] constructStr()
+Node[] constructStr() @safe
 {
     return [Node([pair("string", "abcd")])];
 }
 
-Node[] constructStrUTF8()
+Node[] constructStrUTF8() @safe
 {
     return [Node("\u042d\u0442\u043e \u0443\u043d\u0438\u043a\u043e\u0434\u043d\u0430\u044f \u0441\u0442\u0440\u043e\u043a\u0430")];
 }
 
-Node[] constructTimestamp()
+Node[] constructTimestamp() @safe
 {
     alias DT = DateTime;
     alias ST = SysTime;
@@ -231,7 +231,7 @@ Node[] constructTimestamp()
                   pair("date (00:00:00Z)", ST(DT(2002, 12, 14), UTC()))])];
 }
 
-Node[] constructValue()
+Node[] constructValue() @safe
 {
     return[Node([pair("link with",
                       [Node("library1.dll"), Node("library2.dll")])]),
@@ -240,7 +240,7 @@ Node[] constructValue()
                        Node([pair("=", "library2.dll"), pair("version", cast(real)2.3)])])])];
 }
 
-Node[] duplicateMergeKey()
+Node[] duplicateMergeKey() @safe
 {
     return [Node([pair("foo", "bar"),
                   pair("x", 1L),
@@ -249,7 +249,7 @@ Node[] duplicateMergeKey()
                   pair("t", 4L)])];
 }
 
-Node[] floatRepresenterBug()
+Node[] floatRepresenterBug() @safe
 {
     return [Node([pair(cast(real)1.0, 1L),
                   pair(real.infinity, 10L),
@@ -257,12 +257,12 @@ Node[] floatRepresenterBug()
                   pair(real.nan, 100L)])];
 }
 
-Node[] invalidSingleQuoteBug()
+Node[] invalidSingleQuoteBug() @safe
 {
     return [Node([Node("foo \'bar\'"), Node("foo\n\'bar\'")])];
 }
 
-Node[] moreFloats()
+Node[] moreFloats() @safe
 {
     return [Node([Node(cast(real)0.0),
                   Node(cast(real)1.0),
@@ -273,17 +273,17 @@ Node[] moreFloats()
                   Node(real.nan)])];
 }
 
-Node[] negativeFloatBug()
+Node[] negativeFloatBug() @safe
 {
     return [Node(cast(real)-1.0)];
 }
 
-Node[] singleDotFloatBug()
+Node[] singleDotFloatBug() @safe
 {
     return [Node(".")];
 }
 
-Node[] timestampBugs()
+Node[] timestampBugs() @safe
 {
     alias DT = DateTime;
     alias ST = SysTime;
@@ -296,22 +296,22 @@ Node[] timestampBugs()
                   Node(ST(DT(2005, 7, 8, 17, 35, 4),    5176000.dur!"hnsecs", UTC()))])];
 }
 
-Node[] utf16be()
+Node[] utf16be() @safe
 {
     return [Node("UTF-16-BE")];
 }
 
-Node[] utf16le()
+Node[] utf16le() @safe
 {
     return [Node("UTF-16-LE")];
 }
 
-Node[] utf8()
+Node[] utf8() @safe
 {
     return [Node("UTF-8")];
 }
 
-Node[] utf8implicit()
+Node[] utf8implicit() @safe
 {
     return [Node("implicit UTF-8")];
 }
@@ -321,7 +321,7 @@ class TestClass
 {
     int x, y, z;
 
-    this(int x, int y, int z)
+    this(int x, int y, int z) @safe
     {
         this.x = x;
         this.y = y;
@@ -330,7 +330,7 @@ class TestClass
 
     //Any D:YAML type must have a custom opCmp operator.
     //This is used for ordering in mappings.
-    override int opCmp(Object o)
+    override int opCmp(Object o) @safe
     {
         TestClass s = cast(TestClass)o;
         if(s is null){return -1;}
@@ -340,7 +340,7 @@ class TestClass
         return 0;
     }
 
-    override string toString()
+    override string toString() @safe
     {
         return format("TestClass(", x, ", ", y, ", ", z, ")");
     }
@@ -353,19 +353,19 @@ struct TestStruct
 
     //Any D:YAML type must have a custom opCmp operator.
     //This is used for ordering in mappings.
-    const int opCmp(ref const TestStruct s)
+    const int opCmp(ref const TestStruct s) @safe
     {
         return value - s.value;
     }
 }
 
 ///Constructor function for TestClass.
-TestClass constructClass(ref Node node)
+TestClass constructClass(ref Node node) @safe
 {
     return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
-Node representClass(ref Node node, Representer representer)
+Node representClass(ref Node node, Representer representer) @safe
 {
     auto value = node.as!TestClass;
     auto pairs = [Node.Pair("x", value.x),
@@ -377,13 +377,13 @@ Node representClass(ref Node node, Representer representer)
 }
 
 ///Constructor function for TestStruct.
-TestStruct constructStruct(ref Node node)
+TestStruct constructStruct(ref Node node) @safe
 {
     return TestStruct(to!int(node.as!string));
 }
 
 ///Representer function for TestStruct.
-Node representStruct(ref Node node, Representer representer)
+Node representStruct(ref Node node, Representer representer) @safe
 {
     string[] keys, values;
     auto value = node.as!TestStruct;
@@ -398,7 +398,7 @@ Node representStruct(ref Node node, Representer representer)
  *          codeDummy    = Dummy .code filename, used to determine that
  *                         .data file with the same name should be used in this test.
  */
-void testConstructor(bool verbose, string dataFilename, string codeDummy)
+void testConstructor(bool verbose, string dataFilename, string codeDummy) @safe
 {
     string base = dataFilename.baseName.stripExtension;
     enforce((base in expected) !is null,
@@ -436,7 +436,7 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy)
 }
 
 
-unittest
+@safe unittest
 {
     writeln("D:YAML Constructor unittest");
     run("testConstructor", &testConstructor, ["data", "code"]);

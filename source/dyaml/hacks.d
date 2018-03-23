@@ -39,7 +39,7 @@ ScalarStyle scalarStyleHack(ref const(Node) node) @safe nothrow
     assert(node.isScalar, "Trying to get scalar style of a non-scalar node");
     return node.scalarStyle;
 }
-unittest
+@safe unittest
 {
     writeln("D:YAML scalarStyleHack getter unittest");
     auto node = Node(5);
@@ -57,7 +57,7 @@ CollectionStyle collectionStyleHack(ref const(Node) node) @safe nothrow
     assert(!node.isScalar, "Trying to get collection style of a scalar node");
     return node.collectionStyle;
 }
-unittest
+@safe unittest
 {
     writeln("D:YAML collectionStyleHack getter unittest");
     auto node = Node([1, 2, 3, 4, 5]);
@@ -77,7 +77,7 @@ void scalarStyleHack(ref Node node, const ScalarStyle rhs) @safe nothrow
     node.scalarStyle = rhs;
 }
 ///
-unittest
+@safe unittest
 {
     writeln("D:YAML scalarStyleHack setter unittest");
     auto node = Node(5);
@@ -97,7 +97,7 @@ void collectionStyleHack(ref Node node, const CollectionStyle rhs) @safe nothrow
     node.collectionStyle = rhs;
 }
 ///
-unittest
+@safe unittest
 {
     writeln("D:YAML collectionStyleHack setter unittest");
     auto node = Node([1, 2, 3, 4, 5]);

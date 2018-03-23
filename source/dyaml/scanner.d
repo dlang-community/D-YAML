@@ -171,7 +171,7 @@ final class Scanner
         }
 
         /// Destroy the scanner.
-        @trusted ~this()
+        ~this() @trusted
         {
             tokens_.destroy();
             indents_.destroy();
@@ -233,14 +233,14 @@ final class Scanner
 
     private:
         /// Build an error message in msgBuffer_ and return it as a string.
-        string buildMsg(S ...)(S args) @trusted pure nothrow @nogc
+        string buildMsg(S ...)(S args) @trusted
         {
             return cast(string)msgBuffer_.printNoGC(args);
         }
 
         /// Most scanning error messages have the same format; so build them with this
         /// function.
-        string expected(T)(string expected, T found) @safe pure nothrow @nogc
+        string expected(T)(string expected, T found)
         {
             return buildMsg("expected ", expected, ", but found ", found);
         }
@@ -489,7 +489,7 @@ final class Scanner
         }
 
         /// Add DOCUMENT-START or DOCUMENT-END token.
-        void fetchDocumentIndicator(TokenID id)() @safe
+        void fetchDocumentIndicator(TokenID id)()
             if(id == TokenID.DocumentStart || id == TokenID.DocumentEnd)
         {
             // Set indentation to -1 .
@@ -508,7 +508,7 @@ final class Scanner
         alias fetchDocumentIndicator!(TokenID.DocumentEnd) fetchDocumentEnd;
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
-        void fetchFlowCollectionStart(TokenID id)() @trusted
+        void fetchFlowCollectionStart(TokenID id)() @safe
         {
             // '[' and '{' may start a simple key.
             savePossibleSimpleKey();
@@ -526,7 +526,7 @@ final class Scanner
         alias fetchFlowCollectionStart!(TokenID.FlowMappingStart) fetchFlowMappingStart;
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
-        void fetchFlowCollectionEnd(TokenID id)() @safe
+        void fetchFlowCollectionEnd(TokenID id)()
         {
             // Reset possible simple key on the current level.
             removePossibleSimpleKey();
@@ -560,7 +560,7 @@ final class Scanner
         ///
         /// Params:  type = String representing the token type we might need to add.
         ///          id   = Token type we might need to add.
-        void blockChecks(string type, TokenID id)() @safe
+        void blockChecks(string type, TokenID id)()
         {
             enum context = type ~ " keys are not allowed here";
             // Are we allowed to start a key (not neccesarily a simple one)?
@@ -659,7 +659,7 @@ final class Scanner
         }
 
         /// Add ALIAS or ANCHOR token.
-        void fetchAnchor_(TokenID id)() @trusted
+        void fetchAnchor_(TokenID id)() @safe
             if(id == TokenID.Alias || id == TokenID.Anchor)
         {
             // ALIAS/ANCHOR could be a simple key.
@@ -677,7 +677,7 @@ final class Scanner
         alias fetchAnchor_!(TokenID.Anchor) fetchAnchor;
 
         /// Add TAG token.
-        void fetchTag() @trusted
+        void fetchTag() @safe
         {
             //TAG could start a simple key.
             savePossibleSimpleKey();
@@ -689,7 +689,7 @@ final class Scanner
         }
 
         /// Add block SCALAR token.
-        void fetchBlockScalar(ScalarStyle style)() @trusted
+        void fetchBlockScalar(ScalarStyle style)() @safe
             if(style == ScalarStyle.Literal || style == ScalarStyle.Folded)
         {
             // Reset possible simple key on the current level.
@@ -707,7 +707,7 @@ final class Scanner
         alias fetchBlockScalar!(ScalarStyle.Folded) fetchFolded;
 
         /// Add quoted flow SCALAR token.
-        void fetchFlowScalar(ScalarStyle quotes)() @safe
+        void fetchFlowScalar(ScalarStyle quotes)()
         {
             // A flow scalar could be a simple key.
             savePossibleSimpleKey();
@@ -828,7 +828,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanAlphaNumericToSlice(string name)(const Mark startMark) @system
+        void scanAlphaNumericToSlice(string name)(const Mark startMark)
         {
             size_t length = 0;
             dchar c = reader_.peek();
@@ -855,7 +855,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        void scanToNextBreakToSlice() @system
+        void scanToNextBreakToSlice() @safe
         {
             uint length = 0;
             while(!searchAllBreaks.canFind(reader_.peek(length)))
@@ -905,7 +905,7 @@ final class Scanner
         }
 
         /// Scan directive token.
-        Token scanDirective() @trusted
+        Token scanDirective() @safe
         {
             Mark startMark = reader_.mark;
             // Skip the '%'.
@@ -949,7 +949,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanDirectiveNameToSlice(const Mark startMark) @system
+        void scanDirectiveNameToSlice(const Mark startMark) @safe
         {
             // Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
@@ -966,7 +966,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveValueToSlice(const Mark startMark) @system
+        void scanYAMLDirectiveValueToSlice(const Mark startMark) @safe
         {
             findNextNonSpace();
 
@@ -999,7 +999,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanYAMLDirectiveNumberToSlice(const Mark startMark) @system
+        void scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
         {
             if(!isDigit(reader_.peek()))
             {
@@ -1023,7 +1023,7 @@ final class Scanner
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        uint scanTagDirectiveValueToSlice(const Mark startMark) @system
+        uint scanTagDirectiveValueToSlice(const Mark startMark) @safe
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder.length;
@@ -1042,7 +1042,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectiveHandleToSlice(const Mark startMark) @system
+        void scanTagDirectiveHandleToSlice(const Mark startMark) @safe
         {
             scanTagHandleToSlice!"directive"(startMark);
             if(error_) { return; }
@@ -1057,7 +1057,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagDirectivePrefixToSlice(const Mark startMark) @system
+        void scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             scanTagURIToSlice!"directive"(startMark);
             if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
@@ -1094,7 +1094,7 @@ final class Scanner
         /// Therefore we restrict aliases to ASCII alphanumeric characters.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanAnchor(const TokenID id) @trusted
+        Token scanAnchor(const TokenID id) @safe
         {
             const startMark = reader_.mark;
             const dchar i = reader_.get();
@@ -1130,7 +1130,7 @@ final class Scanner
         /// Scan a tag token.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanTag() @trusted
+        Token scanTag() @safe
         {
             const startMark = reader_.mark;
             dchar c = reader_.peek(1);
@@ -1448,7 +1448,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice() @system
+        Tuple!(uint, Mark) scanBlockScalarIndentationToSlice() @safe
         {
             uint maxIndent;
             Mark endMark = reader_.mark;
@@ -1472,7 +1472,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        Mark scanBlockScalarBreaksToSlice(const uint indent) @trusted
+        Mark scanBlockScalarBreaksToSlice(const uint indent) @safe
         {
             Mark endMark = reader_.mark;
 
@@ -1490,7 +1490,7 @@ final class Scanner
         /// Scan a qouted flow scalar token with specified quotes.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanFlowScalar(const ScalarStyle quotes) @trusted
+        Token scanFlowScalar(const ScalarStyle quotes) @safe
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
@@ -1521,7 +1521,7 @@ final class Scanner
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
-            @system
+            @safe
         {
             for(;;) with(ScalarStyle)
             {
@@ -1635,7 +1635,7 @@ final class Scanner
         /// spaces into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanFlowScalarSpacesToSlice(const Mark startMark) @system
+        void scanFlowScalarSpacesToSlice(const Mark startMark) @safe
         {
             // Increase length as long as we see whitespace.
             size_t length = 0;
@@ -1680,7 +1680,7 @@ final class Scanner
         /// line breaks into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        bool scanFlowScalarBreaksToSlice(const Mark startMark) @system
+        bool scanFlowScalarBreaksToSlice(const Mark startMark) @safe
         {
             // True if at least one line break was found.
             bool anyBreaks;
@@ -1873,7 +1873,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagHandleToSlice(string name)(const Mark startMark) @system
+        void scanTagHandleToSlice(string name)(const Mark startMark)
         {
             dchar c = reader_.peek();
             enum contextMsg = "While scanning a " ~ name;
@@ -1910,7 +1910,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanTagURIToSlice(string name)(const Mark startMark) @trusted
+        void scanTagURIToSlice(string name)(const Mark startMark)
         {
             // Note: we do not check if URI is well-formed.
             dchar c = reader_.peek();
@@ -1952,7 +1952,7 @@ final class Scanner
         /// characters into that slice.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        void scanURIEscapesToSlice(string name)(const Mark startMark) @system
+        void scanURIEscapesToSlice(string name)(const Mark startMark)
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
@@ -1967,7 +1967,7 @@ final class Scanner
             //
             // Returns the number of bytes used by the dchar in bytes on success,
             // size_t.max on failure.
-            static size_t getDchar(char[] bytes, Reader reader_)
+            static size_t getDchar(char[] bytes, Reader reader_) @trusted
             {
                 size_t nextChar;
                 dchar c;
@@ -1985,7 +1985,7 @@ final class Scanner
                 reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)
                 {
-                    core.stdc.string.memmove(bytes.ptr, bytes.ptr + nextChar,
+                    core.stdc.string.memmove(&bytes[0], &bytes[nextChar],
                                              bytes.length - nextChar);
                 }
                 return bytes.length - nextChar;
@@ -2081,7 +2081,7 @@ final class Scanner
 private:
 
 /// A nothrow function that converts a dchar[] to a string.
-string utf32To8(C)(C[] str) @safe pure nothrow
+string utf32To8(C)(C[] str)
     if(is(Unqual!C == dchar))
 {
     try                    { return str.to!string; }

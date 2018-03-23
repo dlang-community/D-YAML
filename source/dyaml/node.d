@@ -112,7 +112,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 
     private:
         // Construct a YAMLContainer holding specified value.
-        this(T value) @trusted {value_ = value;}
+        this(T value) @safe {value_ = value;}
 }
 
 
@@ -127,7 +127,7 @@ private struct Pair
 
     public:
         /// Construct a Pair from two values. Will be converted to Nodes if needed.
-        this(K, V)(K key, V value) @safe
+        this(K, V)(K key, V value)
         {
             static if(is(Unqual!K == Node)){this.key = key;}
             else                           {this.key = Node(key);}
@@ -265,7 +265,7 @@ struct Node
         }
         /// Ditto.
         // Overload for types where we can make this nothrow.
-        this(T)(T value, const string tag = null) @trusted pure nothrow
+        this(T)(T value, const string tag = null) @trusted
             if(scalarCtorNothrow!T)
         {
             tag_   = tag;
@@ -276,7 +276,7 @@ struct Node
             // User defined type or plain string.
             else                              { value_ = Value(value);}
         }
-        unittest
+        @safe unittest
         {
             {
                 auto node = Node(42);
@@ -343,7 +343,7 @@ struct Node
                 value_ = Value(nodes);
             }
         }
-        unittest
+        @safe unittest
         {
             with(Node([1, 2, 3]))
             {
@@ -393,7 +393,7 @@ struct Node
             foreach(key, ref value; array){pairs ~= Pair(key, value);}
             value_ = Value(pairs);
         }
-        unittest
+        @safe unittest
         {
             int[string] aa;
             aa["1"] = 1;
@@ -465,7 +465,7 @@ struct Node
             foreach(i; 0 .. keys.length){pairs ~= Pair(keys[i], values[i]);}
             value_ = Value(pairs);
         }
-        unittest
+        @safe unittest
         {
             with(Node(["1", "2"], [1, 2]))
             {
@@ -535,12 +535,12 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
-        bool opEquals(T)(const auto ref T rhs) const @safe
+        bool opEquals(T)(const auto ref T rhs) const
         {
             return equals!(Yes.useTag)(rhs);
         }
         ///
-        unittest
+        @safe unittest
         {
             auto node = Node(42);
 
@@ -671,7 +671,7 @@ struct Node
             }
             assert(false, "This code should never be reached");
         }
-        unittest
+        @safe unittest
         {
             assertThrown!NodeException(Node("42").get!int);
             Node(YAMLNull()).get!YAMLNull;
@@ -807,7 +807,7 @@ struct Node
             throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         ///
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node opIndex unittest");
             alias Node.Value Value;
@@ -821,7 +821,7 @@ struct Node
             assert(nmap["11"].as!int == 11);
             assert(nmap["14"].as!int == 14);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node opIndex unittest");
             alias Node.Value Value;
@@ -856,7 +856,7 @@ struct Node
          *
          * Throws:  NodeException if the node is not a collection.
          */
-        bool contains(T)(T rhs) const @safe
+        bool contains(T)(T rhs) const
         {
             return contains_!(T, No.key, "contains")(rhs);
         }
@@ -870,13 +870,13 @@ struct Node
          *
          * Throws:  NodeException if the node is not a mapping.
          */
-        bool containsKey(T)(T rhs) const @safe
+        bool containsKey(T)(T rhs) const
         {
             return contains_!(T, Yes.key, "containsKey")(rhs);
         }
 
         // Unittest for contains() and containsKey().
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node contains/containsKey unittest");
             auto seq = Node([1, 2, 3, 4, 5]);
@@ -946,7 +946,7 @@ struct Node
             collectionStyle = rhs.collectionStyle;
         }
         // Unittest for opAssign().
-        unittest
+        @safe unittest
         {
             auto seq = Node([1, 2, 3, 4, 5]);
             auto assigned = seq;
@@ -1007,7 +1007,7 @@ struct Node
 
             throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node opIndexAssign unittest");
 
@@ -1048,7 +1048,7 @@ struct Node
           * Throws: NodeException if the node is not a sequence or an element
           *         could not be converted to specified type.
           */
-        auto sequence(T = Node)() @trusted
+        auto sequence(T = Node)()
         {
             enforce(isSequence,
                     new Error("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
@@ -1118,7 +1118,7 @@ struct Node
             }
             return Range(get!(Node[]));
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node sequence unittest");
 
@@ -1137,56 +1137,56 @@ struct Node
           * Throws: NodeException if the node is not a mapping.
           *
           */
-        auto mapping() @trusted
+        auto mapping() @safe
         {
             enforce(isMapping,
-                    new Error("Trying to 'mapping'-iterate over a " 
+                    new Error("Trying to 'mapping'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             struct Range
             {
                 Node.Pair[] pairs;
                 size_t position;
 
-                this(Node.Pair[] pairs)
+                this(Node.Pair[] pairs) @safe
                 {
                     this.pairs = pairs;
                     position = 0;
                 }
 
                 /* Input range functionality. */
-                bool empty() { return position >= pairs.length; }
+                bool empty() @safe { return position >= pairs.length; }
 
-                void popFront() 
-                { 
+                void popFront() @safe
+                {
                     enforce(!empty, "Attempted to popFront an empty mapping");
-                    position++; 
+                    position++;
                 }
 
-                Pair front() 
-                { 
+                Pair front() @safe
+                {
                     enforce(!empty, "Attempted to take the front of an empty mapping");
-                    return pairs[position]; 
+                    return pairs[position];
                 }
 
                 /* Forward range functionality. */
-                Range save() { return this; }
+                Range save() @safe  { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack() @safe
+                {
                     enforce(!empty, "Attempted to popBack an empty mapping");
-                    pairs = pairs[0 .. $ - 1]; 
+                    pairs = pairs[0 .. $ - 1];
                 }
 
-                Pair back() 
-                { 
+                Pair back() @safe
+                {
                     enforce(!empty, "Attempted to take the back of an empty mapping");
-                    return pairs[$ - 1]; 
+                    return pairs[$ - 1];
                 }
 
                 /* Random-access range functionality. */
-                size_t length() const @property { return pairs.length; }
-                Pair opIndex(size_t index) { return pairs[index]; }
+                size_t length() const @property @safe { return pairs.length; }
+                Pair opIndex(size_t index) @safe { return pairs[index]; }
 
                 static assert(isInputRange!Range);
                 static assert(isForwardRange!Range);
@@ -1195,7 +1195,7 @@ struct Node
             }
             return Range(get!(Node.Pair[]));
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node mapping unittest");
 
@@ -1222,7 +1222,7 @@ struct Node
           * Throws: NodeException if the nodes is not a mapping or an element
           *         could not be converted to specified type.
           */
-        auto mappingKeys(K = Node)() @trusted
+        auto mappingKeys(K = Node)()
         {
             enforce(isMapping,
                     new Error("Trying to 'mappingKeys'-iterate over a " 
@@ -1232,7 +1232,7 @@ struct Node
             else
                 return mapping.map!(pair => pair.key.as!K);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node mappingKeys unittest");
 
@@ -1252,7 +1252,7 @@ struct Node
           * Throws: NodeException if the nodes is not a mapping or an element
           *         could not be converted to specified type.
           */
-        auto mappingValues(V = Node)() @trusted
+        auto mappingValues(V = Node)()
         {
             enforce(isMapping,
                     new Error("Trying to 'mappingValues'-iterate over a " 
@@ -1262,7 +1262,7 @@ struct Node
             else
                 return mapping.map!(pair => pair.value.as!V);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node mappingValues unittest");
 
@@ -1304,7 +1304,7 @@ struct Node
             }
             return result;
         }
-        unittest
+        @system unittest
         {
             writeln("D:YAML Node opApply unittest 1");
 
@@ -1372,7 +1372,7 @@ struct Node
             }
             return result;
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node opApply unittest 2");
 
@@ -1447,7 +1447,7 @@ struct Node
             else                           {nodes ~= Node(value);}
             value_ = Value(nodes);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node add unittest 1");
 
@@ -1484,7 +1484,7 @@ struct Node
             pairs ~= Pair(key, value);
             value_ = Value(pairs);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node add unittest 2");
             with(Node([1, 2], [3, 4]))
@@ -1508,7 +1508,7 @@ struct Node
          *
          * See_Also: contains
          */
-        Node* opBinaryRight(string op, K)(K key) @system
+        Node* opBinaryRight(string op, K)(K key)
             if (op == "in")
         {
             enforce(isMapping, new Error("Trying to use 'in' on a " ~
@@ -1524,7 +1524,7 @@ struct Node
                 return &(get!(Node.Pair[])[idx].value);
             }
         }
-        unittest
+        @safe unittest
         {
             writeln(`D:YAML Node opBinaryRight!"in" unittest`);
             auto mapping = Node(["foo", "baz"], ["bar", "qux"]);
@@ -1553,7 +1553,7 @@ struct Node
         {
             remove_!(T, No.key, "remove")(rhs);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node remove unittest");
             with(Node([1, 2, 3, 4, 3]))
@@ -1601,7 +1601,7 @@ struct Node
         {
             remove_!(T, Yes.key, "removeAt")(index);
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Node removeAt unittest");
             with(Node([1, 2, 3, 4, 3]))
@@ -1632,13 +1632,13 @@ struct Node
         }
 
         // Compute hash of the node.
-        hash_t toHash() nothrow const
+        hash_t toHash() nothrow const @trusted
         {
-            const tagHash = (tag_ is null) ? 0 : tag_.hashOf();
-            // Variant toHash is not const at the moment, so we need to const-cast.
-            return tagHash + value_.toHash();
+            const valueHash = value_.toHash();
+
+            return tag_ is null ? valueHash : tag_.hashOf(valueHash);
         }
-        unittest
+        @safe unittest
         {
             writeln("Node(42).toHash(): ", Node(42).toHash());
         }
@@ -1668,13 +1668,13 @@ struct Node
         }
 
         // Construct Node.Value from user defined type.
-        static Value userValue(T)(T value) @trusted nothrow
+        static Value userValue(T)(T value) @trusted
         {
             return Value(cast(YAMLObject)new YAMLContainer!T(value));
         }
 
         // Construct Node.Value from a type it can store directly (after casting if needed)
-        static Value value(T)(T value) @system nothrow if(allowed!T)
+        static Value value(T)(T value) if(allowed!T)
         {
             static if(Value.allowed!T)
             {
@@ -1702,7 +1702,7 @@ struct Node
         // Equality test with any value.
         //
         // useTag determines whether or not to consider tags in node-node comparisons.
-        bool equals(Flag!"useTag" useTag, T)(ref T rhs) const @safe
+        bool equals(Flag!"useTag" useTag, T)(ref T rhs) const
         {
             static if(is(Unqual!T == Node))
             {
@@ -1843,7 +1843,7 @@ struct Node
         // Params:  level = Level of the node in the tree.
         //
         // Returns: String representing the node tree.
-        @property string debugString(uint level = 0) @trusted
+        @property string debugString(uint level = 0) @safe
         {
             string indent;
             foreach(i; 0 .. level){indent ~= " ";}
@@ -1879,17 +1879,16 @@ struct Node
         }
 
         // Get type of the node value (YAMLObject for user types).
-        @property TypeInfo type() const @trusted nothrow
+        @property TypeInfo type() const @safe nothrow
         {
-            alias TypeInfo delegate() const nothrow nothrowType;
-            return (cast(nothrowType)&value_.type)();
+            return value_.type;
         }
 
     public:
         // Determine if the value stored by the node is of specified type.
         //
         // This only works for default YAML types, not for user defined types.
-        @property bool isType(T)() const @safe nothrow
+        @property bool isType(T)() const
         {
             return this.type is typeid(Unqual!T);
         }
@@ -1928,7 +1927,7 @@ struct Node
         }
 
         // Determine if the value can be converted to specified type.
-        @property bool convertsTo(T)() const @safe nothrow
+        @property bool convertsTo(T)() const
         {
             if(isType!T){return true;}
 
@@ -1963,7 +1962,7 @@ struct Node
         }
 
         // Implementation of remove() and removeAt()
-        void remove_(T, Flag!"key" key, string func)(T rhs) @system
+        void remove_(T, Flag!"key" key, string func)(T rhs)
         {
             enforce(isSequence || isMapping,
                     new Error("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
@@ -2083,7 +2082,7 @@ package:
 //
 // Params:  pairs   = Appender managing the array of pairs to merge into.
 //          toMerge = Pair to merge.
-void merge(ref Appender!(Node.Pair[]) pairs, ref Node.Pair toMerge) @trusted
+void merge(ref Appender!(Node.Pair[]) pairs, ref Node.Pair toMerge) @safe
 {
     foreach(ref pair; pairs.data)
     {
@@ -2099,7 +2098,7 @@ void merge(ref Appender!(Node.Pair[]) pairs, ref Node.Pair toMerge) @trusted
 //
 // Params:  pairs   = Appender managing the array of pairs to merge into.
 //          toMerge = Pairs to merge.
-void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @trusted
+void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
 {
     bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
 

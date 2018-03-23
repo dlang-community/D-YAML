@@ -31,10 +31,11 @@ immutable ubyte[][NBOMS] ByteOrderMarks =
 interface YStream
 {
     void writeExact(const void* buffer, size_t size);
-    size_t write(const(ubyte)[] buffer);
-    size_t write(const(char)[] str);
-    void flush();
-    @property bool writeable();
+    void writeExact(const void[] buffer) @safe;
+    size_t write(const(ubyte)[] buffer) @safe;
+    size_t write(const(char)[] str) @safe;
+    void flush() @safe;
+    @property bool writeable() @safe;
 }
 
 class YMemoryStream : YStream
@@ -46,20 +47,25 @@ class YMemoryStream : YStream
         data ~= cast(ubyte[])buffer[0 .. size];
     }
 
-    size_t write(const(ubyte)[] buffer)
+    void writeExact(const void[] buffer) @trusted
+    {
+        data ~= cast(ubyte[])buffer;
+    }
+
+    size_t write(const(ubyte)[] buffer) @safe
     {
         data ~= buffer;
         return buffer.length;
     }
 
-    size_t write(const(char)[] str)
+    size_t write(const(char)[] str) @safe
     {
         return write(cast(const(ubyte)[])str);
     }
 
-    void flush() {}
+    void flush() @safe {}
 
-    @property bool writeable() { return true; }
+    @property bool writeable() @safe { return true; }
 }
 
 class YFile : YStream
@@ -67,17 +73,17 @@ class YFile : YStream
     static import std.stdio;
     std.stdio.File file;
 
-    this(string fn)
+    this(string fn) @safe
     {
         this.file = std.stdio.File(fn, "w");
     }
 
-    this(std.stdio.File file)
+    this(std.stdio.File file) @safe
     {
         this.file = file;
     }
 
-    unittest
+    @system unittest
     {
         import std.stdio : stdout;
         auto stream = new YFile(stdout);
@@ -89,26 +95,31 @@ class YFile : YStream
         this.file.rawWrite(cast(const) buffer[0 .. size]);
     }
 
-    size_t write(const(ubyte)[] buffer)
+    void writeExact(const void[] buffer) @trusted
+    {
+        this.file.rawWrite(buffer);
+    }
+
+    size_t write(const(ubyte)[] buffer) @trusted
     {
         this.file.rawWrite(buffer);
         return buffer.length;
     }
 
-    size_t write(const(char)[] str)
+    size_t write(const(char)[] str) @trusted
     {
-        return write(cast(const(ubyte)[])str);
+        return write(cast(ubyte[])str);
     }
 
-    void flush()
+    void flush() @safe
     {
         this.file.flush();
     }
 
-    @property bool writeable() { return true; }
+    @property bool writeable() @safe { return true; }
 }
 
-unittest
+@safe unittest
 {
     import dyaml.dumper, dyaml.loader, dyaml.node;
     import std.file : readText, remove;
@@ -135,7 +146,7 @@ unittest
     remove("output.yaml");
 }
 
-unittest // #88, #89
+@safe unittest // #88, #89
 {
     import dyaml.dumper, dyaml.loader;
     import std.file : remove, read;
@@ -147,5 +158,5 @@ unittest // #88, #89
     dumper.YAMLVersion = null; // supress directive
     dumper.dump(Loader.fromString("Hello world".dup).load);
 
-    assert (cast (char[]) fn.read()[0..3] == "Hel");
+    assert (fn.read()[0..3] == "Hel");
 }

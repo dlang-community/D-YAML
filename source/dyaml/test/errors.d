@@ -19,7 +19,7 @@ import dyaml.test.common;
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testLoaderError(bool verbose, string errorFilename)
+void testLoaderError(bool verbose, string errorFilename) @safe
 {
     auto buffer = std.file.read(errorFilename);
 
@@ -27,7 +27,7 @@ void testLoaderError(bool verbose, string errorFilename)
     try { nodes = Loader(buffer).loadAll(); }
     catch(YAMLException e)
     {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        printException(e, verbose);
         return;
     }
     assert(false, "Expected an exception");
@@ -37,7 +37,7 @@ void testLoaderError(bool verbose, string errorFilename)
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testLoaderErrorString(bool verbose, string errorFilename)
+void testLoaderErrorString(bool verbose, string errorFilename) @safe
 {
     // Load file to a buffer, then pass that to the YAML loader.
     auto buffer = std.file.read(errorFilename);
@@ -48,7 +48,7 @@ void testLoaderErrorString(bool verbose, string errorFilename)
     }
     catch(YAMLException e)
     {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        printException(e, verbose);
         return;
     }
     assert(false, "Expected an exception");
@@ -58,12 +58,12 @@ void testLoaderErrorString(bool verbose, string errorFilename)
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testLoaderErrorFilename(bool verbose, string errorFilename)
+void testLoaderErrorFilename(bool verbose, string errorFilename) @safe
 {
     try { auto nodes = Loader(errorFilename).loadAll(); }
     catch(YAMLException e)
     {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        printException(e, verbose);
         return;
     }
     assert(false, "testLoaderErrorSingle(" ~ verbose.to!string ~
@@ -74,19 +74,18 @@ void testLoaderErrorFilename(bool verbose, string errorFilename)
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testLoaderErrorSingle(bool verbose, string errorFilename)
+void testLoaderErrorSingle(bool verbose, string errorFilename) @safe
 {
     try { auto nodes = Loader(errorFilename).load(); }
     catch(YAMLException e)
     {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        printException(e, verbose);
         return;
     }
     assert(false, "Expected an exception");
 }
 
-
-unittest
+@safe unittest
 {
     writeln("D:YAML Errors unittest");
     run("testLoaderError",         &testLoaderError,         ["loader-error"]);

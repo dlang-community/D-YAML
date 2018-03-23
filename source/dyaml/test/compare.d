@@ -19,7 +19,7 @@ import dyaml.token;
 /// Params:  verbose           = Print verbose output?
 ///          dataFilename      = YAML file to parse.
 ///          canonicalFilename = Another file to parse, in canonical YAML format.
-void testParser(bool verbose, string dataFilename, string canonicalFilename)
+void testParser(bool verbose, string dataFilename, string canonicalFilename) @safe
 {
     auto dataEvents = Loader(dataFilename).parse();
     auto canonicalEvents = Loader(canonicalFilename).parse();
@@ -38,7 +38,7 @@ void testParser(bool verbose, string dataFilename, string canonicalFilename)
 /// Params:  verbose           = Print verbose output?
 ///          dataFilename      = YAML file to load.
 ///          canonicalFilename = Another file to load, in canonical YAML format.
-void testLoader(bool verbose, string dataFilename, string canonicalFilename)
+void testLoader(bool verbose, string dataFilename, string canonicalFilename) @safe
 {
     auto data = Loader(dataFilename).loadAll();
     auto canonical = Loader(canonicalFilename).loadAll();
@@ -62,7 +62,7 @@ void testLoader(bool verbose, string dataFilename, string canonicalFilename)
 }
 
 
-unittest
+@safe unittest
 {
     writeln("D:YAML comparison unittest");
     run("testParser", &testParser, ["data", "canonical"]);

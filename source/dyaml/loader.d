@@ -157,9 +157,9 @@ struct Loader
             return Loader(cast(ubyte[])data);
         }
         ///
-        unittest
+        @safe unittest
         {
-            assert(Loader.fromString(cast(char[])"42").load().as!int == 42);
+            assert(Loader.fromString("42".dup).load().as!int == 42);
         }
 
         /** Construct a Loader to load YAML from a buffer.
@@ -265,12 +265,11 @@ struct Loader
          *
          * Throws:  YAMLException on a parsing error.
          */
-        Node[] loadAll() @trusted
+        Node[] loadAll() @safe
         {
             Node[] nodes;
-            foreach(ref node; this) 
+            foreach(ref node; this)
             {
-                nodes.assumeSafeAppend();
                 nodes ~= node;
             }
             return nodes;
@@ -316,14 +315,13 @@ struct Loader
 
     package:
         // Scan and return all tokens. Used for debugging.
-        Token[] scan() @trusted
+        Token[] scan() @safe
         {
             try
             {
                 Token[] result;
                 while(scanner_.checkToken())
                 {
-                    result.assumeSafeAppend();
                     result ~= scanner_.getToken();
                 }
                 return result;
@@ -378,7 +376,7 @@ struct Loader
         }
 }
 
-unittest
+@safe unittest
 {
     char[] yaml_input = ("red:   '#ff0000'\n" ~
                         "green: '#00ff00'\n" ~

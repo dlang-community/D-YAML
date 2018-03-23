@@ -127,12 +127,12 @@ final class Parser
         TagDirective[] tagDirectives_;
 
         ///Stack of states.
-        Array!(Event delegate()) states_;
+        Array!(Event delegate() @safe) states_;
         ///Stack of marks used to keep track of extents of e.g. YAML collections.
         Array!Mark marks_;
 
         ///Current state.
-        Event delegate() state_;
+        Event delegate() @safe state_;
 
     public:
         ///Construct a Parser using specified Scanner.
@@ -165,7 +165,7 @@ final class Parser
          *          or if there are any events left if no types specified.
          *          false otherwise.
          */
-        bool checkEvent(EventID[] ids...) @trusted
+        bool checkEvent(EventID[] ids...) @safe
         {
             //Check if the next event is one of specified types.
             if(currentEvent_.isNull && state_ !is null)
@@ -228,7 +228,7 @@ final class Parser
 
     private:
         ///Pop and return the newest state in states_.
-        Event delegate() popState() @trusted
+        Event delegate() @safe popState() @trusted
         {
             enforce(states_.length > 0,
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
@@ -347,7 +347,7 @@ final class Parser
             while(scanner_.checkToken(TokenID.Directive))
             {
                 const token = scanner_.getToken();
-                const value = token.value;
+                string value = token.value.idup;
                 if(token.directive == DirectiveType.YAML)
                 {
                     enforce(YAMLVersion_ is null,
@@ -356,11 +356,11 @@ final class Parser
                     enforce(minor == "1",
                             new Error("Incompatible document (version 1.x is required)",
                                       token.startMark));
-                    YAMLVersion_ = cast(string)value;
+                    YAMLVersion_ = value;
                 }
                 else if(token.directive == DirectiveType.TAG)
                 {
-                    auto handle = cast(string)value[0 .. token.valueDivider];
+                    auto handle = value[0 .. token.valueDivider];
 
                     foreach(ref pair; tagDirectives_)
                     {
@@ -369,8 +369,8 @@ final class Parser
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagDirectives_ ~= 
-                        TagDirective(handle, cast(string)value[token.valueDivider .. $]);
+                    tagDirectives_ ~=
+                        TagDirective(handle, value[token.valueDivider .. $]);
                 }
                 // Any other directive type is ignored (only YAML and TAG are in YAML
                 // 1.1/1.2, any other directives are "reserved")
@@ -432,7 +432,7 @@ final class Parser
             uint tagHandleEnd;
 
             //Get anchor/tag if detected. Return false otherwise.
-            bool get(const TokenID id, const Flag!"first" first, ref string target)
+            bool get(const TokenID id, const Flag!"first" first, ref string target) @trusted
             {
                 if(!scanner_.checkToken(id)){return false;}
                 invalidMarks = false;
@@ -536,7 +536,7 @@ final class Parser
         /// Handle escape sequences in a double quoted scalar.
         ///
         /// Moved here from scanner as it can't always be done in-place with slices.
-        string handleDoubleQuotedScalarEscapes(char[] tokenValue)
+        string handleDoubleQuotedScalarEscapes(char[] tokenValue) const @system
         {
             string notInPlace;
             bool inEscape = false;
@@ -623,7 +623,7 @@ final class Parser
          */
         string processTag(const string tag, const uint handleEnd,
                           const Mark startMark, const Mark tagMark)
-            const @trusted
+            const @safe
         {
             const handle = tag[0 .. handleEnd];
             const suffix = tag[handleEnd .. $];
@@ -829,7 +829,7 @@ final class Parser
         }
 
         ///Parse a key in flow context.
-        Event parseFlowKey(in Event delegate() nextState) @trusted
+        Event parseFlowKey(in Event delegate() @safe nextState) @trusted
         {
             const token = scanner_.getToken();
 
@@ -851,7 +851,7 @@ final class Parser
         }
 
         ///Parse a mapping value in a flow context.
-        Event parseFlowValue(TokenID checkId, in Event delegate() nextState)
+        Event parseFlowValue(TokenID checkId, in Event delegate() @safe nextState)
             @trusted
         {
             if(scanner_.checkToken(TokenID.Value))

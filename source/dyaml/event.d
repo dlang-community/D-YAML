@@ -89,10 +89,10 @@ struct Event
     CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
     ///Is this a null (uninitialized) event?
-    @property bool isNull() const pure @system nothrow {return id == EventID.Invalid;}
+    @property bool isNull() const pure @safe nothrow {return id == EventID.Invalid;}
 
     ///Get string representation of the token ID.
-    @property string idString() const @system {return to!string(id);}
+    @property string idString() const @safe {return to!string(id);}
 
     static assert(Event.sizeof <= 64, "Event struct larger than expected");
 }
@@ -105,7 +105,7 @@ struct Event
  *          anchor   = Anchor, if this is an alias event.
  */
 Event event(EventID id)(const Mark start, const Mark end, const string anchor = null)
-    pure @trusted nothrow
+    @trusted
 {
     Event result;
     result.startMark = start;
@@ -149,7 +149,7 @@ Event collectionStartEvent(EventID id)
  *          encoding = Encoding of the stream.
  */
 Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding)
-    pure @trusted nothrow
+    pure @safe nothrow
 {
     Event result;
     result.startMark = start;
@@ -198,7 +198,7 @@ Event documentStartEvent(const Mark start, const Mark end, const bool explicit, 
  *          end      = End position of the event in the file/stream.
  *          explicit = Is this an explicit document end?
  */
-Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pure @trusted nothrow
+Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pure @safe nothrow
 {
     Event result;
     result.startMark        = start;
@@ -219,17 +219,15 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          style    = Scalar style.
 Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
                   const Tuple!(bool, bool) implicit, const string value,
-                  const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
+                  const ScalarStyle style = ScalarStyle.Invalid) @trusted pure nothrow @nogc
 {
     Event result;
     result.value       = value;
     result.startMark   = start;
     result.endMark     = end;
 
-    () @trusted {
-        result.anchor  = anchor;
-        result.tag     = tag;
-    }();
+    result.anchor  = anchor;
+    result.tag     = tag;
 
     result.id          = EventID.Scalar;
     result.scalarStyle = style;

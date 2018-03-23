@@ -143,7 +143,7 @@ struct AppenderNoGCFixed(A : T[], T)
     /// Construct an appender that will work with given buffer.
     ///
     /// Data written to the appender will overwrite the buffer from the start.
-    this(T[] arr) @trusted pure nothrow
+    this(T[] arr) @safe pure nothrow
     {
         // initialize to a given array.
         _data.arr = cast(Unqual!T[])arr[0 .. 0]; //trusted
@@ -163,11 +163,8 @@ struct AppenderNoGCFixed(A : T[], T)
     /**
      * Returns the managed array.
      */
-    @property inout(T)[] data() inout @trusted pure nothrow
+    @property inout(T)[] data() inout @safe pure nothrow
     {
-        /* @trusted operation:
-         * casting Unqual!T[] to inout(T)[]
-         */
         return cast(typeof(return))(_data.arr);
     }
 
@@ -217,7 +214,7 @@ struct AppenderNoGCFixed(A : T[], T)
         @disable void clear();
     }
 }
-unittest
+@safe unittest
 {
     char[256] buffer;
     auto appender = appenderNoGC(buffer[]);
@@ -245,7 +242,7 @@ struct ValidateResult
 /// Validate a UTF-8 string, checking if it is well-formed Unicode.
 ///
 /// See_Also: ValidateResult
-ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
+ValidateResult validateUTF8NoGC(const(char[]) str) @safe pure nothrow @nogc
 {
     immutable len = str.length;
     size_t characterCount;
@@ -289,7 +286,6 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @trusted pure nothrow @nogc
 ///          'string errorMessage' member that is null on success and otherwise stores
 ///          the error message.
 auto decodeUTF8NoGC(Flag!"validated" validated)(const(char[]) str, ref size_t index)
-    @trusted pure nothrow @nogc
 {
     static if(!validated) struct Result
     {
@@ -301,7 +297,7 @@ auto decodeUTF8NoGC(Flag!"validated" validated)(const(char[]) str, ref size_t in
     /// Dchar bitmask for different numbers of UTF-8 code units.
     enum bitMask     = tuple((1 << 7) - 1, (1 << 11) - 1, (1 << 16) - 1, (1 << 21) - 1);
 
-    auto pstr = str.ptr + index;
+    auto pstr = str[index..$];
 
     immutable length = str.length - index;
     ubyte fst = pstr[0];

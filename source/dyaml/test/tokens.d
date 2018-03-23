@@ -24,7 +24,7 @@ import dyaml.token;
  *          dataFilename   = File to scan.
  *          tokensFilename = File containing expected tokens.
  */
-void testTokens(bool verbose, string dataFilename, string tokensFilename)
+void testTokens(bool verbose, string dataFilename, string tokensFilename) @safe
 {
     //representations of YAML tokens in tokens file.
     auto replace = [TokenID.Directive          : "%"   ,
@@ -72,7 +72,7 @@ void testTokens(bool verbose, string dataFilename, string tokensFilename)
  *          dataFilename      = File to scan.
  *          canonicalFilename = Another file to scan, in canonical YAML format.
  */
-void testScanner(bool verbose, string dataFilename, string canonicalFilename)
+void testScanner(bool verbose, string dataFilename, string canonicalFilename) @safe
 {
     foreach(filename; [dataFilename, canonicalFilename])
     {
@@ -86,7 +86,7 @@ void testScanner(bool verbose, string dataFilename, string canonicalFilename)
     }
 }
 
-unittest
+@safe unittest
 {
     writeln("D:YAML tokens unittest");
     run("testTokens",  &testTokens, ["data", "tokens"]);

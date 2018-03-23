@@ -232,7 +232,7 @@ final class Composer
         }
 
         ///Compose a scalar node.
-        Node composeScalarNode() @system
+        Node composeScalarNode() @safe
         {
             immutable event = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value, 
@@ -263,9 +263,7 @@ final class Composer
                 nodeAppender.put(composeNode(pairAppenderLevel, nodeAppenderLevel + 1));
             }
 
-            core.memory.GC.disable();
-            scope(exit){core.memory.GC.enable();}
-            Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark, 
+            Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark,
                                           tag, nodeAppender.data.dup, startEvent.collectionStyle);
             nodeAppender.clear();
 
@@ -286,7 +284,7 @@ final class Composer
          * Returns: Flattened mapping as pairs.
          */
         Node.Pair[] flatten(ref Node root, const Mark startMark, const Mark endMark,
-                            const uint pairAppenderLevel, const uint nodeAppenderLevel) @system
+                            const uint pairAppenderLevel, const uint nodeAppenderLevel) @safe
         {
             void error(Node node)
             {
@@ -306,11 +304,11 @@ final class Composer
             if(root.isMapping)
             {
                 Node[] toMerge;
+                toMerge.reserve(root.length);
                 foreach(ref Node key, ref Node value; root)
                 {
                     if(key.isType!YAMLMerge)
                     {
-                        toMerge.assumeSafeAppend();
                         toMerge ~= value;
                     }
                     else
@@ -337,8 +335,6 @@ final class Composer
                 error(root);
             }
 
-            core.memory.GC.disable();
-            scope(exit){core.memory.GC.enable();}
             auto flattened = pairAppender.data.dup;
             pairAppender.clear();
 
@@ -381,9 +377,7 @@ final class Composer
                                              pairAppenderLevel + 1, nodeAppenderLevel));
             }
 
-            core.memory.GC.disable();
-            scope(exit){core.memory.GC.enable();}
-            Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark, 
+            Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark,
                                           tag, pairAppender.data.dup, startEvent.collectionStyle);
 
             pairAppender.clear();

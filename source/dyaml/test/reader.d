@@ -18,7 +18,7 @@ import dyaml.reader;
 //
 // Params:  verbose = Print verbose output?
 //          data    = Stream to read.
-void runReader(const bool verbose, void[] fileData)
+void runReader(const bool verbose, ubyte[] fileData) @safe
 {
     try
     {
@@ -27,7 +27,7 @@ void runReader(const bool verbose, void[] fileData)
     }
     catch(ReaderException e)
     {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        printException(e, verbose);
         return;
     }
     assert(false, "Expected an exception");
@@ -38,13 +38,13 @@ void runReader(const bool verbose, void[] fileData)
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testStreamError(bool verbose, string errorFilename)
+void testStreamError(bool verbose, string errorFilename) @trusted
 {
     import std.file;
-    runReader(verbose, std.file.read(errorFilename));
+    runReader(verbose, cast(ubyte[])std.file.read(errorFilename));
 }
 
-unittest
+@safe unittest
 {
     writeln("D:YAML Reader unittest");
     run("testStreamError", &testStreamError, ["stream-error"]);

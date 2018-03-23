@@ -94,7 +94,7 @@ final class Reader
         ///
         /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
-        this(ubyte[] buffer) @trusted pure //!nothrow
+        this(ubyte[] buffer) @trusted pure
         {
             auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
@@ -124,7 +124,6 @@ final class Reader
             checkASCII();
         }
 
-pure nothrow @nogc:
         /// Get character at specified index relative to current position.
         ///
         /// Params:  index = Index of the character to get relative to current position
@@ -135,7 +134,7 @@ pure nothrow @nogc:
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(const size_t index) @safe
+        dchar peek(const size_t index) @safe pure nothrow @nogc
         {
             if(index < upcomingASCII_) { return buffer_[bufferOffset_ + index]; }
             if(characterCount_ <= charIndex_ + index)
@@ -178,7 +177,7 @@ pure nothrow @nogc:
         }
 
         /// Optimized version of peek() for the case where peek index is 0.
-        dchar peek() @safe
+        dchar peek() @safe pure nothrow @nogc
         {
             if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
             if(characterCount_ <= charIndex_) { return '\0'; }
@@ -195,13 +194,13 @@ pure nothrow @nogc:
         ///                  case, '\0' will be returned.
         ///
         /// Returns: Byte at specified position or '\0' if outside of the buffer.
-        char peekByte(const size_t index) @safe
+        char peekByte(const size_t index) @safe pure nothrow @nogc
         {
             return characterCount_ > (charIndex_ + index) ? buffer_[bufferOffset_ + index] : '\0';
         }
 
         /// Optimized version of peekByte() for the case where peek byte index is 0.
-        char peekByte() @safe
+        char peekByte() @safe pure nothrow @nogc
         {
             return characterCount_ > charIndex_ ? buffer_[bufferOffset_] : '\0';
         }
@@ -218,7 +217,7 @@ pure nothrow @nogc:
         ///                  slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        char[] prefix(const size_t length) @safe
+        char[] prefix(const size_t length) @safe pure nothrow @nogc
         {
             return slice(length);
         }
@@ -234,7 +233,7 @@ pure nothrow @nogc:
         ///                  this.
         ///
         /// Returns: Bytes starting at current position.
-        char[] prefixBytes(const size_t length) @safe
+        char[] prefixBytes(const size_t length) @safe pure nothrow @nogc
         {
             assert(length == 0 || bufferOffset_ + length < buffer_.length,
                    "prefixBytes out of bounds");
@@ -251,7 +250,7 @@ pure nothrow @nogc:
         ///                be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        char[] slice(const size_t end) @safe
+        char[] slice(const size_t end) @safe pure nothrow @nogc
         {
             // Fast path in case the caller has already peek()ed all the way to end.
             if(end == lastDecodedCharOffset_)
@@ -279,7 +278,7 @@ pure nothrow @nogc:
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar get() @safe
+        dchar get() @safe pure nothrow @nogc
         {
             const result = peek();
             forward();
@@ -291,7 +290,7 @@ pure nothrow @nogc:
         /// Params:  length = Number or characters (code points, not bytes) to get.
         ///
         /// Returns: Characters starting at current position.
-        char[] get(const size_t length) @safe
+        char[] get(const size_t length) @safe pure nothrow @nogc
         {
             auto result = slice(length);
             forward(length);
@@ -301,7 +300,7 @@ pure nothrow @nogc:
         /// Move current position forward.
         ///
         /// Params:  length = Number of characters to move position forward.
-        void forward(size_t length) @safe
+        void forward(size_t length) @safe pure nothrow @nogc
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
@@ -356,7 +355,7 @@ pure nothrow @nogc:
         }
 
         /// Move current position forward by one character.
-        void forward() @trusted
+        void forward() @safe pure nothrow @nogc
         {
             ++charIndex_;
             lastDecodedBufferOffset_ = bufferOffset_;
@@ -401,25 +400,24 @@ pure nothrow @nogc:
         /// Used to build slices of read data in Reader; to avoid allocations.
         SliceBuilder sliceBuilder;
 
-@safe pure nothrow @nogc:
         /// Get a string describing current buffer position, used for error messages.
-        Mark mark() const { return Mark(line_, column_); }
+        Mark mark() const pure nothrow @nogc @safe { return Mark(line_, column_); }
 
         /// Get current line number.
-        uint line() const { return line_; }
+        uint line() const @safe pure nothrow @nogc { return line_; }
 
         /// Get current column number.
-        uint column() const { return column_; }
+        uint column() const @safe pure nothrow @nogc { return column_; }
 
         /// Get index of the current character in the buffer.
-        size_t charIndex() const { return charIndex_; }
+        size_t charIndex() const @safe pure nothrow @nogc { return charIndex_; }
 
         /// Get encoding of the input buffer.
-        Encoding encoding() const { return encoding_; }
+        Encoding encoding() const @safe pure nothrow @nogc { return encoding_; }
 
 private:
         // Update upcomingASCII_ (should be called forward()ing over a UTF-8 sequence)
-        void checkASCII()
+        void checkASCII() @safe pure nothrow @nogc
         {
             upcomingASCII_ = countASCII(buffer_[bufferOffset_ .. $]);
         }
@@ -428,7 +426,7 @@ private:
         // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
         //
         // Does not advance the buffer position. Used in peek() and slice().
-        dchar decodeNext()
+        dchar decodeNext() @safe pure nothrow @nogc
         {
             assert(lastDecodedBufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of YAML buffer");
@@ -453,7 +451,6 @@ private:
 /// See begin() documentation.
 struct SliceBuilder
 {
-pure nothrow @nogc:
 private:
     // No copying by the user.
     @disable this(this);
@@ -474,7 +471,7 @@ private:
     // The number of elements currently in endStack_.
     size_t endStackUsed_ = 0;
 
-    @safe const invariant()
+    @safe const pure nothrow @nogc invariant()
     {
         if(!inProgress) { return; }
         assert(end_ <= reader_.bufferOffset_, "Slice ends after buffer position");
@@ -482,7 +479,7 @@ private:
     }
 
     // Is a slice currently being built?
-    bool inProgress() @safe const
+    bool inProgress() @safe const pure nothrow @nogc
     {
         assert(start_ == size_t.max ? end_ == size_t.max : end_ != size_t.max,
                "start_/end_ are not consistent");
@@ -500,7 +497,7 @@ public:
     /// forward() move the position. E.g. it is valid to extend a slice by write()-ing
     /// a string just returned by get() - but not one returned by prefix() unless the
     /// position has changed since the prefix() call.
-    void begin() @system
+    void begin() @safe pure nothrow @nogc
     {
         assert(!inProgress, "Beginning a slice while another slice is being built");
         assert(endStackUsed_ == 0, "Slice stack not empty at slice begin");
@@ -516,7 +513,7 @@ public:
     ///
     /// Returns a string; once a slice is finished it is definitive that its contents
     /// will not be changed.
-    char[] finish() @system
+    char[] finish() @safe pure nothrow @nogc
     {
         assert(inProgress, "finish called without begin");
         assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
@@ -534,7 +531,7 @@ public:
     /// end of the slice being built, the slice is extended (trivial operation).
     ///
     /// See_Also: begin
-    void write(char[] str) @system
+    void write(char[] str) @trusted pure nothrow @nogc
     {
         assert(inProgress, "write called without begin");
         assert(end_ <= reader_.bufferOffset_,
@@ -561,7 +558,7 @@ public:
     /// Data can only be written up to the current position in the Reader buffer.
     ///
     /// See_Also: begin
-    void write(dchar c) @system
+    void write(dchar c) @safe pure nothrow @nogc
     {
         assert(inProgress, "write called without begin");
         if(c < 0x80)
@@ -588,7 +585,7 @@ public:
     /// position = Position to insert the character at in code units, not code points.
     ///            Must be less than slice length(); a previously returned length()
     ///            can be used.
-    void insert(const dchar c, const size_t position) @system
+    void insert(const dchar c, const size_t position) @system pure nothrow @nogc
     {
         assert(inProgress, "insert called without begin");
         assert(start_ + position <= end_, "Trying to insert after the end of the slice");
@@ -612,7 +609,7 @@ public:
     }
 
     /// Get the current length of the slice.
-    size_t length() @safe const
+    size_t length() @safe const pure nothrow @nogc
     {
         return end_ - start_;
     }
@@ -622,7 +619,6 @@ public:
     /// Can be used to save and revert back to slice state.
     struct Transaction
     {
-    @system pure nothrow @nogc:
     private:
         // The slice builder affected by the transaction.
         SliceBuilder* builder_ = null;
@@ -639,7 +635,7 @@ public:
         /// ended either by commit()-ing or reverting through the destructor.
         ///
         /// Saves the current state of a slice.
-        this(ref SliceBuilder builder)
+        this(ref SliceBuilder builder) @system pure nothrow @nogc
         {
             builder_ = &builder;
             stackLevel_ = builder_.endStackUsed_;
@@ -653,7 +649,7 @@ public:
         ///
         /// Does nothing for a default-initialized transaction (the transaction has not
         /// been started yet).
-        void commit()
+        void commit() @safe pure nothrow @nogc
         {
             assert(!committed_, "Can't commit a transaction more than once");
 
@@ -667,7 +663,7 @@ public:
         /// Destroy the transaction and revert it if it hasn't been committed yet.
         ///
         /// Does nothing for a default-initialized transaction.
-        ~this()
+        ~this() @safe pure nothrow @nogc
         {
             if(builder_ is null || committed_) { return; }
             assert(builder_.endStackUsed_ == stackLevel_ + 1,
@@ -681,7 +677,7 @@ private:
     // Push the current end of the slice so we can revert to it if needed.
     //
     // Used by Transaction.
-    void push() @system
+    void push() @safe pure nothrow @nogc
     {
         assert(inProgress, "push called without begin");
         assert(endStackUsed_ < endStack_.length, "Slice stack overflow");
@@ -692,7 +688,7 @@ private:
     // value, reverting changes since the old end was pushed.
     //
     // Used by Transaction.
-    void pop() @system
+    void pop() @safe pure nothrow @nogc
     {
         assert(inProgress, "pop called without begin");
         assert(endStackUsed_ > 0, "Trying to pop an empty slice stack");
@@ -703,7 +699,7 @@ private:
     // changes made since pushing the old end.
     //
     // Used by Transaction.
-    void apply() @system
+    void apply() @safe pure nothrow @nogc
     {
         assert(inProgress, "apply called without begin");
         assert(endStackUsed_ > 0, "Trying to apply an empty slice stack");
@@ -823,7 +819,7 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 }
 
 /// Determine if all characters (code points, not bytes) in a string are printable.
-bool isPrintableValidUTF8(const char[] chars) @trusted pure nothrow @nogc
+bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
 {
     // This is oversized (only 128 entries are necessary) simply because having 256
     // entries improves performance... for some reason (alignment?)
@@ -1041,7 +1037,7 @@ void test1Byte(R)()
     // assert(collectException(reader.peek(2)));
 }
 
-unittest
+@system unittest
 {
     testEndian!Reader();
     testPeekPrefixForward!Reader();

@@ -72,7 +72,7 @@ struct Flags(names ...) if(names.length <= 8)
         ///Flag accessors.
         mixin(flags(names));
 }
-unittest
+@safe unittest
 {
     import std.stdio;
     writeln("Flags unittest");
