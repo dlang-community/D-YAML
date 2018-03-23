@@ -19,6 +19,7 @@ import std.array;
 import std.conv;
 import std.file;
 import std.path;
+import std.traits;
 import std.typecons;
 
 package:
@@ -31,7 +32,7 @@ package:
  *          unittestExt  = Extensions of data files needed for the unittest.
  *          skipExt      = Extensions that must not be used for the unittest.
  */
-void run(F ...)(string testName, void function(bool, F) testFunction,
+void run(D)(string testName, D testFunction,
                 string[] unittestExt, string[] skipExt = [])
 {
     immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../../test/data";
@@ -54,16 +55,25 @@ void run(F ...)(string testName, void function(bool, F) testFunction,
                 if(extensions.canFind(ext)){continue outer;}
             }
 
-            results ~= execute!F(testName, testFunction, filenames, verbose);
+            results ~= execute(testName, testFunction, filenames, verbose);
         }
     }
     else
     {
-        results ~= execute!F(testName, testFunction, cast(string[])[], verbose);
+        results ~= execute(testName, testFunction, cast(string[])[], verbose);
     }
     display(results, verbose);
 }
 
+/**
+ * Prints an exception if verbosity is turned on.
+ * Params:  e     = Exception to print.
+ *          verbose = Whether verbose mode is enabled.
+ */
+void printException(YAMLException e, bool verbose) @trusted
+{
+        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+}
 
 private:
 
@@ -85,7 +95,7 @@ alias Tuple!(string, "name", string[], "filenames", TestStatus, "kind", string, 
  *
  * Returns: Test input base filenames and their extensions.
  */
-string[][string] findTestFilenames(const string dir)
+string[][string] findTestFilenames(const string dir) @trusted
 {
     //Groups of extensions indexed by base names.
     string[][string] names;
@@ -130,8 +140,8 @@ body
  *
  * Returns: Information about the results of the unittest.
  */
-Result execute(F ...)(const string testName, void function(bool, F) testFunction,
-                      string[] filenames, const bool verbose)
+Result execute(D)(const string testName, D testFunction,
+                      string[] filenames, const bool verbose) @trusted
 {
     if(verbose)
     {
@@ -144,6 +154,7 @@ Result execute(F ...)(const string testName, void function(bool, F) testFunction
     try
     {
         //Convert filenames to parameters tuple and call the test function.
+        alias F = Parameters!D[1..$];
         F parameters;
         stringsToTuple!(F.length - 1, F)(parameters, filenames);
         testFunction(verbose, parameters);
@@ -167,7 +178,7 @@ Result execute(F ...)(const string testName, void function(bool, F) testFunction
  * Params:  results = Unittest results.
  *          verbose = Print verbose output?
  */
-void display(Result[] results, const bool verbose)
+void display(Result[] results, const bool verbose) @safe
 {
     if(results.length > 0 && !verbose){write("\n");}
 

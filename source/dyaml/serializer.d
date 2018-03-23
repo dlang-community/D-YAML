@@ -82,7 +82,7 @@ struct Serializer
         }
 
         ///Destroy the Serializer.
-        @safe ~this()
+        ~this() @safe
         {
             emitter_.emit(streamEndEvent(Mark(), Mark()));
             YAMLVersion_.destroy();
@@ -119,7 +119,7 @@ struct Serializer
          *
          * Returns: True if the node is anchorable, false otherwise.
          */
-        static bool anchorable(ref Node node) @safe 
+        static bool anchorable(ref Node node) @safe
         {
             if(node.isScalar)
             {
@@ -157,7 +157,7 @@ struct Serializer
         }
 
         ///Generate and return a new anchor.
-        string generateAnchor() @trusted
+        string generateAnchor() @safe
         {
             ++lastAnchorID_;
             auto appender = appender!string();
@@ -166,7 +166,7 @@ struct Serializer
         }
 
         ///Serialize a node and all its subnodes.
-        void serializeNode(ref Node node) @trusted
+        void serializeNode(ref Node node) @safe
         {
             //If the node has an anchor, emit an anchor (as aliasEvent) on the 
             //first occurrence, save it in serializedNodes_, and emit an alias 

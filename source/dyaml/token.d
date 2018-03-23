@@ -97,16 +97,14 @@ struct Token
 static assert(Token.sizeof <= 32, "Token has unexpected size");
 
 
-@safe pure nothrow @nogc:
-
 /// Construct a directive token.
 ///
 /// Params:  start     = Start position of the token.
 ///          end       = End position of the token.
 ///          value     = Value of the token.
 ///          directive = Directive type (YAML or TAG in YAML 1.1).
-Token directiveToken(const Mark start, const Mark end, char[] value, 
-                     DirectiveType directive, const uint nameEnd)
+Token directiveToken(const Mark start, const Mark end, char[] value,
+                     DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {
     return Token(value, start, end, TokenID.Directive, ScalarStyle.init, Encoding.init,
                  directive, nameEnd);
@@ -127,7 +125,7 @@ Token simpleToken(TokenID id)(const Mark start, const Mark end)
 /// Params:  start    = Start position of the token.
 ///          end      = End position of the token.
 ///          encoding = Encoding of the stream.
-Token streamStartToken(const Mark start, const Mark end, const Encoding encoding)
+Token streamStartToken(const Mark start, const Mark end, const Encoding encoding) @safe pure nothrow @nogc
 {
     return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
 }
@@ -168,7 +166,7 @@ alias simpleValueToken!(TokenID.Anchor) anchorToken;
 ///          end   = End position of the token.
 ///          value = Value of the token.
 ///          style = Style of the token.
-Token scalarToken(const Mark start, const Mark end, char[] value, const ScalarStyle style)
+Token scalarToken(const Mark start, const Mark end, char[] value, const ScalarStyle style) @safe pure nothrow @nogc
 {
     return Token(value, start, end, TokenID.Scalar, style);
 }

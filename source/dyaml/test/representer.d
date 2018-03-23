@@ -24,7 +24,7 @@ import dyaml.test.constructor;
 ///          codeFilename = File name to determine test case from.
 ///                         Nothing is read from this file, it only exists
 ///                         to specify that we need a matching unittest.
-void testRepresenterTypes(bool verbose, string codeFilename)
+void testRepresenterTypes(bool verbose, string codeFilename) @trusted
 {
     string baseName = codeFilename.baseName.stripExtension;
     enforce((baseName in dyaml.test.constructor.expected) !is null,
@@ -77,7 +77,7 @@ void testRepresenterTypes(bool verbose, string codeFilename)
     }
 }
 
-unittest
+@safe unittest
 {
     writeln("D:YAML Representer unittest");
     run("testRepresenterTypes", &testRepresenterTypes, ["code"]);

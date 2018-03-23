@@ -28,7 +28,7 @@ import dyaml.token;
 ///          events2 = Second event array to compare.
 ///
 /// Returns: true if the events are equivalent, false otherwise.
-bool compareEvents(Event[] events1, Event[] events2)
+bool compareEvents(Event[] events1, Event[] events2) @system
 {
     if(events1.length != events2.length){return false;}
 
@@ -79,7 +79,7 @@ bool compareEvents(Event[] events1, Event[] events2)
 ///          dataFilename      = YAML file to parse.
 ///          canonicalFilename = Canonical YAML file used as dummy to determine
 ///                              which data files to load.
-void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilename)
+void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilename) @system
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader(dataFilename);
@@ -108,7 +108,7 @@ void testEmitterOnData(bool verbose, string dataFilename, string canonicalFilena
 ///
 /// Params:  verbose           = Print verbose output?
 ///          canonicalFilename = Canonical YAML file to parse.
-void testEmitterOnCanonical(bool verbose, string canonicalFilename)
+void testEmitterOnCanonical(bool verbose, string canonicalFilename) @system
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader(canonicalFilename);
@@ -141,7 +141,7 @@ void testEmitterOnCanonical(bool verbose, string canonicalFilename)
 ///          dataFilename      = YAML file to parse.
 ///          canonicalFilename = Canonical YAML file used as dummy to determine
 ///                              which data files to load.
-void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilename)
+void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilename) @system
 {
     foreach(filename; [dataFilename, canonicalFilename])
     {
@@ -194,7 +194,7 @@ void testEmitterStyles(bool verbose, string dataFilename, string canonicalFilena
     }
 }
 
-unittest
+@system unittest
 {
     writeln("D:YAML Emitter unittest");
     run("testEmitterOnData",      &testEmitterOnData,      ["data", "canonical"]);

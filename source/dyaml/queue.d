@@ -220,7 +220,7 @@ void free(T)(T* ptr) @system nothrow
     core.stdc.stdlib.free(ptr);
 }
 
-unittest
+@safe unittest
 {
     auto queue = Queue!int();
     assert(queue.empty);

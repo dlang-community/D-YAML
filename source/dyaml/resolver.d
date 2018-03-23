@@ -70,7 +70,7 @@ final class Resolver
         }
 
         ///Destroy the Resolver.
-        pure @safe nothrow ~this()
+        ~this() pure @safe nothrow
         {
             yamlImplicitResolvers_.destroy();
             yamlImplicitResolvers_ = null;
@@ -169,13 +169,13 @@ final class Resolver
             else if(kind == NodeID.Mapping) {return defaultMappingTag_;}
             assert(false, "This line of code should never be reached");
         }
-        unittest
+        @safe unittest
         {
             writeln("D:YAML Resolver unittest");
 
             auto resolver = new Resolver();
 
-            bool tagMatch(string tag, string[] values)
+            bool tagMatch(string tag, string[] values) @safe
             {
                 string expected = tag;
                 foreach(value; values)

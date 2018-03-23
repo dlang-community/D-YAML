@@ -23,7 +23,7 @@ import dyaml.test.common;
  *          dataFilename   = File with unittest data.
  *          detectFilename = Dummy filename used to specify which data filenames to use.
  */
-void testImplicitResolver(bool verbose, string dataFilename, string detectFilename)
+void testImplicitResolver(bool verbose, string dataFilename, string detectFilename) @safe
 {
     string correctTag;
     Node node;
@@ -48,7 +48,7 @@ void testImplicitResolver(bool verbose, string dataFilename, string detectFilena
 }
 
 
-unittest
+@safe unittest
 {
     writeln("D:YAML Resolver unittest");
     run("testImplicitResolver", &testImplicitResolver, ["data", "detect"]);

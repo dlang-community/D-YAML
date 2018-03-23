@@ -47,7 +47,7 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
     // result = A Result struct to put decoded result and any error messages to.
     //
     // On error, result.errorMessage will be set.
-    static void decode(C)(C[] input, ref Result result) @safe pure nothrow
+    static void decode(C)(C[] input, ref Result result)
     {
         // End of part of input that contains complete characters that can be decoded.
         const size_t end = endOfLastUTFSequence(input);
@@ -107,7 +107,6 @@ auto decodeUTF(ubyte[] input, UTFEncoding encoding) @safe pure nothrow
 
 // Determine the end of last UTF-8 or UTF-16 sequence in a raw buffer.
 size_t endOfLastUTFSequence(C)(const C[] buffer)
-    @safe pure nothrow @nogc
 {
     static if(is(C == char))
     {

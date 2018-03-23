@@ -80,28 +80,28 @@ import dyaml.tagdirective;
  */
 struct Dumper
 {
-    unittest
+    @safe unittest
     {
         auto node = Node([1, 2, 3, 4, 5]);
         Dumper(new YMemoryStream()).dump(node);
     }
-   
-    unittest
+
+    @safe unittest
     {
         auto node1 = Node([1, 2, 3, 4, 5]);
         auto node2 = Node("This document contains only one string");
         Dumper(new YMemoryStream()).dump(node1, node2);
     }
-       
-    unittest
+
+    @safe unittest
     {
         //import std.stream;
         auto stream = new YMemoryStream();
         auto node = Node([1, 2, 3, 4, 5]);
         Dumper(stream).dump(node);
     }
-       
-    unittest
+
+    @safe unittest
     {
         auto node = Node([1, 2, 3, 4, 5]);
         auto representer = new Representer();
@@ -157,7 +157,7 @@ struct Dumper
          *
          * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(string filename) @trusted
+        this(string filename) @safe
         {
             name_ = filename;
             //try{this(new File(filename, FileMode.OutNew));}
@@ -183,7 +183,6 @@ struct Dumper
         ///Destroy the Dumper.
         @trusted ~this()
         {
-            YAMLVersion_ = null;
             if(weOwnStream_) { destroy(stream_); }
         }
 
@@ -194,16 +193,14 @@ struct Dumper
         }
 
         ///Specify custom Resolver to use.
-        @property void resolver(Resolver resolver) @trusted
+        @property void resolver(Resolver resolver) @safe
         {
-            resolver_.destroy();
             resolver_ = resolver;
         }
 
         ///Specify custom Representer to use.
-        @property void representer(Representer representer) @trusted
+        @property void representer(Representer representer) @safe
         {
-            representer_.destroy();
             representer_ = representer;
         }
 
@@ -290,7 +287,7 @@ struct Dumper
          * dumper.dump(Node("foo"));
          * --------------------
          */
-        @property void tagDirectives(string[string] tags) pure @trusted
+        @property void tagDirectives(string[string] tags) pure @safe
         {
             TagDirective[] t;
             foreach(handle, prefix; tags)

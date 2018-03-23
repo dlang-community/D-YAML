@@ -184,21 +184,6 @@ struct Emitter
             analysis_.flags.isNull = true;
         }
 
-        ///Destroy the emitter.
-        @trusted ~this()
-        {
-            stream_ = null;
-            states_.destroy();
-            events_.destroy();
-            indents_.destroy();
-            tagDirectives_.destroy();
-            tagDirectives_ = null;
-            preparedAnchor_.destroy();
-            preparedAnchor_ = null;
-            preparedTag_.destroy();
-            preparedTag_ = null;
-        }
-
         ///Emit an event. Throws EmitterException on error.
         void emit(Event event) @trusted
         {
@@ -237,20 +222,20 @@ struct Emitter
         }
 
         ///Write a string to the file/stream.
-        void writeString(const string str) @system
+        void writeString(const char[] str) @safe
         {
             try final switch(encoding_)
             {
                 case Encoding.UTF_8:
-                    stream_.writeExact(str.ptr, str.length * char.sizeof);
+                    stream_.writeExact(str);
                     break;
                 case Encoding.UTF_16:
                     const buffer = to!wstring(str);
-                    stream_.writeExact(buffer.ptr, buffer.length * wchar.sizeof);
+                    stream_.writeExact(buffer);
                     break;
                 case Encoding.UTF_32:
                     const buffer = to!dstring(str);
-                    stream_.writeExact(buffer.ptr, buffer.length * dchar.sizeof);
+                    stream_.writeExact(buffer);
                     break;
             }
             catch(Exception e)
@@ -260,7 +245,7 @@ struct Emitter
         }
 
         ///In some cases, we wait for a few next events before emitting.
-        bool needMoreEvents() @trusted nothrow
+        bool needMoreEvents() @safe nothrow
         {
             if(events_.length == 0){return true;}
 
@@ -273,7 +258,7 @@ struct Emitter
         }
 
         ///Determines if we need specified number of more events.
-        bool needEvents(in uint count) @system nothrow
+        bool needEvents(in uint count) @safe nothrow
         {
             int level = 0;
 
@@ -315,7 +300,7 @@ struct Emitter
         }
 
         ///Determines if the type of current event is as specified. Throws if no event.
-        bool eventTypeIs(in EventID id) const pure @trusted
+        bool eventTypeIs(in EventID id) const pure @safe
         {
             enforce(!event_.isNull,
                     new Error("Expected an event, but no event is available."));
@@ -340,7 +325,7 @@ struct Emitter
         }
 
         ///Expect nothing, throwing if we still have something.
-        void expectNothing() const @trusted
+        void expectNothing() const @safe
         {
             throw new Error("Expected nothing, but got " ~ event_.idString);
         }
@@ -452,7 +437,7 @@ struct Emitter
         }
 
         ///Handle a new node. Context specifies where in the document we are.
-        void expectNode(const Context context) @trusted
+        void expectNode(const Context context) @safe
         {
             context_ = context;
 
@@ -504,7 +489,7 @@ struct Emitter
         }
 
         ///Handle a scalar.
-        void expectScalar() @trusted
+        void expectScalar() @safe
         {
             increaseIndent(Yes.flow);
             processScalar();
@@ -835,7 +820,7 @@ struct Emitter
         }
 
         ///Determine style to write the current scalar in.
-        ScalarStyle chooseScalarStyle() @trusted
+        ScalarStyle chooseScalarStyle() @safe
         {
             if(analysis_.flags.isNull){analysis_ = analyzeScalar(event_.value);}
 
@@ -878,7 +863,7 @@ struct Emitter
         }
 
         ///Prepare YAML version string for output.
-        static string prepareVersion(const string YAMLVersion) @trusted
+        static string prepareVersion(const string YAMLVersion) @safe
         {
             enforce(YAMLVersion.split(".")[0] == "1",
                     new Error("Unsupported YAML version: " ~ YAMLVersion));
@@ -886,7 +871,7 @@ struct Emitter
         }
 
         ///Encode an Unicode character for tag directive and write it to writer.
-        static void encodeChar(Writer)(ref Writer writer, in dchar c) @trusted
+        static void encodeChar(Writer)(ref Writer writer, in dchar c) @safe
         {
             char[4] data;
             const bytes = encode(data, c);
@@ -898,7 +883,7 @@ struct Emitter
         }
 
         ///Prepare tag directive handle for output.
-        static string prepareTagHandle(const string handle) @trusted
+        static string prepareTagHandle(const string handle) @safe
         {
             enforce(handle !is null && handle != "",
                     new Error("Tag handle must not be empty"));
@@ -913,7 +898,7 @@ struct Emitter
         }
 
         ///Prepare tag directive prefix for output.
-        static string prepareTagPrefix(const string prefix) @trusted
+        static string prepareTagPrefix(const string prefix) @safe
         {
             enforce(prefix !is null && prefix != "",
                     new Error("Tag prefix must not be empty"));
@@ -944,7 +929,7 @@ struct Emitter
         }
 
         ///Prepare tag for output.
-        string prepareTag(in string tag) @trusted
+        string prepareTag(in string tag) @safe
         {
             enforce(tag !is null, new Error("Tag must not be empty"));
 
@@ -991,7 +976,7 @@ struct Emitter
         }
 
         ///Prepare anchor for output.
-        static string prepareAnchor(const string anchor) @trusted
+        static string prepareAnchor(const string anchor) @safe
         {
             enforce(anchor != "",
                     new Error("Anchor must not be empty"));
@@ -1172,7 +1157,7 @@ struct Emitter
         //Writers.
 
         ///Start the YAML stream (write the unicode byte order mark).
-        void writeStreamStart() @system
+        void writeStreamStart() @safe
         {
             immutable(ubyte)[] bom;
             //Write BOM (except for UTF-8)
@@ -1196,13 +1181,13 @@ struct Emitter
         }
 
         ///End the YAML stream.
-        void writeStreamEnd() @system {stream_.flush();}
+        void writeStreamEnd() @safe {stream_.flush();}
 
         ///Write an indicator (e.g. ":", "[", ">", etc.).
-        void writeIndicator(const string indicator, 
-                            const Flag!"needWhitespace" needWhitespace, 
+        void writeIndicator(const char[] indicator,
+                            const Flag!"needWhitespace" needWhitespace,
                             const Flag!"whitespace" whitespace = No.whitespace,
-                            const Flag!"indentation" indentation = No.indentation) @system
+                            const Flag!"indentation" indentation = No.indentation) @safe
         {
             const bool prefixSpace = !whitespace_ && needWhitespace;
             whitespace_  = whitespace;
@@ -1218,7 +1203,7 @@ struct Emitter
         }
 
         ///Write indentation.
-        void writeIndent() @system
+        void writeIndent() @safe
         {
             const indent = indent_ == -1 ? 0 : indent_;
 
@@ -1244,7 +1229,7 @@ struct Emitter
         }
 
         ///Start new line.
-        void writeLineBreak(const string data = null) @system
+        void writeLineBreak(const char[] data = null) @safe
         {
             whitespace_ = indentation_ = true;
             ++line_;
@@ -1253,7 +1238,7 @@ struct Emitter
         }
 
         ///Write a YAML version directive.
-        void writeVersionDirective(const string versionText) @system
+        void writeVersionDirective(const string versionText) @safe
         {
             writeString("%YAML ");
             writeString(versionText);
@@ -1261,7 +1246,7 @@ struct Emitter
         }
 
         ///Write a tag directive.
-        void writeTagDirective(const string handle, const string prefix) @system
+        void writeTagDirective(const string handle, const string prefix) @safe
         {
             writeString("%TAG ");
             writeString(handle);
@@ -1319,14 +1304,8 @@ struct ScalarWriter
             split_ = split;
         }
 
-        ///Destroy the ScalarWriter.
-        @trusted nothrow ~this()
-        {
-            text_ = null;
-        }
-
         ///Write text as single quoted scalar.
-        void writeSingleQuoted() @system
+        void writeSingleQuoted() @safe
         {
             emitter_.writeIndicator("\'", Yes.needWhitespace);
             spaces_ = breaks_ = false;
@@ -1376,7 +1355,7 @@ struct ScalarWriter
         }
 
         ///Write text as double quoted scalar.
-        void writeDoubleQuoted() @system
+        void writeDoubleQuoted() @safe
         {
             resetTextPosition();
             emitter_.writeIndicator("\"", Yes.needWhitespace);
@@ -1438,7 +1417,7 @@ struct ScalarWriter
         }
 
         ///Write text as folded block scalar.
-        void writeFolded() @system
+        void writeFolded() @safe
         {
             initBlock('>');
             bool leadingSpace = true;
@@ -1484,7 +1463,7 @@ struct ScalarWriter
         }
 
         ///Write text as literal block scalar.
-        void writeLiteral() @system
+        void writeLiteral() @safe
         {
             initBlock('|');
             breaks_ = true;
@@ -1511,7 +1490,7 @@ struct ScalarWriter
         }
 
         ///Write text as plain scalar.
-        void writePlain() @system
+        void writePlain() @safe
         {
             if(emitter_.context_ == Emitter.Context.Root){emitter_.openEnded_ = true;}
             if(text_ == ""){return;}
@@ -1588,7 +1567,7 @@ struct ScalarWriter
         }
 
         ///Determine hints (indicators) for block scalar.
-        size_t determineBlockHints(char[] hints, uint bestIndent) const pure @trusted 
+        size_t determineBlockHints(char[] hints, uint bestIndent) const pure @safe
         {
             size_t hintsIdx = 0;
             if(text_.length == 0){return hintsIdx;}
@@ -1619,12 +1598,12 @@ struct ScalarWriter
         }
 
         ///Initialize for block scalar writing with specified indicator.
-        void initBlock(const char indicator) @system
+        void initBlock(const char indicator) @safe
         {
             char[4] hints;
             hints[0] = indicator;
             const hintsLength = 1 + determineBlockHints(hints[1 .. $], emitter_.bestIndent_);
-            emitter_.writeIndicator(cast(string)hints[0 .. hintsLength], Yes.needWhitespace);
+            emitter_.writeIndicator(hints[0 .. hintsLength], Yes.needWhitespace);
             if(hints.length > 0 && hints[$ - 1] == '+')
             {
                 emitter_.openEnded_ = true;
@@ -1633,7 +1612,7 @@ struct ScalarWriter
         }
 
         ///Write out the current text range.
-        void writeCurrentRange(const Flag!"UpdateColumn" updateColumn) @system
+        void writeCurrentRange(const Flag!"UpdateColumn" updateColumn) @safe
         {
             emitter_.writeString(text_[startByte_ .. endByte_]);
             if(updateColumn){emitter_.column_ += endChar_ - startChar_;}
@@ -1641,7 +1620,7 @@ struct ScalarWriter
         }
 
         ///Write line breaks in the text range.
-        void writeLineBreaks() @system
+        void writeLineBreaks() @safe
         {
             foreach(const dchar br; text_[startByte_ .. endByte_])
             {
@@ -1650,20 +1629,20 @@ struct ScalarWriter
                 {
                     char[4] brString;
                     const bytes = encode(brString, br);
-                    emitter_.writeLineBreak(cast(string)brString[0 .. bytes]);
+                    emitter_.writeLineBreak(brString[0 .. bytes]);
                 }
             }
             updateRangeStart();
         }
 
         ///Write line break if start of the text range is a newline.
-        void writeStartLineBreak() @system
+        void writeStartLineBreak() @safe
         {
             if(charAtStart == '\n'){emitter_.writeLineBreak();}
         }
 
         ///Write indentation, optionally resetting whitespace/indentation flags.
-        void writeIndent(const Flag!"ResetSpace" resetSpace) @system
+        void writeIndent(const Flag!"ResetSpace" resetSpace) @safe
         {
             emitter_.writeIndent();
             if(resetSpace)
@@ -1680,7 +1659,7 @@ struct ScalarWriter
         }
 
         ///Update the line breaks_ flag, optionally updating the spaces_ flag.
-        void updateBreaks(in dchar c, const Flag!"UpdateSpaces" updateSpaces) pure @trusted
+        void updateBreaks(in dchar c, const Flag!"UpdateSpaces" updateSpaces) pure @safe
         {
             if(c == dcharNone){return;}
             breaks_ = newlineSearch_.canFind(c);

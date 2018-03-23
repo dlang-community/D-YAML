@@ -182,7 +182,6 @@ final class Constructor
          * --------------------
          */
         void addConstructorScalar(T)(const string tag, T function(ref Node) ctor)
-            @safe nothrow
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -233,7 +232,6 @@ final class Constructor
          * --------------------
          */
         void addConstructorSequence(T)(const string tag, T function(ref Node) ctor)
-            @safe nothrow
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -284,7 +282,6 @@ final class Constructor
          * --------------------
          */
         void addConstructorMapping(T)(const string tag, T function(ref Node) ctor)
-            @safe nothrow
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -346,7 +343,6 @@ final class Constructor
          *          ctor = Constructor function.
          */
         auto addConstructor(T)(const string tag, T function(ref Node) ctor)
-            @safe nothrow
         {
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
@@ -363,7 +359,7 @@ final class Constructor
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
-        @property auto delegates(T)() @safe pure nothrow @nogc
+        @property auto delegates(T)()
         {
             static if(is(T : string))          {return &fromScalar_;}
             else static if(is(T : Node[]))     {return &fromSequence_;}
@@ -397,7 +393,7 @@ bool constructBool(ref Node node) @safe
 }
 
 /// Construct an integer (long) _node.
-long constructLong(ref Node node)
+long constructLong(ref Node node) @safe
 {
     string value = node.as!string().replace("_", "");
     const char c = value[0];
@@ -442,9 +438,9 @@ long constructLong(ref Node node)
 
     return result;
 }
-unittest
+@safe unittest
 {
-    long getLong(string str)
+    long getLong(string str) @safe
     {
         auto node = Node(str);
         return constructLong(node);
@@ -466,7 +462,7 @@ unittest
 }
 
 /// Construct a floating point (real) _node.
-real constructReal(ref Node node)
+real constructReal(ref Node node) @safe
 {
     string value = node.as!string().replace("_", "").toLower();
     const char c = value[0];
@@ -508,14 +504,14 @@ real constructReal(ref Node node)
 
     return result;
 }
-unittest
+@safe unittest
 {
-    bool eq(real a, real b, real epsilon = 0.2)
+    bool eq(real a, real b, real epsilon = 0.2) @safe
     {
         return a >= (b - epsilon) && a <= (b + epsilon);
     }
 
-    real getReal(string str)
+    real getReal(string str) @safe
     {
         auto node = Node(str);
         return constructReal(node);
@@ -537,7 +533,7 @@ unittest
 }
 
 /// Construct a binary (base64) _node.
-ubyte[] constructBinary(ref Node node)
+ubyte[] constructBinary(ref Node node) @safe
 {
     import std.ascii : newline;
     import std.array : array;
@@ -554,12 +550,12 @@ ubyte[] constructBinary(ref Node node)
     }
 }
 
-unittest
+@safe unittest
 {
-    ubyte[] test = cast(ubyte[])"The Answer: 42";
+    auto test = "The Answer: 42".representation;
     char[] buffer;
     buffer.length = 256;
-    string input = cast(string)Base64.encode(test, buffer);
+    string input = Base64.encode(test, buffer).idup;
     auto node = Node(input);
     auto value = constructBinary(node);
     assert(value == test);
@@ -567,7 +563,7 @@ unittest
 }
 
 /// Construct a timestamp (SysTime) _node.
-SysTime constructTimestamp(ref Node node)
+SysTime constructTimestamp(ref Node node) @safe
 {
     string value = node.as!string;
 
@@ -639,7 +635,7 @@ SysTime constructTimestamp(ref Node node)
 
     assert(false, "This code should never be reached");
 }
-unittest
+@safe unittest
 {
     writeln("D:YAML construction timestamp unittest");
 
@@ -669,23 +665,22 @@ unittest
 }
 
 /// Construct a string _node.
-string constructString(ref Node node)
+string constructString(ref Node node) @safe
 {
     return node.as!string;
 }
 
 /// Convert a sequence of single-element mappings into a sequence of pairs.
-Node.Pair[] getPairs(string type, Node[] nodes)
+Node.Pair[] getPairs(string type, Node[] nodes) @safe
 {
     Node.Pair[] pairs;
-
+    pairs.reserve(nodes.length);
     foreach(ref node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
                 new Exception("While constructing " ~ type ~
                               ", expected a mapping with single element"));
 
-        pairs.assumeSafeAppend();
         pairs ~= node.as!(Node.Pair[]);
     }
 
@@ -693,14 +688,13 @@ Node.Pair[] getPairs(string type, Node[] nodes)
 }
 
 /// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
-Node.Pair[] constructOrderedMap(ref Node node)
+Node.Pair[] constructOrderedMap(ref Node node) @safe
 {
     auto pairs = getPairs("ordered map", node.as!(Node[]));
 
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
@@ -710,37 +704,35 @@ Node.Pair[] constructOrderedMap(ref Node node)
     }
     return pairs;
 }
-unittest
+@safe unittest
 {
     writeln("D:YAML construction ordered map unittest");
 
     alias Node.Pair Pair;
 
-    Node[] alternateTypes(uint length)
+    Node[] alternateTypes(uint length) @safe
     {
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
             auto pair = (i % 2) ? Pair(i.to!string, i) : Pair(i, i.to!string);
-            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
     }
 
-    Node[] sameType(uint length)
+    Node[] sameType(uint length) @safe
     {
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
             auto pair = Pair(i.to!string, i);
-            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
     }
 
-    bool hasDuplicates(Node[] nodes)
+    bool hasDuplicates(Node[] nodes) @safe
     {
         auto node = Node(nodes);
         return null !is collectException(constructOrderedMap(node));
@@ -755,13 +747,13 @@ unittest
 }
 
 /// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
-Node.Pair[] constructPairs(ref Node node)
+Node.Pair[] constructPairs(ref Node node) @safe
 {
     return getPairs("pairs", node.as!(Node[]));
 }
 
 /// Construct a set _node.
-Node[] constructSet(ref Node node)
+Node[] constructSet(ref Node node) @safe
 {
     auto pairs = node.as!(Node.Pair[]);
 
@@ -769,28 +761,26 @@ Node[] constructSet(ref Node node)
     // memory allocation if possible.
     // Detect duplicates.
     ubyte[Node] map;
-    scope(exit){map.destroy();}
     Node[] nodes;
+    nodes.reserve(pairs.length);
     foreach(ref pair; pairs)
     {
         enforce((pair.key in map) is null, new Exception("Duplicate entry in a set"));
         map[pair.key] = 0;
-        nodes.assumeSafeAppend();
         nodes ~= pair.key;
     }
 
     return nodes;
 }
-unittest
+@safe unittest
 {
     writeln("D:YAML construction set unittest");
 
-    Node.Pair[] set(uint length)
+    Node.Pair[] set(uint length) @safe
     {
         Node.Pair[] pairs;
         foreach(long i; 0 .. length)
         {
-            pairs.assumeSafeAppend();
             pairs ~= Node.Pair(i.to!string, YAMLNull());
         }
 
@@ -827,19 +817,18 @@ unittest
 }
 
 /// Construct a sequence (array) _node.
-Node[] constructSequence(ref Node node)
+Node[] constructSequence(ref Node node) @safe
 {
     return node.as!(Node[]);
 }
 
 /// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
-Node.Pair[] constructMap(ref Node node)
+Node.Pair[] constructMap(ref Node node) @safe
 {
     auto pairs = node.as!(Node.Pair[]);
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
@@ -868,26 +857,26 @@ struct MyStruct
     }
 }
 
-MyStruct constructMyStructScalar(ref Node node)
+MyStruct constructMyStructScalar(ref Node node) @safe
 {
     // Guaranteed to be string as we construct from scalar.
     auto parts = node.as!string().split(":");
     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
 }
 
-MyStruct constructMyStructSequence(ref Node node)
+MyStruct constructMyStructSequence(ref Node node) @safe
 {
     // node is guaranteed to be sequence.
     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
 }
 
-MyStruct constructMyStructMapping(ref Node node)
+MyStruct constructMyStructMapping(ref Node node) @safe
 {
     // node is guaranteed to be mapping.
     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
-unittest
+@safe unittest
 {
     char[] data = "!mystruct 1:2:3".dup;
     auto loader = Loader(data);
@@ -899,7 +888,7 @@ unittest
     assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }
 
-unittest
+@safe unittest
 {
     char[] data = "!mystruct [1, 2, 3]".dup;
     auto loader = Loader(data);
@@ -911,7 +900,7 @@ unittest
     assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }
 
-unittest
+@safe unittest
 {
     char[] data = "!mystruct {x: 1, y: 2, z: 3}".dup;
     auto loader = Loader(data);

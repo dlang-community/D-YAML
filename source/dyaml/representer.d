@@ -48,7 +48,7 @@ final class Representer
 {
     private:
         // Representer functions indexed by types.
-        Node function(ref Node, Representer)[TypeInfo] representers_;
+        Node function(ref Node, Representer) @safe[TypeInfo] representers_;
         // Default style for scalar nodes.
         ScalarStyle defaultScalarStyle_ = ScalarStyle.Invalid;
         // Default style for collection nodes.
@@ -82,7 +82,7 @@ final class Representer
         }
 
         ///Destroy the Representer.
-        pure @safe nothrow ~this()
+        ~this() pure @safe nothrow
         {
             representers_.destroy();
             representers_ = null;
@@ -222,8 +222,8 @@ final class Representer
          * }
          * --------------------
          */
-        void addRepresenter(T)(Node function(ref Node, Representer) representer) 
-            @trusted pure
+        void addRepresenter(T)(Node function(ref Node, Representer) @safe representer)
+            @safe pure
         {
             assert((typeid(T) in representers_) is null, 
                    "Representer function for data type " ~ T.stringof ~
@@ -428,7 +428,7 @@ final class Representer
 
     package:
         //Represent a node based on its type, and return the represented result.
-        Node representData(ref Node data) @system
+        Node representData(ref Node data) @safe
         {
             //User types are wrapped in YAMLObject.
             auto type = data.isUserType ? data.as!YAMLObject.type : data.type;
@@ -454,7 +454,7 @@ final class Representer
         }
 
         //Represent a node, serializing with specified Serializer.
-        void represent(ref Serializer serializer, ref Node node) @trusted
+        void represent(ref Serializer serializer, ref Node node) @safe
         {
             auto data = representData(node);
             serializer.serialize(data);
@@ -478,12 +478,12 @@ Node representString(ref Node node, Representer representer) @safe
 }
 
 ///Represent a bytes _node as a binary scalar.
-Node representBytes(ref Node node, Representer representer) @system
+Node representBytes(ref Node node, Representer representer) @safe
 {
     const ubyte[] value = node.as!(ubyte[]);
     if(value is null){return representNull(node, representer);}
-    return representer.representScalar("tag:yaml.org,2002:binary", 
-                                       cast(string)Base64.encode(value),
+    return representer.representScalar("tag:yaml.org,2002:binary",
+                                       Base64.encode(value).idup,
                                        ScalarStyle.Literal);
 }
 
@@ -495,14 +495,14 @@ Node representBool(ref Node node, Representer representer) @safe
 }
 
 ///Represent a long _node as an integer scalar.
-Node representLong(ref Node node, Representer representer) @system
+Node representLong(ref Node node, Representer representer) @safe
 {
     return representer.representScalar("tag:yaml.org,2002:int", 
                                        to!string(node.as!long));
 }
 
 ///Represent a real _node as a floating point scalar.
-Node representReal(ref Node node, Representer representer) @system
+Node representReal(ref Node node, Representer representer) @safe
 {
     real f = node.as!real;
     string value = isNaN(f)                  ? ".nan":
@@ -516,7 +516,7 @@ Node representReal(ref Node node, Representer representer) @system
 }
 
 ///Represent a SysTime _node as a timestamp.
-Node representSysTime(ref Node node, Representer representer) @system
+Node representSysTime(ref Node node, Representer representer) @safe
 {
     return representer.representScalar("tag:yaml.org,2002:timestamp", 
                                        node.as!SysTime.toISOExtString());
@@ -545,15 +545,14 @@ Node representNodes(ref Node node, Representer representer) @safe
 }
 
 ///Represent a mapping _node as map/ordered map/pairs.
-Node representPairs(ref Node node, Representer representer) @system
+Node representPairs(ref Node node, Representer representer) @safe
 {
     auto pairs = node.as!(Node.Pair[]);
 
-    bool hasDuplicates(Node.Pair[] pairs)
+    bool hasDuplicates(Node.Pair[] pairs) @safe
     {
         //TODO this should be replaced by something with deterministic memory allocation.
         auto keys = redBlackTree!Node();
-        scope(exit){keys.destroy();}
         foreach(ref pair; pairs)
         {
             if(pair.key in keys){return true;}
@@ -562,7 +561,7 @@ Node representPairs(ref Node node, Representer representer) @system
         return false;
     }
 
-    Node[] mapToSequence(Node.Pair[] pairs)
+    Node[] mapToSequence(Node.Pair[] pairs) @safe
     {
         Node[] nodes;
         nodes.length = pairs.length;
@@ -610,8 +609,8 @@ struct MyStruct
     }        
 }
 
-Node representMyStruct(ref Node node, Representer representer) @system
-{ 
+Node representMyStruct(ref Node node, Representer representer) @safe
+{
     //The node is guaranteed to be MyStruct as we add representer for MyStruct.
     auto value = node.as!MyStruct;
     //Using custom scalar format, x:y:z.
@@ -658,15 +657,15 @@ class MyClass
     }
 
     ///Useful for Node.as!string .
-    override string toString() @trusted
+    override string toString() @safe
     {
         return format("MyClass(%s, %s, %s)", x, y, z);
     }
 }
 
 //Same as representMyStruct.
-Node representMyClass(ref Node node, Representer representer) @system
-{ 
+Node representMyClass(ref Node node, Representer representer) @safe
+{
     //The node is guaranteed to be MyClass as we add representer for MyClass.
     auto value = node.as!MyClass;
     //Using custom scalar format, x:y:z.
@@ -677,7 +676,7 @@ Node representMyClass(ref Node node, Representer representer) @system
 
 import dyaml.stream;
 
-unittest
+@safe unittest
 {
     foreach(r; [&representMyStruct, 
                 &representMyStructSeq, 
@@ -691,7 +690,7 @@ unittest
     }
 }
 
-unittest
+@safe unittest
 {
     auto dumper = Dumper(new YMemoryStream());
     auto representer = new Representer;

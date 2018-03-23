@@ -35,7 +35,7 @@ template FastCharSearch(dstring chars, uint tableSize = 256)
 }
 
 /// Generate the search table and the canFind method.
-string searchCode(dstring chars, uint tableSize)() @safe pure //nothrow
+string searchCode(dstring chars, uint tableSize)()
 {
     import std.string;
 
@@ -86,4 +86,10 @@ string searchCode(dstring chars, uint tableSize)() @safe pure //nothrow
              specialChars.length ? specialCharsCode() : q{false});
 
     return code;
+}
+
+@safe unittest
+{
+    mixin FastCharSearch!("+", 128) search;
+    assert(search.canFind('+'));
 }
