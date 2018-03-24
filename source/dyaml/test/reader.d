@@ -38,10 +38,16 @@ void runReader(const bool verbose, ubyte[] fileData) @safe
 ///
 /// Params:  verbose       = Print verbose output?
 ///          errorFilename = File name to read from.
-void testStreamError(bool verbose, string errorFilename) @trusted
+void testStreamError(bool verbose, string errorFilename) @safe
+{
+    runReader(verbose, readData(errorFilename));
+}
+
+// TODO: remove when a @safe ubyte[] file read can be done.
+ubyte[] readData(string filename) @trusted
 {
     import std.file;
-    runReader(verbose, cast(ubyte[])std.file.read(errorFilename));
+    return cast(ubyte[])std.file.read(filename);
 }
 
 @safe unittest
