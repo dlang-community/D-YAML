@@ -24,7 +24,7 @@ import dyaml.test.constructor;
 ///          codeFilename = File name to determine test case from.
 ///                         Nothing is read from this file, it only exists
 ///                         to specify that we need a matching unittest.
-void testRepresenterTypes(bool verbose, string codeFilename) @trusted
+void testRepresenterTypes(bool verbose, string codeFilename) @safe
 {
     string baseName = codeFilename.baseName.stripExtension;
     enforce((baseName in dyaml.test.constructor.expected) !is null,
@@ -33,7 +33,7 @@ void testRepresenterTypes(bool verbose, string codeFilename) @trusted
     Node[] expectedNodes = expected[baseName];
     foreach(encoding; [Encoding.UTF_8, Encoding.UTF_16, Encoding.UTF_32])
     {
-        string output;
+        ubyte[] output;
         Node[] readNodes;
 
         scope(failure)
@@ -44,7 +44,9 @@ void testRepresenterTypes(bool verbose, string codeFilename) @trusted
                 foreach(ref n; expectedNodes){writeln(n.debugString, "\n---\n");}
                 writeln("Read nodes:");
                 foreach(ref n; readNodes){writeln(n.debugString, "\n---\n");}
-                writeln("OUTPUT:\n", output);
+                () @trusted {
+                    writeln("OUTPUT:\n", cast(string)output);
+                }();
             }
         }
 
@@ -59,7 +61,7 @@ void testRepresenterTypes(bool verbose, string codeFilename) @trusted
         dumper.encoding    = encoding;
         dumper.dump(expectedNodes);
 
-        output = cast(string)emitStream.data;
+        output = emitStream.data;
         auto constructor = new Constructor;
         constructor.addConstructorMapping("!tag1", &constructClass);
         constructor.addConstructorScalar("!tag2", &constructStruct);
