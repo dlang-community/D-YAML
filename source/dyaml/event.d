@@ -123,6 +123,7 @@ Event event(EventID id)(const Mark start, const Mark end, const string anchor = 
  *          anchor   = Anchor of the sequence, if any.
  *          tag      = Tag of the sequence, if specified.
  *          implicit = Should the tag be implicitly resolved?
+ *          style = Style to use when outputting document.
  */
 Event collectionStartEvent(EventID id)
     (const Mark start, const Mark end, const string anchor, const string tag,

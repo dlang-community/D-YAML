@@ -92,28 +92,6 @@ final class Resolver
          *          regexp = Regular expression the scalar must match to have this _tag.
          *          first  = String of possible starting characters of the scalar.
          *
-         * Examples:
-         *
-         * Resolve scalars starting with 'A' to !_tag :
-         * --------------------
-         * import std.regex;
-         *
-         * import dyaml.all;
-         *
-         * void main()
-         * {
-         *     auto loader = Loader("file.txt");
-         *     auto resolver = new Resolver();
-         *     resolver.addImplicitResolver("!tag", std.regex.regex("A.*"), "A");
-         *     loader.resolver = resolver;
-         *     
-         *     //Note that we have no constructor from tag "!tag", so we can't
-         *     //actually load anything that resolves to this tag.
-         *     //See Constructor API documentation and tutorial for more information.
-         *
-         *     auto node = loader.load();
-         * }
-         * --------------------
          */
         void addImplicitResolver(string tag, Regex!char regexp, string first) 
             pure @safe 
@@ -126,6 +104,24 @@ final class Resolver
                 }
                 yamlImplicitResolvers_[c] ~= tuple(tag, regexp);
             }
+        }
+        /// Resolve scalars starting with 'A' to !_tag
+        unittest {
+            import std.regex;
+
+            import dyaml;
+
+
+            auto loader = Loader("example.yaml");
+            auto resolver = new Resolver();
+            resolver.addImplicitResolver("!tag", regex("A.*"), "A");
+            loader.resolver = resolver;
+
+            //Note that we have no constructor from tag "!tag", so we can't
+            //actually load anything that resolves to this tag.
+            //See Constructor API documentation and tutorial for more information.
+
+            //auto node = loader.load();
         }
 
     package:

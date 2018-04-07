@@ -28,74 +28,6 @@ import dyaml.token;
  *
  * User specified Constructor and/or Resolver can be used to support new
  * tags / data types.
- *
- * Examples:
- *
- * Load single YAML document from a file:
- * --------------------
- * auto rootNode = Loader("file.yaml").load();
- * ...
- * --------------------
- *
- * Load all YAML documents from a file:
- * --------------------
- * auto nodes = Loader("file.yaml").loadAll();
- * ...
- * --------------------
- *
- * Iterate over YAML documents in a file, lazily loading them:
- * --------------------
- * auto loader = Loader("file.yaml");
- *
- * foreach(ref node; loader)
- * {
- *     ...
- * }
- * --------------------
- *
- * Load YAML from a string:
- * --------------------
- * char[] yaml_input = "red:   '#ff0000'\n"
- *                     "green: '#00ff00'\n"
- *                     "blue:  '#0000ff'".dup;
- *
- * auto colors = Loader.fromString(yaml_input).load();
- *
- * foreach(string color, string value; colors)
- * {
- *     import std.stdio;
- *     writeln(color, " is ", value, " in HTML/CSS");
- * }
- * --------------------
- *
- * Load a file into a buffer in memory and then load YAML from that buffer:
- * --------------------
- * try
- * {
- *     import std.file;
- *     void[] buffer = std.file.read("file.yaml");
- *     auto yamlNode = Loader(buffer);
- *
- *     // Read data from yamlNode here...
- * }
- * catch(FileException e)
- * {
- *     writeln("Failed to read file 'file.yaml'");
- * }
- * --------------------
- *
- * Use a custom constructor/resolver to support custom data types and/or implicit tags:
- * --------------------
- * auto constructor = new Constructor();
- * auto resolver    = new Resolver();
- *
- * // Add constructor functions / resolver expressions here...
- *
- * auto loader = Loader("file.yaml");
- * loader.constructor = constructor;
- * loader.resolver    = resolver;
- * auto rootNode      = loader.load(node);
- * --------------------
  */
 struct Loader
 {
@@ -375,7 +307,48 @@ struct Loader
             if(constructor_ is null) { constructor_ = new Constructor(); }
         }
 }
+/// Load single YAML document from a file:
+@safe unittest
+{
+    write("example.yaml", "Hello world!");
+    auto rootNode = Loader("example.yaml").load();
+    assert(rootNode == "Hello world!");
+}
+/// Load all YAML documents from a file:
+@safe unittest
+{
+    import std.file : write;
+    write("example.yaml",
+        "---\n"~
+        "Hello world!\n"~
+        "...\n"~
+        "---\n"~
+        "Hello world 2!\n"~
+        "...\n"
+    );
+    auto nodes = Loader("example.yaml").loadAll();
+    assert(nodes.length == 2);
+}
+/// Iterate over YAML documents in a file, lazily loading them:
+@safe unittest
+{
+    import std.file : write;
+    write("example.yaml",
+        "---\n"~
+        "Hello world!\n"~
+        "...\n"~
+        "---\n"~
+        "Hello world 2!\n"~
+        "...\n"
+    );
+    auto loader = Loader("example.yaml");
 
+    foreach(ref node; loader)
+    {
+        //Do something
+    }
+}
+/// Load YAML from a string:
 @safe unittest
 {
     char[] yaml_input = ("red:   '#ff0000'\n" ~
@@ -389,4 +362,51 @@ struct Loader
         import std.stdio;
         writeln(color, " is ", value, " in HTML/CSS");
     }
+}
+
+/// Load a file into a buffer in memory and then load YAML from that buffer:
+@safe unittest
+{
+    import std.file : read, write;
+    import std.stdio : writeln;
+    // Create a yaml document
+    write("example.yaml",
+        "---\n"~
+        "Hello world!\n"~
+        "...\n"~
+        "---\n"~
+        "Hello world 2!\n"~
+        "...\n"
+    );
+    try
+    {
+        void[] buffer = read("example.yaml");
+        auto yamlNode = Loader(buffer);
+
+        // Read data from yamlNode here...
+    }
+    catch(FileException e)
+    {
+        writeln("Failed to read file 'example.yaml'");
+    }
+}
+/// Use a custom constructor/resolver to support custom data types and/or implicit tags:
+@safe unittest
+{
+    import std.file : write;
+    // Create a yaml document
+    write("example.yaml",
+        "---\n"~
+        "Hello world!\n"~
+        "...\n"
+    );
+    auto constructor = new Constructor();
+    auto resolver = new Resolver();
+
+    // Add constructor functions / resolver expressions here...
+
+    auto loader = Loader("example.yaml");
+    loader.constructor = constructor;
+    loader.resolver = resolver;
+    auto rootNode = loader.load();
 }

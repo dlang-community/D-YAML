@@ -103,6 +103,7 @@ static assert(Token.sizeof <= 32, "Token has unexpected size");
 ///          end       = End position of the token.
 ///          value     = Value of the token.
 ///          directive = Directive type (YAML or TAG in YAML 1.1).
+///          nameEnd = Position of the end of the name
 Token directiveToken(const Mark start, const Mark end, char[] value,
                      DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {

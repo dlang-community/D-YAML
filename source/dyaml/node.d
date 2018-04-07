@@ -311,13 +311,6 @@ struct Node
          *                  must be in full form, e.g. "tag:yaml.org,2002:set",
          *                  not a shortcut, like "!!set".
          *
-         * Examples:
-         * --------------------
-         * // Will be emitted as a sequence (default for arrays)
-         * auto seq = Node([1, 2, 3, 4, 5]);
-         * // Will be emitted as a set (overriden tag)
-         * auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
-         * --------------------
          */
         this(T)(T[] array, const string tag = null) @trusted
             if (!isSomeString!(T[]))
@@ -341,6 +334,14 @@ struct Node
                 value_ = Value(nodes);
             }
         }
+        ///
+        @safe unittest
+        {
+            // Will be emitted as a sequence (default for arrays)
+            auto seq = Node([1, 2, 3, 4, 5]);
+            // Will be emitted as a set (overriden tag)
+            auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
+        }
         @safe unittest
         {
             with(Node([1, 2, 3]))
@@ -350,10 +351,6 @@ struct Node
                 assert(opIndex(2).as!int == 3);
             }
 
-            // Will be emitted as a sequence (default for arrays)
-            auto seq = Node([1, 2, 3, 4, 5]);
-            // Will be emitted as a set (overriden tag)
-            auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
         }
 
         /** Construct a node from an associative _array.
@@ -373,15 +370,6 @@ struct Node
          *                  in full form, e.g. "tag:yaml.org,2002:omap", not a
          *                  shortcut, like "!!omap".
          *
-         * Examples:
-         * --------------------
-         * // Will be emitted as an unordered mapping (default for mappings)
-         * auto map   = Node([1 : "a", 2 : "b"]);
-         * // Will be emitted as an ordered map (overriden tag)
-         * auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
-         * // Will be emitted as pairs (overriden tag)
-         * auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
-         * --------------------
          */
         this(K, V)(V[K] array, const string tag = null) @trusted
         {
@@ -390,6 +378,16 @@ struct Node
             Node.Pair[] pairs;
             foreach(key, ref value; array){pairs ~= Pair(key, value);}
             value_ = Value(pairs);
+        }
+        ///
+        @safe unittest
+        {
+            // Will be emitted as an unordered mapping (default for mappings)
+            auto map   = Node([1 : "a", 2 : "b"]);
+            // Will be emitted as an ordered map (overriden tag)
+            auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
+            // Will be emitted as pairs (overriden tag)
+            auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
         @safe unittest
         {
@@ -403,12 +401,6 @@ struct Node
                 assert(opIndex("2").as!int == 2);
             }
 
-            // Will be emitted as an unordered mapping (default for mappings)
-            auto map   = Node([1 : "a", 2 : "b"]);
-            // Will be emitted as an ordered map (overriden tag)
-            auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
-            // Will be emitted as pairs (overriden tag)
-            auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
 
         /** Construct a node from arrays of _keys and _values.
@@ -437,15 +429,6 @@ struct Node
          *                   in full form, e.g. "tag:yaml.org,2002:omap", not a
          *                   shortcut, like "!!omap".
          *
-         * Examples:
-         * --------------------
-         * // Will be emitted as an unordered mapping (default for mappings)
-         * auto map   = Node([1, 2], ["a", "b"]);
-         * // Will be emitted as an ordered map (overriden tag)
-         * auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
-         * // Will be emitted as pairs (overriden tag)
-         * auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
-         * --------------------
          */
         this(K, V)(K[] keys, V[] values, const string tag = null) @trusted
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
@@ -463,6 +446,16 @@ struct Node
             foreach(i; 0 .. keys.length){pairs ~= Pair(keys[i], values[i]);}
             value_ = Value(pairs);
         }
+        ///
+        @safe unittest
+        {
+            // Will be emitted as an unordered mapping (default for mappings)
+            auto map   = Node([1, 2], ["a", "b"]);
+            // Will be emitted as an ordered map (overridden tag)
+            auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
+            // Will be emitted as pairs (overriden tag)
+            auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
+        }
         @safe unittest
         {
             with(Node(["1", "2"], [1, 2]))
@@ -472,12 +465,6 @@ struct Node
                 assert(opIndex("2").as!int == 2);
             }
 
-            // Will be emitted as an unordered mapping (default for mappings)
-            auto map   = Node([1, 2], ["a", "b"]);
-            // Will be emitted as an ordered map (overriden tag)
-            auto omap  = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:omap");
-            // Will be emitted as pairs (overriden tag)
-            auto pairs = Node([1, 2], ["a", "b"], "tag:yaml.org,2002:pairs");
         }
 
         /// Is this node valid (initialized)?
@@ -580,17 +567,6 @@ struct Node
          * by old versions of the program, which expect the node to be a scalar.
          * )
          *
-         * Examples:
-         *
-         * Automatic type conversion:
-         * --------------------
-         * auto node = Node(42);
-         *
-         * assert(node.as!int == 42);
-         * assert(node.as!string == "42");
-         * assert(node.as!double == 42.0);
-         * --------------------
-         *
          * Returns: Value of the node as specified type.
          *
          * Throws:  NodeException if unable to convert to specified type, or if
@@ -668,6 +644,15 @@ struct Node
                                 ". Expected: " ~ typeid(T).toString(), startMark_);
             }
             assert(false, "This code should never be reached");
+        }
+        /// Automatic type conversion
+        @safe unittest
+        {
+            auto node = Node(42);
+
+            assert(node.get!int == 42);
+            assert(node.get!string == "42");
+            assert(node.get!double == 42.0);
         }
         @safe unittest
         {
@@ -968,7 +953,9 @@ struct Node
          *
          * To set element at a null index, use YAMLNull for index.
          *
-         * Params:  index = Index of the value to set.
+         * Params:
+         *          value = Value to assign.
+         *          index = Index of the value to set.
          *
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
