@@ -990,9 +990,9 @@ void testEndian(R)()
 
 void testPeekPrefixForward(R)()
 {
-    import dyaml.stream;
+    import std.encoding;
     writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
-    ubyte[] data = ByteOrderMarks[BOM.UTF8] ~ cast(ubyte[])"data";
+    ubyte[] data = bomTable[BOM.utf8].sequence ~ cast(ubyte[])"data";
     auto reader = new R(data);
     assert(reader.peek() == 'd');
     assert(reader.peek(1) == 'a');
@@ -1008,12 +1008,12 @@ void testPeekPrefixForward(R)()
 
 void testUTF(R)()
 {
-    import dyaml.stream;
+    import std.encoding;
     writeln(typeid(R).toString() ~ ": UTF formats unittest");
     dchar[] data = cast(dchar[])"data";
     void utf_test(T)(T[] data, BOM bom)
     {
-        ubyte[] bytes = ByteOrderMarks[bom] ~
+        ubyte[] bytes = bomTable[bom].sequence ~
                         (cast(ubyte[])data)[0 .. data.length * T.sizeof];
         auto reader = new R(bytes);
         assert(reader.peek() == 'd');
@@ -1021,9 +1021,9 @@ void testUTF(R)()
         assert(reader.peek(2) == 't');
         assert(reader.peek(3) == 'a');
     }
-    utf_test!char(to!(char[])(data), BOM.UTF8);
-    utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.UTF16BE : BOM.UTF16LE);
-    utf_test(data, endian == Endian.bigEndian ? BOM.UTF32BE : BOM.UTF32LE);
+    utf_test!char(to!(char[])(data), BOM.utf8);
+    utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.utf16be : BOM.utf16le);
+    utf_test(data, endian == Endian.bigEndian ? BOM.utf32be : BOM.utf32le);
 }
 
 void test1Byte(R)()
