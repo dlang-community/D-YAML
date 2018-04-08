@@ -15,6 +15,7 @@ import std.array;
 import std.ascii;
 import std.container;
 import std.conv;
+import std.encoding;
 import std.exception;
 import std.format;
 import std.range;
@@ -1166,14 +1167,14 @@ struct Emitter
                 case Encoding.UTF_8:
                     break;
                 case Encoding.UTF_16:
-                    bom = std.system.endian == Endian.littleEndian 
-                          ? ByteOrderMarks[BOM.UTF16LE]
-                          : ByteOrderMarks[BOM.UTF16BE];
+                    bom = std.system.endian == Endian.littleEndian
+                          ? bomTable[BOM.utf16le].sequence
+                          : bomTable[BOM.utf16be].sequence;
                     break;
                 case Encoding.UTF_32:
-                    bom = std.system.endian == Endian.littleEndian 
-                          ? ByteOrderMarks[BOM.UTF32LE]  
-                          : ByteOrderMarks[BOM.UTF32BE];
+                    bom = std.system.endian == Endian.littleEndian
+                          ? bomTable[BOM.utf32le].sequence
+                          : bomTable[BOM.utf32be].sequence;
                     break;
             }
 

@@ -1,33 +1,5 @@
 module dyaml.stream;
 
-enum BOM
-{
-    UTF8,           /// UTF-8
-    UTF16LE,        /// UTF-16 Little Endian
-    UTF16BE,        /// UTF-16 Big Endian
-    UTF32LE,        /// UTF-32 Little Endian
-    UTF32BE,        /// UTF-32 Big Endian
-}
-
-import std.system;
-
-private enum int NBOMS = 5;
-immutable Endian[NBOMS] BOMEndian =
-[
-    std.system.endian,
-    Endian.littleEndian, Endian.bigEndian,
-    Endian.littleEndian, Endian.bigEndian
-];
-
-immutable ubyte[][NBOMS] ByteOrderMarks =
-[
-    [0xEF, 0xBB, 0xBF],
-    [0xFF, 0xFE],
-    [0xFE, 0xFF],
-    [0xFF, 0xFE, 0x00, 0x00],
-    [0x00, 0x00, 0xFE, 0xFF]
-];
-
 interface YStream
 {
     void writeExact(const void* buffer, size_t size);
