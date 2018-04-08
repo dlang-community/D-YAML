@@ -13,6 +13,6 @@
     {
         "debug": { "buildOptions": ["debugMode"] },
         "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
-        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck"] },
-    },
+        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck"] }
+    }
 }
