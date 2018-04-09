@@ -41,8 +41,6 @@ class NodeException : YAMLException
         }
 }
 
-private alias NodeException Error;
-
 // Node kinds.
 package enum NodeID : ubyte
 {
@@ -611,7 +609,7 @@ struct Node
                 {
                     return (cast(YAMLContainer!T)object).value_;
                 }
-                throw new Error("Node stores unexpected type: " ~ object.type.toString() ~
+                throw new NodeException("Node stores unexpected type: " ~ object.type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -624,7 +622,7 @@ struct Node
                 static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!string);}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                                     ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else
@@ -636,7 +634,7 @@ struct Node
                     }
                     catch(VariantException e)
                     {
-                        throw new Error("Unable to convert node value to string", startMark_);
+                        throw new NodeException("Unable to convert node value to string", startMark_);
                     }
                 }
             }
@@ -659,14 +657,14 @@ struct Node
                     {
                         const temp = value_.get!(const long);
                         enforce(temp >= T.min && temp <= T.max,
-                            new Error("Integer value of type " ~ typeid(T).toString() ~
+                            new NodeException("Integer value of type " ~ typeid(T).toString() ~
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                         return to!T(temp);
                     }
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                         ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
-                else throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                                 ". Expected: " ~ typeid(T).toString(), startMark_);
             }
             assert(false, "This code should never be reached");
@@ -691,7 +689,7 @@ struct Node
                 {
                     return (cast(const YAMLContainer!(Unqual!T))object).value_;
                 }
-                throw new Error("Node has unexpected type: " ~ object.type.toString() ~
+                throw new NodeException("Node has unexpected type: " ~ object.type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
@@ -704,7 +702,7 @@ struct Node
                 static if(!stringConversion)
                 {
                     if(isString){return to!T(value_.get!(const string));}
-                    throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                                     ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
                 else
@@ -717,7 +715,7 @@ struct Node
                     }
                     catch(VariantException e)
                     {
-                        throw new Error("Unable to convert node value to string", startMark_);
+                        throw new NodeException("Unable to convert node value to string", startMark_);
                     }
                 }
             }
@@ -738,11 +736,11 @@ struct Node
                 {
                     const temp = value_.get!(const long);
                     enforce(temp >= T.min && temp <= T.max,
-                            new Error("Integer value of type " ~ typeid(T).toString() ~
+                            new NodeException("Integer value of type " ~ typeid(T).toString() ~
                                       " out of range. Value: " ~ to!string(temp), startMark_));
                     return to!T(temp);
                 }
-                throw new Error("Node stores unexpected type: " ~ type.toString() ~
+                throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
@@ -759,7 +757,7 @@ struct Node
         {
             if(isSequence)    {return value_.get!(const Node[]).length;}
             else if(isMapping){return value_.get!(const Pair[]).length;}
-            throw new Error("Trying to get length of a " ~ nodeTypeString ~ " node",
+            throw new NodeException("Trying to get length of a " ~ nodeTypeString ~ " node",
                             startMark_);
         }
 
@@ -802,9 +800,9 @@ struct Node
                 }
 
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
-                throw new Error(msg, startMark_);
+                throw new NodeException(msg, startMark_);
             }
-            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
+            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         ///
         @safe unittest
@@ -1005,7 +1003,7 @@ struct Node
                 return;
             }
 
-            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
+            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         @safe unittest
         {
@@ -1051,7 +1049,7 @@ struct Node
         auto sequence(T = Node)()
         {
             enforce(isSequence,
-                    new Error("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
+                    new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
                         startMark_));
             struct Range
             {
@@ -1140,7 +1138,7 @@ struct Node
         auto mapping() @safe
         {
             enforce(isMapping,
-                    new Error("Trying to 'mapping'-iterate over a "
+                    new NodeException("Trying to 'mapping'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             struct Range
             {
@@ -1225,7 +1223,7 @@ struct Node
         auto mappingKeys(K = Node)()
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingKeys'-iterate over a " 
+                    new NodeException("Trying to 'mappingKeys'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!K == Node))
                 return mapping.map!(pair => pair.key);
@@ -1255,7 +1253,7 @@ struct Node
         auto mappingValues(V = Node)()
         {
             enforce(isMapping,
-                    new Error("Trying to 'mappingValues'-iterate over a " 
+                    new NodeException("Trying to 'mappingValues'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!V == Node))
                 return mapping.map!(pair => pair.value);
@@ -1285,7 +1283,7 @@ struct Node
         int opApply(T)(int delegate(ref T) dg) @trusted
         {
             enforce(isSequence,
-                    new Error("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
+                    new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             int result = 0;
@@ -1341,7 +1339,7 @@ struct Node
         int opApply(K, V)(int delegate(ref K, ref V) dg) @trusted
         {
             enforce(isMapping,
-                    new Error("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
+                    new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             int result = 0;
@@ -1440,7 +1438,7 @@ struct Node
         void add(T)(T value) @trusted
         {
             enforce(isSequence(),
-                    new Error("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
+                    new NodeException("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
 
             auto nodes = get!(Node[])();
             static if(is(Unqual!T == Node)){nodes ~= value;}
@@ -1476,7 +1474,7 @@ struct Node
         void add(K, V)(K key, V value) @trusted
         {
             enforce(isMapping(),
-                    new Error("Trying to add a key-value pair to a " ~
+                    new NodeException("Trying to add a key-value pair to a " ~
                               nodeTypeString ~ " node",
                               startMark_));
 
@@ -1511,7 +1509,7 @@ struct Node
         Node* opBinaryRight(string op, K)(K key)
             if (op == "in")
         {
-            enforce(isMapping, new Error("Trying to use 'in' on a " ~
+            enforce(isMapping, new NodeException("Trying to use 'in' on a " ~
                                          nodeTypeString ~ " node", startMark_));
 
             auto idx = findPair(key);
@@ -1957,7 +1955,7 @@ struct Node
                 return findPair!(T, key)(rhs) >= 0;
             }
 
-            throw new Error("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
+            throw new NodeException("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
                             startMark_);
         }
 
@@ -1965,7 +1963,7 @@ struct Node
         void remove_(T, Flag!"key" key, string func)(T rhs)
         {
             enforce(isSequence || isMapping,
-                    new Error("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
+                    new NodeException("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
                               startMark_));
 
             static void removeElem(E, I)(ref Node node, I index)
@@ -2037,12 +2035,12 @@ struct Node
 
             static if(!isIntegral!T)
             {
-                throw new Error("Indexing a sequence with a non-integral type.", startMark_);
+                throw new NodeException("Indexing a sequence with a non-integral type.", startMark_);
             }
             else
             {
                 enforce(index >= 0 && index < value_.get!(const Node[]).length,
-                        new Error("Sequence index out of range: " ~ to!string(index),
+                        new NodeException("Sequence index out of range: " ~ to!string(index),
                                   startMark_));
             }
         }
@@ -2068,9 +2066,9 @@ struct Node
                 }
 
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
-                throw new Error(msg, startMark_);
+                throw new NodeException(msg, startMark_);
             }
-            throw new Error("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
+            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
 }
 
