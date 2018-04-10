@@ -75,4 +75,3 @@ struct Flags(names ...) if(names.length <= 8)
     flags.empty = false;
     assert(flags.empty == false && flags.multiline == false);
 }
-

@@ -1026,7 +1026,7 @@ struct Node
 
         /** Return a range object iterating over a sequence, getting each
           * element as T.
-          * 
+          *
           * If T is Node, simply iterate over the nodes in the sequence.
           * Otherwise, convert each node to T during iteration.
           *
@@ -1052,10 +1052,10 @@ struct Node
                 /* Input range functionality. */
                 bool empty() @property { return position >= subnodes.length; }
 
-                void popFront() 
-                { 
+                void popFront()
+                {
                     enforce(!empty, "Attempted to popFront an empty sequence");
-                    position++; 
+                    position++;
                 }
 
                 T front() @property
@@ -1071,14 +1071,14 @@ struct Node
                 Range save() { return this; }
 
                 /* Bidirectional range functionality. */
-                void popBack() 
-                { 
+                void popBack()
+                {
                     enforce(!empty, "Attempted to popBack an empty sequence");
-                    subnodes = subnodes[0 .. $ - 1]; 
+                    subnodes = subnodes[0 .. $ - 1];
                 }
 
-                T back() 
-                {  
+                T back()
+                {
                     enforce(!empty, "Attempted to take the back of an empty sequence");
                     static if (is(Unqual!T == Node))
                         return subnodes[$ - 1];

@@ -102,7 +102,7 @@ class ParserException : MarkedYAMLException
 
 /// Generates events from tokens provided by a Scanner.
 ///
-/// While Parser receives tokens with non-const character slices, the events it 
+/// While Parser receives tokens with non-const character slices, the events it
 /// produces are immutable strings, which are usually the same slices, cast to string.
 /// Parser is the last layer of D:YAML that may possibly do any modifications to these
 /// slices.
@@ -110,7 +110,7 @@ final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
-        static TagDirective[] defaultTagDirectives_ = 
+        static TagDirective[] defaultTagDirectives_ =
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Scanner providing YAML tokens.

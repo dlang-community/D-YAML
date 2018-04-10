@@ -108,7 +108,7 @@ final class Composer
         Node getNode() @safe
         {
             //Get the root node of the next document.
-            assert(!parser_.checkEvent(EventID.StreamEnd), 
+            assert(!parser_.checkEvent(EventID.StreamEnd),
                    "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
@@ -118,7 +118,7 @@ final class Composer
         ///Get single YAML document, throwing if there is more than one document.
         Node getSingleNode() @trusted
         {
-            assert(!parser_.checkEvent(EventID.StreamEnd), 
+            assert(!parser_.checkEvent(EventID.StreamEnd),
                    "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
@@ -141,7 +141,7 @@ final class Composer
         ///
         ///Params:  pairAppenderLevel = Current level in the pair appender stack.
         ///         nodeAppenderLevel = Current level the node appender stack.
-        void ensureAppendersExist(const uint pairAppenderLevel, const uint nodeAppenderLevel) 
+        void ensureAppendersExist(const uint pairAppenderLevel, const uint nodeAppenderLevel)
             @trusted
         {
             while(pairAppenders_.length <= pairAppenderLevel)
@@ -235,10 +235,10 @@ final class Composer
         Node composeScalarNode() @safe
         {
             immutable event = parser_.getEvent();
-            const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value, 
+            const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value,
                                           event.implicit);
 
-            Node node = constructor_.node(event.startMark, event.endMark, tag, 
+            Node node = constructor_.node(event.startMark, event.endMark, tag,
                                           event.value, event.scalarStyle);
 
             return node;
@@ -248,14 +248,14 @@ final class Composer
         ///
         /// Params: pairAppenderLevel = Current level of the pair appender stack.
         ///         nodeAppenderLevel = Current level of the node appender stack.
-        Node composeSequenceNode(const uint pairAppenderLevel, const uint nodeAppenderLevel) 
+        Node composeSequenceNode(const uint pairAppenderLevel, const uint nodeAppenderLevel)
             @system
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             auto nodeAppender = &(nodeAppenders_[nodeAppenderLevel]);
 
             immutable startEvent = parser_.getEvent();
-            const tag = resolver_.resolve(NodeID.Sequence, startEvent.tag, null, 
+            const tag = resolver_.resolve(NodeID.Sequence, startEvent.tag, null,
                                           startEvent.implicit);
 
             while(!parser_.checkEvent(EventID.SequenceEnd))
@@ -319,7 +319,7 @@ final class Composer
                 }
                 foreach(node; toMerge)
                 {
-                    merge(*pairAppender, flatten(node, startMark, endMark, 
+                    merge(*pairAppender, flatten(node, startMark, endMark,
                                                  pairAppenderLevel + 1, nodeAppenderLevel));
                 }
             }
@@ -327,7 +327,7 @@ final class Composer
             else if(root.isSequence) foreach(ref Node node; root)
             {
                 if(!node.isType!(Node.Pair[])){error(node);}
-                merge(*pairAppender, flatten(node, startMark, endMark, 
+                merge(*pairAppender, flatten(node, startMark, endMark,
                                              pairAppenderLevel + 1, nodeAppenderLevel));
             }
             else
@@ -350,14 +350,14 @@ final class Composer
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             immutable startEvent = parser_.getEvent();
-            const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null, 
+            const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null,
                                           startEvent.implicit);
             auto pairAppender = &(pairAppenders_[pairAppenderLevel]);
 
             Tuple!(Node, Mark)[] toMerge;
             while(!parser_.checkEvent(EventID.MappingEnd))
             {
-                auto pair = Node.Pair(composeNode(pairAppenderLevel + 1, nodeAppenderLevel), 
+                auto pair = Node.Pair(composeNode(pairAppenderLevel + 1, nodeAppenderLevel),
                                       composeNode(pairAppenderLevel + 1, nodeAppenderLevel));
 
                 //Need to flatten and merge the node referred by YAMLMerge.
@@ -373,7 +373,7 @@ final class Composer
             }
             foreach(node; toMerge)
             {
-                merge(*pairAppender, flatten(node[0], startEvent.startMark, node[1], 
+                merge(*pairAppender, flatten(node[0], startEvent.startMark, node[1],
                                              pairAppenderLevel + 1, nodeAppenderLevel));
             }
 

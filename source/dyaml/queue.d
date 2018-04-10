@@ -18,14 +18,14 @@ import std.traits;
 package:
 
 /// Simple queue implemented as a singly linked list with a tail pointer.
-/// 
+///
 /// Needed in some D:YAML code that needs a queue-like structure without too much
 /// reallocation that goes with an array.
-/// 
+///
 /// This should be replaced once Phobos has a decent queue/linked list.
-/// 
+///
 /// Uses manual allocation through malloc/free.
-/// 
+///
 /// Also has some features uncommon for a queue, e.g. iteration. Couldn't bother with
 /// implementing a range, as this is used only as a placeholder until Phobos gets a
 /// decent replacement.
@@ -88,7 +88,7 @@ struct Queue(T)
         body
         {
             const previous = cursor_;
-            cursor_ = cursor_.next_; 
+            cursor_ = cursor_.next_;
             return previous.payload_;
         }
 
@@ -160,7 +160,7 @@ struct Queue(T)
         }
 
         /// Return the next element in the queue.
-        ref inout(T) peek() @safe pure nothrow inout @nogc 
+        ref inout(T) peek() @safe pure nothrow inout @nogc
         in
         {
             assert(!empty, "Trying to peek at an element in an empty queue");

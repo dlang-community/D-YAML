@@ -120,7 +120,7 @@ template ExceptionCtors()
 template MarkedExceptionCtors()
 {
     public:
-        this(string context, const Mark contextMark, string problem, 
+        this(string context, const Mark contextMark, string problem,
              const Mark problemMark, string file = __FILE__, size_t line = __LINE__)
             @safe pure nothrow
         {

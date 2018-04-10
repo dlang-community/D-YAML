@@ -343,13 +343,13 @@ final class Constructor
 
 
 /// Construct a _null _node.
-YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc 
+YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc
 {
     return YAMLNull();
 }
 
 /// Construct a merge _node - a _node that merges another _node into a mapping.
-YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc 
+YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc
 {
     return YAMLMerge();
 }

@@ -123,7 +123,7 @@ struct Dumper
             //catch(StreamException e)
             catch(Exception e)
             {
-                throw new YAMLException("Unable to open file " ~ filename ~ 
+                throw new YAMLException("Unable to open file " ~ filename ~
                                         " for YAML dumping: " ~ e.msg);
             }
             // need to destroy the File we constructed.
@@ -171,7 +171,7 @@ struct Dumper
         ///Set indentation width. 2 by default. Must not be zero.
         @property void indent(uint indent) pure @safe nothrow
         in
-        {   
+        {
             assert(indent != 0, "Can't use zero YAML indent width");
         }
         body
@@ -195,7 +195,7 @@ struct Dumper
         @property void encoding(Encoding encoding) pure @safe nothrow
         {
             encoding_ = encoding;
-        }    
+        }
 
         ///Always explicitly write document start?
         @property void explicitStart(bool explicit) pure @safe nothrow
@@ -216,10 +216,10 @@ struct Dumper
         }
 
         /**
-         * Specify tag directives. 
+         * Specify tag directives.
          *
          * A tag directive specifies a shorthand notation for specifying _tags.
-         * Each tag directive associates a handle with a prefix. This allows for 
+         * Each tag directive associates a handle with a prefix. This allows for
          * compact tag notation.
          *
          * Each handle specified MUST start and end with a '!' character
@@ -262,13 +262,13 @@ struct Dumper
         /**
          * Dump one or more YAML _documents to the file/stream.
          *
-         * Note that while you can call dump() multiple times on the same 
+         * Note that while you can call dump() multiple times on the same
          * dumper, you will end up writing multiple YAML "files" to the same
          * file/stream.
          *
          * Params:  documents = Documents to _dump (root nodes of the _documents).
          *
-         * Throws:  YAMLException on error (e.g. invalid nodes, 
+         * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
         void dump(Node[] documents ...) @trusted
@@ -285,7 +285,7 @@ struct Dumper
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to dump YAML to stream " 
+                throw new YAMLException("Unable to dump YAML to stream "
                                         ~ name_ ~ " : " ~ e.msg);
             }
         }
@@ -310,7 +310,7 @@ struct Dumper
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to emit YAML to stream " 
+                throw new YAMLException("Unable to emit YAML to stream "
                                         ~ name_ ~ " : " ~ e.msg);
             }
         }

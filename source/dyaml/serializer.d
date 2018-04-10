@@ -59,16 +59,16 @@ struct Serializer
          * Construct a Serializer.
          *
          * Params:  emitter       = Emitter to emit events produced.
-         *          resolver      = Resolver used to determine which tags are automaticaly resolvable. 
+         *          resolver      = Resolver used to determine which tags are automaticaly resolvable.
          *          encoding      = Character encoding to use.
-         *          explicitStart = Do all document starts have to be specified explicitly? 
-         *          explicitEnd   = Do all document ends have to be specified explicitly? 
-         *          YAMLVersion   = YAML version string. 
-         *          tagDirectives = Tag directives to emit. 
+         *          explicitStart = Do all document starts have to be specified explicitly?
+         *          explicitEnd   = Do all document ends have to be specified explicitly?
+         *          YAMLVersion   = YAML version string.
+         *          tagDirectives = Tag directives to emit.
          */
         this(ref Emitter emitter, Resolver resolver, Encoding encoding,
-             const Flag!"explicitStart" explicitStart, 
-             const Flag!"explicitEnd" explicitEnd, string YAMLVersion, 
+             const Flag!"explicitStart" explicitStart,
+             const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
              TagDirective[] tagDirectives) @trusted
         {
             emitter_       = &emitter;
@@ -96,7 +96,7 @@ struct Serializer
         ///Serialize a node, emitting it in the process.
         void serialize(ref Node node) @safe
         {
-            emitter_.emit(documentStartEvent(Mark(), Mark(), explicitStart_, 
+            emitter_.emit(documentStartEvent(Mark(), Mark(), explicitStart_,
                                              YAMLVersion_, tagDirectives_));
             anchorNode(node);
             serializeNode(node);
@@ -112,7 +112,7 @@ struct Serializer
         /**
          * Determine if it's a good idea to add an anchor to a node.
          *
-         * Used to prevent associating every single repeating scalar with an 
+         * Used to prevent associating every single repeating scalar with an
          * anchor/alias - only nodes long enough can use anchors.
          *
          * Params:  node = Node to check for anchorability.
@@ -168,8 +168,8 @@ struct Serializer
         ///Serialize a node and all its subnodes.
         void serializeNode(ref Node node) @safe
         {
-            //If the node has an anchor, emit an anchor (as aliasEvent) on the 
-            //first occurrence, save it in serializedNodes_, and emit an alias 
+            //If the node has an anchor, emit an anchor (as aliasEvent) on the
+            //first occurrence, save it in serializedNodes_, and emit an alias
             //if it reappears.
             string aliased = null;
             if(anchorable(node) && (node in anchors_) !is null)
@@ -211,12 +211,12 @@ struct Serializer
             }
             if(node.isMapping)
             {
-                const defaultTag = resolver_.defaultMappingTag; 
+                const defaultTag = resolver_.defaultMappingTag;
                 const implicit = node.tag_ == defaultTag;
                 emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                 implicit, node.collectionStyle));
                 foreach(ref Node key, ref Node value; node)
-                { 
+                {
                     serializeNode(key);
                     serializeNode(value);
                 }
