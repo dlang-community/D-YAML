@@ -63,7 +63,7 @@ struct Loader
             name_ = filename;
             try
             {
-                this(std.file.read(filename)); 
+                this(std.file.read(filename));
             }
             catch(FileException e)
             {

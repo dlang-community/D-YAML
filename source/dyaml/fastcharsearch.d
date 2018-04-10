@@ -24,7 +24,7 @@ package:
  * Params:  chars     = String to search in.
  *          tableSize = Maximum number of bytes used by the table.
  *
- * Generated method: 
+ * Generated method:
  *     bool canFind(dchar c)
  *
  *     Determines if a character is in the string.
@@ -57,7 +57,7 @@ string searchCode(dstring chars, uint tableSize)()
         return specialChars.map!(c => q{cast(uint)c == %s}.format(cast(uint)c)).join(q{ || });
     }
 
-    const caseInTable = 
+    const caseInTable =
     q{
             if(c < %s)
             {
@@ -68,21 +68,21 @@ string searchCode(dstring chars, uint tableSize)()
     string code;
     if(tableSize)
     {
-        code ~= 
+        code ~=
         q{
             static immutable ubyte[%s] table_ = [
             %s];
         }.format(tableSize, table[].map!(c => c ? q{true} : q{false}).join(q{, }));
     }
-    code ~= 
+    code ~=
     q{
-        bool canFind(const dchar c) @safe pure nothrow @nogc 
+        bool canFind(const dchar c) @safe pure nothrow @nogc
         {
             %s
 
             return %s;
         }
-    }.format(tableSize ? caseInTable : "", 
+    }.format(tableSize ? caseInTable : "",
              specialChars.length ? specialCharsCode() : q{false});
 
     return code;

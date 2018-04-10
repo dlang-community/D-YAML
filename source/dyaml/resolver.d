@@ -6,10 +6,10 @@
 
 /**
  * Implements a class that resolves YAML tags. This can be used to implicitly
- * resolve tags for custom data types, removing the need to explicitly 
- * specify tags in YAML. A tutorial can be found 
- * $(LINK2 ../tutorials/custom_types.html, here).    
- * 
+ * resolve tags for custom data types, removing the need to explicitly
+ * specify tags in YAML. A tutorial can be found
+ * $(LINK2 ../tutorials/custom_types.html, here).
+ *
  * Code based on $(LINK2 http://www.pyyaml.org, PyYAML).
  */
 module dyaml.resolver;
@@ -30,7 +30,7 @@ import dyaml.exception;
  *
  * Can be used to implicitly resolve custom data types of scalar values.
  */
-final class Resolver 
+final class Resolver
 {
     private:
         // Default tag to use for scalars.
@@ -40,7 +40,7 @@ final class Resolver
         // Default tag to use for mappings.
         string defaultMappingTag_;
 
-        /* 
+        /*
          * Arrays of scalar resolver tuples indexed by starting character of a scalar.
          *
          * Each tuple stores regular expression the scalar must match,
@@ -60,7 +60,7 @@ final class Resolver
          *
          * Params:  defaultImplicitResolvers = Use default YAML implicit resolvers?
          */
-        this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers) 
+        this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers)
             @safe
         {
             defaultScalarTag_   = "tag:yaml.org,2002:str";
@@ -77,11 +77,11 @@ final class Resolver
         }
 
         /**
-         * Add an implicit scalar resolver. 
+         * Add an implicit scalar resolver.
          *
-         * If a scalar matches regexp and starts with any character in first, 
+         * If a scalar matches regexp and starts with any character in first,
          * its _tag is set to tag. If it matches more than one resolver _regexp
-         * resolvers added _first override ones added later. Default resolvers 
+         * resolvers added _first override ones added later. Default resolvers
          * override any user specified resolvers, but they can be disabled in
          * Resolver constructor.
          *
@@ -93,8 +93,8 @@ final class Resolver
          *          first  = String of possible starting characters of the scalar.
          *
          */
-        void addImplicitResolver(string tag, Regex!char regexp, string first) 
-            pure @safe 
+        void addImplicitResolver(string tag, Regex!char regexp, string first)
+            pure @safe
         {
             foreach(const dchar c; first)
             {
@@ -153,7 +153,7 @@ final class Resolver
                 size_t dummy;
                 const dchar first = value.length == 0 ? '\0' : decode(value, dummy);
 
-                auto resolvers = (first in yamlImplicitResolvers_) is null ? 
+                auto resolvers = (first in yamlImplicitResolvers_) is null ?
                                  [] : yamlImplicitResolvers_[first];
 
                 //If regexp matches, return tag.
@@ -187,19 +187,19 @@ final class Resolver
                 return true;
             }
 
-            assert(tagMatch("tag:yaml.org,2002:bool", 
+            assert(tagMatch("tag:yaml.org,2002:bool",
                    ["yes", "NO", "True", "on"]));
-            assert(tagMatch("tag:yaml.org,2002:float", 
-                   ["6.8523015e+5", "685.230_15e+03", "685_230.15", 
+            assert(tagMatch("tag:yaml.org,2002:float",
+                   ["6.8523015e+5", "685.230_15e+03", "685_230.15",
                     "190:20:30.15", "-.inf", ".NaN"]));
-            assert(tagMatch("tag:yaml.org,2002:int", 
+            assert(tagMatch("tag:yaml.org,2002:int",
                    ["685230", "+685_230", "02472256", "0x_0A_74_AE",
                     "0b1010_0111_0100_1010_1110", "190:20:30"]));
             assert(tagMatch("tag:yaml.org,2002:merge", ["<<"]));
             assert(tagMatch("tag:yaml.org,2002:null", ["~", "null", ""]));
-            assert(tagMatch("tag:yaml.org,2002:str", 
+            assert(tagMatch("tag:yaml.org,2002:str",
                             ["abcd", "9a8b", "9.1adsf"]));
-            assert(tagMatch("tag:yaml.org,2002:timestamp", 
+            assert(tagMatch("tag:yaml.org,2002:timestamp",
                    ["2001-12-15T02:59:43.1Z",
                    "2001-12-14t21:59:43.10-05:00",
                    "2001-12-14 21:59:43.10 -5",
@@ -242,15 +242,15 @@ final class Resolver
                                        "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
                                 "-+0123456789");
             addImplicitResolver("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
-            addImplicitResolver("tag:yaml.org,2002:null", 
+            addImplicitResolver("tag:yaml.org,2002:null",
                                 regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
-            addImplicitResolver("tag:yaml.org,2002:timestamp", 
+            addImplicitResolver("tag:yaml.org,2002:timestamp",
                                 regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
                                        "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
                                        "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
                                        "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
                                        "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
-                                       "[0-9]?(?::[0-9][0-9])?)?$"), 
+                                       "[0-9]?(?::[0-9][0-9])?)?$"),
                                 "0123456789");
             addImplicitResolver("tag:yaml.org,2002:value", regex(r"^=$"), "=");
 

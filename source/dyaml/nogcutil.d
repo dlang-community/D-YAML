@@ -273,16 +273,16 @@ ValidateResult validateUTF8NoGC(const(char[]) str) @safe pure nothrow @nogc
 ///
 /// Params:
 ///
-/// validated = If ture, assume str is a valid UTF-8 string and don't generate any 
+/// validated = If ture, assume str is a valid UTF-8 string and don't generate any
 ///             error-checking code. If validated is true, str $(B must) be a valid
 ///             character, otherwise undefined behavior will occur. Also affects the
 ///             return type.
-/// str       = Will decode the first code point from this string. 
+/// str       = Will decode the first code point from this string.
 /// index     = Index in str where the code point starts. Will be updated to point to
 ///             the next code point.
 ///
 /// Returns: If validated is true, the decoded character.
-///          Otherwise a struct with a 'decoded' member - the decoded character, and a 
+///          Otherwise a struct with a 'decoded' member - the decoded character, and a
 ///          'string errorMessage' member that is null on success and otherwise stores
 ///          the error message.
 auto decodeUTF8NoGC(Flag!"validated" validated)(const(char[]) str, ref size_t index)

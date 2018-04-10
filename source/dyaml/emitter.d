@@ -68,13 +68,13 @@ private mixin FastCharSearch!"\n\u0085\u2028\u2029"d newlineSearch_;
 private alias canFind = std.algorithm.canFind;
 
 //Emits YAML events into a file/stream.
-struct Emitter 
+struct Emitter
 {
     private:
         alias dyaml.tagdirective.TagDirective TagDirective;
 
         ///Default tag handle shortcuts and replacements.
-        static TagDirective[] defaultTagDirectives_ = 
+        static TagDirective[] defaultTagDirectives_ =
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
@@ -165,7 +165,7 @@ struct Emitter
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(YStream stream, const bool canonical, const int indent, const int width, 
+        this(YStream stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @trusted
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
@@ -200,9 +200,9 @@ struct Emitter
 
     private:
         ///Pop and return the newest state in states_.
-        void delegate() popState() @trusted 
+        void delegate() popState() @trusted
         {
-            enforce(states_.length > 0, 
+            enforce(states_.length > 0,
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
             const result = states_.back;
             states_.length = states_.length - 1;
@@ -212,7 +212,7 @@ struct Emitter
         ///Pop and return the newest indent in indents_.
         int popIndent() @trusted
         {
-            enforce(indents_.length > 0, 
+            enforce(indents_.length > 0,
                     new YAMLException("Emitter: Need to pop an indent level but there" ~
                                       " are no indent levels left"));
             const result = indents_.back;
@@ -261,7 +261,7 @@ struct Emitter
         {
             int level = 0;
 
-            //Rather ugly, but good enough for now. 
+            //Rather ugly, but good enough for now.
             //Couldn't be bothered writing a range as events_ should eventually
             //become a Phobos queue/linked list.
             events_.startIteration();
@@ -347,7 +347,7 @@ struct Emitter
                     writeIndicator("...", Yes.needWhitespace);
                     writeIndent();
                 }
-                
+
                 if(YAMLVersion !is null)
                 {
                     writeVersionDirective(prepareVersion(YAMLVersion));
@@ -360,23 +360,23 @@ struct Emitter
 
                     foreach(ref pair; tagDirectives_)
                     {
-                        writeTagDirective(prepareTagHandle(pair.handle), 
+                        writeTagDirective(prepareTagHandle(pair.handle),
                                           prepareTagPrefix(pair.prefix));
                     }
                 }
 
                 bool eq(ref TagDirective a, ref TagDirective b){return a.handle == b.handle;}
                 //Add any default tag directives that have not been overriden.
-                foreach(ref def; defaultTagDirectives_) 
+                foreach(ref def; defaultTagDirectives_)
                 {
                     if(!std.algorithm.canFind!eq(tagDirectives_, def))
                     {
                         tagDirectives_ ~= def;
-                    } 
+                    }
                 }
 
                 const implicit = first && !event_.explicitDocument && !canonical_ &&
-                                 YAMLVersion is null && tagDirectives is null && 
+                                 YAMLVersion is null && tagDirectives is null &&
                                  !checkEmptyDocument();
                 if(!implicit)
                 {
@@ -669,14 +669,14 @@ struct Emitter
         ///Check if an empty sequence is next.
         bool checkEmptySequence() const @trusted pure nothrow
         {
-            return event_.id == EventID.SequenceStart && events_.length > 0 
+            return event_.id == EventID.SequenceStart && events_.length > 0
                    && events_.peek().id == EventID.SequenceEnd;
         }
 
         ///Check if an empty mapping is next.
         bool checkEmptyMapping() const @trusted pure nothrow
         {
-            return event_.id == EventID.MappingStart && events_.length > 0 
+            return event_.id == EventID.MappingStart && events_.length > 0
                    && events_.peek().id == EventID.MappingEnd;
         }
 
@@ -695,12 +695,12 @@ struct Emitter
         }
 
         ///Check if a simple key is next.
-        bool checkSimpleKey() @trusted 
+        bool checkSimpleKey() @trusted
         {
             uint length = 0;
             const id = event_.id;
             const scalar = id == EventID.Scalar;
-            const collectionStart = id == EventID.MappingStart || 
+            const collectionStart = id == EventID.MappingStart ||
                                     id == EventID.SequenceStart;
 
             if((id == EventID.Alias || scalar || collectionStart)
@@ -727,9 +727,9 @@ struct Emitter
 
             if(length >= 128){return false;}
 
-            return id == EventID.Alias || 
+            return id == EventID.Alias ||
                    (scalar && !analysis_.flags.empty && !analysis_.flags.multiline) ||
-                   checkEmptySequence() || 
+                   checkEmptySequence() ||
                    checkEmptyMapping();
         }
 
@@ -742,7 +742,7 @@ struct Emitter
                 style_ = chooseScalarStyle();
             }
 
-            //if(analysis_.flags.multiline && (context_ != Context.MappingSimpleKey) && 
+            //if(analysis_.flags.multiline && (context_ != Context.MappingSimpleKey) &&
             //   ([ScalarStyle.Invalid, ScalarStyle.Plain, ScalarStyle.SingleQuoted, ScalarStyle.DoubleQuoted)
             //    .canFind(style_))
             //{
@@ -829,10 +829,10 @@ struct Emitter
             const singleQuoted   = style == ScalarStyle.SingleQuoted;
             const doubleQuoted   = style == ScalarStyle.DoubleQuoted;
 
-            const allowPlain     = flowLevel_ > 0 ? analysis_.flags.allowFlowPlain 
+            const allowPlain     = flowLevel_ > 0 ? analysis_.flags.allowFlowPlain
                                                   : analysis_.flags.allowBlockPlain;
             //simple empty or multiline scalars can't be written in plain style
-            const simpleNonPlain = (context_ == Context.MappingSimpleKey) && 
+            const simpleNonPlain = (context_ == Context.MappingSimpleKey) &&
                                    (analysis_.flags.empty || analysis_.flags.multiline);
 
             if(doubleQuoted || canonical_)
@@ -845,14 +845,14 @@ struct Emitter
                 return ScalarStyle.Plain;
             }
 
-            if(block && flowLevel_ == 0 && context_ != Context.MappingSimpleKey && 
+            if(block && flowLevel_ == 0 && context_ != Context.MappingSimpleKey &&
                analysis_.flags.allowBlock)
             {
                 return style;
             }
 
-            if((invalidOrPlain || singleQuoted) && 
-               analysis_.flags.allowSingleQuoted && 
+            if((invalidOrPlain || singleQuoted) &&
+               analysis_.flags.allowSingleQuoted &&
                !(context_ == Context.MappingSimpleKey && analysis_.flags.multiline))
             {
                 return ScalarStyle.SingleQuoted;
@@ -942,7 +942,7 @@ struct Emitter
             foreach(ref pair; tagDirectives_)
             {
                 auto prefix = pair.prefix;
-                if(tagString.startsWith(prefix) && 
+                if(tagString.startsWith(prefix) &&
                    (prefix != "!" || prefix.length < tagString.length))
                 {
                     handle = pair.handle;
@@ -956,7 +956,7 @@ struct Emitter
             size_t end = 0;
             foreach(const dchar c; suffix)
             {
-                if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]"d.canFind(c) || 
+                if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]"d.canFind(c) ||
                    (c == '!' && handle != "!"))
                 {
                     ++end;
@@ -1008,11 +1008,11 @@ struct Emitter
                 return analysis;
             }
 
-            //Indicators and special characters (All false by default). 
+            //Indicators and special characters (All false by default).
             bool blockIndicators, flowIndicators, lineBreaks, specialCharacters;
 
             //Important whitespace combinations (All false by default).
-            bool leadingSpace, leadingBreak, trailingSpace, trailingBreak, 
+            bool leadingSpace, leadingBreak, trailingSpace, trailingBreak,
                  breakSpace, spaceBreak;
 
             //Check document indicators.
@@ -1020,12 +1020,12 @@ struct Emitter
             {
                 blockIndicators = flowIndicators = true;
             }
-            
+
             //First character or preceded by a whitespace.
             bool preceededByWhitespace = true;
 
             //Last character or followed by a whitespace.
-            bool followedByWhitespace = scalar.length == 1 || 
+            bool followedByWhitespace = scalar.length == 1 ||
                                         " \t\0\n\r\u0085\u2028\u2029"d.canFind(scalar[1]);
 
             //The previous character is a space/break (false by default).
@@ -1077,7 +1077,7 @@ struct Emitter
                 {
                     specialCharacters = true;
                 }
-                
+
                 //Detect important whitespace combinations.
                 if(c == ' ')
                 {
@@ -1103,16 +1103,16 @@ struct Emitter
                 mixin FastCharSearch! "\0\n\r\u0085\u2028\u2029 \t"d spaceSearch;
                 //Prepare for the next character.
                 preceededByWhitespace = spaceSearch.canFind(c);
-                followedByWhitespace = index + 2 >= scalar.length || 
+                followedByWhitespace = index + 2 >= scalar.length ||
                                        spaceSearch.canFind(scalar[index + 2]);
             }
 
             with(analysis.flags)
             {
                 //Let's decide what styles are allowed.
-                allowFlowPlain = allowBlockPlain = allowSingleQuoted 
+                allowFlowPlain = allowBlockPlain = allowSingleQuoted
                                = allowDoubleQuoted = allowBlock = true;
-                
+
                 //Leading and trailing whitespaces are bad for plain scalars.
                 if(leadingSpace || leadingBreak || trailingSpace || trailingBreak)
                 {
@@ -1311,11 +1311,11 @@ struct ScalarWriter
             resetTextPosition();
 
             do
-            {   
+            {
                 const dchar c = nextChar();
                 if(spaces_)
                 {
-                    if(c != ' ' && tooWide() && split_ && 
+                    if(c != ' ' && tooWide() && split_ &&
                        startByte_ != 0 && endByte_ != text_.length)
                     {
                         writeIndent(Flag!"ResetSpace".no);
@@ -1359,11 +1359,11 @@ struct ScalarWriter
             resetTextPosition();
             emitter_.writeIndicator("\"", Yes.needWhitespace);
             do
-            {   
+            {
                 const dchar c = nextChar();
                 //handle special characters
                 if(c == dcharNone || "\"\\\u0085\u2028\u2029\uFEFF"d.canFind(c) ||
-                   !((c >= '\x20' && c <= '\x7E') || 
+                   !((c >= '\x20' && c <= '\x7E') ||
                      ((c >= '\xA0' && c <= '\uD7FF') || (c >= '\uE000' && c <= '\uFFFD'))))
                 {
                     if(startChar_ < endChar_)
@@ -1392,9 +1392,9 @@ struct ScalarWriter
                         startByte_ = nextEndByte_;
                     }
                 }
-                if((endByte_ > 0 && endByte_ < text_.length - strideBack(text_, text_.length)) 
-                   && (c == ' ' || startChar_ >= endChar_) 
-                   && (emitter_.column_ + endChar_ - startChar_ > emitter_.bestWidth_) 
+                if((endByte_ > 0 && endByte_ < text_.length - strideBack(text_, text_.length))
+                   && (c == ' ' || startChar_ >= endChar_)
+                   && (emitter_.column_ + endChar_ - startChar_ > emitter_.bestWidth_)
                    && split_)
                 {
                     //text_[2:1] is ok in Python but not in D, so we have to use min()
@@ -1425,7 +1425,7 @@ struct ScalarWriter
             resetTextPosition();
 
             do
-            {   
+            {
                 const dchar c = nextChar();
                 if(breaks_)
                 {
@@ -1469,7 +1469,7 @@ struct ScalarWriter
             resetTextPosition();
 
             do
-            {   
+            {
                 const dchar c = nextChar();
                 if(breaks_)
                 {
@@ -1503,7 +1503,7 @@ struct ScalarWriter
             resetTextPosition();
 
             do
-            {   
+            {
                 const dchar c = nextChar();
                 if(spaces_)
                 {
@@ -1561,7 +1561,7 @@ struct ScalarWriter
         ///Is the current line too wide?
         @property bool tooWide() const pure @safe nothrow
         {
-            return startChar_ + 1 == endChar_ && 
+            return startChar_ + 1 == endChar_ &&
                    emitter_.column_ > emitter_.bestWidth_;
         }
 
@@ -1571,7 +1571,7 @@ struct ScalarWriter
             size_t hintsIdx = 0;
             if(text_.length == 0){return hintsIdx;}
 
-            dchar lastChar(const string str, ref size_t end) 
+            dchar lastChar(const string str, ref size_t end)
             {
                 size_t idx = end = end - strideBack(str, end);
                 return decode(text_, idx);

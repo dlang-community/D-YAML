@@ -22,7 +22,7 @@ enum ScalarStyle : ubyte
 ///Collection styles.
 enum CollectionStyle : ubyte
 {
-    Invalid = 0, /// Invalid (uninitialized) style 
+    Invalid = 0, /// Invalid (uninitialized) style
     Block,       /// Block style.
     Flow         /// Flow style.
 }
