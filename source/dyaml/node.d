@@ -157,7 +157,8 @@ private struct Pair
         //
         // useTag determines whether or not we consider node tags
         // in the comparison.
-        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const
+        // Note: @safe isn't properly inferred in single-file builds due to a bug.
+        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
         {
             const keyCmp = key.cmp!useTag(rhs.key);
             return keyCmp != 0 ? keyCmp
