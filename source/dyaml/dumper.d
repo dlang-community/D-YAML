@@ -31,52 +31,10 @@ import dyaml.tagdirective;
 /**
  * Dumps YAML documents to files or streams.
  *
- * User specified Representer and/or Resolver can be used to support new 
+ * User specified Representer and/or Resolver can be used to support new
  * tags / data types.
  *
  * Setters are provided to affect output details (style, encoding, etc.).
- * 
- * Examples: 
- *
- * Write to a file:
- * --------------------
- * auto node = Node([1, 2, 3, 4, 5]);
- * Dumper("file.yaml").dump(node);
- * --------------------
- *
- * Write multiple YAML documents to a file:
- * --------------------
- * auto node1 = Node([1, 2, 3, 4, 5]);
- * auto node2 = Node("This document contains only one string");
- * Dumper("file.yaml").dump(node1, node2);
- *
- * //Or with an array:
- * //Dumper("file.yaml").dump([node1, node2]);
- *
- *
- * --------------------
- *
- * Write to memory:
- * --------------------
- * import std.stream;
- * auto stream = new YMemoryStream();
- * auto node = Node([1, 2, 3, 4, 5]);
- * Dumper(stream).dump(node);
- * --------------------
- *
- * Use a custom representer/resolver to support custom data types and/or implicit tags:
- * --------------------
- * auto node = Node([1, 2, 3, 4, 5]);
- * auto representer = new Representer();
- * auto resolver = new Resolver();
- *
- * //Add representer functions / resolver expressions here...
- *
- * auto dumper = Dumper("file.yaml");
- * dumper.representer = representer;
- * dumper.resolver = resolver;
- * dumper.dump(node);
- * --------------------
  */
 struct Dumper
 {
@@ -271,21 +229,10 @@ struct Dumper
          *
          * Each prefix MUST not be empty.
          *
-         * The "!!" handle is used for default YAML _tags with prefix 
+         * The "!!" handle is used for default YAML _tags with prefix
          * "tag:yaml.org,2002:". This can be overridden.
          *
          * Params:  tags = Tag directives (keys are handles, values are prefixes).
-         *
-         * Example:
-         * --------------------
-         * Dumper dumper = Dumper("file.yaml");
-         * string[string] directives;
-         * directives["!short!"] = "tag:long.org,2011:";
-         * //This will emit tags starting with "tag:long.org,2011"
-         * //with a "!short!" prefix instead.
-         * dumper.tagDirectives(directives);
-         * dumper.dump(Node("foo"));
-         * --------------------
          */
         @property void tagDirectives(string[string] tags) pure @safe
         {
@@ -299,6 +246,17 @@ struct Dumper
                 t ~= TagDirective(handle, prefix);
             }
             tags_ = t;
+        }
+        ///
+        @safe unittest
+        {
+            Dumper dumper = Dumper("example.yaml");
+            string[string] directives;
+            directives["!short!"] = "tag:long.org,2011:";
+            //This will emit tags starting with "tag:long.org,2011"
+            //with a "!short!" prefix instead.
+            dumper.tagDirectives(directives);
+            dumper.dump(Node("foo"));
         }
 
         /**
@@ -356,4 +314,39 @@ struct Dumper
                                         ~ name_ ~ " : " ~ e.msg);
             }
         }
+}
+///Write to a file
+@safe unittest
+{
+    auto node = Node([1, 2, 3, 4, 5]);
+    Dumper("example.yaml").dump(node);
+}
+///Write multiple YAML documents to a file
+@safe unittest
+{
+    auto node1 = Node([1, 2, 3, 4, 5]);
+    auto node2 = Node("This document contains only one string");
+    Dumper("example.yaml").dump(node1, node2);
+    //Or with an array:
+    Dumper("example.yaml").dump([node1, node2]);
+}
+///Write to memory
+@safe unittest
+{
+    import dyaml.stream;
+    auto stream = new YMemoryStream();
+    auto node = Node([1, 2, 3, 4, 5]);
+    Dumper(stream).dump(node);
+}
+///Use a custom representer/resolver to support custom data types and/or implicit tags
+@safe unittest
+{
+    auto node = Node([1, 2, 3, 4, 5]);
+    auto representer = new Representer();
+    auto resolver = new Resolver();
+    //Add representer functions / resolver expressions here...
+    auto dumper = Dumper("example.yaml");
+    dumper.representer = representer;
+    dumper.resolver = resolver;
+    dumper.dump(node);
 }

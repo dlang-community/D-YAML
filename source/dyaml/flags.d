@@ -17,20 +17,6 @@ package:
  * Struct holding multiple named boolean values in a single byte.
  *
  * Can hold at most 8 values.
- *
- * Example:
- * --------------------
- * Flags!("empty", "multiline") flags;
- * assert(flags.empty == false && flags.multiline == false);
- * flags.multiline = true;
- * assert(flags.empty == false && flags.multiline == true);
- * flags.empty = true;
- * assert(flags.empty == true && flags.multiline == true);
- * flags.multiline = false;
- * assert(flags.empty == true && flags.multiline == false);
- * flags.empty = false;
- * assert(flags.empty == false && flags.multiline == false);
- * --------------------
  */
 struct Flags(names ...) if(names.length <= 8)
 {
@@ -72,6 +58,7 @@ struct Flags(names ...) if(names.length <= 8)
         ///Flag accessors.
         mixin(flags(names));
 }
+///
 @safe unittest
 {
     import std.stdio;

@@ -363,17 +363,7 @@ auto decodeUTF8NoGC(Flag!"validated" validated)(const(char[]) str, ref size_t in
     else                 { return invalidUTF; }
 }
 
-/// @nogc version of std.utf.decode() for char[], but assumes str is valid UTF-8.
-///
-/// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
-/// force code using this function to be efficient.
-///
-/// Params:
-///
-/// str   = Will decode the first code point from this string. Must be valid UTF-8,
-///         otherwise undefined behavior WILL occur.
-/// index = Index in str where the code point starts. Will be updated to point to the
-///         next code point.
+/// ditto
 alias decodeValidUTF8NoGC = decodeUTF8NoGC!(Yes.validated);
 
 /// @nogc version of std.utf.encode() for char[].
@@ -451,18 +441,7 @@ auto encodeCharNoGC(Flag!"validated" validated)(ref char[4] buf, dchar c)
     }
 }
 
-/// @nogc version of std.utf.encode() for char[], but assumes c is a valid UTF-32 char.
-///
-/// The caller $(B must) handle ASCII (< 0x80) characters manually; this is asserted to
-/// force code using this function to be efficient.
-///
-/// Params:
-///
-/// buf = Buffer to write the encoded result to.
-/// c   = Character to encode. Must be valid UTF-32, otherwise undefined behavior
-///       $(D will) occur.
-///
-/// Returns: Number of bytes the encoded character takes up in buf.
+/// ditto
 alias encodeValidCharNoGC = encodeCharNoGC!(Yes.validated);
 
 /// @nogc version of std.utf.isValidDchar

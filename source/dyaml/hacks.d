@@ -23,21 +23,21 @@ import dyaml.style;
  * However, determining style may be useful in some cases, e.g. YAML utilities.
  *
  * May only be called on scalar nodes (nodes where node.isScalar() == true).
- *
- * Example:
- * --------------------
- * // Node node // loaded from a file
- * if(node.isScalar)
- * {
- *     import std.stdio;
- *     writeln(node.scalarStyleHack());
- * }
- * --------------------
  */
 ScalarStyle scalarStyleHack(ref const(Node) node) @safe nothrow
 {
     assert(node.isScalar, "Trying to get scalar style of a non-scalar node");
     return node.scalarStyle;
+}
+///
+@safe unittest
+{
+    import dyaml;
+    Node node = Loader.fromString(`"42"`.dup).load(); // loaded from a file
+    if(node.isScalar)
+    {
+        assert(node.scalarStyleHack() == ScalarStyle.DoubleQuoted);
+    }
 }
 @safe unittest
 {

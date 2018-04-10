@@ -108,7 +108,8 @@ final class Representer
          * throw a $(D RepresenterException). See the example for more information.
          * 
          *
-         * Only one function may be specified for one data type. Default data 
+         *
+         * Only one function may be specified for one data type. Default data
          * types already have representer functions unless disabled in the
          * $(D Representer) constructor.
          *
@@ -121,106 +122,6 @@ final class Representer
          * values - it is not const for compatibility reasons.
          *
          * Params:  representer = Representer function to add.
-         *
-         * Examples:
-         *
-         * Representing a simple struct:
-         * --------------------
-         * import std.string;
-         *
-         * import dyaml.all;
-         *
-         * struct MyStruct
-         * {
-         *     int x, y, z;
-         *
-         *     //Any D:YAML type must have a custom opCmp operator.
-         *     //This is used for ordering in mappings.
-         *     const int opCmp(ref const MyStruct s)
-         *     {
-         *         if(x != s.x){return x - s.x;}
-         *         if(y != s.y){return y - s.y;}
-         *         if(z != s.z){return z - s.z;}
-         *         return 0;
-         *     }
-         * }
-         *
-         * Node representMyStruct(ref Node node, Representer representer)
-         * { 
-         *     //The node is guaranteed to be MyStruct as we add representer for MyStruct.
-         *     auto value = node.as!MyStruct;
-         *     //Using custom scalar format, x:y:z.
-         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-         *     //Representing as a scalar, with custom tag to specify this data type.
-         *     return representer.representScalar("!mystruct.tag", scalar);
-         * }
-         *
-         * void main()
-         * {
-         *     auto dumper = Dumper("file.yaml");
-         *     auto representer = new Representer;
-         *     representer.addRepresenter!MyStruct(&representMyStruct);
-         *     dumper.representer = representer;
-         *     dumper.dump(Node(MyStruct(1,2,3)));
-         * }
-         * --------------------
-         *
-         * Representing a class:
-         * --------------------
-         * import std.string;
-         *
-         * import dyaml.all;
-         *
-         * class MyClass
-         * {
-         *     int x, y, z;
-         *
-         *     this(int x, int y, int z)
-         *     {
-         *         this.x = x; 
-         *         this.y = y; 
-         *         this.z = z;
-         *     }
-         *
-         *     //Any D:YAML type must have a custom opCmp operator.
-         *     //This is used for ordering in mappings.
-         *     override int opCmp(Object o)
-         *     {
-         *         MyClass s = cast(MyClass)o;
-         *         if(s is null){return -1;}
-         *         if(x != s.x){return x - s.x;}
-         *         if(y != s.y){return y - s.y;}
-         *         if(z != s.z){return z - s.z;}
-         *         return 0;
-         *     }
-         *
-         *     ///Useful for Node.as!string .
-         *     override string toString()
-         *     {
-         *         return format("MyClass(%s, %s, %s)", x, y, z);
-         *     }
-         * }
-         *
-         * //Same as representMyStruct.
-         * Node representMyClass(ref Node node, Representer representer)
-         * { 
-         *     //The node is guaranteed to be MyClass as we add representer for MyClass.
-         *     auto value = node.as!MyClass;
-         *     //Using custom scalar format, x:y:z.
-         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-         *     //Representing as a scalar, with custom tag to specify this data type.
-         *     return representer.representScalar("!myclass.tag", scalar);
-         * }
-         *
-         * void main()
-         * {
-         *     auto dumper = Dumper("file.yaml");
-         *     auto representer = new Representer;
-         *     representer.addRepresenter!MyClass(&representMyClass);
-         *     dumper.representer = representer;
-         *     dumper.dump(Node(new MyClass(1,2,3)));
-         * }
-         * --------------------
          */
         void addRepresenter(T)(Node function(ref Node, Representer) @safe representer)
             @safe pure
@@ -229,6 +130,96 @@ final class Representer
                    "Representer function for data type " ~ T.stringof ~
                    " already specified. Can't specify another one");
             representers_[typeid(T)] = representer;
+        }
+        /// Representing a simple struct:
+        unittest {
+            import std.string;
+
+            import dyaml;
+
+            struct MyStruct
+            {
+                int x, y, z;
+
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                const int opCmp(ref const MyStruct s)
+                {
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+            }
+
+            static Node representMyStruct(ref Node node, Representer representer) @safe
+            {
+                //The node is guaranteed to be MyStruct as we add representer for MyStruct.
+                auto value = node.as!MyStruct;
+                //Using custom scalar format, x:y:z.
+                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+                //Representing as a scalar, with custom tag to specify this data type.
+                return representer.representScalar("!mystruct.tag", scalar);
+            }
+
+            auto dumper = Dumper("example.yaml");
+            auto representer = new Representer;
+            representer.addRepresenter!MyStruct(&representMyStruct);
+            dumper.representer = representer;
+            dumper.dump(Node(MyStruct(1,2,3)));
+        }
+        /// Representing a class:
+        unittest {
+            import std.string;
+
+            import dyaml;
+
+            class MyClass
+            {
+                int x, y, z;
+
+                this(int x, int y, int z)
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                override int opCmp(Object o)
+                {
+                    MyClass s = cast(MyClass)o;
+                    if(s is null){return -1;}
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+
+                ///Useful for Node.as!string .
+                override string toString()
+                {
+                    return format("MyClass(%s, %s, %s)", x, y, z);
+                }
+            }
+
+            //Same as representMyStruct.
+            static Node representMyClass(ref Node node, Representer representer) @safe
+            {
+                //The node is guaranteed to be MyClass as we add representer for MyClass.
+                auto value = node.as!MyClass;
+                //Using custom scalar format, x:y:z.
+                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+                //Representing as a scalar, with custom tag to specify this data type.
+                return representer.representScalar("!myclass.tag", scalar);
+            }
+
+            auto dumper = Dumper("example.yaml");
+            auto representer = new Representer;
+            representer.addRepresenter!MyClass(&representMyClass);
+            dumper.representer = representer;
+            dumper.dump(Node(new MyClass(1,2,3)));
         }
 
         //If profiling shows a bottleneck on tag construction in these 3 methods,
@@ -246,31 +237,6 @@ final class Representer
          *                   If the node was loaded before, previous _style will always be used.
          *
          * Returns: The represented node.
-         *
-         * Example:
-         * --------------------
-         * struct MyStruct
-         * {
-         *     int x, y, z;
-         *
-         *     //Any D:YAML type must have a custom opCmp operator.
-         *     //This is used for ordering in mappings.
-         *     const int opCmp(ref const MyStruct s)
-         *     {
-         *         if(x != s.x){return x - s.x;}
-         *         if(y != s.y){return y - s.y;}
-         *         if(z != s.z){return z - s.z;}
-         *         return 0;
-         *     }        
-         * }
-         *
-         * Node representMyStruct(ref Node node, Representer representer)
-         * { 
-         *     auto value = node.as!MyStruct;
-         *     auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-         *     return representer.representScalar("!mystruct.tag", scalar);
-         * }
-         * --------------------
          */
         Node representScalar(string tag, string scalar, 
                              ScalarStyle style = ScalarStyle.Invalid) @trusted
@@ -278,6 +244,37 @@ final class Representer
             if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
             return Node.rawNode(Node.Value(scalar), Mark(), tag, style,
                                 CollectionStyle.Invalid);
+        }
+        ///
+        @safe unittest
+        {
+            struct MyStruct
+            {
+                int x, y, z;
+
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                const int opCmp(ref const MyStruct s)
+                {
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+            }
+
+            static Node representMyStruct(ref Node node, Representer representer)
+            {
+                auto value = node.as!MyStruct;
+                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
+                return representer.representScalar("!mystruct.tag", scalar);
+            }
+
+            auto dumper = Dumper("example.yaml");
+            auto representer = new Representer;
+            representer.addRepresenter!MyStruct(&representMyStruct);
+            dumper.representer = representer;
+            dumper.dump(Node(MyStruct(1,2,3)));
         }
 
         /**
@@ -293,33 +290,6 @@ final class Representer
          * Returns: The represented node.
          *
          * Throws:  $(D RepresenterException) if a child could not be represented.
-         *
-         * Example:
-         * --------------------
-         * struct MyStruct
-         * {
-         *     int x, y, z;
-         *
-         *     //Any D:YAML type must have a custom opCmp operator.
-         *     //This is used for ordering in mappings.
-         *     const int opCmp(ref const MyStruct s)
-         *     {
-         *         if(x != s.x){return x - s.x;}
-         *         if(y != s.y){return y - s.y;}
-         *         if(z != s.z){return z - s.z;}
-         *         return 0;
-         *     }        
-         * }
-         *
-         * Node representMyStruct(ref Node node, Representer representer)
-         * { 
-         *     auto value = node.as!MyStruct;
-         *     auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
-         *     //use flow style
-         *     return representer.representSequence("!mystruct.tag", nodes,
-         *                                          CollectionStyle.Flow);
-         * }
-         * --------------------
          */
         Node representSequence(string tag, Node[] sequence, 
                                CollectionStyle style = CollectionStyle.Invalid) @trusted
@@ -341,14 +311,46 @@ final class Representer
 
             if(style == CollectionStyle.Invalid)
             {
-                style = defaultCollectionStyle_ != CollectionStyle.Invalid 
+                style = defaultCollectionStyle_ != CollectionStyle.Invalid
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
             return Node.rawNode(Node.Value(value), Mark(), tag,
                                 ScalarStyle.Invalid, style);
         }
+        ///
+        @safe unittest
+        {
+            struct MyStruct
+            {
+                int x, y, z;
 
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                const int opCmp(ref const MyStruct s)
+                {
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+            }
+
+            static Node representMyStruct(ref Node node, Representer representer)
+            {
+                auto value = node.as!MyStruct;
+                auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
+                //use flow style
+                return representer.representSequence("!mystruct.tag", nodes,
+                    CollectionStyle.Flow);
+            }
+
+            auto dumper = Dumper("example.yaml");
+            auto representer = new Representer;
+            representer.addRepresenter!MyStruct(&representMyStruct);
+            dumper.representer = representer;
+            dumper.dump(Node(MyStruct(1,2,3)));
+        }
         /**
          * Represent a mapping with specified _tag, representing children first.
          *
@@ -362,33 +364,6 @@ final class Representer
          * Returns: The represented node.
          *
          * Throws:  $(D RepresenterException) if a child could not be represented.
-         *
-         * Example:
-         * --------------------
-         * struct MyStruct
-         * {
-         *     int x, y, z;
-         *
-         *     //Any D:YAML type must have a custom opCmp operator.
-         *     //This is used for ordering in mappings.
-         *     const int opCmp(ref const MyStruct s)
-         *     {
-         *         if(x != s.x){return x - s.x;}
-         *         if(y != s.y){return y - s.y;}
-         *         if(z != s.z){return z - s.z;}
-         *         return 0;
-         *     }        
-         * }
-         *
-         * Node representMyStruct(ref Node node, Representer representer)
-         * { 
-         *     auto value = node.as!MyStruct;
-         *     auto pairs = [Node.Pair("x", value.x), 
-         *                   Node.Pair("y", value.y), 
-         *                   Node.Pair("z", value.z)];
-         *     return representer.representMapping("!mystruct.tag", pairs);
-         * }
-         * --------------------
          */
         Node representMapping(string tag, Node.Pair[] pairs,
                               CollectionStyle style = CollectionStyle.Invalid) @trusted
@@ -424,6 +399,39 @@ final class Representer
             }
             return Node.rawNode(Node.Value(value), Mark(), tag,
                                 ScalarStyle.Invalid, style);
+        }
+        ///
+        @safe unittest
+        {
+            struct MyStruct
+            {
+                int x, y, z;
+
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                const int opCmp(ref const MyStruct s)
+                {
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+            }
+
+            static Node representMyStruct(ref Node node, Representer representer)
+            {
+                auto value = node.as!MyStruct;
+                auto pairs = [Node.Pair("x", value.x),
+                Node.Pair("y", value.y),
+                Node.Pair("z", value.z)];
+                return representer.representMapping("!mystruct.tag", pairs);
+            }
+
+            auto dumper = Dumper("example.yaml");
+            auto representer = new Representer;
+            representer.addRepresenter!MyStruct(&representMyStruct);
+            dumper.representer = representer;
+            dumper.dump(Node(MyStruct(1,2,3)));
         }
 
     package:

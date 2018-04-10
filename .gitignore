@@ -56,3 +56,6 @@ Thumbs.db
 perf.data
 perf.data.old
 callgrind.out.*
+
+# Test outputs #
+example.yaml
