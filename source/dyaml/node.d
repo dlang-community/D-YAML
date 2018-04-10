@@ -68,7 +68,7 @@ package abstract class YAMLObject
 
     protected:
         // Compare with another YAMLObject.
-        int cmp(const YAMLObject rhs) const @system {assert(false);};
+        int cmp(const YAMLObject rhs) const @safe {assert(false);};
 }
 
 // Stores a user defined YAML data type.
@@ -97,7 +97,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 
     protected:
         // Compare with another YAMLObject.
-        override int cmp(const YAMLObject rhs) const @system
+        override int cmp(const YAMLObject rhs) const @trusted
         {
             const typeCmp = type.opCmp(rhs.type);
             if(typeCmp != 0){return typeCmp;}
@@ -163,15 +163,7 @@ private struct Pair
             return keyCmp != 0 ? keyCmp
                                 : value.cmp!useTag(rhs.value);
         }
-
-        // @disable causes a linker error with DMD 2.054, so we temporarily use
-        // a private opCmp. Apparently this must also match the attributes of
-        // the Node's opCmp to avoid a linker error.
         @disable int opCmp(ref Pair);
-        int opCmp(ref const(Pair) pair) const @safe
-        {
-            assert(false, "This should never be called");
-        }
 }
 
 /** YAML node.
@@ -246,7 +238,7 @@ struct Node
          *                  be in full form, e.g. "tag:yaml.org,2002:int", not
          *                  a shortcut, like "!!int".
          */
-        this(T)(T value, const string tag = null) @trusted
+        this(T)(T value, const string tag = null) @safe
             if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
         {
             tag_ = tag;
@@ -255,24 +247,24 @@ struct Node
             static assert(!is(Unqual!T == Node));
 
             enum unexpectedType = "Unexpected type in the non-nothrow YAML node constructor";
-            static if(isSomeString!T)             { value_ = Value(value.to!string); }
-            else static if(is(Unqual!T == Value)) { value_ = Value(value); }
+            static if(isSomeString!T)             { setValue(value.to!string); }
+            else static if(is(Unqual!T == Value)) { setValue(value); }
             else static if(Value.allowed!T)       { static assert(false, unexpectedType); }
             // User defined type.
-            else                                  { value_ = userValue(value); }
+            else                                  { setValue(value); }
         }
         /// Ditto.
         // Overload for types where we can make this nothrow.
-        this(T)(T value, const string tag = null) @trusted
+        this(T)(T value, const string tag = null)
             if(scalarCtorNothrow!T)
         {
             tag_   = tag;
             // We can easily store ints, floats, strings.
-            static if(isIntegral!T)           { value_ = Value(cast(long)value); }
-            else static if(is(Unqual!T==bool)){ value_ = Value(cast(bool)value); }
-            else static if(isFloatingPoint!T) { value_ = Value(cast(real)value); }
+            static if(isIntegral!T)           { setValue(cast(long)value); }
+            else static if(is(Unqual!T==bool)){ setValue(cast(bool)value); }
+            else static if(isFloatingPoint!T) { setValue(cast(real)value); }
             // User defined type or plain string.
-            else                              { value_ = Value(value);}
+            else                              { setValue(value);}
         }
         @safe unittest
         {
@@ -312,7 +304,7 @@ struct Node
          *                  not a shortcut, like "!!set".
          *
          */
-        this(T)(T[] array, const string tag = null) @trusted
+        this(T)(T[] array, const string tag = null)
             if (!isSomeString!(T[]))
         {
             tag_ = tag;
@@ -320,18 +312,18 @@ struct Node
             // Construction from raw node or pair array.
             static if(is(Unqual!T == Node) || is(Unqual!T == Node.Pair))
             {
-                value_ = Value(array);
+                setValue(array);
             }
             // Need to handle byte buffers separately.
             else static if(is(Unqual!T == byte) || is(Unqual!T == ubyte))
             {
-                value_ = Value(cast(ubyte[]) array);
+                setValue(cast(ubyte[]) array);
             }
             else
             {
                 Node[] nodes;
                 foreach(ref value; array){nodes ~= Node(value);}
-                value_ = Value(nodes);
+                setValue(nodes);
             }
         }
         ///
@@ -371,13 +363,13 @@ struct Node
          *                  shortcut, like "!!omap".
          *
          */
-        this(K, V)(V[K] array, const string tag = null) @trusted
+        this(K, V)(V[K] array, const string tag = null)
         {
             tag_ = tag;
 
             Node.Pair[] pairs;
             foreach(key, ref value; array){pairs ~= Pair(key, value);}
-            value_ = Value(pairs);
+            setValue(pairs);
         }
         ///
         @safe unittest
@@ -430,7 +422,7 @@ struct Node
          *                   shortcut, like "!!omap".
          *
          */
-        this(K, V)(K[] keys, V[] values, const string tag = null) @trusted
+        this(K, V)(K[] keys, V[] values, const string tag = null)
             if(!(isSomeString!(K[]) || isSomeString!(V[])))
         in
         {
@@ -444,7 +436,7 @@ struct Node
 
             Node.Pair[] pairs;
             foreach(i; 0 .. keys.length){pairs ~= Pair(keys[i], values[i]);}
-            value_ = Value(pairs);
+            setValue(pairs);
         }
         ///
         @safe unittest
@@ -504,7 +496,10 @@ struct Node
         }
 
         /// Return tag of the node.
-        @property string tag()      const @safe nothrow {return tag_;}
+        @property string tag()      const @safe nothrow
+        {
+            return tag_;
+        }
 
         /** Equality test.
          *
@@ -535,6 +530,9 @@ struct Node
 
             auto node2 = Node(YAMLNull());
             assert(node2 == YAMLNull());
+
+            const node3 = Node(42);
+            assert(node3 == 42);
         }
 
         /// Shortcut for get().
@@ -572,41 +570,41 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)()
-            @trusted if(!is(T == const))
+        inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout @safe
         {
-            if(isType!T){return value_.get!T;}
+            if(isType!(Unqual!T)){return getValue!T;}
 
             /// Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!allowed!T) if(isUserType)
+            static if(!allowed!(Unqual!T)) if(isUserType)
             {
-                auto object = as!YAMLObject;
+                auto object = as!(const YAMLObject);
                 if(object.type is typeid(T))
                 {
-                    return (cast(YAMLContainer!T)object).value_;
+                    return (cast(inout YAMLContainer!(Unqual!T))(getValue!YAMLObject())).value_;
                 }
-                throw new NodeException("Node stores unexpected type: " ~ object.type.toString() ~
+                throw new NodeException("Node has unexpected type: " ~ object.type.toString() ~
                                 ". Expected: " ~ typeid(T).toString, startMark_);
             }
 
             // If we're getting from a mapping and we're not getting Node.Pair[],
             // we're getting the default value.
-            if(isMapping){return this["="].as!(T, stringConversion);}
+            if(isMapping){return this["="].get!( T, stringConversion);}
 
             static if(isSomeString!T)
             {
                 static if(!stringConversion)
                 {
-                    if(isString){return to!T(value_.get!string);}
+                    if(isString){return to!T(getValue!string);}
                     throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                    ". Expected: " ~ typeid(T).toString, startMark_);
+                                    ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
                 else
                 {
                     // Try to convert to string.
                     try
                     {
-                        return value_.coerce!T();
+                        // NOTE: We are casting away const here
+                        return coerceValue!T();
                     }
                     catch(VariantException e)
                     {
@@ -619,29 +617,29 @@ struct Node
                 static if(isFloatingPoint!T)
                 {
                     /// Can convert int to float.
-                    if(isInt())       {return to!T(value_.get!(const long));}
-                    else if(isFloat()){return to!T(value_.get!(const real));}
+                    if(isInt())       {return to!T(getValue!long);}
+                    else if(isFloat()){return to!T(getValue!real);}
                 }
                 else static if(is(Unqual!T == bool))
                 {
-                    const temp = value_.get!(const bool);
+                    auto temp = getValue!bool;
                     return to!bool(temp);
                 }
                 else static if(isIntegral!T)
                 {
                     if(isInt())
                     {
-                        const temp = value_.get!(const long);
+                        immutable temp = getValue!long;
                         enforce(temp >= T.min && temp <= T.max,
-                            new NodeException("Integer value of type " ~ typeid(T).toString() ~
-                                      " out of range. Value: " ~ to!string(temp), startMark_));
-                        return to!T(temp);
+                                new NodeException("Integer value of type " ~ typeid(T).toString() ~
+                                          " out of range. Value: " ~ to!string(temp), startMark_));
+                        return temp.to!T;
                     }
                     throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                        ". Expected: " ~ typeid(T).toString(), startMark_);
+                                    ". Expected: " ~ typeid(T).toString, startMark_);
                 }
                 else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                ". Expected: " ~ typeid(T).toString(), startMark_);
+                                    ". Expected: " ~ typeid(T).toString, startMark_);
             }
             assert(false, "This code should never be reached");
         }
@@ -659,76 +657,26 @@ struct Node
             assertThrown!NodeException(Node("42").get!int);
             Node(YAMLNull()).get!YAMLNull;
         }
+        @safe unittest
+        {
+            const node = Node(42);
+            assert(node.get!int == 42);
+            assert(node.get!string == "42");
+            assert(node.get!double == 42.0);
+
+            immutable node2 = Node(42);
+            assert(node2.get!int == 42);
+            assert(node2.get!(const int) == 42);
+            assert(node2.get!(immutable int) == 42);
+            assert(node2.get!string == "42");
+            assert(node2.get!(const string) == "42");
+            assert(node2.get!(immutable string) == "42");
+            assert(node2.get!double == 42.0);
+            assert(node2.get!(const double) == 42.0);
+            assert(node2.get!(immutable double) == 42.0);
+        }
 
         /// Ditto.
-        @property T get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() const
-            @trusted if(is(T == const))
-        {
-            if(isType!(Unqual!T)){return value_.get!T;}
-
-            /// Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!allowed!(Unqual!T)) if(isUserType)
-            {
-                auto object = as!(const YAMLObject);
-                if(object.type is typeid(T))
-                {
-                    return (cast(const YAMLContainer!(Unqual!T))object).value_;
-                }
-                throw new NodeException("Node has unexpected type: " ~ object.type.toString() ~
-                                ". Expected: " ~ typeid(T).toString, startMark_);
-            }
-
-            // If we're getting from a mapping and we're not getting Node.Pair[],
-            // we're getting the default value.
-            if(isMapping){return indexConst("=").as!( T, stringConversion);}
-
-            static if(isSomeString!T)
-            {
-                static if(!stringConversion)
-                {
-                    if(isString){return to!T(value_.get!(const string));}
-                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                    ". Expected: " ~ typeid(T).toString(), startMark_);
-                }
-                else
-                {
-                    // Try to convert to string.
-                    try
-                    {
-                        // NOTE: We are casting away const here
-                        return (cast(Value)value_).coerce!T();
-                    }
-                    catch(VariantException e)
-                    {
-                        throw new NodeException("Unable to convert node value to string", startMark_);
-                    }
-                }
-            }
-            else
-            {
-                static if(isFloatingPoint!T)
-                {
-                    /// Can convert int to float.
-                    if(isInt())       {return to!T(value_.get!(const long));}
-                    else if(isFloat()){return to!T(value_.get!(const real));}
-                }
-                else static if(is(Unqual!T == bool))
-                {
-                    const temp = value_.get!(const bool);
-                    return to!bool(temp);
-                }
-                else static if(isIntegral!T) if(isInt())
-                {
-                    const temp = value_.get!(const long);
-                    enforce(temp >= T.min && temp <= T.max,
-                            new NodeException("Integer value of type " ~ typeid(T).toString() ~
-                                      " out of range. Value: " ~ to!string(temp), startMark_));
-                    return to!T(temp);
-                }
-                throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                ". Expected: " ~ typeid(T).toString, startMark_);
-            }
-        }
 
         /** If this is a collection, return its _length.
          *
@@ -738,12 +686,21 @@ struct Node
          *
          * Throws: NodeException if this is not a sequence nor a mapping.
          */
-        @property size_t length() const @trusted
+        @property size_t length() const @safe
         {
-            if(isSequence)    {return value_.get!(const Node[]).length;}
-            else if(isMapping){return value_.get!(const Pair[]).length;}
+            if(isSequence)    { return getValue!(Node[]).length; }
+            else if(isMapping) { return getValue!(Pair[]).length; }
             throw new NodeException("Trying to get length of a " ~ nodeTypeString ~ " node",
                             startMark_);
+        }
+        @safe unittest
+        {
+            auto node = Node([1,2,3]);
+            assert(node.length == 3);
+            const cNode = Node([1,2,3]);
+            assert(cNode.length == 3);
+            immutable iNode = Node([1,2,3]);
+            assert(iNode.length == 3);
         }
 
         /** Get the element at specified index.
@@ -765,14 +722,36 @@ struct Node
          *          non-integral index is used with a sequence or the node is
          *          not a collection.
          */
-        ref Node opIndex(T)(T index) @trusted
+        ref inout(Node) opIndex(T)(T index) inout @safe
         {
+            //if(isSequence)
+            //{
+            //    checkSequenceIndex(index);
+            //    static if(isIntegral!T || is(Unqual!T == bool))
+            //    {
+            //        return cast(Node)value_.get!(Node[])[index];
+            //    }
+            //    assert(false);
+            //}
+            //else if(isMapping)
+            //{
+            //    auto idx = findPair(index);
+            //    if(idx >= 0)
+            //    {
+            //        return cast(Node)value_.get!(Pair[])[idx].value;
+            //    }
+
+            //    string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
+            //    throw new NodeException(msg, startMark_);
+            //}
+            //throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
+
             if(isSequence)
             {
                 checkSequenceIndex(index);
-                static if(isIntegral!T || is(Unqual!T == bool))
+                static if(isIntegral!T)
                 {
-                    return cast(Node)value_.get!(Node[])[index];
+                    return getValue!(Node[])[index];
                 }
                 assert(false);
             }
@@ -781,7 +760,7 @@ struct Node
                 auto idx = findPair(index);
                 if(idx >= 0)
                 {
-                    return cast(Node)value_.get!(Pair[])[idx].value;
+                    return getValue!(Pair[])[idx].value;
                 }
 
                 string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
@@ -842,6 +821,15 @@ struct Node
         bool contains(T)(T rhs) const
         {
             return contains_!(T, No.key, "contains")(rhs);
+        }
+        @safe unittest
+        {
+            auto mNode = Node(["1", "2", "3"]);
+            assert(mNode.contains("2"));
+            const cNode = Node(["1", "2", "3"]);
+            assert(cNode.contains("2"));
+            immutable iNode = Node(["1", "2", "3"]);
+            assert(iNode.contains("2"));
         }
 
 
@@ -918,11 +906,9 @@ struct Node
         }
 
         /// Assignment (shallow copy) by reference.
-        void opAssign(ref Node rhs) @trusted nothrow
+        void opAssign(ref Node rhs) @safe nothrow
         {
-            // Value opAssign doesn't really throw, so force it to nothrow.
-            alias Value delegate(Value) nothrow valueAssignNothrow;
-            (cast(valueAssignNothrow)&value_.opAssign!Value)(rhs.value_);
+            assumeWontThrow(setValue(rhs.value_));
             startMark_      = rhs.startMark_;
             tag_            = rhs.tag_;
             scalarStyle     = rhs.scalarStyle;
@@ -960,7 +946,7 @@ struct Node
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
          */
-        void opIndexAssign(K, V)(V value, K index) @trusted
+        void opIndexAssign(K, V)(V value, K index) @safe
         {
             if(isSequence())
             {
@@ -968,10 +954,10 @@ struct Node
                 checkSequenceIndex(index);
                 static if(isIntegral!K || is(Unqual!K == bool))
                 {
-                    auto nodes = value_.get!(Node[]);
+                    auto nodes = getValue!(Node[]);
                     static if(is(Unqual!V == Node)){nodes[index] = value;}
                     else                           {nodes[index] = Node(value);}
-                    value_ = Value(nodes);
+                    setValue(nodes);
                     return;
                 }
                 assert(false);
@@ -985,7 +971,7 @@ struct Node
                     auto pairs = as!(Node.Pair[])();
                     static if(is(Unqual!V == Node)){pairs[idx].value = value;}
                     else                           {pairs[idx].value = Node(value);}
-                    value_ = Value(pairs);
+                    setValue(pairs);
                 }
                 return;
             }
@@ -1033,17 +1019,14 @@ struct Node
           * Throws: NodeException if the node is not a sequence or an element
           *         could not be converted to specified type.
           */
-        auto sequence(T = Node)()
+        template sequence(T = Node)
         {
-            enforce(isSequence,
-                    new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
-                        startMark_));
-            struct Range
+            struct Range(N)
             {
-                Node[] subnodes;
+                N subnodes;
                 size_t position;
 
-                this(Node[] nodes)
+                this(N nodes)
                 {
                     subnodes = nodes;
                     position = 0;
@@ -1101,7 +1084,20 @@ struct Node
                 static assert(isBidirectionalRange!Range);
                 static assert(isRandomAccessRange!Range);
             }
-            return Range(get!(Node[]));
+            auto sequence()
+            {
+                enforce(isSequence,
+                        new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
+                            startMark_));
+                return Range!(Node[])(get!(Node[]));
+            }
+            auto sequence() const
+            {
+                enforce(isSequence,
+                        new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
+                            startMark_));
+                return Range!(const(Node)[])(get!(Node[]));
+            }
         }
         @safe unittest
         {
@@ -1110,11 +1106,15 @@ struct Node
             Node n1 = Node([1, 2, 3, 4]);
             int[int] array;
             Node n2 = Node(array);
+            const n3 = Node([1, 2, 3, 4]);
 
             auto r = n1.sequence!int.map!(x => x * 10);
             assert(r.equal([10, 20, 30, 40]));
 
             assertThrown(n2.sequence);
+
+            auto r2 = n3.sequence!int.map!(x => x * 10);
+            assert(r2.equal([10, 20, 30, 40]));
         }
 
         /** Return a range object iterating over mapping's pairs.
@@ -1122,17 +1122,14 @@ struct Node
           * Throws: NodeException if the node is not a mapping.
           *
           */
-        auto mapping() @safe
+        template mapping()
         {
-            enforce(isMapping,
-                    new NodeException("Trying to 'mapping'-iterate over a "
-                        ~ nodeTypeString ~ " node", startMark_));
-            struct Range
+            struct Range(T)
             {
-                Node.Pair[] pairs;
+                T pairs;
                 size_t position;
 
-                this(Node.Pair[] pairs) @safe
+                this(T pairs) @safe
                 {
                     this.pairs = pairs;
                     position = 0;
@@ -1147,7 +1144,7 @@ struct Node
                     position++;
                 }
 
-                Pair front() @safe
+                auto front() @safe
                 {
                     enforce(!empty, "Attempted to take the front of an empty mapping");
                     return pairs[position];
@@ -1163,7 +1160,7 @@ struct Node
                     pairs = pairs[0 .. $ - 1];
                 }
 
-                Pair back() @safe
+                auto back() @safe
                 {
                     enforce(!empty, "Attempted to take the back of an empty mapping");
                     return pairs[$ - 1];
@@ -1171,14 +1168,28 @@ struct Node
 
                 /* Random-access range functionality. */
                 size_t length() const @property @safe { return pairs.length; }
-                Pair opIndex(size_t index) @safe { return pairs[index]; }
+                auto opIndex(size_t index) @safe { return pairs[index]; }
 
                 static assert(isInputRange!Range);
                 static assert(isForwardRange!Range);
                 static assert(isBidirectionalRange!Range);
                 static assert(isRandomAccessRange!Range);
             }
-            return Range(get!(Node.Pair[]));
+
+            auto mapping()
+            {
+                enforce(isMapping,
+                        new NodeException("Trying to 'mapping'-iterate over a "
+                            ~ nodeTypeString ~ " node", startMark_));
+                return Range!(Node.Pair[])(get!(Node.Pair[]));
+            }
+            auto mapping() const
+            {
+                enforce(isMapping,
+                        new NodeException("Trying to 'mapping'-iterate over a "
+                            ~ nodeTypeString ~ " node", startMark_));
+                return Range!(const(Node.Pair)[])(get!(Node.Pair[]));
+            }
         }
         @safe unittest
         {
@@ -1197,6 +1208,11 @@ struct Node
             assert(test[1] == "foo");
             assert(test[2] == "bar");
             assert(test[3] == "baz");
+
+            int[int] constArray = [1: 2, 3: 4];
+            const x = Node(constArray);
+            foreach (pair; x.mapping)
+                assert(pair.value == constArray[pair.key.as!int]);
         }
 
         /** Return a range object iterating over mapping's keys.
@@ -1259,6 +1275,7 @@ struct Node
             assert(m1.mappingValues.equal([2, 3]));
         }
 
+
         /** Foreach over a sequence, getting each element as T.
          *
          * If T is Node, simply iterate over the nodes in the sequence.
@@ -1267,39 +1284,81 @@ struct Node
          * Throws:  NodeException if the node is not a sequence or an
          *          element could not be converted to specified type.
          */
-        int opApply(T)(int delegate(ref T) dg) @trusted
+        template opApply(T)
         {
-            enforce(isSequence,
-                    new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
-                              startMark_));
-
-            int result = 0;
-            foreach(ref node; get!(Node[]))
+            int opApplyImpl(DG)(DG dg)
             {
-                static if(is(Unqual!T == Node))
+                enforce(isSequence,
+                        new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
+                                  startMark_));
+
+                int result = 0;
+                foreach(ref node; get!(Node[]))
                 {
-                    result = dg(node);
+                    static if(is(Unqual!T == Node))
+                    {
+                        result = dg(node);
+                    }
+                    else
+                    {
+                        T temp = node.as!T;
+                        result = dg(temp);
+                    }
+                    if(result){break;}
                 }
-                else
-                {
-                    T temp = node.as!T;
-                    result = dg(temp);
-                }
-                if(result){break;}
+                return result;
             }
-            return result;
-        }
-        @system unittest
+            // Ugly workaround due to issues with inout and delegate params
+            int opApplyImpl(DG)(DG dg) const
+            {
+                enforce(isSequence,
+                        new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
+                                  startMark_));
+
+                int result = 0;
+                foreach(ref node; get!(Node[]))
+                {
+                    static if(is(Unqual!T == Node))
+                    {
+                        result = dg(node);
+                    }
+                    else
+                    {
+                        T temp = node.as!T;
+                        result = dg(temp);
+                    }
+                    if(result){break;}
+                }
+                return result;
+            }
+            int opApply(scope int delegate(ref T) @system dg)
+            {
+                return opApplyImpl(dg);
+            }
+            /// Ditto
+            int opApply(scope int delegate(ref T) @safe dg)
+            {
+                return opApplyImpl(dg);
+            }
+            /// Ditto
+            int opApply(scope int delegate(ref const T) @system dg) const
+            {
+                return opApplyImpl(dg);
+            }
+            /// Ditto
+            int opApply(scope int delegate(ref const T) @safe dg) const
+            {
+                return opApplyImpl(dg);
+            }
+         }
+        @safe unittest
         {
             writeln("D:YAML Node opApply unittest 1");
 
-            alias Node.Value Value;
-            alias Node.Pair Pair;
-
-            Node n1 = Node(Value(cast(long)11));
-            Node n2 = Node(Value(cast(long)12));
-            Node n3 = Node(Value(cast(long)13));
-            Node n4 = Node(Value(cast(long)14));
+            Node n1 = Node(11);
+            Node n2 = Node(12);
+            Node n3 = Node(13);
+            Node n4 = Node(14);
             Node narray = Node([n1, n2, n3, n4]);
 
             int[] array, array2;
@@ -1314,6 +1373,31 @@ struct Node
             assert(array == [11, 12, 13, 14]);
             assert(array2 == [11, 12, 13, 14]);
         }
+        @safe unittest
+        {
+            string[] testStrs = ["1", "2", "3"];
+            auto node1 = Node(testStrs);
+            int i = 0;
+            foreach (string elem; node1)
+            {
+                assert(elem == testStrs[i]);
+                i++;
+            }
+            const node2 = Node(testStrs);
+            i = 0;
+            foreach (string elem; node2)
+            {
+                assert(elem == testStrs[i]);
+                i++;
+            }
+            immutable node3 = Node(testStrs);
+            i = 0;
+            foreach (string elem; node3)
+            {
+                assert(elem == testStrs[i]);
+                i++;
+            }
+        }
 
         /** Foreach over a mapping, getting each key/value as K/V.
          *
@@ -1323,40 +1407,94 @@ struct Node
          * Throws:  NodeException if the node is not a mapping or an
          *          element could not be converted to specified type.
          */
-        int opApply(K, V)(int delegate(ref K, ref V) dg) @trusted
-        {
-            enforce(isMapping,
-                    new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
-                              startMark_));
-
-            int result = 0;
-            foreach(ref pair; get!(Node.Pair[]))
+         template opApply(K, V)
+         {
+            int opApplyImpl(DG)(DG dg)
             {
-                static if(is(Unqual!K == Node) && is(Unqual!V == Node))
-                {
-                    result = dg(pair.key, pair.value);
-                }
-                else static if(is(Unqual!K == Node))
-                {
-                    V tempValue = pair.value.as!V;
-                    result = dg(pair.key, tempValue);
-                }
-                else static if(is(Unqual!V == Node))
-                {
-                    K tempKey   = pair.key.as!K;
-                    result = dg(tempKey, pair.value);
-                }
-                else
-                {
-                    K tempKey   = pair.key.as!K;
-                    V tempValue = pair.value.as!V;
-                    result = dg(tempKey, tempValue);
-                }
+                enforce(isMapping,
+                        new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
+                                  startMark_));
 
-                if(result){break;}
+                int result = 0;
+                foreach(ref pair; get!(Node.Pair[]))
+                {
+                    static if(is(Unqual!K == Node) && is(Unqual!V == Node))
+                    {
+                        result = dg(pair.key, pair.value);
+                    }
+                    else static if(is(Unqual!K == Node))
+                    {
+                        V tempValue = pair.value.as!V;
+                        result = dg(pair.key, tempValue);
+                    }
+                    else static if(is(Unqual!V == Node))
+                    {
+                        K tempKey   = pair.key.as!K;
+                        result = dg(tempKey, pair.value);
+                    }
+                    else
+                    {
+                        K tempKey   = pair.key.as!K;
+                        V tempValue = pair.value.as!V;
+                        result = dg(tempKey, tempValue);
+                    }
+
+                    if(result){break;}
+                }
+                return result;
             }
-            return result;
-        }
+            // Ugly workaround due to issues with inout and delegate params
+            int opApplyImpl(DG)(DG dg) const
+            {
+                enforce(isMapping,
+                        new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
+                                  startMark_));
+
+                int result = 0;
+                foreach(ref pair; get!(Node.Pair[]))
+                {
+                    static if(is(Unqual!K == Node) && is(Unqual!V == Node))
+                    {
+                        result = dg(pair.key, pair.value);
+                    }
+                    else static if(is(Unqual!K == Node))
+                    {
+                        V tempValue = pair.value.as!V;
+                        result = dg(pair.key, tempValue);
+                    }
+                    else static if(is(Unqual!V == Node))
+                    {
+                        K tempKey   = pair.key.as!K;
+                        result = dg(tempKey, pair.value);
+                    }
+                    else
+                    {
+                        K tempKey   = pair.key.as!K;
+                        V tempValue = pair.value.as!V;
+                        result = dg(tempKey, tempValue);
+                    }
+
+                    if(result){break;}
+                }
+                return result;
+            }
+            int opApply(scope int delegate(ref K, ref V) @system dg)
+            {
+                return opApplyImpl(dg);
+            }
+            int opApply(scope int delegate(ref K, ref V) @safe dg)
+            {
+                return opApplyImpl(dg);
+            }
+            int opApply(scope int delegate(ref const K, ref const V) @system dg) const
+            {
+                return opApplyImpl(dg);
+            }
+            int opApply(scope int delegate(ref const K, ref const V) @safe dg) const
+            {
+                return opApplyImpl(dg);
+            }
+         }
         @safe unittest
         {
             writeln("D:YAML Node opApply unittest 2");
@@ -1407,6 +1545,25 @@ struct Node
                 }
             }
         }
+        @safe unittest
+        {
+            string[int] testStrs = [0: "1", 1: "2", 2: "3"];
+            auto node1 = Node(testStrs);
+            foreach (const int i, string elem; node1)
+            {
+                assert(elem == testStrs[i]);
+            }
+            const node2 = Node(testStrs);
+            foreach (const int i, string elem; node2)
+            {
+                assert(elem == testStrs[i]);
+            }
+            immutable node3 = Node(testStrs);
+            foreach (const int i, string elem; node3)
+            {
+                assert(elem == testStrs[i]);
+            }
+        }
 
         /** Add an element to a sequence.
          *
@@ -1422,7 +1579,7 @@ struct Node
          *
          * Params:  value = Value to _add to the sequence.
          */
-        void add(T)(T value) @trusted
+        void add(T)(T value)
         {
             enforce(isSequence(),
                     new NodeException("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
@@ -1430,7 +1587,7 @@ struct Node
             auto nodes = get!(Node[])();
             static if(is(Unqual!T == Node)){nodes ~= value;}
             else                           {nodes ~= Node(value);}
-            value_ = Value(nodes);
+            setValue(nodes);
         }
         @safe unittest
         {
@@ -1458,7 +1615,7 @@ struct Node
          * Params:  key   = Key to _add.
          *          value = Value to _add.
          */
-        void add(K, V)(K key, V value) @trusted
+        void add(K, V)(K key, V value)
         {
             enforce(isMapping(),
                     new NodeException("Trying to add a key-value pair to a " ~
@@ -1467,7 +1624,7 @@ struct Node
 
             auto pairs = get!(Node.Pair[])();
             pairs ~= Pair(key, value);
-            value_ = Value(pairs);
+            setValue(pairs);
         }
         @safe unittest
         {
@@ -1493,7 +1650,7 @@ struct Node
          *
          * See_Also: contains
          */
-        Node* opBinaryRight(string op, K)(K key)
+        inout(Node*) opBinaryRight(string op, K)(K key) inout
             if (op == "in")
         {
             enforce(isMapping, new NodeException("Trying to use 'in' on a " ~
@@ -1521,6 +1678,15 @@ struct Node
             *foo = Node("newfoo");
             assert(mapping["foo"] == Node("newfoo"));
         }
+        @safe unittest
+        {
+            auto mNode = Node(["a": 2]);
+            assert("a" in mNode);
+            const cNode = Node(["a": 2]);
+            assert("a" in cNode);
+            immutable iNode = Node(["a": 2]);
+            assert("a" in iNode);
+        }
 
         /** Remove first (if any) occurence of a value in a collection.
          *
@@ -1534,7 +1700,7 @@ struct Node
          *
          * Throws:  NodeException if the node is not a collection.
          */
-        void remove(T)(T rhs) @trusted
+        void remove(T)(T rhs)
         {
             remove_!(T, No.key, "remove")(rhs);
         }
@@ -1582,7 +1748,7 @@ struct Node
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
          */
-        void removeAt(T)(T index) @trusted
+        void removeAt(T)(T index)
         {
             remove_!(T, Yes.key, "removeAt")(index);
         }
@@ -1640,10 +1806,10 @@ struct Node
         // Returns: Constructed node.
         static Node rawNode(Value value, const Mark startMark, const string tag,
                             const ScalarStyle scalarStyle,
-                            const CollectionStyle collectionStyle) @trusted
+                            const CollectionStyle collectionStyle) @safe
         {
             Node node;
-            node.value_          = value;
+            node.setValue(value);
             node.startMark_      = startMark;
             node.tag_            = tag;
             node.scalarStyle     = scalarStyle;
@@ -1697,7 +1863,7 @@ struct Node
             {
                 try
                 {
-                    auto stored = get!(const(Unqual!T), No.stringConversion);
+                    auto stored = get!(T, No.stringConversion);
                     // Need to handle NaNs separately.
                     static if(isFloatingPoint!T)
                     {
@@ -1705,7 +1871,7 @@ struct Node
                     }
                     else
                     {
-                        return rhs == get!(const(Unqual!T));
+                        return rhs == get!T;
                     }
                 }
                 catch(NodeException e){return false;}
@@ -1717,6 +1883,7 @@ struct Node
         // Used for ordering in mappings and for opEquals.
         //
         // useTag determines whether or not to consider tags in the comparison.
+        // TODO: Make @safe when TypeInfo.cmp is @safe as well.
         int cmp(Flag!"useTag" useTag)(const ref Node rhs) const @trusted
         {
             // Compare tags - if equal or both null, we need to compare further.
@@ -1745,8 +1912,8 @@ struct Node
 
             static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
             {
-                const c1 = lhs.value_.get!(const T);
-                const c2 = rhs.value_.get!(const T);
+                const c1 = lhs.getValue!T;
+                const c2 = rhs.getValue!T;
                 if(c1 is c2){return 0;}
                 if(c1.length != c2.length)
                 {
@@ -1765,24 +1932,24 @@ struct Node
             if(isMapping) {return compareCollections!(Pair[])(this, rhs);}
             if(isString)
             {
-                return std.algorithm.cmp(value_.get!(const string),
-                                         rhs.value_.get!(const string));
+                return std.algorithm.cmp(getValue!string,
+                                         rhs.getValue!string);
             }
             if(isInt)
             {
-                return cmp(value_.get!(const long), rhs.value_.get!(const long));
+                return cmp(getValue!long, rhs.getValue!long);
             }
             if(isBool)
             {
-                const b1 = value_.get!(const bool);
-                const b2 = rhs.value_.get!(const bool);
+                const b1 = getValue!bool;
+                const b2 = rhs.getValue!bool;
                 return b1 ? b2 ? 0 : 1
                           : b2 ? -1 : 0;
             }
             if(isBinary)
             {
-                const b1 = value_.get!(const ubyte[]);
-                const b2 = rhs.value_.get!(const ubyte[]);
+                const b1 = getValue!(ubyte[]);
+                const b2 = rhs.getValue!(ubyte[]);
                 return std.algorithm.cmp(b1, b2);
             }
             if(isNull)
@@ -1793,8 +1960,8 @@ struct Node
             // We consider NaN to be lower than any float.
             if(isFloat)
             {
-                const r1 = value_.get!(const real);
-                const r2 = rhs.value_.get!(const real);
+                const r1 = getValue!real;
+                const r2 = rhs.getValue!real;
                 if(isNaN(r1))
                 {
                     return isNaN(r2) ? 0 : -1;
@@ -1812,13 +1979,13 @@ struct Node
             }
             else if(isTime)
             {
-                const t1 = value_.get!(const SysTime);
-                const t2 = rhs.value_.get!(const SysTime);
+                const t1 = getValue!SysTime;
+                const t2 = rhs.getValue!SysTime;
                 return cmp(t1, t2);
             }
             else if(isUserType)
             {
-                return value_.get!(const YAMLObject).cmp(rhs.value_.get!(const YAMLObject));
+                return getValue!YAMLObject.cmp(rhs.getValue!YAMLObject);
             }
             assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
@@ -1828,7 +1995,7 @@ struct Node
         // Params:  level = Level of the node in the tree.
         //
         // Returns: String representing the node tree.
-        @property string debugString(uint level = 0) @safe
+        @property string debugString(uint level = 0) const @safe
         {
             string indent;
             foreach(i; 0 .. level){indent ~= " ";}
@@ -1926,11 +2093,11 @@ struct Node
 
     private:
         // Implementation of contains() and containsKey().
-        bool contains_(T, Flag!"key" key, string func)(T rhs) const @trusted
+        bool contains_(T, Flag!"key" key, string func)(T rhs) const
         {
             static if(!key) if(isSequence)
             {
-                foreach(ref node; value_.get!(const Node[]))
+                foreach(ref node; getValue!(Node[]))
                 {
                     if(node == rhs){return true;}
                 }
@@ -1955,10 +2122,10 @@ struct Node
 
             static void removeElem(E, I)(ref Node node, I index)
             {
-                auto elems = node.value_.get!(E[]);
+                auto elems = node.getValue!(E[]);
                 moveAll(elems[cast(size_t)index + 1 .. $], elems[cast(size_t)index .. $ - 1]);
                 elems.length = elems.length - 1;
-                node.value_ = Value(elems);
+                node.setValue(elems);
             }
 
             if(isSequence())
@@ -1991,9 +2158,9 @@ struct Node
         }
 
         // Get index of pair with key (or value, if key is false) matching index.
-        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @trusted
+        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const
         {
-            const pairs = value_.get!(const Pair[])();
+            const pairs = getValue!(Pair[])();
             const(Node)* node;
             foreach(idx, ref const(Pair) pair; pairs)
             {
@@ -2015,7 +2182,7 @@ struct Node
         }
 
         // Check if index is integral and in range.
-        void checkSequenceIndex(T)(T index) const @trusted
+        void checkSequenceIndex(T)(T index) const
         {
             assert(isSequence,
                    "checkSequenceIndex() called on a " ~ nodeTypeString ~ " node");
@@ -2026,36 +2193,32 @@ struct Node
             }
             else
             {
-                enforce(index >= 0 && index < value_.get!(const Node[]).length,
+                enforce(index >= 0 && index < getValue!(Node[]).length,
                         new NodeException("Sequence index out of range: " ~ to!string(index),
                                   startMark_));
             }
         }
-
-        // Const version of opIndex.
-        ref const(Node) indexConst(T)(T index) const @trusted
+        // Safe wrapper for getting a value out of the variant.
+        inout(T) getValue(T)() @trusted inout
         {
-            if(isSequence)
+            return value_.get!T;
+        }
+        // Safe wrapper for coercing a value out of the variant.
+        inout(T) coerceValue(T)() @trusted inout
+        {
+            return (cast(Value)value_).coerce!T;
+        }
+        // Safe wrapper for setting a value for the variant.
+        void setValue(T)(T value) @trusted
+        {
+            static if (allowed!T)
             {
-                checkSequenceIndex(index);
-                static if(isIntegral!T)
-                {
-                    return value_.get!(const Node[])[index];
-                }
-                assert(false);
+                value_ = value;
             }
-            else if(isMapping)
+            else
             {
-                auto idx = findPair(index);
-                if(idx >= 0)
-                {
-                    return value_.get!(const Pair[])[idx].value;
-                }
-
-                string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
-                throw new NodeException(msg, startMark_);
+                value_ = cast(YAMLObject)new YAMLContainer!T(value);
             }
-            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
 }
 
