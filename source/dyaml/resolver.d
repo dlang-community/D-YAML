@@ -107,10 +107,12 @@ final class Resolver
         }
         /// Resolve scalars starting with 'A' to !_tag
         unittest {
+            import std.file : write;
             import std.regex;
 
             import dyaml;
 
+            write("example.yaml", "A");
 
             auto loader = Loader("example.yaml");
             auto resolver = new Resolver();
