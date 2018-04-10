@@ -578,13 +578,11 @@ struct Node
             /// Must go before others, as even string/int/etc could be stored in a YAMLObject.
             static if(!allowed!(Unqual!T)) if(isUserType)
             {
-                auto object = as!(const YAMLObject);
-                if(object.type is typeid(T))
-                {
-                    return (cast(inout YAMLContainer!(Unqual!T))(getValue!YAMLObject())).value_;
-                }
-                throw new NodeException("Node has unexpected type: " ~ object.type.toString() ~
-                                ". Expected: " ~ typeid(T).toString, startMark_);
+                auto object = getValue!YAMLObject();
+                enforce(object.type is typeid(T),
+                    new NodeException("Node has unexpected type: " ~ object.type.toString() ~
+                        ". Expected: " ~ typeid(T).toString, startMark_));
+                return (cast(inout YAMLContainer!(Unqual!T))(object)).value_;
             }
 
             // If we're getting from a mapping and we're not getting Node.Pair[],
@@ -597,7 +595,7 @@ struct Node
                 {
                     if(isString){return to!T(getValue!string);}
                     throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                    ". Expected: " ~ typeid(T).toString(), startMark_);
+                        ". Expected: " ~ typeid(T).toString(), startMark_);
                 }
                 else
                 {
@@ -612,36 +610,26 @@ struct Node
                     }
                 }
             }
-            else
+            else static if(isFloatingPoint!T)
             {
-                static if(isFloatingPoint!T)
-                {
-                    /// Can convert int to float.
-                    if(isInt())       {return to!T(getValue!long);}
-                    else if(isFloat()){return to!T(getValue!real);}
-                }
-                else static if(is(Unqual!T == bool))
-                {
-                    auto temp = getValue!bool;
-                    return to!bool(temp);
-                }
-                else static if(isIntegral!T)
-                {
-                    if(isInt())
-                    {
-                        immutable temp = getValue!long;
-                        enforce(temp >= T.min && temp <= T.max,
-                                new NodeException("Integer value of type " ~ typeid(T).toString() ~
-                                          " out of range. Value: " ~ to!string(temp), startMark_));
-                        return temp.to!T;
-                    }
-                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                    ". Expected: " ~ typeid(T).toString, startMark_);
-                }
+                /// Can convert int to float.
+                if(isInt())       {return to!T(getValue!long);}
+                else if(isFloat()){return to!T(getValue!real);}
                 else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                    ". Expected: " ~ typeid(T).toString, startMark_);
+                    ". Expected: " ~ typeid(T).toString, startMark_);
             }
-            assert(false, "This code should never be reached");
+            else static if(isIntegral!T)
+            {
+                enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                                ". Expected: " ~ typeid(T).toString, startMark_));
+                immutable temp = getValue!long;
+                enforce(temp >= T.min && temp <= T.max,
+                    new NodeException("Integer value of type " ~ typeid(T).toString() ~
+                        " out of range. Value: " ~ to!string(temp), startMark_));
+                return temp.to!T;
+            }
+            else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                ". Expected: " ~ typeid(T).toString, startMark_);
         }
         /// Automatic type conversion
         @safe unittest
@@ -655,6 +643,8 @@ struct Node
         @safe unittest
         {
             assertThrown!NodeException(Node("42").get!int);
+            assertThrown!NodeException(Node("42").get!double);
+            assertThrown!NodeException(Node(long.max).get!ushort);
             Node(YAMLNull()).get!YAMLNull;
         }
         @safe unittest
