@@ -1223,7 +1223,7 @@ struct Node
           * Throws: NodeException if the nodes is not a mapping or an element
           *         could not be converted to specified type.
           */
-        auto mappingKeys(K = Node)()
+        auto mappingKeys(K = Node)() const
         {
             enforce(isMapping,
                     new NodeException("Trying to 'mappingKeys'-iterate over a "
@@ -1242,7 +1242,11 @@ struct Node
             m1["foo"] = 2;
             m1["bar"] = 3;
 
-            assert(m1.mappingKeys.equal(["foo", "bar"]));
+            assert(m1.mappingKeys.equal(["foo", "bar"]) || m1.mappingKeys.equal(["bar", "foo"]));
+
+            const cm1 = Node(["foo": 2, "bar": 3]);
+
+            assert(cm1.mappingKeys.equal(["foo", "bar"]) || cm1.mappingKeys.equal(["bar", "foo"]));
         }
 
         /** Return a range object iterating over mapping's values.
@@ -1253,7 +1257,7 @@ struct Node
           * Throws: NodeException if the nodes is not a mapping or an element
           *         could not be converted to specified type.
           */
-        auto mappingValues(V = Node)()
+        auto mappingValues(V = Node)() const
         {
             enforce(isMapping,
                     new NodeException("Trying to 'mappingValues'-iterate over a "
@@ -1272,7 +1276,11 @@ struct Node
             m1["foo"] = 2;
             m1["bar"] = 3;
 
-            assert(m1.mappingValues.equal([2, 3]));
+            assert(m1.mappingValues.equal([2, 3]) || m1.mappingValues.equal([3, 2]));
+
+            const cm1 = Node(["foo": 2, "bar": 3]);
+
+            assert(cm1.mappingValues.equal([2, 3]) || cm1.mappingValues.equal([3, 2]));
         }
 
 
