@@ -68,7 +68,7 @@ package abstract class YAMLObject
 
     protected:
         // Compare with another YAMLObject.
-        int cmp(const YAMLObject rhs) const @safe {assert(false);};
+        int cmp(const YAMLObject rhs) const @system {assert(false);};
 }
 
 // Stores a user defined YAML data type.
@@ -97,7 +97,7 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 
     protected:
         // Compare with another YAMLObject.
-        override int cmp(const YAMLObject rhs) const @trusted
+        override int cmp(const YAMLObject rhs) const @system
         {
             const typeCmp = type.opCmp(rhs.type);
             if(typeCmp != 0){return typeCmp;}
@@ -157,7 +157,7 @@ private struct Pair
         //
         // useTag determines whether or not we consider node tags
         // in the comparison.
-        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
+        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const
         {
             const keyCmp = key.cmp!useTag(rhs.key);
             return keyCmp != 0 ? keyCmp
@@ -238,7 +238,7 @@ struct Node
          *                  be in full form, e.g. "tag:yaml.org,2002:int", not
          *                  a shortcut, like "!!int".
          */
-        this(T)(T value, const string tag = null) @safe
+        this(T)(T value, const string tag = null)
             if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
         {
             tag_ = tag;
@@ -570,7 +570,7 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout @safe
+        inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
         {
             if(isType!(Unqual!T)){return getValue!T;}
 
@@ -603,7 +603,6 @@ struct Node
                     // Try to convert to string.
                     try
                     {
-                        // NOTE: We are casting away const here
                         return coerceValue!T();
                     }
                     catch(VariantException e)
@@ -676,8 +675,6 @@ struct Node
             assert(node2.get!(immutable double) == 42.0);
         }
 
-        /// Ditto.
-
         /** If this is a collection, return its _length.
          *
          * Otherwise, throw NodeException.
@@ -724,28 +721,6 @@ struct Node
          */
         ref inout(Node) opIndex(T)(T index) inout @safe
         {
-            //if(isSequence)
-            //{
-            //    checkSequenceIndex(index);
-            //    static if(isIntegral!T || is(Unqual!T == bool))
-            //    {
-            //        return cast(Node)value_.get!(Node[])[index];
-            //    }
-            //    assert(false);
-            //}
-            //else if(isMapping)
-            //{
-            //    auto idx = findPair(index);
-            //    if(idx >= 0)
-            //    {
-            //        return cast(Node)value_.get!(Pair[])[idx].value;
-            //    }
-
-            //    string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
-            //    throw new NodeException(msg, startMark_);
-            //}
-            //throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
-
             if(isSequence)
             {
                 checkSequenceIndex(index);
@@ -946,7 +921,7 @@ struct Node
          * Throws:  NodeException if the node is not a collection, index is out
          *          of range or if a non-integral index is used on a sequence node.
          */
-        void opIndexAssign(K, V)(V value, K index) @safe
+        void opIndexAssign(K, V)(V value, K index)
         {
             if(isSequence())
             {
@@ -1343,17 +1318,14 @@ struct Node
             {
                 return opApplyImpl(dg);
             }
-            /// Ditto
             int opApply(scope int delegate(ref T) @safe dg)
             {
                 return opApplyImpl(dg);
             }
-            /// Ditto
             int opApply(scope int delegate(ref const T) @system dg) const
             {
                 return opApplyImpl(dg);
             }
-            /// Ditto
             int opApply(scope int delegate(ref const T) @safe dg) const
             {
                 return opApplyImpl(dg);
