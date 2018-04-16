@@ -393,12 +393,11 @@ Node representStruct(ref Node node, Representer representer) @safe
 /**
  * Constructor unittest.
  *
- * Params:  verbose      = Print verbose output?
- *          dataFilename = File name to read from.
+ * Params:  dataFilename = File name to read from.
  *          codeDummy    = Dummy .code filename, used to determine that
  *                         .data file with the same name should be used in this test.
  */
-void testConstructor(bool verbose, string dataFilename, string codeDummy) @safe
+void testConstructor(string dataFilename, string codeDummy) @safe
 {
     string base = dataFilename.baseName.stripExtension;
     enforce((base in expected) !is null,
@@ -420,7 +419,7 @@ void testConstructor(bool verbose, string dataFilename, string codeDummy) @safe
     {
         if(!node.equals!(No.useTag)(exp[i]))
         {
-            if(verbose)
+            static if(verbose)
             {
                 writeln("Expected value:");
                 writeln(exp[i].debugString);

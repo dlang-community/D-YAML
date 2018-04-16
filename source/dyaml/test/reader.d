@@ -16,9 +16,8 @@ import dyaml.reader;
 
 // Try reading entire file through Reader, expecting an error (the file is invalid).
 //
-// Params:  verbose = Print verbose output?
-//          data    = Stream to read.
-void runReader(const bool verbose, ubyte[] fileData) @safe
+// Params:  data    = Stream to read.
+void runReader(ubyte[] fileData) @safe
 {
     try
     {
@@ -27,7 +26,7 @@ void runReader(const bool verbose, ubyte[] fileData) @safe
     }
     catch(ReaderException e)
     {
-        printException(e, verbose);
+        printException(e);
         return;
     }
     assert(false, "Expected an exception");
@@ -36,11 +35,10 @@ void runReader(const bool verbose, ubyte[] fileData) @safe
 
 /// Stream error unittest. Tries to read invalid input files, expecting errors.
 ///
-/// Params:  verbose       = Print verbose output?
-///          errorFilename = File name to read from.
-void testStreamError(bool verbose, string errorFilename) @safe
+/// Params:  errorFilename = File name to read from.
+void testStreamError(string errorFilename) @safe
 {
-    runReader(verbose, readData(errorFilename));
+    runReader(readData(errorFilename));
 }
 
 // TODO: remove when a @safe ubyte[] file read can be done.

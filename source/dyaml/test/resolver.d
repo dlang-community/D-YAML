@@ -19,11 +19,10 @@ import dyaml.test.common;
 /**
  * Implicit tag resolution unittest.
  *
- * Params:  verbose        = Print verbose output?
- *          dataFilename   = File with unittest data.
+ * Params:  dataFilename   = File with unittest data.
  *          detectFilename = Dummy filename used to specify which data filenames to use.
  */
-void testImplicitResolver(bool verbose, string dataFilename, string detectFilename) @safe
+void testImplicitResolver(string dataFilename, string detectFilename) @safe
 {
     string correctTag;
     Node node;
