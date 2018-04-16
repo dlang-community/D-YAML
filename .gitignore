@@ -32,7 +32,9 @@ main
 *.a
 *.lib
 *.o
+*.obj
 *.exe
+docs.json
 
 # Packages #
 ############
@@ -59,3 +61,6 @@ callgrind.out.*
 
 # Test outputs #
 example.yaml
+
+# Unittest Coverage output #
+*.lst
