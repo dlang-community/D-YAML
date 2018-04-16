@@ -20,11 +20,10 @@ import dyaml.test.constructor;
 
 /// Representer unittest.
 ///
-/// Params:  verbose      = Print verbose output?
-///          codeFilename = File name to determine test case from.
+/// Params:  codeFilename = File name to determine test case from.
 ///                         Nothing is read from this file, it only exists
 ///                         to specify that we need a matching unittest.
-void testRepresenterTypes(bool verbose, string codeFilename) @safe
+void testRepresenterTypes(string codeFilename) @safe
 {
     string baseName = codeFilename.baseName.stripExtension;
     enforce((baseName in dyaml.test.constructor.expected) !is null,
@@ -38,7 +37,7 @@ void testRepresenterTypes(bool verbose, string codeFilename) @safe
 
         scope(failure)
         {
-            if(verbose)
+            static if(verbose)
             {
                 writeln("Expected nodes:");
                 foreach(ref n; expectedNodes){writeln(n.debugString, "\n---\n");}

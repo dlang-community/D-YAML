@@ -24,6 +24,8 @@ import std.typecons;
 
 package:
 
+debug(verbose) enum verbose = true;
+else enum verbose = false;
 /**
  * Run an unittest.
  *
@@ -37,7 +39,6 @@ void run(D)(string testName, D testFunction,
 {
     immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../../test/data";
     auto testFilenames = findTestFilenames(dataDir);
-    bool verbose = false;
 
     Result[] results;
     if(unittestExt.length > 0)
@@ -55,24 +56,23 @@ void run(D)(string testName, D testFunction,
                 if(extensions.canFind(ext)){continue outer;}
             }
 
-            results ~= execute(testName, testFunction, filenames, verbose);
+            results ~= execute(testName, testFunction, filenames);
         }
     }
     else
     {
-        results ~= execute(testName, testFunction, cast(string[])[], verbose);
+        results ~= execute(testName, testFunction, cast(string[])[]);
     }
-    display(results, verbose);
+    display(results);
 }
 
 /**
  * Prints an exception if verbosity is turned on.
  * Params:  e     = Exception to print.
- *          verbose = Whether verbose mode is enabled.
  */
-void printException(YAMLException e, bool verbose) @trusted
+void printException(YAMLException e) @trusted
 {
-        if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+        static if(verbose) { writeln(typeid(e).toString(), "\n", e); }
 }
 
 private:
@@ -136,14 +136,13 @@ body
  * Params:  testName     = Name of the unittest.
  *          testFunction = Unittest function.
  *          filenames    = Names of input files to test with.
- *          verbose      = Print verbose output?
  *
  * Returns: Information about the results of the unittest.
  */
 Result execute(D)(const string testName, D testFunction,
-                      string[] filenames, const bool verbose) @trusted
+                      string[] filenames) @trusted
 {
-    if(verbose)
+    static if(verbose)
     {
         writeln("===========================================================================");
         writeln(testName ~ "(" ~ filenames.join(", ") ~ ")...");
@@ -154,11 +153,11 @@ Result execute(D)(const string testName, D testFunction,
     try
     {
         //Convert filenames to parameters tuple and call the test function.
-        alias F = Parameters!D[1..$];
+        alias F = Parameters!D[0..$];
         F parameters;
         stringsToTuple!(F.length - 1, F)(parameters, filenames);
-        testFunction(verbose, parameters);
-        if(!verbose){write(".");}
+        testFunction(parameters);
+        static if(!verbose){write(".");}
     }
     catch(Throwable e)
     {
@@ -176,23 +175,22 @@ Result execute(D)(const string testName, D testFunction,
  * Display unittest results.
  *
  * Params:  results = Unittest results.
- *          verbose = Print verbose output?
  */
-void display(Result[] results, const bool verbose) @safe
+void display(Result[] results) @safe
 {
     if(results.length > 0 && !verbose){write("\n");}
 
     size_t failures = 0;
     size_t errors = 0;
 
-    if(verbose)
+    static if(verbose)
     {
         writeln("===========================================================================");
     }
     //Results of each test.
     foreach(result; results)
     {
-        if(verbose)
+        static if(verbose)
         {
             writeln(result.name, "(" ~ result.filenames.join(", ") ~ "): ",
                     to!string(result.kind));

@@ -48,9 +48,8 @@ dchar bom32(bool wrong = false) pure @safe
 
 /// Unicode input unittest. Tests various encodings.
 ///
-/// Params:  verbose         = Print verbose output?
-///          unicodeFilename = File name to read from.
-void testUnicodeInput(bool verbose, string unicodeFilename) @safe
+/// Params:  unicodeFilename = File name to read from.
+void testUnicodeInput(string unicodeFilename) @safe
 {
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
@@ -68,9 +67,8 @@ void testUnicodeInput(bool verbose, string unicodeFilename) @safe
 
 /// Unicode input error unittest. Tests various encodings with incorrect BOMs.
 ///
-/// Params:  verbose         = Print verbose output?
-///          unicodeFilename = File name to read from.
-void testUnicodeInputErrors(bool verbose, string unicodeFilename) @safe
+/// Params:  unicodeFilename = File name to read from.
+void testUnicodeInputErrors(string unicodeFilename) @safe
 {
     string data = readText(unicodeFilename);
     foreach(buffer; [cast(void[])(data.to!(wchar[])),
@@ -81,7 +79,7 @@ void testUnicodeInputErrors(bool verbose, string unicodeFilename) @safe
         try { Loader(buffer).load(); }
         catch(YAMLException e)
         {
-            printException(e, verbose);
+            printException(e);
             continue;
         }
         assert(false, "Expected an exception");
