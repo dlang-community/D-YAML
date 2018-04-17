@@ -58,13 +58,13 @@ struct Event
         struct
         {
             ///Anchor of the event, if any.
-            string anchor;
+            string _anchor;
             ///Tag of the event, if any.
-            string tag;
+            string _tag;
         }
         ///Tag directives, if this is a DocumentStart.
         //TagDirectives tagDirectives;
-        TagDirective[] tagDirectives;
+        TagDirective[] _tagDirectives;
     }
     ///Event type.
     EventID id = EventID.Invalid;
@@ -94,6 +94,21 @@ struct Event
     ///Get string representation of the token ID.
     @property string idString() const @safe {return to!string(id);}
 
+    auto ref anchor() inout @trusted pure {
+        assert(id != EventID.DocumentStart, "DocumentStart events cannot have anchors.");
+        return _anchor;
+    }
+
+    auto ref tag() inout @trusted pure {
+        assert(id != EventID.DocumentStart, "DocumentStart events cannot have tags.");
+        return _tag;
+    }
+
+    auto ref tagDirectives() inout @trusted pure {
+        assert(id == EventID.DocumentStart, "Only DocumentStart events have tag directives.");
+        return _tagDirectives;
+    }
+
     static assert(Event.sizeof <= 64, "Event struct larger than expected");
 }
 
@@ -105,7 +120,7 @@ struct Event
  *          anchor   = Anchor, if this is an alias event.
  */
 Event event(EventID id)(const Mark start, const Mark end, const string anchor = null)
-    @trusted
+    @safe
 {
     Event result;
     result.startMark = start;
@@ -127,7 +142,7 @@ Event event(EventID id)(const Mark start, const Mark end, const string anchor = 
  */
 Event collectionStartEvent(EventID id)
     (const Mark start, const Mark end, const string anchor, const string tag,
-     const bool implicit, const CollectionStyle style) pure @trusted nothrow
+     const bool implicit, const CollectionStyle style) pure @safe nothrow
 {
     static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
                   id == EventID.MappingStart || id == EventID.MappingEnd);
@@ -180,7 +195,7 @@ alias collectionStartEvent!(EventID.MappingStart)  mappingStartEvent;
  *          tagDirectives = Tag directives of the document.
  */
 Event documentStartEvent(const Mark start, const Mark end, const bool explicit, string YAMLVersion,
-                         TagDirective[] tagDirectives) pure @trusted nothrow
+                         TagDirective[] tagDirectives) pure @safe nothrow
 {
     Event result;
     result.value            = YAMLVersion;
@@ -220,7 +235,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          style    = Scalar style.
 Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
                   const Tuple!(bool, bool) implicit, const string value,
-                  const ScalarStyle style = ScalarStyle.Invalid) @trusted pure nothrow @nogc
+                  const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
 {
     Event result;
     result.value       = value;

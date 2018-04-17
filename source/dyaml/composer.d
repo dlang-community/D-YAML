@@ -174,7 +174,7 @@ final class Composer
         ///
         /// Params: pairAppenderLevel = Current level of the pair appender stack.
         ///         nodeAppenderLevel = Current level of the node appender stack.
-        Node composeNode(const uint pairAppenderLevel, const uint nodeAppenderLevel) @system
+        Node composeNode(const uint pairAppenderLevel, const uint nodeAppenderLevel) @safe
         {
             if(parser_.checkEvent(EventID.Alias))
             {
@@ -249,7 +249,7 @@ final class Composer
         /// Params: pairAppenderLevel = Current level of the pair appender stack.
         ///         nodeAppenderLevel = Current level of the node appender stack.
         Node composeSequenceNode(const uint pairAppenderLevel, const uint nodeAppenderLevel)
-            @system
+            @safe
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             auto nodeAppender = &(nodeAppenders_[nodeAppenderLevel]);
@@ -346,7 +346,7 @@ final class Composer
         /// Params: pairAppenderLevel = Current level of the pair appender stack.
         ///         nodeAppenderLevel = Current level of the node appender stack.
         Node composeMappingNode(const uint pairAppenderLevel, const uint nodeAppenderLevel)
-            @system
+            @safe
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             immutable startEvent = parser_.getEvent();
