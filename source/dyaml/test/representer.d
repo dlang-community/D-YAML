@@ -10,8 +10,9 @@ module dyaml.test.representer;
 version(unittest)
 {
 
-import std.path;
 import std.exception;
+import std.outbuffer;
+import std.path;
 import std.typecons;
 
 import dyaml.test.common;
@@ -51,11 +52,11 @@ void testRepresenterTypes(string codeFilename) @safe
 
         import dyaml.stream;
 
-        auto emitStream  = new YMemoryStream;
+        auto emitStream  = new OutBuffer;
         auto representer = new Representer;
         representer.addRepresenter!TestClass(&representClass);
         representer.addRepresenter!TestStruct(&representStruct);
-        auto dumper = Dumper(emitStream);
+        auto dumper = Dumper!OutBuffer(emitStream);
         dumper.representer = representer;
         dumper.encoding    = encoding;
         dumper.dump(expectedNodes);

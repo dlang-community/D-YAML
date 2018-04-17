@@ -12,6 +12,7 @@ version(unittest)
 
 import std.algorithm;
 import std.file;
+import std.outbuffer;
 import std.range;
 import std.typecons;
 
@@ -83,8 +84,8 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader.fromFile(dataFilename);
     auto events = loader.parse();
-    auto emitStream = new YMemoryStream;
-    Dumper(emitStream).emit(events);
+    auto emitStream = new OutBuffer;
+    Dumper!OutBuffer(emitStream).emit(events);
 
     static if(verbose)
     {
@@ -113,8 +114,8 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
     auto events = loader.parse();
     foreach(canonical; [false, true])
     {
-        auto emitStream = new YMemoryStream;
-        auto dumper = Dumper(emitStream);
+        auto emitStream = new OutBuffer;
+        auto dumper = Dumper!OutBuffer(emitStream);
         dumper.canonical = canonical;
         dumper.emit(events);
         static if(verbose)
@@ -172,8 +173,8 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                     }
                     styledEvents ~= event;
                 }
-                auto emitStream = new YMemoryStream;
-                Dumper(emitStream).emit(styledEvents);
+                auto emitStream = new OutBuffer;
+                Dumper!OutBuffer(emitStream).emit(styledEvents);
                 static if(verbose)
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",

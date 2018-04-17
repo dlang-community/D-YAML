@@ -68,7 +68,7 @@ private alias isFlowIndicator = among!(',', '?', '[', ']', '{', '}');
 private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', ' ', '\t');
 
 //Emits YAML events into a file/stream.
-struct Emitter
+struct Emitter(Range)
 {
     private:
         ///Default tag handle shortcuts and replacements.
@@ -76,7 +76,7 @@ struct Emitter
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
-        YStream stream_;
+        Range stream_;
         ///Encoding can be overriden by STREAM-START.
         Encoding encoding_ = Encoding.UTF_8;
 
@@ -159,15 +159,13 @@ struct Emitter
         /**
          * Construct an emitter.
          *
-         * Params:  stream    = YStream to write to. Must be writable.
+         * Params:  stream    = Output range to write to.
          *          canonical = Write scalars in canonical form?
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(YStream stream, const bool canonical, const int indent, const int width,
+        this(Range stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @trusted
-        in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
-        body
         {
             states_.reserve(32);
             indents_.reserve(32);
@@ -227,15 +225,16 @@ struct Emitter
             try final switch(encoding_)
             {
                 case Encoding.UTF_8:
-                    stream_.writeExact(str);
+                    copy(str, stream_);
+                    //stream_.(str);
                     break;
                 case Encoding.UTF_16:
                     const buffer = to!wstring(str);
-                    stream_.writeExact(buffer);
+                    copy(buffer, stream_);
                     break;
                 case Encoding.UTF_32:
                     const buffer = to!dstring(str);
-                    stream_.writeExact(buffer);
+                    copy(buffer, stream_);
                     break;
             }
             catch(Exception e)
@@ -411,7 +410,6 @@ struct Emitter
                 writeIndicator("...", Yes.needWhitespace);
                 writeIndent();
             }
-            stream_.flush();
             nextExpected(&expectDocumentStart!(No.first));
         }
 
@@ -749,7 +747,7 @@ struct Emitter
             //{
             //    writeIndent();
             //}
-            auto writer = ScalarWriter(this, analysis_.scalar,
+            auto writer = ScalarWriter!Range(this, analysis_.scalar,
                                        context_ != Context.MappingSimpleKey);
             with(writer) final switch(style_)
             {
@@ -1170,12 +1168,11 @@ struct Emitter
                           : bomTable[BOM.utf32be].sequence;
                     break;
             }
-
-            enforce(stream_.write(bom) == bom.length, new EmitterException("Unable to write to stream"));
+            copy(bom, stream_);
         }
 
         ///End the YAML stream.
-        void writeStreamEnd() @safe {stream_.flush();}
+        void writeStreamEnd() @safe {}
 
         ///Write an indicator (e.g. ":", "[", ">", etc.).
         void writeIndicator(const char[] indicator,
@@ -1270,7 +1267,7 @@ struct Emitter
 private:
 
 ///RAII struct used to write out scalar values.
-struct ScalarWriter
+struct ScalarWriter(Range)
 {
     invariant()
     {
@@ -1279,14 +1276,14 @@ struct ScalarWriter
     }
 
     private:
-        @disable int opCmp(ref Emitter);
-        @disable bool opEquals(ref Emitter);
+        @disable int opCmp(ref Emitter!Range);
+        @disable bool opEquals(ref Emitter!Range);
 
         ///Used as "null" UTF-32 character.
         static immutable dcharNone = dchar.max;
 
         ///Emitter used to emit the scalar.
-        Emitter* emitter_;
+        Emitter!Range* emitter_;
 
         ///UTF-8 encoded text of the scalar to write.
         string text_;
@@ -1307,7 +1304,7 @@ struct ScalarWriter
 
     public:
         ///Construct a ScalarWriter using emitter to output text.
-        this(ref Emitter emitter, string text, const bool split = true) @trusted nothrow
+        this(ref Emitter!Range emitter, string text, const bool split = true) @trusted nothrow
         {
             emitter_ = &emitter;
             text_ = text;
@@ -1502,7 +1499,7 @@ struct ScalarWriter
         ///Write text as plain scalar.
         void writePlain() @safe
         {
-            if(emitter_.context_ == Emitter.Context.Root){emitter_.openEnded_ = true;}
+            if(emitter_.context_ == Emitter!Range.Context.Root){emitter_.openEnded_ = true;}
             if(text_ == ""){return;}
             if(!emitter_.whitespace_)
             {

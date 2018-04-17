@@ -22,6 +22,7 @@ import std.datetime;
 import std.exception;
 import std.format;
 import std.math;
+import std.outbuffer;
 import std.typecons;
 import std.string;
 
@@ -154,7 +155,7 @@ final class Representer
                 return representer.representScalar("!mystruct.tag", scalar);
             }
 
-            auto dumper = Dumper("example.yaml");
+            auto dumper = Dumper!OutBuffer(new OutBuffer());
             auto representer = new Representer;
             representer.addRepresenter!MyStruct(&representMyStruct);
             dumper.representer = representer;
@@ -207,7 +208,7 @@ final class Representer
                 return representer.representScalar("!myclass.tag", scalar);
             }
 
-            auto dumper = Dumper("example.yaml");
+            auto dumper = Dumper!OutBuffer(new OutBuffer());
             auto representer = new Representer;
             representer.addRepresenter!MyClass(&representMyClass);
             dumper.representer = representer;
@@ -263,7 +264,7 @@ final class Representer
                 return representer.representScalar("!mystruct.tag", scalar);
             }
 
-            auto dumper = Dumper("example.yaml");
+            auto dumper = Dumper!OutBuffer(new OutBuffer());
             auto representer = new Representer;
             representer.addRepresenter!MyStruct(&representMyStruct);
             dumper.representer = representer;
@@ -339,7 +340,7 @@ final class Representer
                     CollectionStyle.Flow);
             }
 
-            auto dumper = Dumper("example.yaml");
+            auto dumper = Dumper!OutBuffer(new OutBuffer());
             auto representer = new Representer;
             representer.addRepresenter!MyStruct(&representMyStruct);
             dumper.representer = representer;
@@ -422,7 +423,7 @@ final class Representer
                 return representer.representMapping("!mystruct.tag", pairs);
             }
 
-            auto dumper = Dumper("example.yaml");
+            auto dumper = Dumper!OutBuffer(new OutBuffer());
             auto representer = new Representer;
             representer.addRepresenter!MyStruct(&representMyStruct);
             dumper.representer = representer;
@@ -457,7 +458,7 @@ final class Representer
         }
 
         //Represent a node, serializing with specified Serializer.
-        void represent(ref Serializer serializer, ref Node node) @safe
+        void represent(Range)(ref Serializer!Range serializer, ref Node node) @safe
         {
             auto data = representData(node);
             serializer.serialize(data);
@@ -677,15 +678,13 @@ Node representMyClass(ref Node node, Representer representer) @safe
     return representer.representScalar("!myclass.tag", scalar);
 }
 
-import dyaml.stream;
-
 @safe unittest
 {
     foreach(r; [&representMyStruct,
                 &representMyStructSeq,
                 &representMyStructMap])
     {
-        auto dumper = Dumper(new YMemoryStream());
+        auto dumper = Dumper!OutBuffer(new OutBuffer());
         auto representer = new Representer;
         representer.addRepresenter!MyStruct(r);
         dumper.representer = representer;
@@ -695,7 +694,7 @@ import dyaml.stream;
 
 @safe unittest
 {
-    auto dumper = Dumper(new YMemoryStream());
+    auto dumper = Dumper!OutBuffer(new OutBuffer());
     auto representer = new Representer;
     representer.addRepresenter!MyClass(&representMyClass);
     dumper.representer = representer;

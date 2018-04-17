@@ -28,11 +28,11 @@ import dyaml.token;
 package:
 
 ///Serializes represented YAML nodes, generating events which are then emitted by Emitter.
-struct Serializer
+struct Serializer(Range)
 {
     private:
         ///Emitter to emit events produced.
-        Emitter* emitter_;
+        Emitter!Range* emitter_;
         ///Resolver used to determine which tags are automaticaly resolvable.
         Resolver resolver_;
 
@@ -66,7 +66,7 @@ struct Serializer
          *          YAMLVersion   = YAML version string.
          *          tagDirectives = Tag directives to emit.
          */
-        this(Emitter* emitter, Resolver resolver, Encoding encoding,
+        this(Emitter!Range* emitter, Resolver resolver, Encoding encoding,
              const Flag!"explicitStart" explicitStart,
              const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
              TagDirective[] tagDirectives) @safe
