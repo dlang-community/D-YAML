@@ -66,12 +66,12 @@ struct Serializer
          *          YAMLVersion   = YAML version string.
          *          tagDirectives = Tag directives to emit.
          */
-        this(ref Emitter emitter, Resolver resolver, Encoding encoding,
+        this(Emitter* emitter, Resolver resolver, Encoding encoding,
              const Flag!"explicitStart" explicitStart,
              const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
-             TagDirective[] tagDirectives) @trusted
+             TagDirective[] tagDirectives) @safe
         {
-            emitter_       = &emitter;
+            emitter_       = emitter;
             resolver_      = resolver;
             explicitStart_ = explicitStart;
             explicitEnd_   = explicitEnd;
