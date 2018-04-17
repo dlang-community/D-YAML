@@ -531,15 +531,17 @@ public:
     /// end of the slice being built, the slice is extended (trivial operation).
     ///
     /// See_Also: begin
-    void write(char[] str) @trusted pure nothrow @nogc
+    void write(char[] str) @safe pure nothrow @nogc
     {
         assert(inProgress, "write called without begin");
         assert(end_ <= reader_.bufferOffset_,
                "AT START: Slice ends after buffer position");
 
+        // Nothing? Already done.
+        if (str.length == 0) { return; }
         // If str starts at the end of the slice (is a string returned by a Reader
         // method), just extend the slice to contain str.
-        if(str.ptr == reader_.buffer_.ptr + end_)
+        if(&str[0] == &reader_.buffer_[end_])
         {
             end_ += str.length;
         }
@@ -547,8 +549,7 @@ public:
         // by a Reader method and point to buffer. So we need to memmove.
         else
         {
-            core.stdc.string.memmove(reader_.buffer_.ptr + end_, cast(char*)str.ptr,
-                                     str.length * char.sizeof);
+            copy(str, reader_.buffer_[end_..end_ + str.length * char.sizeof]);
             end_ += str.length;
         }
     }
@@ -585,7 +586,7 @@ public:
     /// position = Position to insert the character at in code units, not code points.
     ///            Must be less than slice length(); a previously returned length()
     ///            can be used.
-    void insert(const dchar c, const size_t position) @system pure nothrow @nogc
+    void insert(const dchar c, const size_t position) @safe pure nothrow @nogc
     {
         assert(inProgress, "insert called without begin");
         assert(start_ + position <= end_, "Trying to insert after the end of the slice");
@@ -600,9 +601,8 @@ public:
 
         if(movedLength > 0)
         {
-            core.stdc.string.memmove(reader_.buffer_.ptr + point + bytes,
-                                     reader_.buffer_.ptr + point,
-                                     movedLength * char.sizeof);
+            copy(reader_.buffer_[point..point + movedLength * char.sizeof],
+                    reader_.buffer_[point + bytes..point + bytes + movedLength * char.sizeof]);
         }
         reader_.buffer_[point .. point + bytes] = encodeBuf[0 .. bytes];
         end_ += bytes;
@@ -635,9 +635,9 @@ public:
         /// ended either by commit()-ing or reverting through the destructor.
         ///
         /// Saves the current state of a slice.
-        this(ref SliceBuilder builder) @system pure nothrow @nogc
+        this(SliceBuilder* builder) @safe pure nothrow @nogc
         {
-            builder_ = &builder;
+            builder_ = builder;
             stackLevel_ = builder_.endStackUsed_;
             builder_.push();
         }

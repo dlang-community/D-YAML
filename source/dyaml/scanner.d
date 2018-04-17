@@ -1210,7 +1210,7 @@ final class Scanner
         /// Scan a block scalar token with specified style.
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanBlockScalar(const ScalarStyle style) @trusted
+        Token scanBlockScalar(const ScalarStyle style) @safe
         {
             const startMark = reader_.mark;
 
@@ -1233,7 +1233,7 @@ final class Scanner
             alias Transaction = SliceBuilder.Transaction;
             // Used to strip the last line breaks written to the slice at the end of the
             // scalar, which may be needed based on chomping.
-            Transaction breaksTransaction = Transaction(reader_.sliceBuilder);
+            Transaction breaksTransaction = Transaction(&reader_.sliceBuilder);
             // Read the first indentation/line breaks before the scalar.
             size_t startLen = reader_.sliceBuilder.length;
             if(increment == int.min)
@@ -1263,7 +1263,7 @@ final class Scanner
 
                 // This transaction serves to rollback data read in the
                 // scanBlockScalarBreaksToSlice() call.
-                breaksTransaction = Transaction(reader_.sliceBuilder);
+                breaksTransaction = Transaction(&reader_.sliceBuilder);
                 startLen = reader_.sliceBuilder.length;
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
@@ -1712,7 +1712,7 @@ final class Scanner
         /// Scan plain scalar token (no block, no quotes).
         ///
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
-        Token scanPlain() @trusted
+        Token scanPlain() @safe
         {
             // We keep track of the allowSimpleKey_ flag here.
             // Indentation rules are loosed for the flow context
@@ -1788,7 +1788,7 @@ final class Scanner
                 endMark = reader_.mark;
 
                 spacesTransaction.commit();
-                spacesTransaction = Transaction(reader_.sliceBuilder);
+                spacesTransaction = Transaction(&reader_.sliceBuilder);
 
                 const startLength = reader_.sliceBuilder.length;
                 scanPlainSpacesToSlice(startMark);
@@ -1809,7 +1809,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        void scanPlainSpacesToSlice(const Mark startMark) @system
+        void scanPlainSpacesToSlice(const Mark startMark) @safe
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
@@ -1847,7 +1847,7 @@ final class Scanner
             bool extraBreaks = false;
 
             alias Transaction = SliceBuilder.Transaction;
-            auto transaction = Transaction(reader_.sliceBuilder);
+            auto transaction = Transaction(&reader_.sliceBuilder);
             if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
             while(search.canFind(reader_.peek()))
             {
