@@ -12,9 +12,11 @@ module dyaml.composer;
 
 import core.memory;
 
+import std.algorithm;
 import std.array;
 import std.conv;
 import std.exception;
+import std.range;
 import std.typecons;
 
 import dyaml.constructor;
@@ -314,12 +316,12 @@ final class Composer
                     else
                     {
                         auto temp = Node.Pair(key, value);
-                        merge(*pairAppender, temp);
+                        pairAppender.put(temp);
                     }
                 }
                 foreach(node; toMerge)
                 {
-                    merge(*pairAppender, flatten(node, startMark, endMark,
+                    pairAppender.put(flatten(node, startMark, endMark,
                                                  pairAppenderLevel + 1, nodeAppenderLevel));
                 }
             }
@@ -327,7 +329,7 @@ final class Composer
             else if(root.isSequence) foreach(ref Node node; root)
             {
                 if(!node.isType!(Node.Pair[])){error(node);}
-                merge(*pairAppender, flatten(node, startMark, endMark,
+                pairAppender.put(flatten(node, startMark, endMark,
                                              pairAppenderLevel + 1, nodeAppenderLevel));
             }
             else
@@ -368,7 +370,7 @@ final class Composer
                 //Not YAMLMerge, just add the pair.
                 else
                 {
-                    merge(*pairAppender, pair);
+                    pairAppender.put(pair);
                 }
             }
             foreach(node; toMerge)
@@ -376,6 +378,12 @@ final class Composer
                 merge(*pairAppender, flatten(node[0], startEvent.startMark, node[1],
                                              pairAppenderLevel + 1, nodeAppenderLevel));
             }
+            auto numUnique = pairAppender.data.dup
+                                .sort!((x,y) => x.key > y.key)
+                                .uniq!((x,y) => x.key == y.key)
+                                .walkLength;
+            enforce(numUnique == pairAppender.data.length,
+                    new ComposerException("Duplicate key found in mapping", parser_.getEvent().startMark));
 
             Node node = constructor_.node(startEvent.startMark, parser_.getEvent().endMark,
                                           tag, pairAppender.data.dup, startEvent.collectionStyle);
