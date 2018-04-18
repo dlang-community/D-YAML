@@ -2195,22 +2195,6 @@ struct Node
 }
 
 package:
-// Merge a pair into an array of pairs based on merge rules in the YAML spec.
-//
-// The new pair will only be added if there is not already a pair
-// with the same key.
-//
-// Params:  pairs   = Appender managing the array of pairs to merge into.
-//          toMerge = Pair to merge.
-void merge(ref Appender!(Node.Pair[]) pairs, ref Node.Pair toMerge) @safe
-{
-    foreach(ref pair; pairs.data)
-    {
-        if(pair.key == toMerge.key){return;}
-    }
-    pairs.put(toMerge);
-}
-
 // Merge pairs into an array of pairs based on merge rules in the YAML spec.
 //
 // Any new pair will only be added if there is not already a pair
