@@ -170,16 +170,6 @@ final class Scanner
             fetchStreamStart();
         }
 
-        /// Destroy the scanner.
-        ~this() @trusted
-        {
-            tokens_.destroy();
-            indents_.destroy();
-            possibleSimpleKeys_.destroy();
-            possibleSimpleKeys_ = null;
-            reader_ = null;
-        }
-
         /// Check if the next token is one of specified types.
         ///
         /// If no types are specified, checks if any tokens are left.

@@ -81,13 +81,6 @@ final class Representer
             addRepresenter!SysTime(&representSysTime);
         }
 
-        ///Destroy the Representer.
-        ~this() pure @safe nothrow
-        {
-            representers_.destroy();
-            representers_ = null;
-        }
-
         ///Set default _style for scalars. If style is $(D ScalarStyle.Invalid), the _style is chosen automatically.
         @property void defaultScalarStyle(ScalarStyle style) pure @safe nothrow
         {

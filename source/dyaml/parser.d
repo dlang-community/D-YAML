@@ -142,16 +142,6 @@ final class Parser
             marks_.reserve(32);
         }
 
-        ///Destroy the parser.
-        @trusted ~this()
-        {
-            currentEvent_.destroy();
-            tagDirectives_.destroy();
-            tagDirectives_ = null;
-            states_.destroy();
-            marks_.destroy();
-        }
-
         /**
          * Check if the next event is one of specified types.
          *
