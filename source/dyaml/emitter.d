@@ -61,8 +61,7 @@ struct ScalarAnalysis
            "allowSingleQuoted", "allowDoubleQuoted", "allowBlock", "isNull") flags;
 }
 
-///Quickly determines if a character is a newline.
-private mixin FastCharSearch!"\n\u0085\u2028\u2029"d newlineSearch_;
+private alias isNewLine = among!('\n', '\u0085', '\u2028', '\u2029');
 
 // override the canFind added by the FastCharSearch mixins
 private alias canFind = std.algorithm.canFind;
@@ -1070,7 +1069,7 @@ struct Emitter
                 }
 
                 //Check for line breaks, special, and unicode characters.
-                if(newlineSearch_.canFind(c)){lineBreaks = true;}
+                if(c.isNewLine){lineBreaks = true;}
                 if(!(c == '\n' || (c >= '\x20' && c <= '\x7E')) &&
                    !((c == '\u0085' || (c >= '\xA0' && c <= '\uD7FF') ||
                      (c >= '\uE000' && c <= '\uFFFD')) && c != '\uFEFF'))
@@ -1087,7 +1086,7 @@ struct Emitter
                     previousSpace = true;
                     previousBreak = false;
                 }
-                else if(newlineSearch_.canFind(c))
+                else if(c.isNewLine)
                 {
                     if(index == 0){leadingBreak = true;}
                     if(index == scalar.length - 1){trailingBreak = true;}
@@ -1328,14 +1327,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         emitter_.writeIndent();
                     }
                 }
-                else if((c == dcharNone || c == '\'' || c == ' ' || newlineSearch_.canFind(c))
+                else if((c == dcharNone || c == '\'' || c == ' ' || c.isNewLine)
                         && startChar_ < endChar_)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
@@ -1429,7 +1428,7 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         if(!leadingSpace && c != dcharNone && c != ' ')
                         {
@@ -1452,7 +1451,7 @@ struct ScalarWriter
                         writeCurrentRange(Flag!"UpdateColumn".yes);
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c) || c == ' ')
+                else if(c == dcharNone || c.isNewLine || c == ' ')
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1473,13 +1472,13 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeLineBreaks();
                         if(c != dcharNone){emitter_.writeIndent();}
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c))
+                else if(c == dcharNone || c.isNewLine)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".no);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1519,14 +1518,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         writeIndent(Flag!"ResetSpace".yes);
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c) || c == ' ')
+                else if(c == dcharNone || c.isNewLine || c == ' ')
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                 }
@@ -1581,15 +1580,15 @@ struct ScalarWriter
             const last = lastChar(text_, end);
             const secondLast = end > 0 ? lastChar(text_, end) : 0;
 
-            if(newlineSearch_.canFind(text_[0]) || text_[0] == ' ')
+            if(text_[0].isNewLine || text_[0] == ' ')
             {
                 hints[hintsIdx++] = cast(char)('0' + bestIndent);
             }
-            if(!newlineSearch_.canFind(last))
+            if(!last.isNewLine)
             {
                 hints[hintsIdx++] = '-';
             }
-            else if(std.utf.count(text_) == 1 || newlineSearch_.canFind(secondLast))
+            else if(std.utf.count(text_) == 1 || secondLast.isNewLine)
             {
                 hints[hintsIdx++] = '+';
             }
@@ -1661,7 +1660,7 @@ struct ScalarWriter
         void updateBreaks(in dchar c, const Flag!"UpdateSpaces" updateSpaces) pure @safe
         {
             if(c == dcharNone){return;}
-            breaks_ = newlineSearch_.canFind(c);
+            breaks_ = (c.isNewLine != 0);
             if(updateSpaces){spaces_ = c == ' ';}
         }
 
