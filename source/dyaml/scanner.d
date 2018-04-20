@@ -20,11 +20,11 @@ import std.exception;
 import std.string;
 import std.typecons;
 import std.traits : Unqual;
+import std.utf;
 
 import dyaml.fastcharsearch;
 import dyaml.escapes;
 import dyaml.exception;
-import dyaml.nogcutil;
 import dyaml.queue;
 import dyaml.reader;
 import dyaml.style;
@@ -1552,7 +1552,7 @@ final class Scanner
                     for(size_t i = oldSliceLength; i < slice.length;)
                     {
                         // slice is UTF-8 - need to decode
-                        const ch = slice[i] < 0x80 ? slice[i++] : decodeValidUTF8NoGC(slice, i);
+                        const ch = slice[i] < 0x80 ? slice[i++] : decode(slice, i);
                         if(search.canFind(ch)) { break outer; }
                         ++numCodePoints;
                     }
@@ -1985,9 +1985,7 @@ final class Scanner
                 }
                 else
                 {
-                    const decoded = decodeUTF8NoGC!(No.validated)(bytes[], nextChar);
-                    if(decoded.errorMessage !is null) { return size_t.max; }
-                    c = decoded.decoded;
+                    c = decode(bytes[], nextChar);
                 }
                 reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)

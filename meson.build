@@ -24,7 +24,6 @@ dyaml_src = [
     'source/dyaml/linebreak.d',
     'source/dyaml/loader.d',
     'source/dyaml/node.d',
-    'source/dyaml/nogcutil.d',
     'source/dyaml/package.d',
     'source/dyaml/parser.d',
     'source/dyaml/queue.d',
@@ -46,8 +45,7 @@ dyaml_src = [
     'source/dyaml/test/representer.d',
     'source/dyaml/test/resolver.d',
     'source/dyaml/test/tokens.d',
-    'source/dyaml/token.d',
-    'source/dyaml/unused.d'
+    'source/dyaml/token.d'
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 

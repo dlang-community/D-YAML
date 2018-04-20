@@ -538,7 +538,6 @@ final class Parser
         {
             string notInPlace;
             bool inEscape = false;
-            import dyaml.nogcutil;
             auto appender = appender!(char[])();
             for(char[] oldValue = tokenValue; !oldValue.empty();)
             {

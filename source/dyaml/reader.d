@@ -26,7 +26,6 @@ import tinyendian;
 import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
-import dyaml.nogcutil;
 
 
 
@@ -134,7 +133,7 @@ final class Reader
         ///
         // XXX removed; search for 'risky' to find why.
         // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(const size_t index) @safe pure nothrow @nogc
+        dchar peek(const size_t index) @safe pure
         {
             if(index < upcomingASCII_) { return buffer_[bufferOffset_ + index]; }
             if(characterCount_ <= charIndex_ + index)
@@ -160,7 +159,7 @@ final class Reader
                     ++lastDecodedBufferOffset_;
                     return b;
                 }
-                return decodeValidUTF8NoGC(buffer_, lastDecodedBufferOffset_);
+                return decode(buffer_, lastDecodedBufferOffset_);
             }
 
             // 'Slow' path where we decode everything up to the requested character.
@@ -177,7 +176,7 @@ final class Reader
         }
 
         /// Optimized version of peek() for the case where peek index is 0.
-        dchar peek() @safe pure nothrow @nogc
+        dchar peek() @safe pure
         {
             if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
             if(characterCount_ <= charIndex_) { return '\0'; }
@@ -217,7 +216,7 @@ final class Reader
         ///                  slice will be shorter.
         ///
         /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        char[] prefix(const size_t length) @safe pure nothrow @nogc
+        char[] prefix(const size_t length) @safe pure
         {
             return slice(length);
         }
@@ -250,7 +249,7 @@ final class Reader
         ///                be shorter.
         ///
         /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        char[] slice(const size_t end) @safe pure nothrow @nogc
+        char[] slice(const size_t end) @safe pure
         {
             // Fast path in case the caller has already peek()ed all the way to end.
             if(end == lastDecodedCharOffset_)
@@ -278,7 +277,7 @@ final class Reader
         ///
         /// Throws:  ReaderException if trying to read past the end of the buffer
         ///          or if invalid data is read.
-        dchar get() @safe pure nothrow @nogc
+        dchar get() @safe pure
         {
             const result = peek();
             forward();
@@ -290,7 +289,7 @@ final class Reader
         /// Params:  length = Number or characters (code points, not bytes) to get.
         ///
         /// Returns: Characters starting at current position.
-        char[] get(const size_t length) @safe pure nothrow @nogc
+        char[] get(const size_t length) @safe pure
         {
             auto result = slice(length);
             forward(length);
@@ -300,7 +299,7 @@ final class Reader
         /// Move current position forward.
         ///
         /// Params:  length = Number of characters to move position forward.
-        void forward(size_t length) @safe pure nothrow @nogc
+        void forward(size_t length) @safe pure
         {
             mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
 
@@ -337,7 +336,7 @@ final class Reader
                        "ASCII must be handled by preceding code");
 
                 ++charIndex_;
-                const c = decodeValidUTF8NoGC(buffer_, bufferOffset_);
+                const c = decode(buffer_, bufferOffset_);
 
                 // New line. (can compare with '\n' without decoding since it's ASCII)
                 if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
@@ -355,7 +354,7 @@ final class Reader
         }
 
         /// Move current position forward by one character.
-        void forward() @safe pure nothrow @nogc
+        void forward() @safe pure
         {
             ++charIndex_;
             lastDecodedBufferOffset_ = bufferOffset_;
@@ -384,7 +383,7 @@ final class Reader
             assert(buffer_[bufferOffset_] >= 0x80,
                    "ASCII must be handled by preceding code");
 
-            const c = decodeValidUTF8NoGC(buffer_, bufferOffset_);
+            const c = decode(buffer_, bufferOffset_);
 
             // New line. (can compare with '\n' without decoding since it's ASCII)
             if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
@@ -426,7 +425,7 @@ private:
         // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
         //
         // Does not advance the buffer position. Used in peek() and slice().
-        dchar decodeNext() @safe pure nothrow @nogc
+        dchar decodeNext() @safe pure
         {
             assert(lastDecodedBufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of YAML buffer");
@@ -439,7 +438,7 @@ private:
                 return b;
             }
 
-            return decodeValidUTF8NoGC(buffer_, lastDecodedBufferOffset_);
+            return decode(buffer_, lastDecodedBufferOffset_);
         }
 }
 
@@ -559,7 +558,7 @@ public:
     /// Data can only be written up to the current position in the Reader buffer.
     ///
     /// See_Also: begin
-    void write(dchar c) @safe pure nothrow @nogc
+    void write(dchar c) @safe pure
     {
         assert(inProgress, "write called without begin");
         if(c < 0x80)
@@ -570,7 +569,7 @@ public:
 
         // We need to encode a non-ASCII dchar into UTF-8
         char[4] encodeBuf;
-        const bytes = encodeValidCharNoGC(encodeBuf, c);
+        const bytes = encode(encodeBuf, c);
         reader_.buffer_[end_ .. end_ + bytes] = encodeBuf[0 .. bytes];
         end_ += bytes;
     }
@@ -586,7 +585,7 @@ public:
     /// position = Position to insert the character at in code units, not code points.
     ///            Must be less than slice length(); a previously returned length()
     ///            can be used.
-    void insert(const dchar c, const size_t position) @safe pure nothrow @nogc
+    void insert(const dchar c, const size_t position) @safe pure
     {
         assert(inProgress, "insert called without begin");
         assert(start_ + position <= end_, "Trying to insert after the end of the slice");
@@ -597,7 +596,7 @@ public:
         // Encode c into UTF-8
         char[4] encodeBuf;
         if(c < 0x80) { encodeBuf[0] = cast(char)c; }
-        const size_t bytes = c < 0x80 ? 1 : encodeValidCharNoGC(encodeBuf, c);
+        const size_t bytes = c < 0x80 ? 1 : encode(encodeBuf, c);
 
         if(movedLength > 0)
         {
@@ -764,13 +763,8 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
                     continue;
                 }
 
-                const encodeResult = encodeCharNoGC!(No.validated)(encodeBuf, c);
-                if(encodeResult.errorMessage !is null)
-                {
-                    result.errorMessage = encodeResult.errorMessage;
-                    return;
-                }
-                const bytes = encodeResult.bytes;
+                std.utf.encode(encodeBuf, c);
+                const bytes = codeLength!char(c);
                 utf8[length .. length + bytes] = encodeBuf[0 .. bytes];
                 length += bytes;
             }
@@ -788,14 +782,8 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
     {
         case UTFEncoding.UTF_8:
             result.utf8 = cast(char[])input;
-            const validateResult = result.utf8.validateUTF8NoGC();
-            if(!validateResult.valid)
-            {
-                result.errorMessage = "UTF-8 validation error after character #" ~
-                                      validateResult.characterCount.to!string ~ ": " ~
-                                      validateResult.msg;
-            }
-            result.characterCount = validateResult.characterCount;
+            result.utf8.validate();
+            result.characterCount = std.utf.count(result.utf8);
             break;
         case UTFEncoding.UTF_16:
             assert(input.length % 2 == 0, "UTF-16 buffer size must be even");
@@ -817,7 +805,7 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 }
 
 /// Determine if all characters (code points, not bytes) in a string are printable.
-bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
+bool isPrintableValidUTF8(const char[] chars) @safe pure
 {
     // This is oversized (only 128 entries are necessary) simply because having 256
     // entries improves performance... for some reason (alignment?)
@@ -917,7 +905,7 @@ bool isPrintableValidUTF8(const char[] chars) @safe pure nothrow @nogc
         if(index == chars.length) { break; }
 
         // Not ASCII, need to decode.
-        const dchar c = decodeValidUTF8NoGC(chars, index);
+        const dchar c = decode(chars, index);
         // We now c is not ASCII, so only check for printable non-ASCII chars.
         if(!(c == 0x85 || (c >= 0xA0 && c <= '\uD7FF') ||
             (c >= '\uE000' && c <= '\uFFFD') ||
