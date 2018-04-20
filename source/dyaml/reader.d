@@ -661,16 +661,14 @@ public:
         }
 
         /// Destroy the transaction and revert it if it hasn't been committed yet.
-        ///
-        /// Does nothing for a default-initialized transaction.
-        ~this() @safe pure nothrow @nogc
+        void end() @safe pure nothrow @nogc
         {
-            if(builder_ is null || committed_) { return; }
-            assert(builder_.endStackUsed_ == stackLevel_ + 1,
+            assert(builder_ && builder_.endStackUsed_ == stackLevel_ + 1,
                    "Parent transactions don't fully contain child transactions");
             builder_.pop();
             builder_ = null;
         }
+
     }
 
 private:

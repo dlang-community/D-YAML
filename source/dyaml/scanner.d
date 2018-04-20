@@ -235,7 +235,13 @@ final class Scanner
         /// Build an error message in msgBuffer_ and return it as a string.
         string buildMsg(S ...)(S args) @trusted
         {
-            return cast(string)msgBuffer_.printNoGC(args);
+            try {
+                return text(args);
+            }
+            catch (Exception)
+            {
+                return "";
+            }
         }
 
         /// Most scanning error messages have the same format; so build them with this
@@ -739,7 +745,7 @@ final class Scanner
             tokens_.push(plain);
         }
 
-    pure nothrow @nogc:
+    pure:
 
         ///Check if the next token is DIRECTIVE:        ^ '%' ...
         bool checkDirective() @safe
@@ -1326,7 +1332,7 @@ final class Scanner
             // (which are at the end of the scalar). Otherwise re remove them (end the
             // transaction).
             if(chomping == Chomping.Keep)  { breaksTransaction.commit(); }
-            else                           { breaksTransaction.__dtor(); }
+            else                           { breaksTransaction.end(); }
             if(chomping != Chomping.Strip && lineBreak != int.max)
             {
                 // If chomping is Keep, we keep the line break but the first line break
@@ -1596,14 +1602,15 @@ final class Scanner
                         char[2] escapeStart = ['\\', cast(char) c];
                         reader_.sliceBuilder.write(escapeStart);
                         reader_.sliceBuilder.write(hex);
-                        bool overflow;
                         // Note: This is just error checking; Parser does the actual
                         //       escaping (otherwise we could accidentally create an
                         //       escape sequence here that wasn't in input, breaking the
                         //       escaping code in parser, which is in parser because it
                         //       can't always be done in place)
-                        parseNoGC!int(hex, 16u, overflow);
-                        if(overflow)
+                        try {
+                            parse!int(hex, 16u);
+                        }
+                        catch (Exception)
                         {
                             error("While scanning a double quoted scalar", startMark,
                                   "overflow when parsing an escape sequence of " ~
@@ -1799,7 +1806,7 @@ final class Scanner
                 }
             }
 
-            spacesTransaction.__dtor();
+            spacesTransaction.end();
             char[] slice = reader_.sliceBuilder.finish();
 
             return scalarToken(startMark, endMark, slice, ScalarStyle.Plain);
@@ -1835,7 +1842,7 @@ final class Scanner
             const lineBreak = scanLineBreak();
             allowSimpleKey_ = true;
 
-            static bool end(Reader reader_) @safe pure nothrow @nogc
+            static bool end(Reader reader_) @safe pure
             {
                 const prefix = reader_.prefix(3);
                 return ("---" == prefix || "..." == prefix)

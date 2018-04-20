@@ -539,7 +539,7 @@ final class Parser
             string notInPlace;
             bool inEscape = false;
             import dyaml.nogcutil;
-            auto appender = appenderNoGC(cast(char[])tokenValue);
+            auto appender = appender!(char[])();
             for(char[] oldValue = tokenValue; !oldValue.empty();)
             {
                 const dchar c = oldValue.front();
@@ -549,7 +549,7 @@ final class Parser
                 {
                     if(c != '\\')
                     {
-                        if(notInPlace is null) { appender.putDChar(c); }
+                        if(notInPlace is null) { appender.put(c); }
                         else                   { notInPlace ~= c; }
                         continue;
                     }
@@ -570,7 +570,7 @@ final class Parser
                         // many-byte unicode chars
                         if(c != 'L' && c != 'P')
                         {
-                            appender.putDChar(dyaml.escapes.fromEscape(c));
+                            appender.put(dyaml.escapes.fromEscape(c));
                             continue;
                         }
                         // Need to duplicate as we won't fit into
@@ -596,10 +596,8 @@ final class Parser
                     assert(!hex.canFind!(d => !d.isHexDigit),
                             "Scanner must ensure the hex string is valid");
 
-                    bool overflow;
-                    const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
-                    assert(!overflow, "Scanner must ensure there's no overflow");
-                    if(notInPlace is null) { appender.putDChar(decoded); }
+                    const decoded = cast(dchar)parse!int(hex, 16u);
+                    if(notInPlace is null) { appender.put(decoded); }
                     else                   { notInPlace ~= decoded; }
                     continue;
                 }
