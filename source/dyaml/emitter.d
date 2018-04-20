@@ -480,7 +480,7 @@ struct Emitter
             }
         }
         ///Handle an alias.
-        void expectAlias() @trusted
+        void expectAlias() @safe
         {
             enforce(event_.anchor !is null, new EmitterException("Anchor is not specified for alias"));
             processAnchor("*");
@@ -681,7 +681,7 @@ struct Emitter
         }
 
         ///Check if an empty document is next.
-        bool checkEmptyDocument() const @trusted pure nothrow
+        bool checkEmptyDocument() const @safe pure nothrow
         {
             if(event_.id != EventID.DocumentStart || events_.length == 0)
             {
@@ -695,7 +695,7 @@ struct Emitter
         }
 
         ///Check if a simple key is next.
-        bool checkSimpleKey() @trusted
+        bool checkSimpleKey() @safe
         {
             uint length = 0;
             const id = event_.id;
@@ -764,7 +764,7 @@ struct Emitter
         }
 
         ///Process and write an anchor/alias.
-        void processAnchor(const string indicator) @trusted
+        void processAnchor(const string indicator) @safe
         {
             if(event_.anchor is null)
             {
@@ -784,7 +784,7 @@ struct Emitter
         }
 
         ///Process and write a tag.
-        void processTag() @trusted
+        void processTag() @safe
         {
             string tag = event_.tag;
 
