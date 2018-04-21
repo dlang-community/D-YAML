@@ -29,7 +29,6 @@ import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;
 import dyaml.exception;
-import dyaml.fastcharsearch;
 import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.queue;
@@ -63,8 +62,11 @@ struct ScalarAnalysis
 
 private alias isNewLine = among!('\n', '\u0085', '\u2028', '\u2029');
 
-// override the canFind added by the FastCharSearch mixins
-private alias canFind = std.algorithm.canFind;
+private alias isSpecialChar = among!('#', ',', '[', ']', '{', '}', '&', '*', '!', '|', '>', '\\', '\'', '"', '%', '@', '`');
+
+private alias isFlowIndicator = among!(',', '?', '[', ']', '{', '}');
+
+private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', ' ', '\t');
 
 //Emits YAML events into a file/stream.
 struct Emitter
@@ -1032,14 +1034,11 @@ struct Emitter
 
             foreach(const size_t index, const dchar c; scalar)
             {
-                mixin FastCharSearch!("#,[]{}&*!|>\'\"%@`"d, 128) specialCharSearch;
-                mixin FastCharSearch!(",?[]{}"d, 128) flowIndicatorSearch;
-
                 //Check for indicators.
                 if(index == 0)
                 {
                     //Leading indicators are special characters.
-                    if(specialCharSearch.canFind(c))
+                    if(c.isSpecialChar)
                     {
                         flowIndicators = blockIndicators = true;
                     }
@@ -1056,7 +1055,7 @@ struct Emitter
                 else
                 {
                     //Some indicators cannot appear within a scalar as well.
-                    if(flowIndicatorSearch.canFind(c)){flowIndicators = true;}
+                    if(c.isFlowIndicator){flowIndicators = true;}
                     if(c == ':')
                     {
                         flowIndicators = true;
@@ -1099,11 +1098,10 @@ struct Emitter
                     previousSpace = previousBreak = false;
                 }
 
-                mixin FastCharSearch! "\0\n\r\u0085\u2028\u2029 \t"d spaceSearch;
                 //Prepare for the next character.
-                preceededByWhitespace = spaceSearch.canFind(c);
+                preceededByWhitespace = c.isSpace != 0;
                 followedByWhitespace = index + 2 >= scalar.length ||
-                                       spaceSearch.canFind(scalar[index + 2]);
+                                       scalar[index + 2].isSpace;
             }
 
             with(analysis.flags)

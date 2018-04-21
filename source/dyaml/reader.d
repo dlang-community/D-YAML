@@ -23,11 +23,10 @@ import std.utf;
 
 import tinyendian;
 
-import dyaml.fastcharsearch;
 import dyaml.encoding;
 import dyaml.exception;
 
-
+alias isBreak = among!('\n', '\u0085', '\u2028', '\u2029');
 
 package:
 
@@ -301,8 +300,6 @@ final class Reader
         /// Params:  length = Number of characters to move position forward.
         void forward(size_t length) @safe pure
         {
-            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
-
             while(length > 0)
             {
                 auto asciiToTake = min(upcomingASCII_, length);
@@ -339,7 +336,7 @@ final class Reader
                 const c = decode(buffer_, bufferOffset_);
 
                 // New line. (can compare with '\n' without decoding since it's ASCII)
-                if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+                if(c.isBreak || (c == '\r' && buffer_[bufferOffset_] != '\n'))
                 {
                     ++line_;
                     column_ = 0;
@@ -377,7 +374,6 @@ final class Reader
             }
 
             // UTF-8
-            mixin FastCharSearch!"\n\u0085\u2028\u2029"d search;
             assert(bufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of YAML buffer");
             assert(buffer_[bufferOffset_] >= 0x80,
@@ -386,7 +382,7 @@ final class Reader
             const c = decode(buffer_, bufferOffset_);
 
             // New line. (can compare with '\n' without decoding since it's ASCII)
-            if(search.canFind(c) || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+            if(c.isBreak || (c == '\r' && buffer_[bufferOffset_] != '\n'))
             {
                 ++line_;
                 column_ = 0;

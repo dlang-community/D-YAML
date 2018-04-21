@@ -22,7 +22,6 @@ import std.typecons;
 import std.traits : Unqual;
 import std.utf;
 
-import dyaml.fastcharsearch;
 import dyaml.escapes;
 import dyaml.exception;
 import dyaml.queue;
@@ -53,6 +52,21 @@ package:
 /// TAG(value)
 /// SCALAR(value, plain, style)
 
+alias isBreak = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isBreakOrSpace = among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isWhiteSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}', '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isURIChar = among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '!', '~', '*', '\'', '(', ')', '[', ']', '%');
+
+alias isNSChar = among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isBChar = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
+
+alias isFlowScalarBreakSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029', '\'', '"', '\\');
 
 /// Marked exception thrown at scanner errors.
 ///
@@ -152,14 +166,6 @@ final class Scanner
         /// error message is removed, but the allocation when creating an exception is
         /// not.
         char[256] msgBuffer_;
-
-        /// Used to detect if a character is any whitespace plus '\0'
-        mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029"d searchAllWhitespace;
-        /// Used to detect if a character is any line break plus '\0'
-        mixin FastCharSearch!"\0\n\r\u0085\u2028\u2029"d searchAllBreaks;
-
-        /// Avoids compiler confusion of std.algorithm.canFind with FastCharSearch.
-        alias canFind = std.algorithm.canFind;
 
     public:
         /// Construct a Scanner using specified Reader.
@@ -750,7 +756,7 @@ final class Scanner
             return reader_.column     == 0     &&
                    reader_.peekByte() == '-'   &&
                    reader_.prefix(3)  == "---" &&
-                   searchAllWhitespace.canFind(reader_.peek(3));
+                   reader_.peek(3).isWhiteSpace;
         }
 
         /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
@@ -760,13 +766,13 @@ final class Scanner
             return reader_.column     == 0     &&
                    reader_.peekByte() == '.'   &&
                    reader_.prefix(3)  == "..." &&
-                   searchAllWhitespace.canFind(reader_.peek(3));
+                   reader_.peek(3).isWhiteSpace;
         }
 
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe
         {
-            return searchAllWhitespace.canFind(reader_.peek(1));
+            return !!reader_.peek(1).isWhiteSpace;
         }
 
         /// Check if the next token is KEY(flow context):    '?'
@@ -774,7 +780,7 @@ final class Scanner
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe
         {
-            return (flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1)));
+            return (flowLevel_ > 0 || reader_.peek(1).isWhiteSpace);
         }
 
         /// Check if the next token is VALUE(flow context):  ':'
@@ -782,7 +788,7 @@ final class Scanner
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe
         {
-            return flowLevel_ > 0 || searchAllWhitespace.canFind(reader_.peek(1));
+            return flowLevel_ > 0 || reader_.peek(1).isWhiteSpace;
         }
 
         /// Check if the next token is a plain scalar.
@@ -802,13 +808,11 @@ final class Scanner
         bool checkPlain() @safe
         {
             const c = reader_.peek();
-            mixin FastCharSearch!"-?:,[]{}#&*!|>\'\"%@` \t\0\n\r\u0085\u2028\u2029"d
-                searchPlainNotFirstChar;
-            if(!searchPlainNotFirstChar.canFind(c))
+            if(!c.isNonScalarStartCharacter)
             {
                 return true;
             }
-            return !searchAllWhitespace.canFind(reader_.peek(1)) &&
+            return !reader_.peek(1).isWhiteSpace &&
                    (c == '-' || (flowLevel_ == 0 && (c == '?' || c == ':')));
         }
 
@@ -844,7 +848,7 @@ final class Scanner
         /// Scan and throw away all characters until next line break.
         void scanToNextBreak() @safe
         {
-            while(!searchAllBreaks.canFind(reader_.peek())) { reader_.forward(); }
+            while(!reader_.peek().isBreak) { reader_.forward(); }
         }
 
         /// Scan all characters until next line break.
@@ -854,7 +858,7 @@ final class Scanner
         void scanToNextBreakToSlice() @safe
         {
             uint length = 0;
-            while(!searchAllBreaks.canFind(reader_.peek(length)))
+            while(!reader_.peek(length).isBreak)
             {
                 ++length;
             }
@@ -1068,7 +1072,7 @@ final class Scanner
         {
             findNextNonSpace();
             if(reader_.peekByte() == '#') { scanToNextBreak(); }
-            if(searchAllBreaks.canFind(reader_.peek()))
+            if(reader_.peek().isBreak)
             {
                 scanLineBreak();
                 return;
@@ -1102,7 +1106,7 @@ final class Scanner
             char[] value = reader_.sliceBuilder.finish();
             if(error_)   { return Token.init; }
 
-            if(!searchAllWhitespace.canFind(reader_.peek()) &&
+            if(!reader_.peek().isWhiteSpace &&
                !"?:,]}%@"d.canFind(reader_.peekByte()))
             {
                 enum anchorCtx = "While scanning an anchor";
@@ -1137,7 +1141,6 @@ final class Scanner
             // (slice) we will produce.
             uint handleEnd;
 
-            mixin FastCharSearch!" \0\n\r\u0085\u2028\u2029"d search;
             if(c == '<')
             {
                 reader_.forward(2);
@@ -1153,7 +1156,7 @@ final class Scanner
                 }
                 reader_.forward();
             }
-            else if(searchAllWhitespace.canFind(c))
+            else if(c.isWhiteSpace)
             {
                 reader_.forward();
                 handleEnd = 0;
@@ -1164,7 +1167,7 @@ final class Scanner
                 uint length = 1;
                 bool useHandle = false;
 
-                while(!search.canFind(c))
+                while(!c.isBreakOrSpace)
                 {
                     if(c == '!')
                     {
@@ -1192,7 +1195,7 @@ final class Scanner
                 if(error_) { return Token.init; }
             }
 
-            if(search.canFind(reader_.peek()))
+            if(reader_.peek().isBreakOrSpace)
             {
                 char[] slice = reader_.sliceBuilder.finish();
                 return tagToken(startMark, reader_.mark, slice, handleEnd);
@@ -1431,7 +1434,7 @@ final class Scanner
             findNextNonSpace();
             if(reader_.peekByte()== '#') { scanToNextBreak(); }
 
-            if(searchAllBreaks.canFind(reader_.peek()))
+            if(reader_.peek().isBreak)
             {
                 scanLineBreak();
                 return;
@@ -1523,8 +1526,6 @@ final class Scanner
             {
                 dchar c = reader_.peek();
 
-                mixin FastCharSearch!" \t\0\n\r\u0085\u2028\u2029\'\"\\"d search;
-
                 size_t numCodePoints = 0;
                 // This is an optimized way of writing:
                 // while(!search.canFind(reader_.peek(numCodePoints))) { ++numCodePoints; }
@@ -1543,7 +1544,7 @@ final class Scanner
                     {
                         // slice is UTF-8 - need to decode
                         const ch = slice[i] < 0x80 ? slice[i++] : decode(slice, i);
-                        if(search.canFind(ch)) { break outer; }
+                        if(ch.isFlowScalarBreakSpace) { break outer; }
                         ++numCodePoints;
                     }
                     oldSliceLength = slice.length;
@@ -1686,7 +1687,7 @@ final class Scanner
                 // Instead of checking indentation, we check for document separators.
                 const prefix = reader_.prefix(3);
                 if((prefix == "---" || prefix == "...") &&
-                   searchAllWhitespace.canFind(reader_.peek(3)))
+                   reader_.peek(3).isWhiteSpace)
                 {
                     error("While scanning a quoted scalar", startMark,
                           "found unexpected document separator", reader_.mark);
@@ -1738,8 +1739,8 @@ final class Scanner
                     for(;;)
                     {
                         const cNext = reader_.peek(length + 1);
-                        if(searchAllWhitespace.canFind(c) ||
-                           (c == ':' && searchAllWhitespace.canFind(cNext)))
+                        if(c.isWhiteSpace ||
+                           (c == ':' && cNext.isWhiteSpace))
                         {
                             break;
                         }
@@ -1752,7 +1753,7 @@ final class Scanner
                     for(;;)
                     {
                         c = reader_.peek(length);
-                        if(searchAllWhitespace.canFind(c) || ",:?[]{}"d.canFind(c))
+                        if(c.isWhiteSpace || ",:?[]{}"d.canFind(c))
                         {
                             break;
                         }
@@ -1762,7 +1763,7 @@ final class Scanner
 
                 // It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
-                   !searchAllWhitespace.canFind(reader_.peek(length + 1)) &&
+                   !reader_.peek(length + 1).isWhiteSpace &&
                    !",[]{}"d.canFind(reader_.peek(length + 1)))
                 {
                     // This is an error; throw the slice away.
@@ -1818,10 +1819,7 @@ final class Scanner
             reader_.forward(length);
 
             dchar c = reader_.peek();
-            mixin FastCharSearch!" \n\r\u0085\u2028\u2029"d search;
-            // No newline after the spaces (if any)
-            // (Excluding ' ' so we can use the same FastCharSearch as below)
-            if(!search.canFind(c) && c != ' ')
+            if(!c.isNSChar)
             {
                 // We have spaces, but no newline.
                 if(whitespaces.length > 0) { reader_.sliceBuilder.write(whitespaces); }
@@ -1846,7 +1844,7 @@ final class Scanner
             alias Transaction = SliceBuilder.Transaction;
             auto transaction = Transaction(&reader_.sliceBuilder);
             if(lineBreak != '\n') { reader_.sliceBuilder.write(lineBreak); }
-            while(search.canFind(reader_.peek()))
+            while(reader_.peek().isNSChar)
             {
                 if(reader_.peekByte() == ' ') { reader_.forward(); }
                 else
@@ -1914,8 +1912,7 @@ final class Scanner
             const startLen = reader_.sliceBuilder.length;
             {
                 uint length = 0;
-                mixin FastCharSearch!"-;/?:@&=+$,_.!~*\'()[]%"d search;
-                while(c.isAlphaNum || search.canFind(c))
+                while(c.isAlphaNum || c.isURIChar)
                 {
                     if(c == '%')
                     {
