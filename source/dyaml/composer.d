@@ -116,7 +116,7 @@ final class Composer
         }
 
         ///Get single YAML document, throwing if there is more than one document.
-        Node getSingleNode() @trusted
+        Node getSingleNode() @safe
         {
             assert(!parser_.checkEvent(EventID.StreamEnd),
                    "Trying to get a node from Composer when there is no node to " ~
@@ -142,7 +142,7 @@ final class Composer
         ///Params:  pairAppenderLevel = Current level in the pair appender stack.
         ///         nodeAppenderLevel = Current level the node appender stack.
         void ensureAppendersExist(const uint pairAppenderLevel, const uint nodeAppenderLevel)
-            @trusted
+            @safe
         {
             while(pairAppenders_.length <= pairAppenderLevel)
             {
@@ -155,7 +155,7 @@ final class Composer
         }
 
         ///Compose a YAML document and return its root node.
-        Node composeDocument() @trusted
+        Node composeDocument() @safe
         {
             //Drop the DOCUMENT-START event.
             parser_.getEvent();
