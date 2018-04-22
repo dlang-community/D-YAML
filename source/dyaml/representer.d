@@ -238,11 +238,12 @@ final class Representer
          * Returns: The represented node.
          */
         Node representScalar(string tag, string scalar,
-                             ScalarStyle style = ScalarStyle.Invalid) @trusted
+                             ScalarStyle style = ScalarStyle.Invalid) @safe
         {
             if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
-            return Node.rawNode(Node.Value(scalar), Mark(), tag, style,
-                                CollectionStyle.Invalid);
+            auto newNode = Node(scalar, tag);
+            newNode.scalarStyle = style;
+            return newNode;
         }
         ///
         @safe unittest
@@ -291,7 +292,7 @@ final class Representer
          * Throws:  $(D RepresenterException) if a child could not be represented.
          */
         Node representSequence(string tag, Node[] sequence,
-                               CollectionStyle style = CollectionStyle.Invalid) @trusted
+                               CollectionStyle style = CollectionStyle.Invalid) @safe
         {
             Node[] value;
             value.length = sequence.length;
@@ -314,8 +315,9 @@ final class Representer
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
-            return Node.rawNode(Node.Value(value), Mark(), tag,
-                                ScalarStyle.Invalid, style);
+            auto newNode = Node(value, tag);
+            newNode.collectionStyle = style;
+            return newNode;
         }
         ///
         @safe unittest
@@ -365,7 +367,7 @@ final class Representer
          * Throws:  $(D RepresenterException) if a child could not be represented.
          */
         Node representMapping(string tag, Node.Pair[] pairs,
-                              CollectionStyle style = CollectionStyle.Invalid) @trusted
+                              CollectionStyle style = CollectionStyle.Invalid) @safe
         {
             Node.Pair[] value;
             value.length = pairs.length;
@@ -396,8 +398,9 @@ final class Representer
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
-            return Node.rawNode(Node.Value(value), Mark(), tag,
-                                ScalarStyle.Invalid, style);
+            auto newNode = Node(value, tag);
+            newNode.collectionStyle = style;
+            return newNode;
         }
         ///
         @safe unittest

@@ -291,13 +291,17 @@ final class Constructor
             {
                 static if(is(U : ScalarStyle))
                 {
-                    return Node.rawNode((*delegates!T)[tag](node), start, tag,
-                                        style, CollectionStyle.Invalid);
+                    auto newNode = Node((*delegates!T)[tag](node), tag);
+                    newNode.startMark_ = start;
+                    newNode.scalarStyle = style;
+                    return newNode;
                 }
                 else static if(is(U : CollectionStyle))
                 {
-                    return Node.rawNode((*delegates!T)[tag](node), start, tag,
-                                        ScalarStyle.Invalid, style);
+                    auto newNode = Node((*delegates!T)[tag](node), tag);
+                    newNode.startMark_ = start;
+                    newNode.collectionStyle = style;
+                    return newNode;
                 }
                 else static assert(false);
             }
