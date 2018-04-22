@@ -27,7 +27,7 @@ struct Flags(names ...) if(names.length <= 8)
         ubyte flags_;
 
         ///Generate a setter and a getter for each flag.
-        static string flags(string[] names ...) @trusted
+        static string flags(string[] names ...) @safe
         in
         {
             assert(names.length <= 8, "Flags struct can only hold 8 flags");
