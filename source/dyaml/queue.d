@@ -99,7 +99,7 @@ struct Queue(T)
         }
 
         /// Push new item to the queue.
-        void push(T item) @trusted nothrow
+        void push(T item) @safe nothrow
         {
             Node* newLast = newNode(item, null);
             if(last_ !is null) { last_.next_ = newLast; }
@@ -109,7 +109,7 @@ struct Queue(T)
         }
 
         /// Insert a new item putting it to specified index in the linked list.
-        void insert(T item, const size_t idx) @trusted nothrow
+        void insert(T item, const size_t idx) @safe nothrow
         in
         {
             assert(idx <= length_);
@@ -136,7 +136,7 @@ struct Queue(T)
         }
 
         /// Return the next element in the queue and remove it.
-        T pop() @trusted nothrow
+        T pop() @safe nothrow
         in
         {
             assert(!empty, "Trying to pop an element from an empty queue");
