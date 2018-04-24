@@ -2129,7 +2129,8 @@ struct Node
         }
 
         // Get index of pair with key (or value, if key is false) matching index.
-        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const
+        // Cannot be inferred @safe due to https://issues.dlang.org/show_bug.cgi?id=16528
+        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @safe
         {
             const pairs = getValue!(Pair[])();
             const(Node)* node;
