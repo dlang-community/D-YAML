@@ -38,38 +38,6 @@ import dyaml.tagdirective;
  */
 struct Dumper
 {
-    @safe unittest
-    {
-        auto node = Node([1, 2, 3, 4, 5]);
-        Dumper(new YMemoryStream()).dump(node);
-    }
-
-    @safe unittest
-    {
-        auto node1 = Node([1, 2, 3, 4, 5]);
-        auto node2 = Node("This document contains only one string");
-        Dumper(new YMemoryStream()).dump(node1, node2);
-    }
-
-    @safe unittest
-    {
-        //import std.stream;
-        auto stream = new YMemoryStream();
-        auto node = Node([1, 2, 3, 4, 5]);
-        Dumper(stream).dump(node);
-    }
-
-    @safe unittest
-    {
-        auto node = Node([1, 2, 3, 4, 5]);
-        auto representer = new Representer();
-        auto resolver = new Resolver();
-        auto dumper = Dumper(new YMemoryStream());
-        dumper.representer = representer;
-        dumper.resolver = resolver;
-        dumper.dump(node);
-    }
-
     private:
         //Resolver to resolve tags.
         Resolver resolver_;
