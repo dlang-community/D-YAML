@@ -193,7 +193,7 @@ struct Node
                            Value.allowed!T;
         }
 
-    private:
+    package:
         // Stored value.
         Value value_;
         // Start position of the node.
@@ -1766,28 +1766,6 @@ struct Node
         }
 
     package:
-        // Construct a node from raw data.
-        //
-        // Params:  value           = Value of the node.
-        //          startMark       = Start position of the node in file.
-        //          tag             = Tag of the node.
-        //          scalarStyle     = Scalar style of the node.
-        //          collectionStyle = Collection style of the node.
-        //
-        // Returns: Constructed node.
-        static Node rawNode(Value value, const Mark startMark, const string tag,
-                            const ScalarStyle scalarStyle,
-                            const CollectionStyle collectionStyle) @safe
-        {
-            Node node;
-            node.setValue(value);
-            node.startMark_      = startMark;
-            node.tag_            = tag;
-            node.scalarStyle     = scalarStyle;
-            node.collectionStyle = collectionStyle;
-
-            return node;
-        }
 
         // Construct Node.Value from user defined type.
         static Value userValue(T)(T value) @trusted
