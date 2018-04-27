@@ -8,7 +8,7 @@ import std.math;
 import std.random;
 import std.stdio;
 import std.string;
-import dyaml.all;
+import dyaml;
 
 
 Node config;
@@ -220,7 +220,7 @@ Node pairs(bool root, bool complex, Node range, string tag)
         {
             auto key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
             // Maps can't contain duplicate keys
-            while(tag.endsWith("map") && keys[0 .. i].canFind(key)) 
+            while(tag.endsWith("map") && keys[0 .. i].canFind(key))
             {
                 key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
             }

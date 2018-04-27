@@ -31,6 +31,14 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ninja -j8 -C build test -v; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then SDKROOT=$(xcodebuild -version -sdk macosx Path) meson build && ninja -j8 -C build test; fi
   - dub build
+  - "dub build dyaml:benchmark"
+  - "dub build dyaml:constructor"
+  - "dub build dyaml:getting-started"
+  - "dub build dyaml:representer"
+  - "dub build dyaml:resolver"
+  - "dub build dyaml:benchmark"
+  - "dub build dyaml:yaml_gen"
+  - "dub build dyaml:yaml_stats"
   - dub test --build=unittest-cov
 after_success:
  - bash <(curl -s https://codecov.io/bash)
