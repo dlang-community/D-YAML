@@ -1,6 +1,6 @@
 import std.stdio;
 import std.string;
-import dyaml.all;
+import dyaml;
 
 struct Color
 {

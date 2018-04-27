@@ -1,16 +1,10 @@
 {
-    "name": "yaml_bench",
+    "name": "benchmark",
     "targetType": "executable",
     "sourceFiles": ["yaml_bench.d"],
     "mainSourceFile": "yaml_bench.d",
     "dependencies":
     {
-        "dyaml": { "version" : "~>0.5.0" },
-    },
-    "buildTypes":
-    {
-        "debug": { "buildOptions": ["debugMode", "debugInfoC"] },
-        "release": { "buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"] },
-        "profile": { "buildOptions": ["releaseMode", "optimize", "noBoundsCheck", "debugInfoC"] }
+        "dyaml": { "version" : "*" }
     }
 }

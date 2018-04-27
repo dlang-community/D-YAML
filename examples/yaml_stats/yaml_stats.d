@@ -3,7 +3,7 @@
 
 import std.stdio;
 import std.string;
-import dyaml.all;
+import dyaml;
 
 
 ///Collects statistics about a YAML document and returns them as string.
@@ -66,8 +66,8 @@ string statistics(ref Node document)
                     "\nMappings:                %s" ~
                   "\n\nAverage sequence length: %s" ~
                     "\nAverage mapping length:  %s" ~
-                  "\n\n%s", 
-                  nodes, scalars, sequences, mappings, 
+                  "\n\n%s",
+                  nodes, scalars, sequences, mappings,
                   sequences == 0.0 ? 0.0 : cast(real)seqItems / sequences,
                   mappings  == 0.0 ? 0.0 : cast(real)mapPairs / mappings,
                   tagStats);

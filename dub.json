@@ -7,5 +7,14 @@
     "license": "Boost 1.0",
     "dependencies": { "tinyendian" : { "version" : "~>0.1.0" } },
     "homepage": "https://github.com/dlang-community/D-YAML",
-    "copyright": "Copyright © 2011-2014, Ferdinand Majerech"
+    "copyright": "Copyright © 2011-2014, Ferdinand Majerech",
+    "subPackages": [
+        "examples/constructor",
+        "examples/getting_started",
+        "examples/representer",
+        "examples/resolver",
+        "examples/yaml_bench",
+        "examples/yaml_gen",
+        "examples/yaml_stats"
+    ]
 }

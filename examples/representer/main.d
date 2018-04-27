@@ -1,5 +1,5 @@
 import std.stdio;
-import dyaml.all;
+import dyaml;
 
 struct Color
 {
@@ -16,7 +16,7 @@ struct Color
    }
 }
 
-Node representColor(ref Node node, Representer representer)
+Node representColor(ref Node node, Representer representer) @safe
 {
    //The node is guaranteed to be Color as we add representer for Color.
    Color color = node.as!Color;

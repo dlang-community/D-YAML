@@ -1,32 +1,32 @@
 
 module dyaml.yaml_bench;
-//Benchmark that loads, and optionally extracts data from and/or emits a YAML file. 
+//Benchmark that loads, and optionally extracts data from and/or emits a YAML file.
 
 import std.conv;
 import std.datetime;
 import std.stdio;
 import std.string;
-import dyaml.all;
+import dyaml;
 
 ///Print help information.
 void help()
 {
     string help =
-        "D:YAML benchmark\n"
-        "Copyright (C) 2011-2014 Ferdinand Majerech\n"
-        "Usage: yaml_bench [OPTION ...] [YAML_FILE]\n"
-        "\n"
-        "Loads and optionally extracts data and/or dumps a YAML file.\n"
-        "\n"
-        "Available options:\n"
-        " -h --help          Show this help information.\n"
-        " -g --get           Extract data from the file (using Node.as()).\n"
-        " -d --dump          Dump the loaded data (to YAML_FILE.dump).\n"
-        " -r --runs=NUM      Repeat parsing the file NUM times.\n"
-        "    --reload        Reload the file from the diskl on every repeat\n"
-        "                    By default, the file is loaded to memory once\n"
-        "                    and repeatedly parsed from memory.\n"
-        " -s --scan-only    Do not execute the entire parsing process, only\n"
+        "D:YAML benchmark\n"~
+        "Copyright (C) 2011-2014 Ferdinand Majerech\n"~
+        "Usage: yaml_bench [OPTION ...] [YAML_FILE]\n"~
+        "\n"~
+        "Loads and optionally extracts data and/or dumps a YAML file.\n"~
+        "\n"~
+        "Available options:\n"~
+        " -h --help          Show this help information.\n"~
+        " -g --get           Extract data from the file (using Node.as()).\n"~
+        " -d --dump          Dump the loaded data (to YAML_FILE.dump).\n"~
+        " -r --runs=NUM      Repeat parsing the file NUM times.\n"~
+        "    --reload        Reload the file from the diskl on every repeat\n"~
+        "                    By default, the file is loaded to memory once\n"~
+        "                    and repeatedly parsed from memory.\n"~
+        " -s --scan-only    Do not execute the entire parsing process, only\n"~
         "                    scanning. Overrides '--dump'.\n";
     writeln(help);
 }
@@ -71,10 +71,10 @@ void main(string[] args)
     string file = null;
 
     //Parse command line args
-    foreach(arg; args[1 .. $]) 
+    foreach(arg; args[1 .. $])
     {
         auto parts = arg.split("=");
-        if(arg[0] == '-') switch(parts[0]) 
+        if(arg[0] == '-') switch(parts[0])
         {
             case "--help", "-h":      help(); return;
             case "--get",  "-g":      get      = true; break;
@@ -88,8 +88,8 @@ void main(string[] args)
         {
             if(file !is null)
             {
-                writeln("\nUnknown argument or file specified twice: ", arg, "\n\n"); 
-                help(); 
+                writeln("\nUnknown argument or file specified twice: ", arg, "\n\n");
+                help();
                 return;
             }
 
@@ -98,8 +98,8 @@ void main(string[] args)
     }
     if(file is null)
     {
-        writeln("\nFile not specified.\n\n"); 
-        help(); 
+        writeln("\nFile not specified.\n\n");
+        help();
         return;
     }
 
