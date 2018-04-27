@@ -5,6 +5,6 @@
     "mainSourceFile": "yaml_gen.d",
     "dependencies":
     {
-        "dyaml": { "version" : "~>0.5.0" },
-    },
+        "dyaml": { "version" : "*" }
+    }
 }
