@@ -58,25 +58,25 @@ struct Loader
          *
          * Throws:  YAMLException if the file could not be opened or read.
          */
-        this(string filename) @trusted
-        {
-            name_ = filename;
+         static Loader fromFile(string filename) @trusted
+         {
             try
             {
-                this(std.file.read(filename));
+                auto loader = Loader(std.file.read(filename));
+                loader.name_ = filename;
+                return loader;
             }
             catch(FileException e)
             {
                 throw new YAMLException("Unable to open file %s for YAML loading: %s"
                                         .format(filename, e.msg));
             }
-        }
+         }
 
-        /** Construct a Loader to load YAML from a string (char []).
+        /** Construct a Loader to load YAML from a string.
          *
-         * Params:  data = String to load YAML from. $(B will) be overwritten during
-         *                 parsing as D:YAML reuses memory. Use data.dup if you don't
-         *                 want to modify the original string.
+         * Params:  data = String to load YAML from. The char[] version $(B will)
+         *                 overwrite its input during parsing as D:YAML reuses memory.
          *
          * Returns: Loader loading YAML from given string.
          *
@@ -88,10 +88,20 @@ struct Loader
         {
             return Loader(cast(ubyte[])data);
         }
-        ///
+        /// Ditto
+        static Loader fromString(string data) @safe
+        {
+            return fromString(data.dup);
+        }
+        /// Load  a char[].
         @safe unittest
         {
             assert(Loader.fromString("42".dup).load().as!int == 42);
+        }
+        /// Load a string.
+        @safe unittest
+        {
+            assert(Loader.fromString("42").load().as!int == 42);
         }
 
         /** Construct a Loader to load YAML from a buffer.
@@ -111,11 +121,26 @@ struct Loader
          *
          * Throws:  YAMLException if yamlData contains data illegal in YAML.
          */
-        this(void[] yamlData) @trusted
+        static Loader fromBuffer(ubyte[] yamlData) @safe
+        {
+            return Loader(yamlData);
+        }
+        /// Ditto
+        static Loader fromBuffer(void[] yamlData) @system
+        {
+            return Loader(yamlData);
+        }
+        /// Ditto
+        private this(void[] yamlData) @system
+        {
+            this(cast(ubyte[])yamlData);
+        }
+        /// Ditto
+        private this(ubyte[] yamlData) @safe
         {
             try
             {
-                reader_      = new Reader(cast(ubyte[])yamlData);
+                reader_      = new Reader(yamlData);
                 scanner_     = new Scanner(reader_);
                 parser_      = new Parser(scanner_);
             }
@@ -311,7 +336,7 @@ struct Loader
 @safe unittest
 {
     write("example.yaml", "Hello world!");
-    auto rootNode = Loader("example.yaml").load();
+    auto rootNode = Loader.fromFile("example.yaml").load();
     assert(rootNode == "Hello world!");
 }
 /// Load all YAML documents from a file:
@@ -326,7 +351,7 @@ struct Loader
         "Hello world 2!\n"~
         "...\n"
     );
-    auto nodes = Loader("example.yaml").loadAll();
+    auto nodes = Loader.fromFile("example.yaml").loadAll();
     assert(nodes.length == 2);
 }
 /// Iterate over YAML documents in a file, lazily loading them:
@@ -341,7 +366,7 @@ struct Loader
         "Hello world 2!\n"~
         "...\n"
     );
-    auto loader = Loader("example.yaml");
+    auto loader = Loader.fromFile("example.yaml");
 
     foreach(ref node; loader)
     {
@@ -351,9 +376,9 @@ struct Loader
 /// Load YAML from a string:
 @safe unittest
 {
-    char[] yaml_input = ("red:   '#ff0000'\n" ~
+    string yaml_input = ("red:   '#ff0000'\n" ~
                         "green: '#00ff00'\n" ~
-                        "blue:  '#0000ff'").dup;
+                        "blue:  '#0000ff'");
 
     auto colors = Loader.fromString(yaml_input).load();
 
@@ -379,8 +404,8 @@ struct Loader
     );
     try
     {
-        void[] buffer = read("example.yaml");
-        auto yamlNode = Loader(buffer);
+        string buffer = readText("example.yaml");
+        auto yamlNode = Loader.fromString(buffer);
 
         // Read data from yamlNode here...
     }
@@ -404,7 +429,7 @@ struct Loader
 
     // Add constructor functions / resolver expressions here...
 
-    auto loader = Loader("example.yaml");
+    auto loader = Loader.fromFile("example.yaml");
     loader.constructor = constructor;
     loader.resolver = resolver;
     auto rootNode = loader.load();

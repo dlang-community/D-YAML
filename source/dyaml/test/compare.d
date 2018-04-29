@@ -20,8 +20,8 @@ import dyaml.token;
 ///          canonicalFilename = Another file to parse, in canonical YAML format.
 void testParser(string dataFilename, string canonicalFilename) @safe
 {
-    auto dataEvents = Loader(dataFilename).parse();
-    auto canonicalEvents = Loader(canonicalFilename).parse();
+    auto dataEvents = Loader.fromFile(dataFilename).parse();
+    auto canonicalEvents = Loader.fromFile(canonicalFilename).parse();
 
     assert(dataEvents.length == canonicalEvents.length);
 
@@ -38,8 +38,8 @@ void testParser(string dataFilename, string canonicalFilename) @safe
 ///          canonicalFilename = Another file to load, in canonical YAML format.
 void testLoader(string dataFilename, string canonicalFilename) @safe
 {
-    auto data = Loader(dataFilename).loadAll();
-    auto canonical = Loader(canonicalFilename).loadAll();
+    auto data = Loader.fromFile(dataFilename).loadAll();
+    auto canonical = Loader.fromFile(canonicalFilename).loadAll();
 
     assert(data.length == canonical.length, "Unequal node count");
     foreach(n; 0 .. data.length)

@@ -170,7 +170,7 @@ final class Constructor
                 return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
             }
 
-            auto loader = Loader.fromString("!mystruct 12:34:56".dup);
+            auto loader = Loader.fromString("!mystruct 12:34:56");
             auto constructor = new Constructor;
             constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
             loader.constructor = constructor;
@@ -211,7 +211,7 @@ final class Constructor
                  //!mystruct [x, y, z]
                  return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
              }
-             auto loader = Loader.fromString("!mystruct [1,2,3]".dup);
+             auto loader = Loader.fromString("!mystruct [1,2,3]");
              auto constructor = new Constructor;
              constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
              loader.constructor = constructor;
@@ -252,7 +252,7 @@ final class Constructor
                 //!mystruct {"x": x, "y": y, "z": z}
                 return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
             }
-            auto loader = Loader.fromString(`!mystruct {"x": 11, "y": 22, "z": 33}`.dup);
+            auto loader = Loader.fromString(`!mystruct {"x": 11, "y": 22, "z": 33}`);
             auto constructor = new Constructor;
             constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
             loader.constructor = constructor;
@@ -847,8 +847,8 @@ MyStruct constructMyStructMapping(ref Node node) @safe
 
 @safe unittest
 {
-    char[] data = "!mystruct 1:2:3".dup;
-    auto loader = Loader(data);
+    string data = "!mystruct 1:2:3";
+    auto loader = Loader.fromString(data);
     auto constructor = new Constructor;
     constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
     loader.constructor = constructor;
@@ -859,8 +859,8 @@ MyStruct constructMyStructMapping(ref Node node) @safe
 
 @safe unittest
 {
-    char[] data = "!mystruct [1, 2, 3]".dup;
-    auto loader = Loader(data);
+    string data = "!mystruct [1, 2, 3]";
+    auto loader = Loader.fromString(data);
     auto constructor = new Constructor;
     constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
     loader.constructor = constructor;
@@ -871,8 +871,8 @@ MyStruct constructMyStructMapping(ref Node node) @safe
 
 @safe unittest
 {
-    char[] data = "!mystruct {x: 1, y: 2, z: 3}".dup;
-    auto loader = Loader(data);
+    string data = "!mystruct {x: 1, y: 2, z: 3}";
+    auto loader = Loader.fromString(data);
     auto constructor = new Constructor;
     constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
     loader.constructor = constructor;

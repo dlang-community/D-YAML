@@ -65,7 +65,7 @@ void testRepresenterTypes(string codeFilename) @safe
         constructor.addConstructorMapping("!tag1", &constructClass);
         constructor.addConstructorScalar("!tag2", &constructStruct);
 
-        auto loader        = Loader(emitStream.data.dup);
+        auto loader        = Loader.fromBuffer(emitStream.data);
         loader.name        = "TEST";
         loader.constructor = constructor;
         readNodes          = loader.loadAll();

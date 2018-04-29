@@ -81,7 +81,7 @@ bool compareEvents(Event[] events1, Event[] events2) @system
 void testEmitterOnData(string dataFilename, string canonicalFilename) @system
 {
     //Must exist due to Anchor, Tags reference counts.
-    auto loader = Loader(dataFilename);
+    auto loader = Loader.fromFile(dataFilename);
     auto events = cast(Event[])loader.parse();
     auto emitStream = new YMemoryStream;
     Dumper(emitStream).emit(events);
@@ -93,7 +93,7 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @system
         writeln("OUTPUT:\n", cast(string)emitStream.data);
     }
 
-    auto loader2        = Loader(emitStream.data.dup);
+    auto loader2        = Loader.fromBuffer(emitStream.data);
     loader2.name        = "TEST";
     loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
@@ -109,7 +109,7 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @system
 void testEmitterOnCanonical(string canonicalFilename) @system
 {
     //Must exist due to Anchor, Tags reference counts.
-    auto loader = Loader(canonicalFilename);
+    auto loader = Loader.fromFile(canonicalFilename);
     auto events = cast(Event[])loader.parse();
     foreach(canonical; [false, true])
     {
@@ -122,7 +122,7 @@ void testEmitterOnCanonical(string canonicalFilename) @system
             writeln("OUTPUT (canonical=", canonical, "):\n",
                     cast(string)emitStream.data);
         }
-        auto loader2        = Loader(emitStream.data.dup);
+        auto loader2        = Loader.fromBuffer(emitStream.data);
         loader2.name        = "TEST";
         loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
@@ -143,7 +143,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
     foreach(filename; [dataFilename, canonicalFilename])
     {
         //must exist due to Anchor, Tags reference counts
-        auto loader = Loader(canonicalFilename);
+        auto loader = Loader.fromFile(canonicalFilename);
         auto events = cast(Event[])loader.parse();
         foreach(flowStyle; [CollectionStyle.Block, CollectionStyle.Flow])
         {
@@ -180,7 +180,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
                             to!string(style), ")");
                     writeln(emitStream.data);
                 }
-                auto loader2        = Loader(emitStream.data.dup);
+                auto loader2        = Loader.fromBuffer(emitStream.data);
                 loader2.name        = "TEST";
                 loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;

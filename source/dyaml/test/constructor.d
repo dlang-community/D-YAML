@@ -407,7 +407,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     constructor.addConstructorMapping("!tag1", &constructClass);
     constructor.addConstructorScalar("!tag2", &constructStruct);
 
-    auto loader        = Loader(dataFilename);
+    auto loader        = Loader.fromFile(dataFilename);
     loader.constructor = constructor;
     loader.resolver    = new Resolver;
 
