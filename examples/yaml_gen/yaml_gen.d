@@ -264,7 +264,7 @@ Node generateNode(const string type, bool root = false)
 
 Node[] generate(const string configFileName)
 {
-    config = Loader(configFileName).load();
+    config = Loader.fromFile(configFileName).load();
 
     minNodesDocument = config["min-nodes-per-document"].as!long;
 

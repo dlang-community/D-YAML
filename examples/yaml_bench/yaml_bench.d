@@ -104,7 +104,7 @@ void main(string[] args) //@safe
             else       { fileWorkingCopy[] = fileInMemory[]; }
             void[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
 
-            auto loader        = Loader(fileToLoad);
+            auto loader        = Loader.fromBuffer(fileToLoad);
             if(scanOnly)
             {
                 loader.scanBench();

@@ -78,7 +78,7 @@ void main()
        constructor.addConstructorScalar("!color", &constructColorScalar);
        constructor.addConstructorMapping("!color-mapping", &constructColorMapping);
 
-       auto loader = Loader("input.yaml");
+       auto loader = Loader.fromFile("input.yaml");
        loader.constructor = constructor;
 
        auto root = loader.load();
