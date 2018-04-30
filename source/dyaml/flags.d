@@ -61,9 +61,6 @@ struct Flags(names ...) if(names.length <= 8)
 ///
 @safe unittest
 {
-    import std.stdio;
-    writeln("Flags unittest");
-
     Flags!("empty", "multiline") flags;
     assert(flags.empty == false && flags.multiline == false);
     flags.multiline = true;

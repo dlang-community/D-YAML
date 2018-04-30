@@ -49,7 +49,7 @@ void testImplicitResolver(string dataFilename, string detectFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML Resolver unittest");
+    printProgress("D:YAML Resolver unittest");
     run("testImplicitResolver", &testImplicitResolver, ["data", "detect"]);
 }
 

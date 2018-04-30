@@ -359,8 +359,7 @@ struct Loader
 
     foreach(string color, string value; colors)
     {
-        import std.stdio;
-        writeln(color, " is ", value, " in HTML/CSS");
+        // Do something with the color and its value...
     }
 }
 

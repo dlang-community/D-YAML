@@ -80,7 +80,7 @@ void testRepresenterTypes(string codeFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML Representer unittest");
+    printProgress("D:YAML Representer unittest");
     run("testRepresenterTypes", &testRepresenterTypes, ["code"]);
 }
 

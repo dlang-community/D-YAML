@@ -17,7 +17,6 @@ module dyaml.resolver;
 
 import std.conv;
 import std.regex;
-import std.stdio;
 import std.typecons;
 import std.utf;
 
@@ -169,8 +168,6 @@ final class Resolver
         }
         @safe unittest
         {
-            writeln("D:YAML Resolver unittest");
-
             auto resolver = new Resolver();
 
             bool tagMatch(string tag, string[] values) @safe

@@ -437,7 +437,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
 
 @safe unittest
 {
-    writeln("D:YAML Constructor unittest");
+    printProgress("D:YAML Constructor unittest");
     run("testConstructor", &testConstructor, ["data", "code"]);
 }
 

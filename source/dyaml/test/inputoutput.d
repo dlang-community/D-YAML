@@ -89,7 +89,7 @@ void testUnicodeInputErrors(string unicodeFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML I/O unittest");
+    printProgress("D:YAML I/O unittest");
     run("testUnicodeInput", &testUnicodeInput, ["unicode"]);
     run("testUnicodeInputErrors", &testUnicodeInputErrors, ["unicode"]);
 }
