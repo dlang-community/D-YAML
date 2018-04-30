@@ -64,11 +64,11 @@ final class Constructor
 {
     private:
         // Constructor functions from scalars.
-        Node.Value delegate(ref Node)[string] fromScalar_;
+        Node delegate(ref Node) @safe[string] fromScalar_;
         // Constructor functions from sequences.
-        Node.Value delegate(ref Node)[string] fromSequence_;
+        Node delegate(ref Node) @safe[string] fromSequence_;
         // Constructor functions from mappings.
-        Node.Value delegate(ref Node)[string] fromMapping_;
+        Node delegate(ref Node) @safe[string] fromMapping_;
 
     public:
         /// Construct a Constructor.
@@ -138,7 +138,7 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        void addConstructorScalar(T)(const string tag, T function(ref Node) ctor)
+        void addConstructorScalar(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -183,7 +183,7 @@ final class Constructor
          *
          * See_Also:    addConstructorScalar
          */
-        void addConstructorSequence(T)(const string tag, T function(ref Node) ctor)
+        void addConstructorSequence(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -224,7 +224,7 @@ final class Constructor
          *
          * See_Also:    addConstructorScalar
          */
-        void addConstructorMapping(T)(const string tag, T function(ref Node) ctor)
+        void addConstructorMapping(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
             auto deleg = addConstructor!T(t, ctor);
@@ -274,7 +274,7 @@ final class Constructor
          * Returns: Constructed node.
          */
         Node node(T, U)(const Mark start, const Mark end, const string tag,
-                        T value, U style) @trusted
+                        T value, U style) @safe
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
@@ -291,14 +291,14 @@ final class Constructor
             {
                 static if(is(U : ScalarStyle))
                 {
-                    auto newNode = Node((*delegates!T)[tag](node), tag);
+                    auto newNode = (*delegates!T)[tag](node);
                     newNode.startMark_ = start;
                     newNode.scalarStyle = style;
                     return newNode;
                 }
                 else static if(is(U : CollectionStyle))
                 {
-                    auto newNode = Node((*delegates!T)[tag](node), tag);
+                    auto newNode = (*delegates!T)[tag](node);
                     newNode.startMark_ = start;
                     newNode.collectionStyle = style;
                     return newNode;
@@ -319,7 +319,7 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(const string tag, T function(ref Node) ctor)
+        auto addConstructor(T)(const string tag, T function(ref Node) @safe ctor)
         {
             assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
@@ -328,10 +328,9 @@ final class Constructor
                    "specified. Can't specify another one.");
 
 
-            return (ref Node n)
+            return (ref Node n) @safe
             {
-                static if(Node.allowed!T){return Node.value(ctor(n));}
-                else                     {return Node.userValue(ctor(n));}
+                return Node(ctor(n), tag);
             };
         }
 
