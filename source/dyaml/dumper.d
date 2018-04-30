@@ -350,3 +350,35 @@ struct Dumper
     dumper.resolver = resolver;
     dumper.dump(node);
 }
+// Explicit document start/end markers
+@safe unittest
+{
+    import dyaml.stream;
+    auto stream = new YMemoryStream();
+    auto node = Node([1, 2, 3, 4, 5]);
+    auto dumper = Dumper(stream);
+    dumper.explicitEnd = true;
+    dumper.explicitStart = true;
+    dumper.YAMLVersion = null;
+    dumper.dump(node);
+    //Skip version string
+    assert(stream.data[0..3] == "---");
+    //account for newline at end
+    assert(stream.data[$-4..$-1] == "...");
+}
+// No explicit document start/end markers
+@safe unittest
+{
+    import dyaml.stream;
+    auto stream = new YMemoryStream();
+    auto node = Node([1, 2, 3, 4, 5]);
+    auto dumper = Dumper(stream);
+    dumper.explicitEnd = false;
+    dumper.explicitStart = false;
+    dumper.YAMLVersion = null;
+    dumper.dump(node);
+    //Skip version string
+    assert(stream.data[0..3] != "---");
+    //account for newline at end
+    assert(stream.data[$-4..$-1] != "...");
+}
