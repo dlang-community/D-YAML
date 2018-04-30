@@ -167,7 +167,7 @@ struct Emitter
          *          lineBreak = Line break character/s.
          */
         this(YStream stream, const bool canonical, const int indent, const int width,
-             const LineBreak lineBreak) @trusted
+             const LineBreak lineBreak) @safe
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
         {
@@ -198,7 +198,7 @@ struct Emitter
 
     private:
         ///Pop and return the newest state in states_.
-        void function() @safe popState() @trusted
+        void function() @safe popState() @safe
         {
             enforce(states_.length > 0,
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
@@ -213,7 +213,7 @@ struct Emitter
         }
 
         ///Pop and return the newest indent in indents_.
-        int popIndent() @trusted
+        int popIndent() @safe
         {
             enforce(indents_.length > 0,
                     new YAMLException("Emitter: Need to pop an indent level but there" ~
@@ -288,7 +288,7 @@ struct Emitter
         }
 
         ///Increase indentation level.
-        void increaseIndent(const Flag!"flow" flow = No.flow, const bool indentless = false) @trusted
+        void increaseIndent(const Flag!"flow" flow = No.flow, const bool indentless = false) @safe
         {
             indents_ ~= indent_;
             if(indent_ == -1)
