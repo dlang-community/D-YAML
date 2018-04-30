@@ -134,7 +134,7 @@ final class Parser
 
     public:
         ///Construct a Parser using specified Scanner.
-        this(Scanner scanner) @trusted
+        this(Scanner scanner) @safe
         {
             state_ = &parseStreamStart;
             scanner_ = scanner;
@@ -226,7 +226,7 @@ final class Parser
 
     private:
         ///Pop and return the newest state in states_.
-        Event delegate() @safe popState() @trusted
+        Event delegate() @safe popState() @safe
         {
             enforce(states_.length > 0,
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
@@ -236,7 +236,7 @@ final class Parser
         }
 
         ///Pop and return the newest mark in marks_.
-        Mark popMark() @trusted
+        Mark popMark() @safe
         {
             enforce(marks_.length > 0,
                     new YAMLException("Parser: Need to pop mark but no marks left to pop"));
@@ -260,7 +260,7 @@ final class Parser
         }
 
         /// Parse implicit document start, unless explicit detected: if so, parse explicit.
-        Event parseImplicitDocumentStart() @trusted
+        Event parseImplicitDocumentStart() @safe
         {
             // Parse an implicit document.
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
@@ -278,7 +278,7 @@ final class Parser
         }
 
         ///Parse explicit document start.
-        Event parseDocumentStart() @trusted
+        Event parseDocumentStart() @safe
         {
             //Parse any extra document end indicators.
             while(scanner_.checkToken(TokenID.DocumentEnd)){scanner_.getToken();}
@@ -654,7 +654,7 @@ final class Parser
         ///block_sequence ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
 
         ///Parse an entry of a block sequence. If first is true, this is the first entry.
-        Event parseBlockSequenceEntry(Flag!"first" first)() @trusted
+        Event parseBlockSequenceEntry(Flag!"first" first)() @safe
         {
             static if(first){marks_ ~= scanner_.getToken().startMark;}
 
@@ -688,7 +688,7 @@ final class Parser
         ///indentless_sequence ::= (BLOCK-ENTRY block_node?)+
 
         ///Parse an entry of an indentless sequence.
-        Event parseIndentlessSequenceEntry() @trusted
+        Event parseIndentlessSequenceEntry() @safe
         {
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
@@ -718,7 +718,7 @@ final class Parser
          */
 
         ///Parse a key in a block mapping. If first is true, this is the first key.
-        Event parseBlockMappingKey(Flag!"first" first)() @trusted
+        Event parseBlockMappingKey(Flag!"first" first)() @safe
         {
             static if(first){marks_ ~= scanner_.getToken().startMark;}
 
@@ -751,7 +751,7 @@ final class Parser
         }
 
         ///Parse a value in a block mapping.
-        Event parseBlockMappingValue() @trusted
+        Event parseBlockMappingValue() @safe
         {
             if(scanner_.checkToken(TokenID.Value))
             {
@@ -785,7 +785,7 @@ final class Parser
          */
 
         ///Parse an entry in a flow sequence. If first is true, this is the first entry.
-        Event parseFlowSequenceEntry(Flag!"first" first)() @trusted
+        Event parseFlowSequenceEntry(Flag!"first" first)() @safe
         {
             static if(first){marks_ ~= scanner_.getToken().startMark;}
 
@@ -827,7 +827,7 @@ final class Parser
         }
 
         ///Parse a key in flow context.
-        Event parseFlowKey(in Event delegate() @safe nextState) @trusted
+        Event parseFlowKey(in Event delegate() @safe nextState) @safe
         {
             const token = scanner_.getToken();
 
@@ -850,7 +850,7 @@ final class Parser
 
         ///Parse a mapping value in a flow context.
         Event parseFlowValue(TokenID checkId, in Event delegate() @safe nextState)
-            @trusted
+            @safe
         {
             if(scanner_.checkToken(TokenID.Value))
             {
@@ -893,7 +893,7 @@ final class Parser
          */
 
         ///Parse a key in a flow mapping.
-        Event parseFlowMappingKey(Flag!"first" first)() @trusted
+        Event parseFlowMappingKey(Flag!"first" first)() @safe
         {
             static if(first){marks_ ~= scanner_.getToken().startMark;}
 
