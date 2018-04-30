@@ -17,7 +17,7 @@ struct Color
    }
 }
 
-Color constructColorScalar(ref Node node)
+Color constructColorScalar(ref Node node) @safe
 {
     string value = node.as!string;
 
@@ -52,7 +52,7 @@ Color constructColorScalar(ref Node node)
     return result;
 }
 
-Color constructColorMapping(ref Node node)
+Color constructColorMapping(ref Node node) @safe
 {
     ubyte r,g,b;
 
