@@ -50,7 +50,7 @@ ubyte[] readData(string filename) @trusted
 
 @safe unittest
 {
-    writeln("D:YAML Reader unittest");
+    printProgress("D:YAML Reader unittest");
     run("testStreamError", &testStreamError, ["stream-error"]);
 }
 

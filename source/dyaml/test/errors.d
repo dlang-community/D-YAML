@@ -83,7 +83,7 @@ void testLoaderErrorSingle(string errorFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML Errors unittest");
+    printProgress("D:YAML Errors unittest");
     run("testLoaderError",         &testLoaderError,         ["loader-error"]);
     run("testLoaderErrorString",   &testLoaderErrorString,   ["loader-error"]);
     run("testLoaderErrorFilename", &testLoaderErrorFilename, ["loader-error"]);

@@ -193,7 +193,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
 
 @system unittest
 {
-    writeln("D:YAML Emitter unittest");
+    printProgress("D:YAML Emitter unittest");
     run("testEmitterOnData",      &testEmitterOnData,      ["data", "canonical"]);
     run("testEmitterOnCanonical", &testEmitterOnCanonical, ["canonical"]);
     run("testEmitterStyles",      &testEmitterStyles,      ["data", "canonical"]);

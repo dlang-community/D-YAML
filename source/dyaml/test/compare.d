@@ -62,7 +62,7 @@ void testLoader(string dataFilename, string canonicalFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML comparison unittest");
+    printProgress("D:YAML comparison unittest");
     run("testParser", &testParser, ["data", "canonical"]);
     run("testLoader", &testLoader, ["data", "canonical"], ["test_loader_skip"]);
 }

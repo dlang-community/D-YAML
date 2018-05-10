@@ -19,7 +19,6 @@ import std.container;
 import std.conv;
 import std.datetime;
 import std.exception;
-import std.stdio;
 import std.regex;
 import std.string;
 import std.typecons;
@@ -613,8 +612,6 @@ SysTime constructTimestamp(ref Node node) @safe
 }
 @safe unittest
 {
-    writeln("D:YAML construction timestamp unittest");
-
     string timestamp(string value)
     {
         auto node = Node(value);
@@ -682,8 +679,6 @@ Node.Pair[] constructOrderedMap(ref Node node) @safe
 }
 @safe unittest
 {
-    writeln("D:YAML construction ordered map unittest");
-
     alias Node.Pair Pair;
 
     Node[] alternateTypes(uint length) @safe
@@ -750,8 +745,6 @@ Node[] constructSet(ref Node node) @safe
 }
 @safe unittest
 {
-    writeln("D:YAML construction set unittest");
-
     Node.Pair[] set(uint length) @safe
     {
         Node.Pair[] pairs;

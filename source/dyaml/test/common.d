@@ -24,8 +24,18 @@ import std.typecons;
 
 package:
 
-debug(verbose) enum verbose = true;
-else enum verbose = false;
+debug(verbose)
+{
+    enum verbose = true;
+    enum quiet = false;
+}
+else
+{
+    enum verbose = false;
+    debug(noisy) enum quiet = false;
+    else enum quiet = true;
+}
+
 /**
  * Run an unittest.
  *
@@ -73,6 +83,14 @@ void run(D)(string testName, D testFunction,
 void printException(YAMLException e) @trusted
 {
         static if(verbose) { writeln(typeid(e).toString(), "\n", e); }
+}
+
+void printProgress(T...)(T params) @safe
+{
+    static if(!quiet)
+    {
+        writeln(params);
+    }
 }
 
 private:
@@ -157,7 +175,7 @@ Result execute(D)(const string testName, D testFunction,
         F parameters;
         stringsToTuple!(F.length - 1, F)(parameters, filenames);
         testFunction(parameters);
-        static if(!verbose){write(".");}
+        static if (!quiet){write(".");}
     }
     catch(Throwable e)
     {
@@ -178,7 +196,7 @@ Result execute(D)(const string testName, D testFunction,
  */
 void display(Result[] results) @safe
 {
-    if(results.length > 0 && !verbose){write("\n");}
+    if(results.length > 0 && !verbose && !quiet){write("\n");}
 
     size_t failures = 0;
     size_t errors = 0;
@@ -205,8 +223,8 @@ void display(Result[] results) @safe
     }
 
     //Totals.
-    writeln("===========================================================================");
-    writeln("TESTS: ", results.length);
+    printProgress("===========================================================================");
+    printProgress("TESTS: ", results.length);
     if(failures > 0){writeln("FAILURES: ", failures);}
     if(errors > 0)  {writeln("ERRORS: ", errors);}
 }

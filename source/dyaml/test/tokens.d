@@ -86,7 +86,7 @@ void testScanner(string dataFilename, string canonicalFilename) @safe
 
 @safe unittest
 {
-    writeln("D:YAML tokens unittest");
+    printProgress("D:YAML tokens unittest");
     run("testTokens",  &testTokens, ["data", "tokens"]);
     run("testScanner", &testScanner, ["data", "canonical"]);
 }

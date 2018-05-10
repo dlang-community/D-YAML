@@ -15,7 +15,6 @@ import std.algorithm;
 import std.array;
 import std.conv;
 import std.exception;
-import std.stdio;
 import std.string;
 import std.system;
 import std.typecons;
@@ -975,7 +974,6 @@ size_t countASCII(const(char)[] buffer) @trusted pure nothrow @nogc
 
 void testEndian(R)()
 {
-    writeln(typeid(R).toString() ~ ": endian unittest");
     void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
     {
         auto reader = new R(data);
@@ -991,7 +989,6 @@ void testEndian(R)()
 void testPeekPrefixForward(R)()
 {
     import std.encoding;
-    writeln(typeid(R).toString() ~ ": peek/prefix/forward unittest");
     ubyte[] data = bomTable[BOM.utf8].sequence ~ cast(ubyte[])"data";
     auto reader = new R(data);
     assert(reader.peek() == 'd');
@@ -1009,7 +1006,6 @@ void testPeekPrefixForward(R)()
 void testUTF(R)()
 {
     import std.encoding;
-    writeln(typeid(R).toString() ~ ": UTF formats unittest");
     dchar[] data = cast(dchar[])"data";
     void utf_test(T)(T[] data, BOM bom)
     {
@@ -1028,7 +1024,6 @@ void testUTF(R)()
 
 void test1Byte(R)()
 {
-    writeln(typeid(R).toString() ~ ": 1 byte file unittest");
     ubyte[] data = [97];
 
     auto reader = new R(data);

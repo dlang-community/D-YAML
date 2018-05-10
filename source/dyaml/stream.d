@@ -57,9 +57,9 @@ class YFile : YStream
 
     @system unittest
     {
-        import std.stdio : stdout;
-        auto stream = new YFile(stdout);
-        stream.write("Test writing to stdout through YFile stream\n");
+        import std.stdio : File;
+        auto stream = new YFile(File.tmpfile);
+        stream.write("Test writing to tmpFile through YFile stream\n");
     }
 
     void writeExact(const void* buffer, size_t size)
