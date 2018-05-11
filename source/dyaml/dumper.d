@@ -50,8 +50,6 @@ struct Dumper(Range)
 
         //Stream to write to.
         Range stream_;
-        //True if this Dumper owns stream_ and needs to destroy it in the destructor.
-        bool weOwnStream_;
 
         //Write scalars in canonical form?
         bool canonical_;
@@ -91,12 +89,6 @@ struct Dumper(Range)
             representer_ = new Representer();
             stream_ = stream;
         }
-
-        ///Destroy the Dumper.
-        //@trusted ~this()
-        //{
-        //    if(weOwnStream_) { destroy(stream_); }
-        //}
 
         ///Set stream _name. Used in debugging messages.
         @property void name(string name) pure @safe nothrow
