@@ -196,7 +196,7 @@ struct Dumper(Range)
         ///
         @safe unittest
         {
-            Dumper!OutBuffer dumper = Dumper(new OutBuffer());
+            auto dumper = dumper(new OutBuffer());
             string[string] directives;
             directives["!short!"] = "tag:long.org,2011:";
             //This will emit tags starting with "tag:long.org,2011"
