@@ -59,12 +59,12 @@ void testRepresenterTypes(string codeFilename) @safe
         dumper.encoding    = encoding;
         dumper.dump(expectedNodes);
 
-        output = emitStream.data;
+        output = emitStream.toBytes;
         auto constructor = new Constructor;
         constructor.addConstructorMapping("!tag1", &constructClass);
         constructor.addConstructorScalar("!tag2", &constructStruct);
 
-        auto loader        = Loader.fromBuffer(emitStream.data);
+        auto loader        = Loader.fromBuffer(emitStream.toBytes);
         loader.name        = "TEST";
         loader.constructor = constructor;
         readNodes          = loader.loadAll();

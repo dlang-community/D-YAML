@@ -35,6 +35,11 @@ import dyaml.tagdirective;
  *
  * Setters are provided to affect output details (style, encoding, etc.).
  */
+auto dumper(Range)(auto ref Range output)
+{
+    return Dumper!Range(output);
+}
+
 struct Dumper(Range)
 {
     private:
@@ -79,25 +84,7 @@ struct Dumper(Range)
          * Construct a Dumper writing to a file.
          *
          * Params: filename = File name to write to.
-         *
-         * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        //this(string filename) @safe
-        //{
-        //    name_ = filename;
-        //    //try{this(new File(filename, FileMode.OutNew));}
-        //    try{this(new YFile(filename));}
-        //    //catch(StreamException e)
-        //    catch(Exception e)
-        //    {
-        //        throw new YAMLException("Unable to open file " ~ filename ~
-        //                                " for YAML dumping: " ~ e.msg);
-        //    }
-        //    // need to destroy the File we constructed.
-        //    weOwnStream_ = true;
-        //}
-
-        ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
         this(Range stream) @safe
         {
             resolver_    = new Resolver();
@@ -286,23 +273,23 @@ struct Dumper(Range)
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    Dumper!OutBuffer(new OutBuffer()).dump(node);
+    dumper(new OutBuffer()).dump(node);
 }
 ///Write multiple YAML documents to a file
 @safe unittest
 {
     auto node1 = Node([1, 2, 3, 4, 5]);
     auto node2 = Node("This document contains only one string");
-    Dumper!OutBuffer(new OutBuffer()).dump(node1, node2);
+    dumper(new OutBuffer()).dump(node1, node2);
     //Or with an array:
-    Dumper!OutBuffer(new OutBuffer()).dump([node1, node2]);
+    dumper(new OutBuffer()).dump([node1, node2]);
 }
 ///Write to memory
 @safe unittest
 {
     auto stream = new OutBuffer();
     auto node = Node([1, 2, 3, 4, 5]);
-    Dumper!OutBuffer(stream).dump(node);
+    dumper(stream).dump(node);
 }
 ///Use a custom representer/resolver to support custom data types and/or implicit tags
 @safe unittest
@@ -311,7 +298,7 @@ struct Dumper(Range)
     auto representer = new Representer();
     auto resolver = new Resolver();
     //Add representer functions / resolver expressions here...
-    auto dumper = Dumper!OutBuffer(new OutBuffer());
+    auto dumper = dumper(new OutBuffer());
     dumper.representer = representer;
     dumper.resolver = resolver;
     dumper.dump(node);
@@ -319,30 +306,30 @@ struct Dumper(Range)
 // Explicit document start/end markers
 @safe unittest
 {
-    auto stream = new YMemoryStream();
+    auto stream = new OutBuffer();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = Dumper(stream);
+    auto dumper = dumper(stream);
     dumper.explicitEnd = true;
     dumper.explicitStart = true;
     dumper.YAMLVersion = null;
     dumper.dump(node);
     //Skip version string
-    assert(stream.data[0..3] == "---");
+    assert(stream.toString[0..3] == "---");
     //account for newline at end
-    assert(stream.data[$-4..$-1] == "...");
+    assert(stream.toString[$-4..$-1] == "...");
 }
 // No explicit document start/end markers
 @safe unittest
 {
-    auto stream = new YMemoryStream();
+    auto stream = new OutBuffer();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = Dumper(stream);
+    auto dumper = dumper(stream);
     dumper.explicitEnd = false;
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;
     dumper.dump(node);
     //Skip version string
-    assert(stream.data[0..3] != "---");
+    assert(stream.toString[0..3] != "---");
     //account for newline at end
-    assert(stream.data[$-4..$-1] != "...");
+    assert(stream.toString[$-4..$-1] != "...");
 }
