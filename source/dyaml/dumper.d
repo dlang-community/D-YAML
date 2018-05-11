@@ -15,7 +15,6 @@ module dyaml.dumper;
 import std.typecons;
 import std.outbuffer;
 
-import dyaml.stream;
 import dyaml.emitter;
 import dyaml.encoding;
 import dyaml.event;
@@ -320,7 +319,6 @@ struct Dumper(Range)
 // Explicit document start/end markers
 @safe unittest
 {
-    import dyaml.stream;
     auto stream = new YMemoryStream();
     auto node = Node([1, 2, 3, 4, 5]);
     auto dumper = Dumper(stream);
@@ -336,7 +334,6 @@ struct Dumper(Range)
 // No explicit document start/end markers
 @safe unittest
 {
-    import dyaml.stream;
     auto stream = new YMemoryStream();
     auto node = Node([1, 2, 3, 4, 5]);
     auto dumper = Dumper(stream);

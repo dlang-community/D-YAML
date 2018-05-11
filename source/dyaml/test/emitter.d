@@ -16,7 +16,6 @@ import std.outbuffer;
 import std.range;
 import std.typecons;
 
-import dyaml.stream;
 import dyaml.dumper;
 import dyaml.event;
 import dyaml.test.common;

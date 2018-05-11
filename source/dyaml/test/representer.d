@@ -50,8 +50,6 @@ void testRepresenterTypes(string codeFilename) @safe
             }
         }
 
-        import dyaml.stream;
-
         auto emitStream  = new OutBuffer;
         auto representer = new Representer;
         representer.addRepresenter!TestClass(&representClass);

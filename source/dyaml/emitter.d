@@ -23,7 +23,6 @@ import std.system;
 import std.typecons;
 import std.utf;
 
-import dyaml.stream;
 import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;

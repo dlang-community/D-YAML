@@ -15,7 +15,6 @@ import std.file;
 import std.system;
 
 import dyaml.test.common;
-import dyaml.stream;
 
 /// Get an UTF-16 byte order mark.
 ///
