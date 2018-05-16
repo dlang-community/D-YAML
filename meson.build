@@ -1,7 +1,7 @@
 project('D-YAML', 'd',
     meson_version: '>=0.40.0',
     subproject_dir: 'contrib',
-    version: '0.6.2'
+    version: '0.6.5'
 )
 
 project_soversion    = '0'
