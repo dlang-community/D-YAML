@@ -36,6 +36,7 @@ script:
   - "dub build dyaml:getting-started"
   - "dub build dyaml:representer"
   - "dub build dyaml:resolver"
+  - "dub build dyaml:tojson"
   - "dub build dyaml:yaml_gen"
   - "dub build dyaml:yaml_stats"
   - dub test --build=unittest-cov

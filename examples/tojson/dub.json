@@ -1,0 +1,8 @@
+{
+    "name": "tojson",
+    "targetType": "executable",
+    "dependencies":
+    {
+        "dyaml": "*"
+    }
+}
