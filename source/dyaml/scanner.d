@@ -229,7 +229,7 @@ final class Scanner
 
     private:
         /// Build an error message in msgBuffer_ and return it as a string.
-        string buildMsg(S ...)(S args) @trusted
+        string buildMsg(S ...)(S args)
         {
             try {
                 return text(args);
