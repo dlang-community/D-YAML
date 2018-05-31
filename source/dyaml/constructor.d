@@ -159,6 +159,7 @@ final class Constructor
                 return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
             }
 
+            import dyaml.loader : Loader;
             auto loader = Loader.fromString("!mystruct 12:34:56");
             auto constructor = new Constructor;
             constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
@@ -178,34 +179,37 @@ final class Constructor
             (*delegates!(Node[]))[t] = deleg;
         }
         ///
-        @safe unittest {
-             static struct MyStruct
-             {
-                 int x, y, z;
+        @safe unittest
+        {
+            static struct MyStruct
+            {
+                int x, y, z;
 
-                 //Any D:YAML type must have a custom opCmp operator.
-                 //This is used for ordering in mappings.
-                 const int opCmp(ref const MyStruct s)
-                 {
-                     if(x != s.x){return x - s.x;}
-                     if(y != s.y){return y - s.y;}
-                     if(z != s.z){return z - s.z;}
-                     return 0;
-                 }
-             }
+                //Any D:YAML type must have a custom opCmp operator.
+                //This is used for ordering in mappings.
+                const int opCmp(ref const MyStruct s)
+                {
+                    if(x != s.x){return x - s.x;}
+                    if(y != s.y){return y - s.y;}
+                    if(z != s.z){return z - s.z;}
+                    return 0;
+                }
+            }
 
-             static MyStruct constructMyStructSequence(ref Node node) @safe
-             {
-                 //node is guaranteed to be sequence.
-                 //!mystruct [x, y, z]
-                 return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-             }
-             auto loader = Loader.fromString("!mystruct [1,2,3]");
-             auto constructor = new Constructor;
-             constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-             loader.constructor = constructor;
-             Node node = loader.load();
-             assert(node.get!MyStruct == MyStruct(1, 2, 3));
+            static MyStruct constructMyStructSequence(ref Node node) @safe
+            {
+                //node is guaranteed to be sequence.
+                //!mystruct [x, y, z]
+                return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
+            }
+
+            import dyaml.loader : Loader;
+            auto loader = Loader.fromString("!mystruct [1,2,3]");
+            auto constructor = new Constructor;
+            constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
+            loader.constructor = constructor;
+            Node node = loader.load();
+            assert(node.get!MyStruct == MyStruct(1, 2, 3));
          }
 
         /** Add a constructor function from a mapping.
@@ -241,6 +245,8 @@ final class Constructor
                 //!mystruct {"x": x, "y": y, "z": z}
                 return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
             }
+
+            import dyaml.loader : Loader;
             auto loader = Loader.fromString(`!mystruct {"x": 11, "y": 22, "z": 33}`);
             auto constructor = new Constructor;
             constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
@@ -332,6 +338,101 @@ final class Constructor
         }
 }
 
+///Construct a struct from a scalar
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+    }
+
+    static MyStruct constructMyStructScalar(ref Node node) @safe
+    {
+        // Guaranteed to be string as we construct from scalar.
+        auto parts = node.as!string().split(":");
+        return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
+    }
+
+    import dyaml.loader : Loader;
+    string data = "!mystruct 1:2:3";
+    auto loader = Loader.fromString(data);
+    auto constructor = new Constructor;
+    constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
+    loader.constructor = constructor;
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+}
+///Construct a struct from a sequence
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+    }
+    static MyStruct constructMyStructSequence(ref Node node) @safe
+    {
+        // node is guaranteed to be sequence.
+        return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
+    }
+
+    import dyaml.loader : Loader;
+    string data = "!mystruct [1, 2, 3]";
+    auto loader = Loader.fromString(data);
+    auto constructor = new Constructor;
+    constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
+    loader.constructor = constructor;
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+}
+///Construct a struct from a mapping
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+    }
+    static MyStruct constructMyStructMapping(ref Node node) @safe
+    {
+        // node is guaranteed to be mapping.
+        return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
+    }
+
+    import dyaml.loader : Loader;
+    string data = "!mystruct {x: 1, y: 2, z: 3}";
+    auto loader = Loader.fromString(data);
+    auto constructor = new Constructor;
+    constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
+    loader.constructor = constructor;
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+}
 
 /// Construct a _null _node.
 YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc
@@ -794,78 +895,4 @@ Node.Pair[] constructMap(ref Node node) @safe
         keys.insert(pair.key);
     }
     return pairs;
-}
-
-
-// Unittests
-private:
-
-import dyaml.loader;
-
-struct MyStruct
-{
-    int x, y, z;
-
-    int opCmp(ref const MyStruct s) const pure @safe nothrow
-    {
-        if(x != s.x){return x - s.x;}
-        if(y != s.y){return y - s.y;}
-        if(z != s.z){return z - s.z;}
-        return 0;
-    }
-}
-
-MyStruct constructMyStructScalar(ref Node node) @safe
-{
-    // Guaranteed to be string as we construct from scalar.
-    auto parts = node.as!string().split(":");
-    return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-}
-
-MyStruct constructMyStructSequence(ref Node node) @safe
-{
-    // node is guaranteed to be sequence.
-    return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-}
-
-MyStruct constructMyStructMapping(ref Node node) @safe
-{
-    // node is guaranteed to be mapping.
-    return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-}
-
-@safe unittest
-{
-    string data = "!mystruct 1:2:3";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-    loader.constructor = constructor;
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
-}
-
-@safe unittest
-{
-    string data = "!mystruct [1, 2, 3]";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-    loader.constructor = constructor;
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
-}
-
-@safe unittest
-{
-    string data = "!mystruct {x: 1, y: 2, z: 3}";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-    loader.constructor = constructor;
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
 }
