@@ -30,7 +30,7 @@ ScalarStyle scalarStyleHack(ref const(Node) node) @safe nothrow
 @safe unittest
 {
     import dyaml;
-    Node node = Loader.fromString(`"42"`.dup).load(); // loaded from a file
+    Node node = Loader.fromString(`"42"`).load(); // loaded from a file
     if(node.isScalar)
     {
         assert(node.scalarStyleHack() == ScalarStyle.DoubleQuoted);

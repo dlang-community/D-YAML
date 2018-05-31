@@ -83,7 +83,7 @@ void main()
        resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                     "0123456789abcdefABCDEF");
 
-       auto loader = Loader("input.yaml");
+       auto loader = Loader.fromFile("input.yaml");
        loader.constructor = constructor;
        loader.resolver = resolver;
 

@@ -90,7 +90,7 @@ void main(string[] args)
         writeln("------------------------------------------------------------");
         try
         {
-            auto loader = Loader(file);
+            auto loader = Loader.fromFile(file);
 
             size_t idx = 0;
             foreach(ref document; loader)

@@ -4,7 +4,7 @@ import dyaml;
 void main()
 {
     //Read the input.
-    Node root = Loader("input.yaml").load();
+    Node root = Loader.fromFile("input.yaml").load();
 
     //Display the data read.
     foreach(string word; root["Hello World"])

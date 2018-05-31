@@ -54,13 +54,13 @@ void testUnicodeInput(string unicodeFilename) @safe
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
 
-    Node output = Loader(cast(void[])data.to!(char[])).load();
+    Node output = Loader.fromBuffer(cast(ubyte[])data.to!(char[])).load();
     assert(output.as!string == expected);
 
-    foreach(buffer; [cast(void[])(bom16() ~ data.to!(wchar[])),
-                     cast(void[])(bom32() ~ data.to!(dchar[]))])
+    foreach(buffer; [cast(ubyte[])(bom16() ~ data.to!(wchar[])),
+                     cast(ubyte[])(bom32() ~ data.to!(dchar[]))])
     {
-        output = Loader(buffer).load();
+        output = Loader.fromBuffer(buffer).load();
         assert(output.as!string == expected);
     }
 }
@@ -71,12 +71,12 @@ void testUnicodeInput(string unicodeFilename) @safe
 void testUnicodeInputErrors(string unicodeFilename) @safe
 {
     string data = readText(unicodeFilename);
-    foreach(buffer; [cast(void[])(data.to!(wchar[])),
-                     cast(void[])(data.to!(dchar[])),
-                     cast(void[])(bom16(true) ~ data.to!(wchar[])),
-                     cast(void[])(bom32(true) ~ data.to!(dchar[]))])
+    foreach(buffer; [cast(ubyte[])(data.to!(wchar[])),
+                     cast(ubyte[])(data.to!(dchar[])),
+                     cast(ubyte[])(bom16(true) ~ data.to!(wchar[])),
+                     cast(ubyte[])(bom32(true) ~ data.to!(dchar[]))])
     {
-        try { Loader(buffer).load(); }
+        try { Loader.fromBuffer(buffer).load(); }
         catch(YAMLException e)
         {
             printException(e);

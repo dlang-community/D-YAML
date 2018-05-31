@@ -106,7 +106,7 @@ final class Resolver
 
             write("example.yaml", "A");
 
-            auto loader = Loader("example.yaml");
+            auto loader = Loader.fromFile("example.yaml");
             auto resolver = new Resolver();
             resolver.addImplicitResolver("!tag", regex("A.*"), "A");
             loader.resolver = resolver;

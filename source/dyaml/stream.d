@@ -96,8 +96,8 @@ class YFile : YStream
     import dyaml.dumper, dyaml.loader, dyaml.node;
     import std.file : readText, remove;
 
-    char[] test =  ("Hello World : [Hello, World]\n" ~
-                    "Answer: 42").dup;
+    string test =  "Hello World : [Hello, World]\n" ~
+                    "Answer: 42";
     //Read the input.
     Node expected = Loader.fromString(test).load();
     assert(expected["Hello World"][0] == "Hello");
@@ -108,7 +108,7 @@ class YFile : YStream
     Dumper("output.yaml").dump(expected);
 
     // Load the file and verify that it was saved correctly.
-    Node actual = Loader("output.yaml").load();
+    Node actual = Loader.fromFile("output.yaml").load();
     assert(actual["Hello World"][0] == "Hello");
     assert(actual["Hello World"][1] == "World");
     assert(actual["Answer"].as!int == 42);
@@ -128,7 +128,7 @@ class YFile : YStream
 
     auto dumper = Dumper(fn);
     dumper.YAMLVersion = null; // supress directive
-    dumper.dump(Loader.fromString("Hello world".dup).load);
+    dumper.dump(Loader.fromString("Hello world").load);
 
     assert (fn.read()[0..3] == "Hel");
 }
