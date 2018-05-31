@@ -100,17 +100,6 @@ final class Constructor
             addConstructorScalar("tag:yaml.org,2002:merge",     &constructMerge);
         }
 
-        /// Destroy the constructor.
-        @nogc pure @safe nothrow ~this()
-        {
-            fromScalar_.destroy();
-            fromScalar_ = null;
-            fromSequence_.destroy();
-            fromSequence_ = null;
-            fromMapping_.destroy();
-            fromMapping_ = null;
-        }
-
         /** Add a constructor function from scalar.
          *
          * The function must take a reference to $(D Node) to construct from.

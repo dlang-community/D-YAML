@@ -126,13 +126,6 @@ struct Loader
             }
         }
 
-        /// Destroy the Loader.
-        @trusted ~this()
-        {
-            reader_.destroy();
-            scanner_.destroy();
-            parser_.destroy();
-        }
 
         /// Set stream _name. Used in debugging messages.
         void name(string name) pure @safe nothrow @nogc

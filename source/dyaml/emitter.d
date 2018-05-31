@@ -29,7 +29,6 @@ import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;
 import dyaml.exception;
-import dyaml.fastcharsearch;
 import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.queue;
@@ -61,11 +60,13 @@ struct ScalarAnalysis
            "allowSingleQuoted", "allowDoubleQuoted", "allowBlock", "isNull") flags;
 }
 
-///Quickly determines if a character is a newline.
-private mixin FastCharSearch!"\n\u0085\u2028\u2029"d newlineSearch_;
+private alias isNewLine = among!('\n', '\u0085', '\u2028', '\u2029');
 
-// override the canFind added by the FastCharSearch mixins
-private alias canFind = std.algorithm.canFind;
+private alias isSpecialChar = among!('#', ',', '[', ']', '{', '}', '&', '*', '!', '|', '>', '\\', '\'', '"', '%', '@', '`');
+
+private alias isFlowIndicator = among!(',', '?', '[', ']', '{', '}');
+
+private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', ' ', '\t');
 
 //Emits YAML events into a file/stream.
 struct Emitter
@@ -1036,14 +1037,11 @@ struct Emitter
 
             foreach(const size_t index, const dchar c; scalar)
             {
-                mixin FastCharSearch!("#,[]{}&*!|>\'\"%@`"d, 128) specialCharSearch;
-                mixin FastCharSearch!(",?[]{}"d, 128) flowIndicatorSearch;
-
                 //Check for indicators.
                 if(index == 0)
                 {
                     //Leading indicators are special characters.
-                    if(specialCharSearch.canFind(c))
+                    if(c.isSpecialChar)
                     {
                         flowIndicators = blockIndicators = true;
                     }
@@ -1060,7 +1058,7 @@ struct Emitter
                 else
                 {
                     //Some indicators cannot appear within a scalar as well.
-                    if(flowIndicatorSearch.canFind(c)){flowIndicators = true;}
+                    if(c.isFlowIndicator){flowIndicators = true;}
                     if(c == ':')
                     {
                         flowIndicators = true;
@@ -1073,7 +1071,7 @@ struct Emitter
                 }
 
                 //Check for line breaks, special, and unicode characters.
-                if(newlineSearch_.canFind(c)){lineBreaks = true;}
+                if(c.isNewLine){lineBreaks = true;}
                 if(!(c == '\n' || (c >= '\x20' && c <= '\x7E')) &&
                    !((c == '\u0085' || (c >= '\xA0' && c <= '\uD7FF') ||
                      (c >= '\uE000' && c <= '\uFFFD')) && c != '\uFEFF'))
@@ -1090,7 +1088,7 @@ struct Emitter
                     previousSpace = true;
                     previousBreak = false;
                 }
-                else if(newlineSearch_.canFind(c))
+                else if(c.isNewLine)
                 {
                     if(index == 0){leadingBreak = true;}
                     if(index == scalar.length - 1){trailingBreak = true;}
@@ -1103,11 +1101,10 @@ struct Emitter
                     previousSpace = previousBreak = false;
                 }
 
-                mixin FastCharSearch! "\0\n\r\u0085\u2028\u2029 \t"d spaceSearch;
                 //Prepare for the next character.
-                preceededByWhitespace = spaceSearch.canFind(c);
+                preceededByWhitespace = c.isSpace != 0;
                 followedByWhitespace = index + 2 >= scalar.length ||
-                                       spaceSearch.canFind(scalar[index + 2]);
+                                       scalar[index + 2].isSpace;
             }
 
             with(analysis.flags)
@@ -1347,14 +1344,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         emitter_.writeIndent();
                     }
                 }
-                else if((c == dcharNone || c == '\'' || c == ' ' || newlineSearch_.canFind(c))
+                else if((c == dcharNone || c == '\'' || c == ' ' || c.isNewLine)
                         && startChar_ < endChar_)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
@@ -1448,7 +1445,7 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         if(!leadingSpace && c != dcharNone && c != ' ')
                         {
@@ -1471,7 +1468,7 @@ struct ScalarWriter
                         writeCurrentRange(Flag!"UpdateColumn".yes);
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c) || c == ' ')
+                else if(c == dcharNone || c.isNewLine || c == ' ')
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1492,13 +1489,13 @@ struct ScalarWriter
                 const dchar c = nextChar();
                 if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeLineBreaks();
                         if(c != dcharNone){emitter_.writeIndent();}
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c))
+                else if(c == dcharNone || c.isNewLine)
                 {
                     writeCurrentRange(Flag!"UpdateColumn".no);
                     if(c == dcharNone){emitter_.writeLineBreak();}
@@ -1538,14 +1535,14 @@ struct ScalarWriter
                 }
                 else if(breaks_)
                 {
-                    if(!newlineSearch_.canFind(c))
+                    if(!c.isNewLine)
                     {
                         writeStartLineBreak();
                         writeLineBreaks();
                         writeIndent(Flag!"ResetSpace".yes);
                     }
                 }
-                else if(c == dcharNone || newlineSearch_.canFind(c) || c == ' ')
+                else if(c == dcharNone || c.isNewLine || c == ' ')
                 {
                     writeCurrentRange(Flag!"UpdateColumn".yes);
                 }
@@ -1600,15 +1597,15 @@ struct ScalarWriter
             const last = lastChar(text_, end);
             const secondLast = end > 0 ? lastChar(text_, end) : 0;
 
-            if(newlineSearch_.canFind(text_[0]) || text_[0] == ' ')
+            if(text_[0].isNewLine || text_[0] == ' ')
             {
                 hints[hintsIdx++] = cast(char)('0' + bestIndent);
             }
-            if(!newlineSearch_.canFind(last))
+            if(!last.isNewLine)
             {
                 hints[hintsIdx++] = '-';
             }
-            else if(std.utf.count(text_) == 1 || newlineSearch_.canFind(secondLast))
+            else if(std.utf.count(text_) == 1 || secondLast.isNewLine)
             {
                 hints[hintsIdx++] = '+';
             }
@@ -1680,7 +1677,7 @@ struct ScalarWriter
         void updateBreaks(in dchar c, const Flag!"UpdateSpaces" updateSpaces) pure @safe
         {
             if(c == dcharNone){return;}
-            breaks_ = newlineSearch_.canFind(c);
+            breaks_ = (c.isNewLine != 0);
             if(updateSpaces){spaces_ = c == ' ';}
         }
 
