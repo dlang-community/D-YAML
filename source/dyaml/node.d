@@ -209,14 +209,6 @@ struct Node
         static assert(Value.sizeof <= 24, "Unexpected YAML value size");
         static assert(Node.sizeof <= 56, "Unexpected YAML node size");
 
-        // If scalarCtorNothrow!T is true, scalar node ctor from T can be nothrow.
-        //
-        // TODO
-        // Eventually we should simplify this and make all Node constructors except from
-        // user values nothrow (and think even about those user values). 2014-08-28
-        enum scalarCtorNothrow(T) =
-            (is(Unqual!T == string) || isIntegral!T || isFloatingPoint!T) || is(Unqual!T == bool) ||
-            (Value.allowed!T && (!is(Unqual!T == Value) && !isSomeString!T && !isArray!T && !isAssociativeArray!T));
     public:
         /** Construct a Node from a value.
          *
@@ -225,6 +217,12 @@ struct Node
          * more efficiently. To create a node representing a null value,
          * construct it from YAMLNull.
          *
+         * If _array is an _array of nodes or pairs, it is stored directly.
+         * Otherwise, every value in the array is converted to a node, and
+         * those nodes are stored.
+         *
+         * If keys and/or values of _array are nodes, they stored directly.
+         * Otherwise they are converted to nodes and then stored.
          *
          * Note that to emit any non-default types you store
          * in a node, you need a Representer to represent them in YAML -
@@ -239,39 +237,102 @@ struct Node
          *                  a shortcut, like "!!int".
          */
         this(T)(T value, const string tag = null)
-            if(!scalarCtorNothrow!T && (!isArray!T && !isAssociativeArray!T))
+            if(!is(Unqual!T == Node))
         {
             tag_ = tag;
 
-            // No copyconstruction.
-            static assert(!is(Unqual!T == Node));
-
-            enum unexpectedType = "Unexpected type in the non-nothrow YAML node constructor";
             static if(isSomeString!T)             { setValue(value.to!string); }
-            else static if(is(Unqual!T == Value)) { setValue(value); }
-            else static if(Value.allowed!T)       { static assert(false, unexpectedType); }
+            else static if(is(Unqual!T == bool)){ setValue(cast(bool)value); }
+            else static if(isIntegral!T)           { setValue(cast(long)value); }
+            else static if(isFloatingPoint!T) { setValue(cast(real)value); }
+            else static if (isArray!T)
+            {
+                alias ElementT = Unqual!(ElementType!T);
+                // Construction from raw node or pair array.
+                static if(is(ElementT == Node) || is(ElementT == Node.Pair))
+                {
+                    setValue(value);
+                }
+                // Need to handle byte buffers separately.
+                else static if(is(ElementT == byte) || is(ElementT == ubyte))
+                {
+                    setValue(cast(ubyte[]) value);
+                }
+                else
+                {
+                    Node[] nodes;
+                    foreach(ref v; value){nodes ~= Node(v);}
+                    setValue(nodes);
+                }
+            }
+            else static if (isAssociativeArray!T)
+            {
+                Node.Pair[] pairs;
+                foreach(k, ref v; value){pairs ~= Pair(k, v);}
+                setValue(pairs);
+            }
             // User defined type.
             else                                  { setValue(value); }
         }
-        /// Ditto.
-        // Overload for types where we can make this nothrow.
-        this(T)(T value, const string tag = null)
-            if(scalarCtorNothrow!T)
+        /// Construct a scalar node
+        @safe unittest
         {
-            tag_   = tag;
-            // We can easily store ints, floats, strings.
-            static if(isIntegral!T)           { setValue(cast(long)value); }
-            else static if(is(Unqual!T==bool)){ setValue(cast(bool)value); }
-            else static if(isFloatingPoint!T) { setValue(cast(real)value); }
-            // User defined type or plain string.
-            else                              { setValue(value);}
+            // Integer
+            {
+                auto node = Node(5);
+            }
+            // String
+            {
+                auto node = Node("Hello world!");
+            }
+            // Floating point
+            {
+                auto node = Node(5.0f);
+            }
+            // Boolean
+            {
+                auto node = Node(true);
+            }
+            // Time
+            {
+                auto node = Node(SysTime(DateTime(2005, 06, 15, 20, 00, 00), UTC()));
+            }
+            // Integer, dumped as a string
+            {
+                auto node = Node(5, "tag:yaml.org,2002:str");
+            }
+        }
+        /// Construct a sequence node
+        @safe unittest
+        {
+            // Will be emitted as a sequence (default for arrays)
+            {
+                auto seq = Node([1, 2, 3, 4, 5]);
+            }
+            // Will be emitted as a set (overridden tag)
+            {
+                auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
+            }
+            // Can also store arrays of arrays
+            {
+                auto node = Node([[1,2], [3,4]]);
+            }
+        }
+        /// Construct a mapping node
+        @safe unittest
+        {
+            // Will be emitted as an unordered mapping (default for mappings)
+            auto map   = Node([1 : "a", 2 : "b"]);
+            // Will be emitted as an ordered map (overridden tag)
+            auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
+            // Will be emitted as pairs (overridden tag)
+            auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
         @safe unittest
         {
             {
                 auto node = Node(42);
-                assert(node.isScalar && !node.isSequence &&
-                       !node.isMapping && !node.isUserType);
+                assert(node.isScalar && !node.isSequence && !node.isMapping && !node.isUserType);
                 assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
                 assert(!node.isUserType);
             }
@@ -286,54 +347,6 @@ struct Node
             }
         }
 
-        /** Construct a node from an _array.
-         *
-         * If _array is an _array of nodes or pairs, it is stored directly.
-         * Otherwise, every value in the array is converted to a node, and
-         * those nodes are stored.
-         *
-         * Params:  array = Values to store in the node.
-         *          tag   = Overrides tag of the node when emitted, regardless
-         *                  of tag determined by Representer. Representer uses
-         *                  this to determine YAML data type when a D data type
-         *                  maps to multiple different YAML data types.
-         *                  This is used to differentiate between YAML sequences
-         *                  ("!!seq") and sets ("!!set"), which both are
-         *                  internally represented as an array_ of nodes. Tag
-         *                  must be in full form, e.g. "tag:yaml.org,2002:set",
-         *                  not a shortcut, like "!!set".
-         *
-         */
-        this(T)(T[] array, const string tag = null)
-            if (!isSomeString!(T[]))
-        {
-            tag_ = tag;
-
-            // Construction from raw node or pair array.
-            static if(is(Unqual!T == Node) || is(Unqual!T == Node.Pair))
-            {
-                setValue(array);
-            }
-            // Need to handle byte buffers separately.
-            else static if(is(Unqual!T == byte) || is(Unqual!T == ubyte))
-            {
-                setValue(cast(ubyte[]) array);
-            }
-            else
-            {
-                Node[] nodes;
-                foreach(ref value; array){nodes ~= Node(value);}
-                setValue(nodes);
-            }
-        }
-        ///
-        @safe unittest
-        {
-            // Will be emitted as a sequence (default for arrays)
-            auto seq = Node([1, 2, 3, 4, 5]);
-            // Will be emitted as a set (overriden tag)
-            auto set = Node([1, 2, 3, 4, 5], "tag:yaml.org,2002:set");
-        }
         @safe unittest
         {
             with(Node([1, 2, 3]))
@@ -343,43 +356,6 @@ struct Node
                 assert(opIndex(2).as!int == 3);
             }
 
-        }
-
-        /** Construct a node from an associative _array.
-         *
-         * If keys and/or values of _array are nodes, they stored directly.
-         * Otherwise they are converted to nodes and then stored.
-         *
-         * Params:  array = Values to store in the node.
-         *          tag   = Overrides tag of the node when emitted, regardless
-         *                  of tag determined by Representer. Representer uses
-         *                  this to determine YAML data type when a D data type
-         *                  maps to multiple different YAML data types.
-         *                  This is used to differentiate between YAML unordered
-         *                  mappings ("!!map"), ordered mappings ("!!omap"), and
-         *                  pairs ("!!pairs") which are all internally
-         *                  represented as an _array of node pairs. Tag must be
-         *                  in full form, e.g. "tag:yaml.org,2002:omap", not a
-         *                  shortcut, like "!!omap".
-         *
-         */
-        this(K, V)(V[K] array, const string tag = null)
-        {
-            tag_ = tag;
-
-            Node.Pair[] pairs;
-            foreach(key, ref value; array){pairs ~= Pair(key, value);}
-            setValue(pairs);
-        }
-        ///
-        @safe unittest
-        {
-            // Will be emitted as an unordered mapping (default for mappings)
-            auto map   = Node([1 : "a", 2 : "b"]);
-            // Will be emitted as an ordered map (overriden tag)
-            auto omap  = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:omap");
-            // Will be emitted as pairs (overriden tag)
-            auto pairs = Node([1 : "a", 2 : "b"], "tag:yaml.org,2002:pairs");
         }
         @safe unittest
         {
