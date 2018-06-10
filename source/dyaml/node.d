@@ -241,11 +241,26 @@ struct Node
             tag_ = tag;
 
             //Unlike with assignment, we're just copying the value.
-            static if (is(Unqual!T == Node)) {setValue(value.value_); }
-            else static if(isSomeString!T)             { setValue(value.to!string); }
-            else static if(is(Unqual!T == bool)){ setValue(cast(bool)value); }
-            else static if(isIntegral!T)           { setValue(cast(long)value); }
-            else static if(isFloatingPoint!T) { setValue(cast(real)value); }
+            static if (is(Unqual!T == Node))
+            {
+                setValue(value.value_);
+            }
+            else static if(isSomeString!T)
+            {
+                setValue(value.to!string);
+            }
+            else static if(is(Unqual!T == bool))
+            {
+                setValue(cast(bool)value);
+            }
+            else static if(isIntegral!T)
+            {
+                setValue(cast(long)value);
+            }
+            else static if(isFloatingPoint!T)
+            {
+                setValue(cast(real)value);
+            }
             else static if (isArray!T)
             {
                 alias ElementT = Unqual!(ElementType!T);
@@ -262,18 +277,27 @@ struct Node
                 else
                 {
                     Node[] nodes;
-                    foreach(ref v; value){nodes ~= Node(v);}
+                    foreach(ref v; value)
+                    {
+                        nodes ~= Node(v);
+                    }
                     setValue(nodes);
                 }
             }
             else static if (isAssociativeArray!T)
             {
                 Node.Pair[] pairs;
-                foreach(k, ref v; value){pairs ~= Pair(k, v);}
+                foreach(k, ref v; value)
+                {
+                    pairs ~= Pair(k, v);
+                }
                 setValue(pairs);
             }
             // User defined type.
-            else                                  { setValue(value); }
+            else
+            {
+                setValue(value);
+            }
         }
         /// Construct a scalar node
         @safe unittest
