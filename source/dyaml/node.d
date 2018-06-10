@@ -2012,6 +2012,108 @@ struct Node
             else static if(is(Unqual!T==bool)){return isBool();}
             else                             {return false;}
         }
+        /**
+        * Sets the style of this node when dumped.
+        *
+        * Params: style = Any valid style.
+        */
+        void setStyle(CollectionStyle style) @safe
+        {
+            enforce(!isValid || isSequence || isMapping, new NodeException(
+                "Cannot set collection style for non-collection nodes", startMark_));
+            collectionStyle = style;
+        }
+        /// Ditto
+        void setStyle(ScalarStyle style) @safe
+        {
+            enforce(!isValid || (!isSequence && !isMapping), new NodeException(
+                "Cannot set scalar style for non-scalar nodes", startMark_));
+            scalarStyle = style;
+        }
+        ///
+        @safe unittest
+        {
+            import dyaml.dumper;
+            import dyaml.stream;
+            auto stream = new YMemoryStream();
+            auto node = Node([1, 2, 3, 4, 5]);
+            node.setStyle(CollectionStyle.Block);
+
+            auto dumper = Dumper(stream);
+            dumper.dump(node);
+        }
+        ///
+        @safe unittest
+        {
+            import dyaml.dumper;
+            import dyaml.stream;
+            auto stream = new YMemoryStream();
+            auto node = Node(4);
+            node.setStyle(ScalarStyle.Literal);
+
+            auto dumper = Dumper(stream);
+            dumper.dump(node);
+        }
+        @safe unittest
+        {
+            assertThrown!NodeException(Node(4).setStyle(CollectionStyle.Block));
+            assertThrown!NodeException(Node([4]).setStyle(ScalarStyle.Literal));
+        }
+        @safe unittest
+        {
+            import dyaml.dumper;
+            import dyaml.stream;
+            {
+                auto stream = new YMemoryStream();
+                auto node = Node([1, 2, 3, 4, 5]);
+                node.setStyle(CollectionStyle.Block);
+                auto dumper = Dumper(stream);
+                dumper.explicitEnd = false;
+                dumper.explicitStart = false;
+                dumper.YAMLVersion = null;
+                dumper.dump(node);
+
+                //Block style should start with a hyphen.
+                assert(stream.data[0] == '-');
+            }
+            {
+                auto stream = new YMemoryStream();
+                auto node = Node([1, 2, 3, 4, 5]);
+                node.setStyle(CollectionStyle.Flow);
+                auto dumper = Dumper(stream);
+                dumper.explicitEnd = false;
+                dumper.explicitStart = false;
+                dumper.YAMLVersion = null;
+                dumper.dump(node);
+
+                //Flow style should start with a bracket.
+                assert(stream.data[0] == '[');
+            }
+            {
+                auto stream = new YMemoryStream();
+                auto node = Node(1);
+                node.setStyle(ScalarStyle.SingleQuoted);
+                auto dumper = Dumper(stream);
+                dumper.explicitEnd = false;
+                dumper.explicitStart = false;
+                dumper.YAMLVersion = null;
+                dumper.dump(node);
+
+                assert(stream.data == "!!int '1'\n");
+            }
+            {
+                auto stream = new YMemoryStream();
+                auto node = Node(1);
+                node.setStyle(ScalarStyle.DoubleQuoted);
+                auto dumper = Dumper(stream);
+                dumper.explicitEnd = false;
+                dumper.explicitStart = false;
+                dumper.YAMLVersion = null;
+                dumper.dump(node);
+
+                assert(stream.data == "!!int \"1\"\n");
+            }
+        }
 
     private:
         // Implementation of contains() and containsKey().
