@@ -91,7 +91,7 @@ final class Reader
         ///
         /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
-        this(ubyte[] buffer) @trusted pure
+        this(ubyte[] buffer) @safe pure
         {
             auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
