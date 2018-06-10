@@ -297,7 +297,7 @@ void main(string[] args)
         //Generate and dump the nodes.
         Node[] generated = generate(configFile);
 
-        auto dumper     = dumper(File(args[1]).lockingTextWriter);
+        auto dumper     = dumper(File(args[1], "w").lockingTextWriter);
         auto encoding   = config["encoding"];
         dumper.encoding = encoding == "utf-16" ? Encoding.UTF_16:
                           encoding == "utf-32" ? Encoding.UTF_32:
