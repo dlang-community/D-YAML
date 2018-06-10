@@ -15,6 +15,7 @@ import std.algorithm;
 import std.array;
 import std.conv;
 import std.exception;
+import std.range;
 import std.string;
 import std.system;
 import std.typecons;
@@ -915,42 +916,9 @@ bool isPrintableValidUTF8(const char[] chars) @safe pure
 /// Counts the number of ASCII characters in buffer until the first UTF-8 sequence.
 ///
 /// Used to determine how many characters we can process without decoding.
-size_t countASCII(const(char)[] buffer) @trusted pure nothrow @nogc
+size_t countASCII(const(char)[] buffer) @safe pure nothrow @nogc
 {
-    size_t count = 0;
-
-    // The topmost bit in ASCII characters is always 0
-    enum ulong Mask8  = 0x7f7f7f7f7f7f7f7f;
-    enum uint Mask4   = 0x7f7f7f7f;
-    enum ushort Mask2 = 0x7f7f;
-
-    // Start by checking in 8-byte chunks.
-    while(buffer.length >= Mask8.sizeof)
-    {
-        const block  = *cast(typeof(Mask8)*)buffer.ptr;
-        const masked = Mask8 & block;
-        if(masked != block) { break; }
-        count += Mask8.sizeof;
-        buffer = buffer[Mask8.sizeof .. $];
-    }
-
-    // If 8 bytes didn't match, try 4, 2 bytes.
-    import std.typetuple;
-    foreach(Mask; TypeTuple!(Mask4, Mask2))
-    {
-        if(buffer.length < Mask.sizeof) { continue; }
-        const block  = *cast(typeof(Mask)*)buffer.ptr;
-        const masked = Mask & block;
-        if(masked != block) { continue; }
-        count += Mask.sizeof;
-        buffer = buffer[Mask.sizeof .. $];
-    }
-
-    // If even a 2-byte chunk didn't match, test just one byte.
-    if(buffer.empty || buffer[0] >= 0x80) { return count; }
-    ++count;
-
-    return count;
+    return buffer.byCodeUnit.until!(x => x > 0x7F).walkLength;
 }
 // Unittests.
 
