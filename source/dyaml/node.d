@@ -1531,6 +1531,10 @@ struct Node
          */
         void add(T)(T value)
         {
+            if (!isValid)
+            {
+                setValue(Node[].init);
+            }
             enforce(isSequence(),
                     new NodeException("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
 
@@ -1545,6 +1549,19 @@ struct Node
             {
                 add(5.0f);
                 assert(opIndex(4).as!float == 5.0f);
+            }
+            with(Node())
+            {
+                add(5.0f);
+                assert(opIndex(0).as!float == 5.0f);
+            }
+            with(Node(5.0f))
+            {
+                assertThrown!NodeException(add(5.0f));
+            }
+            with(Node([5.0f : true]))
+            {
+                assertThrown!NodeException(add(5.0f));
             }
         }
 
@@ -1565,6 +1582,10 @@ struct Node
          */
         void add(K, V)(K key, V value)
         {
+            if (!isValid)
+            {
+                setValue(Node.Pair[].init);
+            }
             enforce(isMapping(),
                     new NodeException("Trying to add a key-value pair to a " ~
                               nodeTypeString ~ " node",
@@ -1580,6 +1601,19 @@ struct Node
             {
                 add(5, "6");
                 assert(opIndex(5).as!string == "6");
+            }
+            with(Node())
+            {
+                add(5, "6");
+                assert(opIndex(5).as!string == "6");
+            }
+            with(Node(5.0f))
+            {
+                assertThrown!NodeException(add(5, "6"));
+            }
+            with(Node([5.0f]))
+            {
+                assertThrown!NodeException(add(5, "6"));
             }
         }
 
