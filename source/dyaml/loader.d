@@ -233,7 +233,18 @@ struct Loader
          *
          * Throws: YAMLException on a parsing error.
          */
-        int opApply(int delegate(ref Node) dg) @trusted
+        int opApply(int delegate(ref Node) @safe dg) @safe
+        {
+            return opApplyImpl(dg);
+        }
+        /// Ditto
+        int opApply(int delegate(ref Node) @system dg) @system
+        {
+            return opApplyImpl(dg);
+        }
+
+    package:
+        int opApplyImpl(T)(T dg)
         in
         {
             assert(!done_, "Loader: Trying to load YAML twice");
@@ -262,8 +273,6 @@ struct Loader
                                         .format(name_, e.msg));
             }
         }
-
-    package:
         // Scan and return all tokens. Used for debugging.
         Token[] scan() @safe
         {
