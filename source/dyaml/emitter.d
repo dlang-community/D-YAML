@@ -225,7 +225,6 @@ struct Emitter(Range)
             {
                 case Encoding.UTF_8:
                     copy(str, stream_);
-                    //stream_.(str);
                     break;
                 case Encoding.UTF_16:
                     const buffer = to!wstring(str);
