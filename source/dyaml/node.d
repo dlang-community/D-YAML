@@ -2011,24 +2011,24 @@ struct Node
         @safe unittest
         {
             import dyaml.dumper;
-            import dyaml.stream;
-            auto stream = new YMemoryStream();
+            import std.outbuffer;
+            auto stream = new OutBuffer();
             auto node = Node([1, 2, 3, 4, 5]);
             node.setStyle(CollectionStyle.Block);
 
-            auto dumper = Dumper(stream);
+            auto dumper = dumper(stream);
             dumper.dump(node);
         }
         ///
         @safe unittest
         {
             import dyaml.dumper;
-            import dyaml.stream;
-            auto stream = new YMemoryStream();
+            import std.outbuffer;
+            auto stream = new OutBuffer();
             auto node = Node(4);
             node.setStyle(ScalarStyle.Literal);
 
-            auto dumper = Dumper(stream);
+            auto dumper = dumper(stream);
             dumper.dump(node);
         }
         @safe unittest
@@ -2039,56 +2039,56 @@ struct Node
         @safe unittest
         {
             import dyaml.dumper;
-            import dyaml.stream;
+            import std.outbuffer;
             {
-                auto stream = new YMemoryStream();
+                auto stream = new OutBuffer();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.Block);
-                auto dumper = Dumper(stream);
+                auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
                 //Block style should start with a hyphen.
-                assert(stream.data[0] == '-');
+                assert(stream.toString()[0] == '-');
             }
             {
-                auto stream = new YMemoryStream();
+                auto stream = new OutBuffer();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.Flow);
-                auto dumper = Dumper(stream);
+                auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
                 //Flow style should start with a bracket.
-                assert(stream.data[0] == '[');
+                assert(stream.toString()[0] == '[');
             }
             {
-                auto stream = new YMemoryStream();
+                auto stream = new OutBuffer();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.SingleQuoted);
-                auto dumper = Dumper(stream);
+                auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
-                assert(stream.data == "!!int '1'\n");
+                assert(stream.toString() == "!!int '1'\n");
             }
             {
-                auto stream = new YMemoryStream();
+                auto stream = new OutBuffer();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.DoubleQuoted);
-                auto dumper = Dumper(stream);
+                auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
-                assert(stream.data == "!!int \"1\"\n");
+                assert(stream.toString() == "!!int \"1\"\n");
             }
         }
 
