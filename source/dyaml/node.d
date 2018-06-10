@@ -217,12 +217,12 @@ struct Node
          * more efficiently. To create a node representing a null value,
          * construct it from YAMLNull.
          *
-         * If _array is an _array of nodes or pairs, it is stored directly.
+         * If value is a node, its value will be copied directly. The tag and
+         * other information attached to the original node will be discarded.
+         *
+         * If value is an array of nodes or pairs, it is stored directly.
          * Otherwise, every value in the array is converted to a node, and
          * those nodes are stored.
-         *
-         * If keys and/or values of _array are nodes, they stored directly.
-         * Otherwise they are converted to nodes and then stored.
          *
          * Note that to emit any non-default types you store
          * in a node, you need a Representer to represent them in YAML -
@@ -237,11 +237,12 @@ struct Node
          *                  a shortcut, like "!!int".
          */
         this(T)(T value, const string tag = null)
-            if(!is(Unqual!T == Node))
         {
             tag_ = tag;
 
-            static if(isSomeString!T)             { setValue(value.to!string); }
+            //Unlike with assignment, we're just copying the value.
+            static if (is(Unqual!T == Node)) {setValue(value.value_); }
+            else static if(isSomeString!T)             { setValue(value.to!string); }
             else static if(is(Unqual!T == bool)){ setValue(cast(bool)value); }
             else static if(isIntegral!T)           { setValue(cast(long)value); }
             else static if(isFloatingPoint!T) { setValue(cast(real)value); }
@@ -346,7 +347,6 @@ struct Node
                 assert(node.as!string == "string");
             }
         }
-
         @safe unittest
         {
             with(Node([1, 2, 3]))
@@ -368,7 +368,12 @@ struct Node
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
-
+        }
+        @safe unittest
+        {
+            auto node = Node(Node(4, "tag:yaml.org,2002:str"));
+            assert(node == 4);
+            assert(node.tag_ == "");
         }
 
         /** Construct a node from arrays of _keys and _values.
