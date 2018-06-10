@@ -122,7 +122,6 @@ private struct Pair
         /// Value node.
         Node value;
 
-    public:
         /// Construct a Pair from two values. Will be converted to Nodes if needed.
         this(K, V)(K key, V value)
         {
@@ -192,13 +191,11 @@ struct Node
                            Value.allowed!T;
         }
 
-    package:
         // Stored value.
         Value value_;
         // Start position of the node.
         Mark startMark_;
 
-    package:
         // Tag of the node.
         string tag_;
         // Node scalar style. Used to remember style this node was loaded with.
