@@ -183,14 +183,11 @@ struct Node
                          Node.Pair[], Node[], YAMLObject) Value;
 
         // Can Value hold this type without wrapping it in a YAMLObject?
-        template allowed(T)
-        {
-            enum allowed = isIntegral!T ||
-                           isFloatingPoint!T ||
-                           isSomeString!T ||
-                           is(Unqual!T == bool) ||
-                           Value.allowed!T;
-        }
+        enum allowed(T) = isIntegral!T ||
+                       isFloatingPoint!T ||
+                       isSomeString!T ||
+                       is(Unqual!T == bool) ||
+                       Value.allowed!T;
 
     package:
         // Stored value.
