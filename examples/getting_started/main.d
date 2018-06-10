@@ -14,5 +14,5 @@ void main()
     writeln("The answer is ", root["Answer"].as!int);
 
     //Dump the loaded document to output.yaml.
-    Dumper("output.yaml").dump(root);
+    dumper(File("output.yaml").lockingTextWriter).dump(root);
 }
