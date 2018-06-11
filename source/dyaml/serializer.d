@@ -187,7 +187,7 @@ struct Serializer
                 bool isDefault = node.tag_ == defaultTag;
 
                 emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
-                              tuple(isDetected, isDefault), value, node.scalarStyle));
+                              isDetected, isDefault, value, node.scalarStyle));
                 return;
             }
             if(node.isSequence)

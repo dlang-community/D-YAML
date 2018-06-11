@@ -157,7 +157,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
                     if(event.id == EventID.Scalar)
                     {
                         event = scalarEvent(Mark(), Mark(), event.anchor, event.tag,
-                                            tuple(event.implicit, event.implicit_2),
+                                            event.implicit, event.implicit_2,
                                             event.value, style);
                     }
                     else if(event.id == EventID.SequenceStart)

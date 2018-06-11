@@ -468,7 +468,7 @@ final class Parser
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
                 return scalarEvent(startMark, token.endMark, anchor, tag,
-                                   tuple(implicit, implicit_2), value, token.style);
+                                   implicit, implicit_2, value, token.style);
             }
 
             if(scanner_.checkToken(TokenID.FlowSequenceStart))
@@ -512,7 +512,7 @@ final class Parser
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
                 return scalarEvent(startMark, endMark, anchor, tag,
-                                   tuple(implicit, false) , "");
+                                   implicit, false , "");
             }
 
             const token = scanner_.peekToken();
@@ -935,6 +935,6 @@ final class Parser
         ///Return an empty scalar.
         Event processEmptyScalar(const Mark mark) @safe pure nothrow const @nogc
         {
-            return scalarEvent(mark, mark, null, null, tuple(true, false), "");
+            return scalarEvent(mark, mark, null, null, true, false, "");
         }
 }
