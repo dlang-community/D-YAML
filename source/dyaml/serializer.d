@@ -182,12 +182,10 @@ struct Serializer
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
                 const detectedTag = resolver_.resolve(NodeID.Scalar, null, value, true);
-                const defaultTag = resolver_.resolve(NodeID.Scalar, null, value, false);
                 bool isDetected = node.tag_ == detectedTag;
-                bool isDefault = node.tag_ == defaultTag;
 
                 emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
-                              isDetected, isDefault, value, node.scalarStyle));
+                              isDetected, value, node.scalarStyle));
                 return;
             }
             if(node.isSequence)

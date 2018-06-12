@@ -796,7 +796,7 @@ struct Emitter
             {
                 if(style_ == ScalarStyle.Invalid){style_ = chooseScalarStyle();}
                 if((!canonical_ || (tag is null)) &&
-                   (style_ == ScalarStyle.Plain ? event_.implicit : event_.implicit_2))
+                   (style_ == ScalarStyle.Plain ? event_.implicit : !event_.implicit && (tag is null)))
                 {
                     preparedTag_ = null;
                     return;

@@ -56,7 +56,7 @@ bool compareEvents(Event[] events1, Event[] events2) @system
         if(e1.id == EventID.Scalar)
         {
             //Different scalar tag (if applicable).
-            if(![e1.implicit, e1.implicit_2, e2.implicit, e2.implicit_2].canFind(true)
+            if(!(e1.implicit || e2.implicit)
                && e1.tag != e2.tag)
             {
                 return false;
@@ -157,7 +157,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
                     if(event.id == EventID.Scalar)
                     {
                         event = scalarEvent(Mark(), Mark(), event.anchor, event.tag,
-                                            event.implicit, event.implicit_2,
+                                            event.implicit,
                                             event.value, style);
                     }
                     else if(event.id == EventID.SequenceStart)

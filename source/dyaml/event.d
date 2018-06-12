@@ -80,8 +80,6 @@ struct Event
          */
         bool explicitDocument;
     }
-    ///TODO figure this out - Unknown, used by PyYAML with Scalar events.
-    bool implicit_2;
     ///Encoding of the stream, if this is a StreamStart.
     Encoding encoding;
     ///Collection style, if this is a SequenceStart or MappingStart.
@@ -233,7 +231,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          value    = String value of the scalar.
 ///          style    = Scalar style.
 Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
-                  const bool implicit, const bool implicit_2, const string value,
+                  const bool implicit, const string value,
                   const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
 {
     Event result;
@@ -247,6 +245,5 @@ Event scalarEvent(const Mark start, const Mark end, const string anchor, const s
     result.id          = EventID.Scalar;
     result.scalarStyle = style;
     result.implicit    = implicit;
-    result.implicit_2  = implicit_2;
     return result;
 }
