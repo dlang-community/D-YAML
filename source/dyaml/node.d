@@ -137,19 +137,6 @@ private struct Pair
             return cmp!(Yes.useTag)(rhs) == 0;
         }
 
-        /// Assignment (shallow copy) by value.
-        void opAssign(Pair rhs) @safe nothrow
-        {
-            opAssign(rhs);
-        }
-
-        /// Assignment (shallow copy) by reference.
-        void opAssign(ref Pair rhs) @safe nothrow
-        {
-            key   = rhs.key;
-            value = rhs.value;
-        }
-
     private:
         // Comparison with another Pair.
         //
@@ -861,13 +848,7 @@ struct Node
         }
 
         /// Assignment (shallow copy) by value.
-        void opAssign(Node rhs) @safe nothrow
-        {
-            opAssign(rhs);
-        }
-
-        /// Assignment (shallow copy) by reference.
-        void opAssign(ref Node rhs) @safe nothrow
+        void opAssign()(auto ref Node rhs)
         {
             assumeWontThrow(setValue(rhs.value_));
             startMark_      = rhs.startMark_;
