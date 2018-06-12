@@ -58,9 +58,12 @@ alias isBreakOrSpace = among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029
 
 alias isWhiteSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
-alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}', '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}',
+    '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\0', '\n',
+    '\r', '\u0085', '\u2028', '\u2029');
 
-alias isURIChar = among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '!', '~', '*', '\'', '(', ')', '[', ']', '%');
+alias isURIChar = among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',',
+    '_', '.', '!', '~', '*', '\'', '(', ')', '[', ']', '%');
 
 alias isNSChar = among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
@@ -438,6 +441,7 @@ final class Scanner
             while(indent_ > column)
             {
                 indent_ = indents_.back;
+                assert(indents_.length);
                 indents_.length = indents_.length - 1;
                 tokens_.push(blockEndToken(reader_.mark, reader_.mark));
             }
@@ -506,8 +510,8 @@ final class Scanner
         }
 
         /// Aliases to add DOCUMENT-START or DOCUMENT-END token.
-        alias fetchDocumentIndicator!(TokenID.DocumentStart) fetchDocumentStart;
-        alias fetchDocumentIndicator!(TokenID.DocumentEnd) fetchDocumentEnd;
+        alias fetchDocumentStart = fetchDocumentIndicator!(TokenID.DocumentStart);
+        alias fetchDocumentEnd = fetchDocumentIndicator!(TokenID.DocumentEnd);
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionStart(TokenID id)() @safe
@@ -524,8 +528,8 @@ final class Scanner
         }
 
         /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
-        alias fetchFlowCollectionStart!(TokenID.FlowSequenceStart) fetchFlowSequenceStart;
-        alias fetchFlowCollectionStart!(TokenID.FlowMappingStart) fetchFlowMappingStart;
+        alias fetchFlowSequenceStart = fetchFlowCollectionStart!(TokenID.FlowSequenceStart);
+        alias fetchFlowMappingStart = fetchFlowCollectionStart!(TokenID.FlowMappingStart);
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionEnd(TokenID id)()
@@ -542,8 +546,8 @@ final class Scanner
         }
 
         /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token/
-        alias fetchFlowCollectionEnd!(TokenID.FlowSequenceEnd) fetchFlowSequenceEnd;
-        alias fetchFlowCollectionEnd!(TokenID.FlowMappingEnd) fetchFlowMappingEnd;
+        alias fetchFlowSequenceEnd = fetchFlowCollectionEnd!(TokenID.FlowSequenceEnd);
+        alias fetchFlowMappingEnd = fetchFlowCollectionEnd!(TokenID.FlowMappingEnd);
 
         /// Add FLOW-ENTRY token;
         void fetchFlowEntry() @safe
@@ -675,8 +679,8 @@ final class Scanner
         }
 
         /// Aliases to add ALIAS or ANCHOR token.
-        alias fetchAnchor_!(TokenID.Alias) fetchAlias;
-        alias fetchAnchor_!(TokenID.Anchor) fetchAnchor;
+        alias fetchAlias = fetchAnchor_!(TokenID.Alias);
+        alias fetchAnchor = fetchAnchor_!(TokenID.Anchor);
 
         /// Add TAG token.
         void fetchTag() @safe
@@ -705,8 +709,8 @@ final class Scanner
         }
 
         /// Aliases to add literal or folded block scalar.
-        alias fetchBlockScalar!(ScalarStyle.Literal) fetchLiteral;
-        alias fetchBlockScalar!(ScalarStyle.Folded) fetchFolded;
+        alias fetchLiteral = fetchBlockScalar!(ScalarStyle.Literal);
+        alias fetchFolded = fetchBlockScalar!(ScalarStyle.Folded);
 
         /// Add quoted flow SCALAR token.
         void fetchFlowScalar(ScalarStyle quotes)()
@@ -723,8 +727,8 @@ final class Scanner
         }
 
         /// Aliases to add single or double quoted block scalar.
-        alias fetchFlowScalar!(ScalarStyle.SingleQuoted) fetchSingle;
-        alias fetchFlowScalar!(ScalarStyle.DoubleQuoted) fetchDouble;
+        alias fetchSingle = fetchFlowScalar!(ScalarStyle.SingleQuoted);
+        alias fetchDouble = fetchFlowScalar!(ScalarStyle.DoubleQuoted);
 
         /// Add plain SCALAR token.
         void fetchPlain() @safe
@@ -830,7 +834,7 @@ final class Scanner
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanAlphaNumericToSlice(string name)(const Mark startMark)
         {
-            size_t length = 0;
+            size_t length;
             dchar c = reader_.peek();
             while(c.isAlphaNum || "-_"d.canFind(c)) { c = reader_.peek(++length); }
 
@@ -857,7 +861,7 @@ final class Scanner
         /// characters into that slice.
         void scanToNextBreakToSlice() @safe
         {
-            uint length = 0;
+            uint length;
             while(!reader_.peek(length).isBreak)
             {
                 ++length;
@@ -1165,7 +1169,7 @@ final class Scanner
             else
             {
                 uint length = 1;
-                bool useHandle = false;
+                bool useHandle;
 
                 while(!c.isBreakOrSpace)
                 {
@@ -1526,7 +1530,7 @@ final class Scanner
             {
                 dchar c = reader_.peek();
 
-                size_t numCodePoints = 0;
+                size_t numCodePoints;
                 // This is an optimized way of writing:
                 // while(!search.canFind(reader_.peek(numCodePoints))) { ++numCodePoints; }
                 outer: for(size_t oldSliceLength;;)
@@ -1636,7 +1640,7 @@ final class Scanner
         void scanFlowScalarSpacesToSlice(const Mark startMark) @safe
         {
             // Increase length as long as we see whitespace.
-            size_t length = 0;
+            size_t length;
             while(" \t"d.canFind(reader_.peekByte(length))) { ++length; }
             auto whitespaces = reader_.prefixBytes(length);
 
@@ -1730,7 +1734,7 @@ final class Scanner
             while(reader_.peekByte() != '#')
             {
                 // Scan the entire plain scalar.
-                size_t length = 0;
+                size_t length;
                 dchar c = void;
                 // Moved the if() out of the loop for optimization.
                 if(flowLevel_ == 0)
@@ -1813,12 +1817,12 @@ final class Scanner
             // We just forbid them completely. Do not use tabs in YAML!
 
             // Get as many plain spaces as there are.
-            size_t length = 0;
+            size_t length;
             while(reader_.peekByte(length) == ' ') { ++length; }
             char[] whitespaces = reader_.prefixBytes(length);
             reader_.forward(length);
 
-            dchar c = reader_.peek();
+            const dchar c = reader_.peek();
             if(!c.isNSChar)
             {
                 // We have spaces, but no newline.
@@ -1839,7 +1843,7 @@ final class Scanner
 
             if(end(reader_)) { return; }
 
-            bool extraBreaks = false;
+            bool extraBreaks;
 
             alias Transaction = SliceBuilder.Transaction;
             auto transaction = Transaction(&reader_.sliceBuilder);
@@ -1911,7 +1915,7 @@ final class Scanner
             dchar c = reader_.peek();
             const startLen = reader_.sliceBuilder.length;
             {
-                uint length = 0;
+                uint length;
                 while(c.isAlphaNum || c.isURIChar)
                 {
                     if(c == '%')
@@ -1952,7 +1956,6 @@ final class Scanner
             // decoding into UTF-32.
             char[4] bytes;
             size_t bytesUsed;
-            Mark mark = reader_.mark;
 
             // Get one dchar by decoding data from bytes.
             //
