@@ -12,7 +12,6 @@ module dyaml.event;
 
 import std.array;
 import std.conv;
-import std.typecons;
 
 import dyaml.encoding;
 import dyaml.exception;
@@ -81,8 +80,6 @@ struct Event
          */
         bool explicitDocument;
     }
-    ///TODO figure this out - Unknown, used by PyYAML with Scalar events.
-    bool implicit_2;
     ///Encoding of the stream, if this is a StreamStart.
     Encoding encoding;
     ///Collection style, if this is a SequenceStart or MappingStart.
@@ -234,7 +231,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          value    = String value of the scalar.
 ///          style    = Scalar style.
 Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
-                  const Tuple!(bool, bool) implicit, const string value,
+                  const bool implicit, const string value,
                   const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
 {
     Event result;
@@ -247,7 +244,6 @@ Event scalarEvent(const Mark start, const Mark end, const string anchor, const s
 
     result.id          = EventID.Scalar;
     result.scalarStyle = style;
-    result.implicit    = implicit[0];
-    result.implicit_2  = implicit[1];
+    result.implicit    = implicit;
     return result;
 }
