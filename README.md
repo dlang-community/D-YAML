@@ -47,7 +47,7 @@ might be compatibility breaking changes.
 ## Directory structure
 
 | Directory     | Contents                       |
-| ------------- | ------------------------------ |
+|---------------|--------------------------------|
 | `./`          | This README, utility scripts.  |
 | `./doc`       | Documentation.                 |
 | `./docsrc`    | Documentation sources.         |
