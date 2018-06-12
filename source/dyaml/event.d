@@ -173,14 +173,14 @@ Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding
 }
 
 ///Aliases for simple events.
-alias event!(EventID.StreamEnd)   streamEndEvent;
-alias event!(EventID.Alias)       aliasEvent;
-alias event!(EventID.SequenceEnd) sequenceEndEvent;
-alias event!(EventID.MappingEnd)  mappingEndEvent;
+alias streamEndEvent = event!(EventID.StreamEnd);
+alias aliasEvent = event!(EventID.Alias);
+alias sequenceEndEvent = event!(EventID.SequenceEnd);
+alias mappingEndEvent = event!(EventID.MappingEnd);
 
 ///Aliases for collection start events.
-alias collectionStartEvent!(EventID.SequenceStart) sequenceStartEvent;
-alias collectionStartEvent!(EventID.MappingStart)  mappingStartEvent;
+alias sequenceStartEvent = collectionStartEvent!(EventID.SequenceStart);
+alias mappingStartEvent = collectionStartEvent!(EventID.MappingStart);
 
 /**
  * Construct a document start event.
