@@ -98,11 +98,12 @@ final class Resolver
             }
         }
         /// Resolve scalars starting with 'A' to !_tag
-        unittest {
+        unittest
+        {
             import std.file : write;
-            import std.regex;
-
-            import dyaml;
+            import std.regex : regex;
+            import dyaml.loader : Loader;
+            import dyaml.resolver : Resolver;
 
             write("example.yaml", "A");
 
@@ -119,7 +120,7 @@ final class Resolver
         }
 
     package:
-        /*
+        /**
          * Resolve tag of a node.
          *
          * Params:  kind     = Type of the node.
@@ -165,10 +166,10 @@ final class Resolver
 
             bool tagMatch(string tag, string[] values) @safe
             {
-                string expected = tag;
+                const string expected = tag;
                 foreach(value; values)
                 {
-                    string resolved = resolver.resolve(NodeID.Scalar, null, value, true);
+                    const string resolved = resolver.resolve(NodeID.Scalar, null, value, true);
                     if(expected != resolved)
                     {
                         return false;
@@ -199,13 +200,13 @@ final class Resolver
             assert(tagMatch("tag:yaml.org,2002:yaml", ["!", "&", "*"]));
         }
 
-        ///Return default scalar tag.
+        ///Returns: Default scalar tag.
         @property string defaultScalarTag()   const pure @safe nothrow {return defaultScalarTag_;}
 
-        ///Return default sequence tag.
+        ///Returns: Default sequence tag.
         @property string defaultSequenceTag() const pure @safe nothrow {return defaultSequenceTag_;}
 
-        ///Return default mapping tag.
+        ///Returns: Default mapping tag.
         @property string defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
 
     private:
