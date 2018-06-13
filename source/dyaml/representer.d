@@ -458,7 +458,7 @@ final class Representer
         }
 
         //Represent a node, serializing with specified Serializer.
-        void represent(Range)(ref Serializer!Range serializer, ref Node node) @safe
+        void represent(Range, CharType)(ref Serializer!(Range, CharType) serializer, ref Node node) @safe
         {
             auto data = representData(node);
             serializer.serialize(data);

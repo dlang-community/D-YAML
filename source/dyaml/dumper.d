@@ -16,7 +16,6 @@ import std.typecons;
 import std.outbuffer;
 
 import dyaml.emitter;
-import dyaml.encoding;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.linebreak;
@@ -33,7 +32,7 @@ import dyaml.tagdirective;
  * User specified Representer and/or Resolver can be used to support new
  * tags / data types.
  *
- * Setters are provided to affect output details (style, encoding, etc.).
+ * Setters are provided to affect output details (style, etc.).
  */
 auto dumper(Range)(auto ref Range output)
 {
@@ -59,8 +58,6 @@ struct Dumper(Range)
         uint textWidth_ = 80;
         //Line break to use.
         LineBreak lineBreak_ = LineBreak.Unix;
-        //Character encoding to use.
-        Encoding encoding_ = Encoding.UTF_8;
         //YAML version string.
         string YAMLVersion_ = "1.1";
         //Tag directives to use.
@@ -137,12 +134,6 @@ struct Dumper(Range)
             lineBreak_ = lineBreak;
         }
 
-        ///Set character _encoding to use. UTF-8 by default.
-        @property void encoding(Encoding encoding) pure @safe nothrow
-        {
-            encoding_ = encoding;
-        }
-
         ///Always explicitly write document start?
         @property void explicitStart(bool explicit) pure @safe nothrow
         {
@@ -217,12 +208,12 @@ struct Dumper(Range)
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(Node[] documents ...) @safe
+        void dump(CharacterType = char)(Node[] documents ...) @trusted
         {
             try
             {
-                auto emitter = new Emitter!Range(stream_, canonical_, indent_, textWidth_, lineBreak_);
-                auto serializer = Serializer!Range(emitter, resolver_, encoding_, explicitStart_,
+                auto emitter = new Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto serializer = Serializer!(Range, CharacterType)(emitter, resolver_, explicitStart_,
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)
                 {
@@ -244,11 +235,11 @@ struct Dumper(Range)
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(Event[] events) @safe
+        void emit(CharacterType = char)(Event[] events) @safe
         {
             try
             {
-                auto emitter = Emitter!Range(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);

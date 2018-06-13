@@ -11,6 +11,7 @@ version(unittest)
 {
 
 import std.exception;
+import std.meta;
 import std.outbuffer;
 import std.path;
 import std.typecons;
@@ -31,7 +32,7 @@ void testRepresenterTypes(string codeFilename) @safe
             new Exception("Unimplemented representer test: " ~ baseName));
 
     Node[] expectedNodes = expected[baseName];
-    foreach(encoding; [Encoding.UTF_8, Encoding.UTF_16, Encoding.UTF_32])
+    foreach(encoding; AliasSeq!(char, wchar, dchar))
     {
         ubyte[] output;
         Node[] readNodes;
@@ -56,8 +57,7 @@ void testRepresenterTypes(string codeFilename) @safe
         representer.addRepresenter!TestStruct(&representStruct);
         auto dumper = Dumper!OutBuffer(emitStream);
         dumper.representer = representer;
-        dumper.encoding    = encoding;
-        dumper.dump(expectedNodes);
+        dumper.dump!encoding(expectedNodes);
 
         output = emitStream.toBytes;
         auto constructor = new Constructor;
