@@ -132,14 +132,14 @@ Token streamStartToken(const Mark start, const Mark end, const Encoding encoding
 }
 
 /// Aliases for construction of simple token types.
-alias simpleToken!(TokenID.StreamEnd)          streamEndToken;
-alias simpleToken!(TokenID.BlockSequenceStart) blockSequenceStartToken;
-alias simpleToken!(TokenID.BlockMappingStart)  blockMappingStartToken;
-alias simpleToken!(TokenID.BlockEnd)           blockEndToken;
-alias simpleToken!(TokenID.Key)                keyToken;
-alias simpleToken!(TokenID.Value)              valueToken;
-alias simpleToken!(TokenID.BlockEntry)         blockEntryToken;
-alias simpleToken!(TokenID.FlowEntry)          flowEntryToken;
+alias streamEndToken = simpleToken!(TokenID.StreamEnd);
+alias blockSequenceStartToken = simpleToken!(TokenID.BlockSequenceStart);
+alias blockMappingStartToken = simpleToken!(TokenID.BlockMappingStart);
+alias blockEndToken = simpleToken!(TokenID.BlockEnd);
+alias keyToken = simpleToken!(TokenID.Key);
+alias valueToken = simpleToken!(TokenID.Value);
+alias blockEntryToken = simpleToken!(TokenID.BlockEntry);
+alias flowEntryToken = simpleToken!(TokenID.FlowEntry);
 
 /// Construct a simple token with value with specified type.
 ///
@@ -157,9 +157,9 @@ Token simpleValueToken(TokenID id)(const Mark start, const Mark end, char[] valu
 }
 
 /// Alias for construction of tag token.
-alias simpleValueToken!(TokenID.Tag) tagToken;
-alias simpleValueToken!(TokenID.Alias) aliasToken;
-alias simpleValueToken!(TokenID.Anchor) anchorToken;
+alias tagToken = simpleValueToken!(TokenID.Tag);
+alias aliasToken = simpleValueToken!(TokenID.Alias);
+alias anchorToken = simpleValueToken!(TokenID.Anchor);
 
 /// Construct a scalar token.
 ///

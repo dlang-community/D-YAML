@@ -165,8 +165,8 @@ struct Node
 
     package:
         // YAML value type.
-        alias Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
-                         Node.Pair[], Node[], YAMLObject) Value;
+        alias Value = Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
+                         Node.Pair[], Node[], YAMLObject);
 
         // Can Value hold this type without wrapping it in a YAMLObject?
         enum allowed(T) = isIntegral!T ||
@@ -522,7 +522,7 @@ struct Node
         }
 
         /// Shortcut for get().
-        alias get as;
+        alias as = get;
 
         /** Get the value of the node as specified type.
          *
@@ -722,9 +722,6 @@ struct Node
         ///
         @safe unittest
         {
-            alias Node.Value Value;
-            alias Node.Pair Pair;
-
             Node narray = Node([11, 12, 13, 14]);
             Node nmap   = Node(["11", "12", "13", "14"], [11, 12, 13, 14]);
 
@@ -735,9 +732,6 @@ struct Node
         }
         @safe unittest
         {
-            alias Node.Value Value;
-            alias Node.Pair Pair;
-
             Node narray = Node([11, 12, 13, 14]);
             Node nmap   = Node(["11", "12", "13", "14"], [11, 12, 13, 14]);
 
@@ -1432,9 +1426,6 @@ struct Node
          }
         @safe unittest
         {
-            alias Node.Value Value;
-            alias Node.Pair Pair;
-
             Node n1 = Node(cast(long)11);
             Node n2 = Node(cast(long)12);
             Node n3 = Node(cast(long)13);
@@ -1954,22 +1945,22 @@ struct Node
         }
 
         // Is the value a bool?
-        alias isType!bool isBool;
+        alias isBool = isType!bool;
 
         // Is the value a raw binary buffer?
-        alias isType!(ubyte[]) isBinary;
+        alias isBinary = isType!(ubyte[]);
 
         // Is the value an integer?
-        alias isType!long isInt;
+        alias isInt = isType!long;
 
         // Is the value a floating point number?
-        alias isType!real isFloat;
+        alias isFloat = isType!real;
 
         // Is the value a string?
-        alias isType!string isString;
+        alias isString = isType!string;
 
         // Is the value a timestamp?
-        alias isType!SysTime isTime;
+        alias isTime = isType!SysTime;
 
         // Does given node have the same type as this node?
         bool hasEqualType(const ref Node node) const @safe
