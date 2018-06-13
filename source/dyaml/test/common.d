@@ -104,7 +104,7 @@ enum TestStatus
 }
 
 ///Unittest result.
-alias Tuple!(string, "name", string[], "filenames", TestStatus, "kind", string, "info") Result;
+alias Result = Tuple!(string, "name", string[], "filenames", TestStatus, "kind", string, "info");
 
 /**
  * Find unittest input filenames.

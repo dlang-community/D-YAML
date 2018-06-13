@@ -17,9 +17,6 @@ import std.system;
 import dyaml.test.common;
 import dyaml.stream;
 
-
-alias std.system.endian endian;
-
 /// Get an UTF-16 byte order mark.
 ///
 /// Params:  wrong = Get the incorrect BOM for this system.

@@ -72,8 +72,6 @@ private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', '
 struct Emitter
 {
     private:
-        alias dyaml.tagdirective.TagDirective TagDirective;
-
         ///Default tag handle shortcuts and replacements.
         static TagDirective[] defaultTagDirectives_ =
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];

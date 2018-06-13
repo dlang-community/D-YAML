@@ -13,8 +13,6 @@ import std.array;
 import std.string;
 import std.conv;
 
-alias to!string str;
-
 
 /// Base class for all exceptions thrown by D:YAML.
 class YAMLException : Exception
@@ -53,7 +51,7 @@ struct Mark
             // Line/column numbers start at zero internally, make them start at 1.
             static string clamped(ushort v) @safe pure nothrow
             {
-                return str(v + 1) ~ (v == ushort.max ? " or higher" : "");
+                return text(v + 1, v == ushort.max ? " or higher" : "");
             }
             return "line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
         }
