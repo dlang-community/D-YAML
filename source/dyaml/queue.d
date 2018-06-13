@@ -7,13 +7,7 @@
 module dyaml.queue;
 
 
-/// Queue collection.
-import core.stdc.stdlib;
-import core.memory;
-
-import std.container;
-import std.traits;
-
+import std.traits : hasMember, hasIndirections;
 
 package:
 
@@ -22,152 +16,223 @@ package:
 /// Needed in some D:YAML code that needs a queue-like structure without too much
 /// reallocation that goes with an array.
 ///
-/// This should be replaced once Phobos has a decent queue/linked list.
-///
-/// Uses manual allocation through malloc/free.
-///
-/// Also has some features uncommon for a queue, e.g. iteration. Couldn't bother with
-/// implementing a range, as this is used only as a placeholder until Phobos gets a
-/// decent replacement.
+/// Allocations are non-GC and are damped by a free-list based on the nodes
+/// that are removed. Note that elements lifetime must be managed
+/// outside.
 struct Queue(T)
-    if(!hasMember!(T, "__dtor"))
+if (!hasMember!(T, "__xdtor"))
 {
-    private:
-        /// Linked list node containing one element and pointer to the next node.
-        struct Node
+
+private:
+
+    // Linked list node containing one element and pointer to the next node.
+    struct Node
+    {
+        T payload_;
+        Node* next_;
+    }
+
+    // Start of the linked list - first element added in time (end of the queue).
+    Node* first_;
+    // Last element of the linked list - last element added in time (start of the queue).
+    Node* last_;
+    // Cursor pointing to the current node in iteration.
+    Node* cursor_;
+    // free-list
+    Node* stock;
+
+    // Length of the queue.
+    size_t length_;
+
+    // allocate a new node or recycle one from the stock.
+    Node* makeNewNode(T thePayload, Node* theNext = null) @trusted nothrow @nogc
+    {
+        import std.experimental.allocator : make;
+        import std.experimental.allocator.mallocator : Mallocator;
+
+        Node* result;
+        if (stock !is null)
         {
-            T payload_;
-            Node* next_ = null;
+            result = stock;
+            stock = result.next_;
+            result.payload_ = thePayload;
+            result.next_ = theNext;
         }
-
-        /// Start of the linked list - first element added in time (end of the queue).
-        Node* first_ = null;
-        /// Last element of the linked list - last element added in time (start of the queue).
-        Node* last_ = null;
-        /// Cursor pointing to the current node in iteration.
-        Node* cursor_ = null;
-
-        /// Length of the queue.
-        size_t length_ = 0;
-
-    public:
-        @disable void opAssign(ref Queue);
-        @disable bool opEquals(ref Queue);
-        @disable int opCmp(ref Queue);
-
-        /// Start iterating over the queue.
-        void startIteration() @safe pure nothrow @nogc
+        else
         {
-            cursor_ = first_;
+            result = Mallocator.instance.make!(Node)(thePayload, theNext);
+            // GC can dispose T managed member if it thinks they are no used...
+            static if (hasIndirections!T)
+            {
+                import core.memory : GC;
+                GC.addRange(result, Node.sizeof);
+            }
         }
+        return result;
+    }
 
-        /// Get next element in the queue.
-        ref const(T) next() @safe pure nothrow @nogc
-        in
-        {
-            assert(!empty);
-            assert(cursor_ !is null);
-        }
-        body
-        {
-            const previous = cursor_;
-            cursor_ = cursor_.next_;
-            return previous.payload_;
-        }
+    // free the stock of available free nodes.
+    void freeStock() @trusted @nogc nothrow
+    {
+        import std.experimental.allocator.mallocator : Mallocator;
 
-        /// Are we done iterating?
-        bool iterationOver() @safe pure nothrow const @nogc
+        while (stock !is null)
         {
-            return cursor_ is null;
+            Node* toFree = stock;
+            stock = stock.next_;
+            static if (hasIndirections!T)
+            {
+                import core.memory : GC;
+                GC.removeRange(toFree);
+            }
+            Mallocator.instance.deallocate((cast(ubyte*) toFree)[0 .. Node.sizeof]);
         }
+    }
 
-        /// Push new item to the queue.
-        void push(T item) @safe nothrow
+public:
+
+    @disable void opAssign(ref Queue);
+    @disable bool opEquals(ref Queue);
+    @disable int opCmp(ref Queue);
+
+    @disable this(this);
+
+    ~this() @safe nothrow @nogc
+    {
+        freeStock();
+        stock = first_;
+        freeStock();
+    }
+
+    /// Start iterating over the queue.
+    void startIteration() @safe pure nothrow @nogc
+    {
+        cursor_ = first_;
+    }
+
+    /// Returns: The next element in the queue.
+    ref const(T) next() @safe pure nothrow @nogc
+    in
+    {
+        assert(!empty);
+        assert(cursor_ !is null);
+    }
+    do
+    {
+        const previous = cursor_;
+        cursor_ = cursor_.next_;
+        return previous.payload_;
+    }
+
+    /// Returns: true if itrating is not possible anymore, false otherwise.
+    bool iterationOver() @safe pure nothrow const @nogc
+    {
+        return cursor_ is null;
+    }
+
+    /// Push a new item to the queue.
+    void push(T item) @nogc @safe nothrow
+    {
+        Node* newLast = makeNewNode(item);
+        if (last_ !is null)
+            last_.next_ = newLast;
+        if (first_ is null)
+            first_      = newLast;
+        last_ = newLast;
+        ++length_;
+    }
+
+    /// Insert a new item putting it to specified index in the linked list.
+    void insert(T item, const size_t idx) @safe nothrow
+    in
+    {
+        assert(idx <= length_);
+    }
+    do
+    {
+        if (idx == 0)
         {
-            Node* newLast = new Node(item, null);
-            if(last_ !is null) { last_.next_ = newLast; }
-            if(first_ is null) { first_      = newLast; }
-            last_ = newLast;
+            first_ = makeNewNode(item, first_);
             ++length_;
         }
-
-        /// Insert a new item putting it to specified index in the linked list.
-        void insert(T item, const size_t idx) @safe nothrow
-        in
+        // Adding before last added element, so we can just push.
+        else if (idx == length_)
         {
-            assert(idx <= length_);
+            push(item);
         }
-        body
+        else
         {
-            if(idx == 0)
-            {
-                first_ = new Node(item, first_);
-                ++length_;
-            }
-            // Adding before last added element, so we can just push.
-            else if(idx == length_) { push(item); }
-            else
-            {
-                // Get the element before one we're inserting.
-                Node* current = first_;
-                foreach(i; 1 .. idx) { current = current.next_; }
+            // Get the element before one we're inserting.
+            Node* current = first_;
+            foreach (i; 1 .. idx)
+                current = current.next_;
 
-                // Insert a new node after current, and put current.next_ behind it.
-                current.next_ = new Node(item, current.next_);
-                ++length_;
-            }
+            assert(current);
+            // Insert a new node after current, and put current.next_ behind it.
+            current.next_ = makeNewNode(item, current.next_);
+            ++length_;
         }
+    }
 
-        /// Return the next element in the queue and remove it.
-        T pop() @safe nothrow
-        in
+    /// Returns: The next element in the queue and remove it.
+    T pop() @safe nothrow
+    in
+    {
+        assert(!empty, "Trying to pop an element from an empty queue");
+    }
+    do
+    {
+        T result = peek();
+
+        Node* oldStock = stock;
+        Node* old = first_;
+        first_ = first_.next_;
+
+        // start the stock from the popped element
+        stock = old;
+        old.next_ = null;
+        // add the existing "old" stock to the new first stock element
+        if (oldStock !is null)
+            stock.next_ = oldStock;
+
+        if (--length_ == 0)
         {
-            assert(!empty, "Trying to pop an element from an empty queue");
-        }
-        body
-        {
-            T result     = peek();
-            Node* popped = first_;
-            first_       = first_.next_;
-
-            if(--length_ == 0)
-            {
-                assert(first_ is null);
-                last_ = null;
-            }
-
-            return result;
+            assert(first_ is null);
+            last_ = null;
         }
 
-        /// Return the next element in the queue.
-        ref inout(T) peek() @safe pure nothrow inout @nogc
-        in
-        {
-            assert(!empty, "Trying to peek at an element in an empty queue");
-        }
-        body
-        {
-            return first_.payload_;
-        }
+        return result;
+    }
 
-        /// Is the queue empty?
-        bool empty() @safe pure nothrow const @nogc
-        {
-            return first_ is null;
-        }
+    /// Returns: The next element in the queue.
+    ref inout(T) peek() @safe pure nothrow inout @nogc
+    in
+    {
+        assert(!empty, "Trying to peek at an element in an empty queue");
+    }
+    do
+    {
+        return first_.payload_;
+    }
 
-        /// Return number of elements in the queue.
-        size_t length() @safe pure nothrow const @nogc
-        {
-            return length_;
-        }
+    /// Returns: true of the queue empty, false otherwise.
+    bool empty() @safe pure nothrow const @nogc
+    {
+        return first_ is null;
+    }
+
+    /// Returns: The number of elements in the queue.
+    size_t length() @safe pure nothrow const @nogc
+    {
+        return length_;
+    }
 }
 
-@safe unittest
+@safe nothrow unittest
 {
     auto queue = Queue!int();
     assert(queue.empty);
-    foreach(i; 0 .. 65)
+    foreach (i; 0 .. 65)
     {
         queue.push(5);
         assert(queue.pop() == 5);
@@ -176,7 +241,7 @@ struct Queue(T)
     }
 
     int[] array = [1, -1, 2, -2, 3, -3, 4, -4, 5, -5];
-    foreach(i; array)
+    foreach (i; array)
     {
         queue.push(i);
     }
@@ -187,7 +252,7 @@ struct Queue(T)
     queue.insert(42, queue.length);
 
     int[] array2;
-    while(!queue.empty)
+    while (!queue.empty)
     {
         array2 ~= queue.pop();
     }
