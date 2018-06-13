@@ -184,30 +184,16 @@ public:
     {
         T result = peek();
 
-        // node will be availalbe w/o alloc
-        if (stock is null)
-        {
-            stock = first_;
-        }
-        else
-        {
-            // try to find if node that will be pop is linked to the first stock node
-            Node* c = stock;
-            while (c !is null && c !is first_)
-                c = c.next_;
-            // else the stock chain is broke so free the stock and start a new one
-            if (c is null)
-            {
-                freeStock();
-                stock = first_;
-            }
-        }
-
+        Node* oldStock = stock;
         Node* old = first_;
         first_ = first_.next_;
 
-        // terminates the chain in the stock
+        // start the stock from the popped element
+        stock = old;
         old.next_ = null;
+        // add the existing "old" stock to the new first stock element
+        if (oldStock !is null)
+            stock.next_ = oldStock;
 
         if (--length_ == 0)
         {
