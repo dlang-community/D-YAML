@@ -180,7 +180,7 @@ final class Composer
         {
             if(parser_.checkEvent(EventID.Alias))
             {
-                immutable event = parser_.getEvent();
+                const event = parser_.getEvent();
                 const anchor = event.anchor;
                 enforce((anchor in anchors_) !is null,
                         new ComposerException("Found undefined alias: " ~ anchor,
@@ -196,7 +196,7 @@ final class Composer
                 return anchors_[anchor];
             }
 
-            immutable event = parser_.peekEvent();
+            const event = parser_.peekEvent();
             const anchor = event.anchor;
             if((anchor !is null) && (anchor in anchors_) !is null)
             {
@@ -236,7 +236,7 @@ final class Composer
         ///Compose a scalar node.
         Node composeScalarNode() @safe
         {
-            immutable event = parser_.getEvent();
+            const event = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value,
                                           event.implicit);
 
@@ -256,7 +256,7 @@ final class Composer
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             auto nodeAppender = &(nodeAppenders_[nodeAppenderLevel]);
 
-            immutable startEvent = parser_.getEvent();
+            const startEvent = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Sequence, startEvent.tag, null,
                                           startEvent.implicit);
 
@@ -351,7 +351,7 @@ final class Composer
             @safe
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
-            immutable startEvent = parser_.getEvent();
+            const startEvent = parser_.getEvent();
             const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null,
                                           startEvent.implicit);
             auto pairAppender = &(pairAppenders_[pairAppenderLevel]);

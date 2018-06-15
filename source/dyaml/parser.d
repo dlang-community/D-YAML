@@ -197,7 +197,7 @@ final class Parser
          *
          * Must not be called if there are no events left.
          */
-        immutable(Event) getEvent() @trusted
+        Event getEvent() @trusted
         {
             //Get the next event and proceed further.
             if(currentEvent_.isNull && state_ !is null)
@@ -207,7 +207,7 @@ final class Parser
 
             if(!currentEvent_.isNull)
             {
-                immutable Event result = cast(immutable Event)currentEvent_;
+                Event result = currentEvent_;
                 currentEvent_.id = EventID.Invalid;
                 return result;
             }
