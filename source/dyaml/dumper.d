@@ -12,6 +12,7 @@
 module dyaml.dumper;
 
 import std.array;
+import std.range.primitives;
 import std.typecons;
 
 import dyaml.emitter;
@@ -34,6 +35,7 @@ import dyaml.tagdirective;
  * Setters are provided to affect output details (style, etc.).
  */
 auto dumper(Range)(auto ref Range output)
+    if (isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
 {
     return Dumper!Range(output);
 }
@@ -208,6 +210,7 @@ struct Dumper(Range)
          *          unable to write to file/stream).
          */
         void dump(CharacterType = char)(Node[] documents ...) @trusted
+            if (isOutputRange!(Range, CharacterType))
         {
             try
             {
