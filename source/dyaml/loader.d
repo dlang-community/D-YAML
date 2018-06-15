@@ -10,6 +10,7 @@ module dyaml.loader;
 
 import std.exception;
 import std.file;
+import std.stdio : File;
 import std.string;
 
 import dyaml.composer;
@@ -55,6 +56,7 @@ struct Loader
         /** Construct a Loader to load YAML from a file.
          *
          * Params:  filename = Name of the file to load from.
+         *          file = Already-opened file to load from.
          *
          * Throws:  YAMLException if the file could not be opened or read.
          */
@@ -71,6 +73,13 @@ struct Loader
                 throw new YAMLException("Unable to open file %s for YAML loading: %s"
                                         .format(filename, e.msg));
             }
+         }
+         /// ditto
+         static Loader fromFile(File file) @system
+         {
+            auto loader = Loader(file.byChunk(4096).join);
+            loader.name_ = file.name;
+            return loader;
          }
 
         /** Construct a Loader to load YAML from a string.
@@ -330,6 +339,19 @@ struct Loader
 {
     write("example.yaml", "Hello world!");
     auto rootNode = Loader.fromFile("example.yaml").load();
+    assert(rootNode == "Hello world!");
+}
+/// Load single YAML document from an already-opened file:
+@system unittest
+{
+    // Open a temporary file
+    auto file = File.tmpfile;
+    // Write valid YAML
+    file.write("Hello world!");
+    // Return to the beginning
+    file.seek(0);
+    // Load document
+    auto rootNode = Loader.fromFile(file).load();
     assert(rootNode == "Hello world!");
 }
 /// Load all YAML documents from a file:
