@@ -76,9 +76,7 @@ struct Loader
          /// Ditto
          static Loader fromFile(File file) @system
          {
-            // Use a reasonable chunk size for reading
-            enum chunkSize = 4096;
-            auto loader = Loader(file.byChunk(chunkSize).join);
+            auto loader = Loader(file.byChunk(4096).join);
             loader.name_ = file.name;
             return loader;
          }
