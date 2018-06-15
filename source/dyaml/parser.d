@@ -235,6 +235,17 @@ final class Parser
             return result;
         }
 
+        /// Push a state on the stack
+        void pushState(Event delegate() @safe state) @trusted
+        {
+            states_ ~= state;
+        }
+        /// Push a mark on the stack
+        void pushMark(Mark mark) @trusted
+        {
+            marks_ ~= mark;
+        }
+
         /**
          * stream    ::= STREAM-START implicit_document? explicit_document* STREAM-END
          * implicit_document ::= block_node DOCUMENT-END*
@@ -250,7 +261,7 @@ final class Parser
         }
 
         /// Parse implicit document start, unless explicit detected: if so, parse explicit.
-        Event parseImplicitDocumentStart() @trusted
+        Event parseImplicitDocumentStart() @safe
         {
             // Parse an implicit document.
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
@@ -259,7 +270,7 @@ final class Parser
                 tagDirectives_  = defaultTagDirectives_;
                 const token = scanner_.peekToken();
 
-                states_ ~= &parseDocumentEnd;
+                pushState(&parseDocumentEnd);
                 state_ = &parseBlockNode;
 
                 return documentStartEvent(token.startMark, token.endMark, false, null, null);
@@ -285,7 +296,7 @@ final class Parser
                                   scanner_.peekToken().startMark));
 
                 const endMark = scanner_.getToken().endMark;
-                states_ ~= &parseDocumentEnd;
+                pushState(&parseDocumentEnd);
                 state_ = &parseDocumentContent;
                 return documentStartEvent(startMark, endMark, true, YAMLVersion_, tagDirectives);
             }
@@ -640,16 +651,16 @@ final class Parser
         ///block_sequence ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
 
         ///Parse an entry of a block sequence. If first is true, this is the first entry.
-        Event parseBlockSequenceEntry(Flag!"first" first)() @trusted
+        Event parseBlockSequenceEntry(Flag!"first" first)() @safe
         {
-            static if(first){marks_ ~= scanner_.getToken().startMark;}
+            static if(first){pushMark(scanner_.getToken().startMark);}
 
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
                 const token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.BlockEnd))
                 {
-                    states_~= &parseBlockSequenceEntry!(No.first);
+                    pushState(&parseBlockSequenceEntry!(No.first));
                     return parseBlockNode();
                 }
 
@@ -674,7 +685,7 @@ final class Parser
         ///indentless_sequence ::= (BLOCK-ENTRY block_node?)+
 
         ///Parse an entry of an indentless sequence.
-        Event parseIndentlessSequenceEntry() @trusted
+        Event parseIndentlessSequenceEntry() @safe
         {
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
@@ -683,7 +694,7 @@ final class Parser
                 if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key,
                                         TokenID.Value, TokenID.BlockEnd))
                 {
-                    states_ ~= &parseIndentlessSequenceEntry;
+                    pushState(&parseIndentlessSequenceEntry);
                     return parseBlockNode();
                 }
 
@@ -704,9 +715,9 @@ final class Parser
          */
 
         ///Parse a key in a block mapping. If first is true, this is the first key.
-        Event parseBlockMappingKey(Flag!"first" first)() @trusted
+        Event parseBlockMappingKey(Flag!"first" first)() @safe
         {
-            static if(first){marks_ ~= scanner_.getToken().startMark;}
+            static if(first){pushMark(scanner_.getToken().startMark);}
 
             if(scanner_.checkToken(TokenID.Key))
             {
@@ -714,7 +725,7 @@ final class Parser
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
-                    states_ ~= &parseBlockMappingValue;
+                    pushState(&parseBlockMappingValue);
                     return parseBlockNodeOrIndentlessSequence();
                 }
 
@@ -737,7 +748,7 @@ final class Parser
         }
 
         ///Parse a value in a block mapping.
-        Event parseBlockMappingValue() @trusted
+        Event parseBlockMappingValue() @safe
         {
             if(scanner_.checkToken(TokenID.Value))
             {
@@ -745,7 +756,7 @@ final class Parser
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
-                    states_ ~= &parseBlockMappingKey!(No.first);
+                    pushState(&parseBlockMappingKey!(No.first));
                     return parseBlockNodeOrIndentlessSequence();
                 }
 
@@ -771,9 +782,9 @@ final class Parser
          */
 
         ///Parse an entry in a flow sequence. If first is true, this is the first entry.
-        Event parseFlowSequenceEntry(Flag!"first" first)() @trusted
+        Event parseFlowSequenceEntry(Flag!"first" first)() @safe
         {
-            static if(first){marks_ ~= scanner_.getToken().startMark;}
+            static if(first){pushMark(scanner_.getToken().startMark);}
 
             if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
             {
@@ -801,7 +812,7 @@ final class Parser
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
                 {
-                    states_ ~= &parseFlowSequenceEntry!(No.first);
+                    pushState(&parseFlowSequenceEntry!(No.first));
                     return parseFlowNode();
                 }
             }
@@ -813,14 +824,14 @@ final class Parser
         }
 
         ///Parse a key in flow context.
-        Event parseFlowKey(in Event delegate() @safe nextState) @trusted
+        Event parseFlowKey(in Event delegate() @safe nextState) @safe
         {
             const token = scanner_.getToken();
 
             if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry,
                                     TokenID.FlowSequenceEnd))
             {
-                states_ ~= nextState;
+                pushState(nextState);
                 return parseFlowNode();
             }
 
@@ -836,14 +847,14 @@ final class Parser
 
         ///Parse a mapping value in a flow context.
         Event parseFlowValue(TokenID checkId, in Event delegate() @safe nextState)
-            @trusted
+            @safe
         {
             if(scanner_.checkToken(TokenID.Value))
             {
                 const token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.FlowEntry, checkId))
                 {
-                    states_ ~= nextState;
+                    pushState(nextState);
                     return parseFlowNode();
                 }
 
@@ -879,9 +890,9 @@ final class Parser
          */
 
         ///Parse a key in a flow mapping.
-        Event parseFlowMappingKey(Flag!"first" first)() @trusted
+        Event parseFlowMappingKey(Flag!"first" first)() @safe
         {
-            static if(first){marks_ ~= scanner_.getToken().startMark;}
+            static if(first){pushMark(scanner_.getToken().startMark);}
 
             if(!scanner_.checkToken(TokenID.FlowMappingEnd))
             {
@@ -907,7 +918,7 @@ final class Parser
 
                 if(!scanner_.checkToken(TokenID.FlowMappingEnd))
                 {
-                    states_ ~= &parseFlowMappingEmptyValue;
+                    pushState(&parseFlowMappingEmptyValue);
                     return parseFlowNode();
                 }
             }
