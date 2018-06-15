@@ -71,7 +71,7 @@ void run(D)(string testName, D testFunction,
     }
     else
     {
-        results ~= execute(testName, testFunction, cast(string[])[]);
+        results ~= execute(testName, testFunction, string[].init);
     }
     display(results);
 }

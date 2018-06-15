@@ -51,7 +51,7 @@ void testUnicodeInput(string unicodeFilename) @safe
     string data     = readText(unicodeFilename);
     string expected = data.split().join(" ");
 
-    Node output = Loader.fromBuffer(cast(ubyte[])data.to!(char[])).load();
+    Node output = Loader.fromString(data).load();
     assert(output.as!string == expected);
 
     foreach(buffer; [cast(ubyte[])(bom16() ~ data.to!(wchar[])),

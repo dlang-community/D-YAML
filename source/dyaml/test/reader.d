@@ -21,7 +21,7 @@ void runReader(ubyte[] fileData) @safe
 {
     try
     {
-        auto reader = new Reader(cast(ubyte[])fileData);
+        auto reader = new Reader(fileData);
         while(reader.peek() != '\0') { reader.forward(); }
     }
     catch(ReaderException e)
