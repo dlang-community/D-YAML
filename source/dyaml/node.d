@@ -2011,8 +2011,7 @@ struct Node
         @safe unittest
         {
             import dyaml.dumper;
-            import std.outbuffer;
-            auto stream = new OutBuffer();
+            auto stream = new Appender!string();
             auto node = Node([1, 2, 3, 4, 5]);
             node.setStyle(CollectionStyle.Block);
 
@@ -2023,8 +2022,7 @@ struct Node
         @safe unittest
         {
             import dyaml.dumper;
-            import std.outbuffer;
-            auto stream = new OutBuffer();
+            auto stream = new Appender!string();
             auto node = Node(4);
             node.setStyle(ScalarStyle.Literal);
 
@@ -2039,9 +2037,8 @@ struct Node
         @safe unittest
         {
             import dyaml.dumper;
-            import std.outbuffer;
             {
-                auto stream = new OutBuffer();
+                auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.Block);
                 auto dumper = dumper(stream);
@@ -2051,10 +2048,10 @@ struct Node
                 dumper.dump(node);
 
                 //Block style should start with a hyphen.
-                assert(stream.toString()[0] == '-');
+                assert(stream.data[0] == '-');
             }
             {
-                auto stream = new OutBuffer();
+                auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.Flow);
                 auto dumper = dumper(stream);
@@ -2064,10 +2061,10 @@ struct Node
                 dumper.dump(node);
 
                 //Flow style should start with a bracket.
-                assert(stream.toString()[0] == '[');
+                assert(stream.data[0] == '[');
             }
             {
-                auto stream = new OutBuffer();
+                auto stream = new Appender!string();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.SingleQuoted);
                 auto dumper = dumper(stream);
@@ -2076,10 +2073,10 @@ struct Node
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
-                assert(stream.toString() == "!!int '1'\n");
+                assert(stream.data == "!!int '1'\n");
             }
             {
-                auto stream = new OutBuffer();
+                auto stream = new Appender!string();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.DoubleQuoted);
                 auto dumper = dumper(stream);
@@ -2088,7 +2085,7 @@ struct Node
                 dumper.YAMLVersion = null;
                 dumper.dump(node);
 
-                assert(stream.toString() == "!!int \"1\"\n");
+                assert(stream.data == "!!int \"1\"\n");
             }
         }
 

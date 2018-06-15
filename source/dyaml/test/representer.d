@@ -10,11 +10,12 @@ module dyaml.test.representer;
 version(unittest)
 {
 
+import std.array;
 import std.exception;
 import std.meta;
-import std.outbuffer;
 import std.path;
 import std.typecons;
+import std.utf;
 
 import dyaml.test.common;
 import dyaml.test.constructor;
@@ -34,7 +35,7 @@ void testRepresenterTypes(string codeFilename) @safe
     Node[] expectedNodes = expected[baseName];
     foreach(encoding; AliasSeq!(char, wchar, dchar))
     {
-        ubyte[] output;
+        immutable(encoding)[] output;
         Node[] readNodes;
 
         scope(failure)
@@ -51,20 +52,20 @@ void testRepresenterTypes(string codeFilename) @safe
             }
         }
 
-        auto emitStream  = new OutBuffer;
+        auto emitStream  = new Appender!(immutable(encoding)[]);
         auto representer = new Representer;
         representer.addRepresenter!TestClass(&representClass);
         representer.addRepresenter!TestStruct(&representStruct);
-        auto dumper = Dumper!OutBuffer(emitStream);
+        auto dumper = dumper(emitStream);
         dumper.representer = representer;
         dumper.dump!encoding(expectedNodes);
 
-        output = emitStream.toBytes;
+        output = emitStream.data;
         auto constructor = new Constructor;
         constructor.addConstructorMapping("!tag1", &constructClass);
         constructor.addConstructorScalar("!tag2", &constructStruct);
 
-        auto loader        = Loader.fromBuffer(emitStream.toBytes);
+        auto loader        = Loader.fromString(emitStream.data.toUTF8);
         loader.name        = "TEST";
         loader.constructor = constructor;
         readNodes          = loader.loadAll();

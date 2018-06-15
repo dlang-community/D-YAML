@@ -11,9 +11,8 @@
  */
 module dyaml.dumper;
 
-
+import std.array;
 import std.typecons;
-import std.outbuffer;
 
 import dyaml.emitter;
 import dyaml.event;
@@ -187,7 +186,7 @@ struct Dumper(Range)
         ///
         @safe unittest
         {
-            auto dumper = dumper(new OutBuffer());
+            auto dumper = dumper(new Appender!string());
             string[string] directives;
             directives["!short!"] = "tag:long.org,2011:";
             //This will emit tags starting with "tag:long.org,2011"
@@ -256,21 +255,21 @@ struct Dumper(Range)
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    dumper(new OutBuffer()).dump(node);
+    dumper(new Appender!string()).dump(node);
 }
 ///Write multiple YAML documents to a file
 @safe unittest
 {
     auto node1 = Node([1, 2, 3, 4, 5]);
     auto node2 = Node("This document contains only one string");
-    dumper(new OutBuffer()).dump(node1, node2);
+    dumper(new Appender!string()).dump(node1, node2);
     //Or with an array:
-    dumper(new OutBuffer()).dump([node1, node2]);
+    dumper(new Appender!string()).dump([node1, node2]);
 }
 ///Write to memory
 @safe unittest
 {
-    auto stream = new OutBuffer();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
     dumper(stream).dump(node);
 }
@@ -281,7 +280,7 @@ struct Dumper(Range)
     auto representer = new Representer();
     auto resolver = new Resolver();
     //Add representer functions / resolver expressions here...
-    auto dumper = dumper(new OutBuffer());
+    auto dumper = dumper(new Appender!string());
     dumper.representer = representer;
     dumper.resolver = resolver;
     dumper.dump(node);
@@ -289,7 +288,7 @@ struct Dumper(Range)
 // Explicit document start/end markers
 @safe unittest
 {
-    auto stream = new OutBuffer();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
     auto dumper = dumper(stream);
     dumper.explicitEnd = true;
@@ -297,14 +296,14 @@ struct Dumper(Range)
     dumper.YAMLVersion = null;
     dumper.dump(node);
     //Skip version string
-    assert(stream.toString[0..3] == "---");
+    assert(stream.data[0..3] == "---");
     //account for newline at end
-    assert(stream.toString[$-4..$-1] == "...");
+    assert(stream.data[$-4..$-1] == "...");
 }
 // No explicit document start/end markers
 @safe unittest
 {
-    auto stream = new OutBuffer();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
     auto dumper = dumper(stream);
     dumper.explicitEnd = false;
@@ -312,7 +311,7 @@ struct Dumper(Range)
     dumper.YAMLVersion = null;
     dumper.dump(node);
     //Skip version string
-    assert(stream.toString[0..3] != "---");
+    assert(stream.data[0..3] != "---");
     //account for newline at end
-    assert(stream.toString[$-4..$-1] != "...");
+    assert(stream.data[$-4..$-1] != "...");
 }
