@@ -56,6 +56,7 @@ struct Loader
         /** Construct a Loader to load YAML from a file.
          *
          * Params:  filename = Name of the file to load from.
+         *          file = Already-opened file to load from.
          *
          * Throws:  YAMLException if the file could not be opened or read.
          */
@@ -73,7 +74,7 @@ struct Loader
                                         .format(filename, e.msg));
             }
          }
-         /// Ditto
+         /// ditto
          static Loader fromFile(File file) @system
          {
             auto loader = Loader(file.byChunk(4096).join);
