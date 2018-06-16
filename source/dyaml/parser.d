@@ -125,16 +125,16 @@ final class Parser
         TagDirective[] tagDirectives_;
 
         ///Stack of states.
-        Array!(Event delegate() @safe) states_;
+        Appender!(Event delegate() @safe[]) states_;
         ///Stack of marks used to keep track of extents of e.g. YAML collections.
-        Array!Mark marks_;
+        Appender!(Mark[]) marks_;
 
         ///Current state.
         Event delegate() @safe state_;
 
     public:
         ///Construct a Parser using specified Scanner.
-        this(Scanner scanner) @trusted
+        this(Scanner scanner) @safe
         {
             state_ = &parseStreamStart;
             scanner_ = scanner;
@@ -216,32 +216,32 @@ final class Parser
 
     private:
         ///Pop and return the newest state in states_.
-        Event delegate() @safe popState() @trusted
+        Event delegate() @safe popState() @safe
         {
-            enforce(states_.length > 0,
+            enforce(states_.data.length > 0,
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
-            const result = states_.back;
-            states_.length = states_.length - 1;
+            const result = states_.data.back;
+            states_.shrinkTo(states_.data.length - 1);
             return result;
         }
 
         ///Pop and return the newest mark in marks_.
-        Mark popMark() @trusted
+        Mark popMark() @safe
         {
-            enforce(marks_.length > 0,
+            enforce(marks_.data.length > 0,
                     new YAMLException("Parser: Need to pop mark but no marks left to pop"));
-            const result = marks_.back;
-            marks_.length = marks_.length - 1;
+            const result = marks_.data.back;
+            marks_.shrinkTo(marks_.data.length - 1);
             return result;
         }
 
         /// Push a state on the stack
-        void pushState(Event delegate() @safe state) @trusted
+        void pushState(Event delegate() @safe state) @safe
         {
             states_ ~= state;
         }
         /// Push a mark on the stack
-        void pushMark(Mark mark) @trusted
+        void pushMark(Mark mark) @safe
         {
             marks_ ~= mark;
         }
@@ -304,8 +304,8 @@ final class Parser
             {
                 //Parse the end of the stream.
                 const token = scanner_.getToken();
-                assert(states_.length == 0);
-                assert(marks_.length == 0);
+                assert(states_.data.length == 0);
+                assert(marks_.data.length == 0);
                 state_ = null;
                 return streamEndEvent(token.startMark, token.endMark);
             }
@@ -671,7 +671,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 const token = scanner_.peekToken();
-                throw new ParserException("While parsing a block collection", marks_.back,
+                throw new ParserException("While parsing a block collection", marks_.data.back,
                                 "expected block end, but found " ~ token.idString,
                                 token.startMark);
             }
@@ -736,7 +736,7 @@ final class Parser
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
                 const token = scanner_.peekToken();
-                throw new ParserException("While parsing a block mapping", marks_.back,
+                throw new ParserException("While parsing a block mapping", marks_.data.back,
                                 "expected block end, but found: " ~ token.idString,
                                 token.startMark);
             }
@@ -797,7 +797,7 @@ final class Parser
                     else
                     {
                         const token = scanner_.peekToken();
-                        throw new ParserException("While parsing a flow sequence", marks_.back,
+                        throw new ParserException("While parsing a flow sequence", marks_.data.back,
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
                     }
@@ -905,7 +905,7 @@ final class Parser
                     else
                     {
                         const token = scanner_.peekToken();
-                        throw new ParserException("While parsing a flow mapping", marks_.back,
+                        throw new ParserException("While parsing a flow mapping", marks_.data.back,
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);
                     }
