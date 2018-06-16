@@ -415,7 +415,7 @@ final class Scanner
         /// Decrease indentation, removing entries in indents_.
         ///
         /// Params:  column = Current column in the file/stream.
-        void unwindIndent(const int column) @trusted
+        void unwindIndent(const int column) @safe
         {
             if(flowLevel_ > 0)
             {
@@ -451,7 +451,7 @@ final class Scanner
         /// Params:  column = Current column in the file/stream.
         ///
         /// Returns: true if the indentation was increased, false otherwise.
-        bool addIndent(int column) @trusted
+        bool addIndent(int column) @safe
         {
             if(indent_ >= column){return false;}
             indents_ ~= indent_;
@@ -1963,7 +1963,7 @@ final class Scanner
             //
             // Returns the number of bytes used by the dchar in bytes on success,
             // size_t.max on failure.
-            static size_t getDchar(char[] bytes, Reader reader_) @trusted
+            static size_t getDchar(char[] bytes, Reader reader_) @safe
             {
                 size_t nextChar;
                 dchar c;
@@ -1979,8 +1979,7 @@ final class Scanner
                 reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)
                 {
-                    core.stdc.string.memmove(&bytes[0], &bytes[nextChar],
-                                             bytes.length - nextChar);
+                    copy(bytes[nextChar..bytes.length], bytes[0..bytes.length-nextChar]);
                 }
                 return bytes.length - nextChar;
             }
