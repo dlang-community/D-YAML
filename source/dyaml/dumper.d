@@ -239,12 +239,12 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(Node[] documents ...) @trusted
+        void dump(Node[] documents ...) @safe
         {
             try
             {
-                auto emitter = Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
-                auto serializer = Serializer(&emitter, resolver_, encoding_, explicitStart_,
+                auto emitter = new Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto serializer = Serializer(emitter, resolver_, encoding_, explicitStart_,
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)
                 {
