@@ -266,11 +266,11 @@ struct Dumper
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(Event[] events) @system
+        void emit(Event[] events) @safe
         {
             try
             {
-                auto emitter = Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = new Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);

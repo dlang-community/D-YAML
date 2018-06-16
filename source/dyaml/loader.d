@@ -308,11 +308,11 @@ struct Loader
 
 
         // Parse and return all events. Used for debugging.
-        immutable(Event)[] parse() @safe
+        Event[] parse() @safe
         {
             try
             {
-                immutable(Event)[] result;
+                Event[] result;
                 while(parser_.checkEvent())
                 {
                     result ~= parser_.getEvent();

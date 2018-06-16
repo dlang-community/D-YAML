@@ -105,10 +105,10 @@ Node[] constructCustom() @safe
 
 Node[] constructFloat() @safe
 {
-    return [Node([pair("canonical",         cast(real)685230.15),
-                  pair("exponential",       cast(real)685230.15),
-                  pair("fixed",             cast(real)685230.15),
-                  pair("sexagesimal",       cast(real)685230.15),
+    return [Node([pair("canonical",         685230.15L),
+                  pair("exponential",       685230.15L),
+                  pair("fixed",             685230.15L),
+                  pair("sexagesimal",       685230.15L),
                   pair("negative infinity", -real.infinity),
                   pair("not a number",      real.nan)])];
 }
@@ -236,8 +236,8 @@ Node[] constructValue() @safe
     return[Node([pair("link with",
                       [Node("library1.dll"), Node("library2.dll")])]),
            Node([pair("link with",
-                      [Node([pair("=", "library1.dll"), pair("version", cast(real)1.2)]),
-                       Node([pair("=", "library2.dll"), pair("version", cast(real)2.3)])])])];
+                      [Node([pair("=", "library1.dll"), pair("version", 1.2L)]),
+                       Node([pair("=", "library2.dll"), pair("version", 2.3L)])])])];
 }
 
 Node[] duplicateMergeKey() @safe
@@ -251,7 +251,7 @@ Node[] duplicateMergeKey() @safe
 
 Node[] floatRepresenterBug() @safe
 {
-    return [Node([pair(cast(real)1.0, 1L),
+    return [Node([pair(1.0L, 1L),
                   pair(real.infinity, 10L),
                   pair(-real.infinity, -10L),
                   pair(real.nan, 100L)])];
@@ -264,9 +264,9 @@ Node[] invalidSingleQuoteBug() @safe
 
 Node[] moreFloats() @safe
 {
-    return [Node([Node(cast(real)0.0),
-                  Node(cast(real)1.0),
-                  Node(cast(real)-1.0),
+    return [Node([Node(0.0L),
+                  Node(1.0L),
+                  Node(-1.0L),
                   Node(real.infinity),
                   Node(-real.infinity),
                   Node(real.nan),
@@ -275,7 +275,7 @@ Node[] moreFloats() @safe
 
 Node[] negativeFloatBug() @safe
 {
-    return [Node(cast(real)-1.0)];
+    return [Node(-1.0L)];
 }
 
 Node[] singleDotFloatBug() @safe

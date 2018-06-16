@@ -28,7 +28,7 @@ import dyaml.token;
 ///          events2 = Second event array to compare.
 ///
 /// Returns: true if the events are equivalent, false otherwise.
-bool compareEvents(Event[] events1, Event[] events2) @system
+bool compareEvents(Event[] events1, Event[] events2) @safe
 {
     if(events1.length != events2.length){return false;}
 
@@ -78,11 +78,11 @@ bool compareEvents(Event[] events1, Event[] events2) @system
 /// Params:  dataFilename      = YAML file to parse.
 ///          canonicalFilename = Canonical YAML file used as dummy to determine
 ///                              which data files to load.
-void testEmitterOnData(string dataFilename, string canonicalFilename) @system
+void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader.fromFile(dataFilename);
-    auto events = cast(Event[])loader.parse();
+    auto events = loader.parse();
     auto emitStream = new YMemoryStream;
     Dumper(emitStream).emit(events);
 
@@ -90,14 +90,14 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @system
     {
         writeln(dataFilename);
         writeln("ORIGINAL:\n", readText(dataFilename));
-        writeln("OUTPUT:\n", cast(string)emitStream.data);
+        writeln("OUTPUT:\n", cast(char[])emitStream.data);
     }
 
     auto loader2        = Loader.fromBuffer(emitStream.data);
     loader2.name        = "TEST";
     loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
-    auto newEvents = cast(Event[])loader2.parse();
+    auto newEvents = loader2.parse();
     assert(compareEvents(events, newEvents));
 }
 
@@ -106,11 +106,11 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @system
 /// comparing events from parsing the emitted result with originally parsed events.
 ///
 /// Params:  canonicalFilename = Canonical YAML file to parse.
-void testEmitterOnCanonical(string canonicalFilename) @system
+void testEmitterOnCanonical(string canonicalFilename) @safe
 {
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader.fromFile(canonicalFilename);
-    auto events = cast(Event[])loader.parse();
+    auto events = loader.parse();
     foreach(canonical; [false, true])
     {
         auto emitStream = new YMemoryStream;
@@ -120,13 +120,13 @@ void testEmitterOnCanonical(string canonicalFilename) @system
         static if(verbose)
         {
             writeln("OUTPUT (canonical=", canonical, "):\n",
-                    cast(string)emitStream.data);
+                    cast(char[])emitStream.data);
         }
         auto loader2        = Loader.fromBuffer(emitStream.data);
         loader2.name        = "TEST";
         loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
-        auto newEvents = cast(Event[])loader2.parse();
+        auto newEvents = loader2.parse();
         assert(compareEvents(events, newEvents));
     }
 }
@@ -138,13 +138,13 @@ void testEmitterOnCanonical(string canonicalFilename) @system
 /// Params:  dataFilename      = YAML file to parse.
 ///          canonicalFilename = Canonical YAML file used as dummy to determine
 ///                              which data files to load.
-void testEmitterStyles(string dataFilename, string canonicalFilename) @system
+void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
 {
     foreach(filename; [dataFilename, canonicalFilename])
     {
         //must exist due to Anchor, Tags reference counts
         auto loader = Loader.fromFile(canonicalFilename);
-        auto events = cast(Event[])loader.parse();
+        auto events = loader.parse();
         foreach(flowStyle; [CollectionStyle.Block, CollectionStyle.Flow])
         {
             foreach(style; [ScalarStyle.Literal, ScalarStyle.Folded,
@@ -178,20 +178,20 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @system
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",
                             to!string(style), ")");
-                    writeln(emitStream.data);
+                    writeln(cast(char[])emitStream.data);
                 }
                 auto loader2        = Loader.fromBuffer(emitStream.data);
                 loader2.name        = "TEST";
                 loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;
-                auto newEvents = cast(Event[])loader2.parse();
+                auto newEvents = loader2.parse();
                 assert(compareEvents(events, newEvents));
             }
         }
     }
 }
 
-@system unittest
+@safe unittest
 {
     printProgress("D:YAML Emitter unittest");
     run("testEmitterOnData",      &testEmitterOnData,      ["data", "canonical"]);

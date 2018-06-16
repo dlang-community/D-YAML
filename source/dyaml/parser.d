@@ -182,13 +182,13 @@ final class Parser
          *
          * Must not be called if there are no events left.
          */
-        immutable(Event) peekEvent() @trusted
+        Event peekEvent() @safe
         {
             if(currentEvent_.isNull && state_ !is null)
             {
                 currentEvent_ = state_();
             }
-            if(!currentEvent_.isNull){return cast(immutable Event)currentEvent_;}
+            if(!currentEvent_.isNull){return currentEvent_;}
             assert(false, "No event left to peek");
         }
 
@@ -197,7 +197,7 @@ final class Parser
          *
          * Must not be called if there are no events left.
          */
-        immutable(Event) getEvent() @trusted
+        Event getEvent() @safe
         {
             //Get the next event and proceed further.
             if(currentEvent_.isNull && state_ !is null)
@@ -207,7 +207,7 @@ final class Parser
 
             if(!currentEvent_.isNull)
             {
-                immutable Event result = cast(immutable Event)currentEvent_;
+                Event result = currentEvent_;
                 currentEvent_.id = EventID.Invalid;
                 return result;
             }
@@ -336,7 +336,7 @@ final class Parser
         }
 
         /// Process directives at the beginning of a document.
-        TagDirective[] processDirectives() @system
+        TagDirective[] processDirectives() @safe
         {
             // Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
@@ -534,11 +534,11 @@ final class Parser
         /// Handle escape sequences in a double quoted scalar.
         ///
         /// Moved here from scanner as it can't always be done in-place with slices.
-        string handleDoubleQuotedScalarEscapes(char[] tokenValue) const @system
+        string handleDoubleQuotedScalarEscapes(char[] tokenValue) const @safe
         {
             string notInPlace;
             bool inEscape = false;
-            auto appender = appender!(char[])();
+            auto appender = appender!(string)();
             for(char[] oldValue = tokenValue; !oldValue.empty();)
             {
                 const dchar c = oldValue.front();
@@ -604,7 +604,7 @@ final class Parser
                 assert(false, "Scanner must handle unsupported escapes");
             }
 
-            return notInPlace is null ? cast(string)appender.data : notInPlace;
+            return notInPlace is null ? appender.data : notInPlace;
         }
 
         /**
