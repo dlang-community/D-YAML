@@ -270,7 +270,7 @@ struct Dumper
         {
             try
             {
-                auto emitter = new Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);

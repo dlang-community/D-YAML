@@ -13,7 +13,6 @@ module dyaml.emitter;
 import std.algorithm;
 import std.array;
 import std.ascii;
-import std.container;
 import std.conv;
 import std.encoding;
 import std.exception;
@@ -82,7 +81,7 @@ struct Emitter
         Encoding encoding_ = Encoding.UTF_8;
 
         ///Stack of states.
-        Array!(void function() @safe) states_;
+        Appender!(void function() @safe[]) states_;
         ///Current state.
         //WARNING! DO NOT CALL DIRECTLY! Use callNext() instead!
         void function() @safe state_;
@@ -93,7 +92,7 @@ struct Emitter
         Event event_;
 
         ///Stack of previous indentation levels.
-        Array!int indents_;
+        Appender!(int[]) indents_;
         ///Current indentation level.
         int indent_ = -1;
 
@@ -197,12 +196,12 @@ struct Emitter
 
     private:
         ///Pop and return the newest state in states_.
-        void function() @safe popState() @trusted
+        void function() @safe popState() @safe
         {
-            enforce(states_.length > 0,
+            enforce(states_.data.length > 0,
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
-            const result = states_.back;
-            states_.length = states_.length - 1;
+            const result = states_.data[$-1];
+            states_.shrinkTo(states_.data.length - 1);
             return result;
         }
 
@@ -212,13 +211,13 @@ struct Emitter
         }
 
         ///Pop and return the newest indent in indents_.
-        int popIndent() @trusted
+        int popIndent() @safe
         {
-            enforce(indents_.length > 0,
+            enforce(indents_.data.length > 0,
                     new YAMLException("Emitter: Need to pop an indent level but there" ~
                                       " are no indent levels left"));
-            const result = indents_.back;
-            indents_.length = indents_.length - 1;
+            const result = indents_.data[$-1];
+            indents_.shrinkTo(indents_.data.length - 1);
             return result;
         }
 
@@ -287,7 +286,7 @@ struct Emitter
         }
 
         ///Increase indentation level.
-        void increaseIndent(const Flag!"flow" flow = No.flow, const bool indentless = false) @trusted
+        void increaseIndent(const Flag!"flow" flow = No.flow, const bool indentless = false) @safe
         {
             indents_ ~= indent_;
             if(indent_ == -1)
