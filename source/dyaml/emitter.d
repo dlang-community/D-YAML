@@ -165,7 +165,7 @@ struct Emitter
          *          lineBreak = Line break character/s.
          */
         this(YStream stream, const bool canonical, const int indent, const int width,
-             const LineBreak lineBreak) @trusted
+             const LineBreak lineBreak) @safe
         in{assert(stream.writeable, "Can't emit YAML to a non-writable stream");}
         body
         {
