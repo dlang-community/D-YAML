@@ -131,7 +131,7 @@ final class Scanner
         /// Current indentation level.
         int indent_ = -1;
         /// Past indentation levels. Used as a stack.
-        Array!int indents_;
+        Appender!(int[]) indents_;
 
         /// Processed tokens not yet emitted. Used as a queue.
         Queue!Token tokens_;
@@ -440,9 +440,9 @@ final class Scanner
             // In block context, we may need to issue the BLOCK-END tokens.
             while(indent_ > column)
             {
-                indent_ = indents_.back;
-                assert(indents_.length);
-                indents_.length = indents_.length - 1;
+                indent_ = indents_.data.back;
+                assert(indents_.data.length);
+                indents_.shrinkTo(indents_.data.length - 1);
                 tokens_.push(blockEndToken(reader_.mark, reader_.mark));
             }
         }
