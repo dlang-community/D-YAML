@@ -13,7 +13,6 @@ module dyaml.parser;
 
 import std.algorithm;
 import std.array;
-import std.container;
 import std.conv;
 import std.exception;
 import std.typecons;

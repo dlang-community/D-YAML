@@ -13,7 +13,6 @@ module dyaml.emitter;
 import std.algorithm;
 import std.array;
 import std.ascii;
-import std.container;
 import std.conv;
 import std.encoding;
 import std.exception;
