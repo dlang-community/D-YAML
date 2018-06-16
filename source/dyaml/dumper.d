@@ -243,7 +243,7 @@ struct Dumper
         {
             try
             {
-                auto emitter = new Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
                 auto serializer = Serializer(emitter, resolver_, encoding_, explicitStart_,
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)

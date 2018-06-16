@@ -95,8 +95,6 @@ public:
     @disable bool opEquals(ref Queue);
     @disable int opCmp(ref Queue);
 
-    @disable this(this);
-
     ~this() @safe nothrow @nogc
     {
         freeStock();

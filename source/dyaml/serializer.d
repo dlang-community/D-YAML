@@ -32,7 +32,7 @@ struct Serializer
 {
     private:
         ///Emitter to emit events produced.
-        Emitter* emitter_;
+        Emitter emitter_;
         ///Resolver used to determine which tags are automaticaly resolvable.
         Resolver resolver_;
 
@@ -66,7 +66,7 @@ struct Serializer
          *          YAMLVersion   = YAML version string.
          *          tagDirectives = Tag directives to emit.
          */
-        this(Emitter* emitter, Resolver resolver, Encoding encoding,
+        this(Emitter emitter, Resolver resolver, Encoding encoding,
              const Flag!"explicitStart" explicitStart,
              const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
              TagDirective[] tagDirectives) @safe
