@@ -58,16 +58,16 @@ struct YAMLNull
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
-// Base class for YAMLContainer - used for user defined YAML types.
-package abstract class YAMLObject
+// Interface for YAMLContainer - used for user defined YAML types.
+package interface YAMLObject
 {
     public:
         // Get type of the stored value.
-        @property TypeInfo type() const pure @safe nothrow {assert(false);}
+        @property TypeInfo type() const pure @safe nothrow;
 
     protected:
         // Compare with another YAMLObject.
-        int cmp(const YAMLObject) const @system {assert(false);}
+        int cmp(const YAMLObject) const @system;
 }
 
 // Stores a user defined YAML data type.
