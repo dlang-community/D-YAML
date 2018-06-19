@@ -76,6 +76,11 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
     private:
         // Stored value.
         T value_;
+        // Construct a YAMLContainer holding specified value.
+        this(T value) @safe
+        {
+            value_ = value;
+        }
 
     public:
         // Get type of the stored value.
@@ -107,9 +112,6 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
             return (*v1).opCmp(*v2);
         }
 
-    private:
-        // Construct a YAMLContainer holding specified value.
-        this(T value) @safe {value_ = value;}
 }
 
 
