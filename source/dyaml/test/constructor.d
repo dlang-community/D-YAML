@@ -353,7 +353,7 @@ struct TestStruct
 
     //Any D:YAML type must have a custom opCmp operator.
     //This is used for ordering in mappings.
-    const int opCmp(ref const TestStruct s) @safe
+    int opCmp(ref const TestStruct s) const @safe
     {
         return value - s.value;
     }
@@ -414,7 +414,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     Node[] exp = expected[base];
 
     //Compare with expected results document by document.
-    size_t i = 0;
+    size_t i;
     foreach(node; loader)
     {
         if(!node.equals!(No.useTag)(exp[i]))

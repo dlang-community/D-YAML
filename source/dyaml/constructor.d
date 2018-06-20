@@ -129,7 +129,7 @@ final class Constructor
         void addConstructorScalar(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
-            auto deleg = addConstructor!T(t, ctor);
+            const deleg = addConstructor!T(t, ctor);
             (*delegates!string)[t] = deleg;
         }
         ///
@@ -141,7 +141,7 @@ final class Constructor
 
                 //Any D:YAML type must have a custom opCmp operator.
                 //This is used for ordering in mappings.
-                const int opCmp(ref const MyStruct s)
+                int opCmp(ref const MyStruct s) const
                 {
                     if(x != s.x){return x - s.x;}
                     if(y != s.y){return y - s.y;}
@@ -175,7 +175,7 @@ final class Constructor
         void addConstructorSequence(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
-            auto deleg = addConstructor!T(t, ctor);
+            const deleg = addConstructor!T(t, ctor);
             (*delegates!(Node[]))[t] = deleg;
         }
         ///
@@ -187,7 +187,7 @@ final class Constructor
 
                 //Any D:YAML type must have a custom opCmp operator.
                 //This is used for ordering in mappings.
-                const int opCmp(ref const MyStruct s)
+                int opCmp(ref const MyStruct s) const
                 {
                     if(x != s.x){return x - s.x;}
                     if(y != s.y){return y - s.y;}
@@ -219,7 +219,7 @@ final class Constructor
         void addConstructorMapping(T)(const string tag, T function(ref Node) @safe ctor)
         {
             const t = tag;
-            auto deleg = addConstructor!T(t, ctor);
+            const deleg = addConstructor!T(t, ctor);
             (*delegates!(Node.Pair[]))[t] = deleg;
         }
         ///
@@ -230,7 +230,7 @@ final class Constructor
 
                 //Any D:YAML type must have a custom opCmp operator.
                 //This is used for ordering in mappings.
-                const int opCmp(ref const MyStruct s)
+                int opCmp(ref const MyStruct s) const
                 {
                     if(x != s.x){return x - s.x;}
                     if(y != s.y){return y - s.y;}
@@ -484,7 +484,7 @@ long constructLong(ref Node node) @safe
         //Sexagesimal.
         else if(value.canFind(":"))
         {
-            long val = 0;
+            long val;
             long base = 1;
             foreach_reverse(digit; value.split(":"))
             {
@@ -622,7 +622,7 @@ ubyte[] constructBinary(ref Node node) @safe
     buffer.length = 256;
     string input = Base64.encode(test, buffer).idup;
     auto node = Node(input);
-    auto value = constructBinary(node);
+    const value = constructBinary(node);
     assert(value == test);
     assert(value == [84, 104, 101, 32, 65, 110, 115, 119, 101, 114, 58, 32, 52, 50]);
 }
@@ -661,7 +661,7 @@ SysTime constructTimestamp(ref Node node) @safe
         const hour            = to!int(captures[1]);
         const minute          = to!int(captures[2]);
         const second          = to!int(captures[3]);
-        const hectonanosecond = cast(int)(to!real("0" ~ captures[4]) * 10000000);
+        const hectonanosecond = cast(int)(to!real("0" ~ captures[4]) * 10_000_000);
 
         // If available, get timezone.
         value = matches.front.post;
@@ -676,7 +676,7 @@ SysTime constructTimestamp(ref Node node) @safe
         // We have a timezone, so parse it.
         captures = matches.front.captures;
         int sign    = 1;
-        int tzHours = 0;
+        int tzHours;
         if(!captures[1].empty)
         {
             if(captures[1][0] == '-') {sign = -1;}

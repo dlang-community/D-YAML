@@ -47,15 +47,15 @@ final class Reader
 {
     private:
         // Buffer of currently loaded characters.
-        char[] buffer_ = null;
+        char[] buffer_;
 
         // Current position within buffer. Only data after this position can be read.
-        size_t bufferOffset_ = 0;
+        size_t bufferOffset_;
 
         // Index of the current character in the buffer.
-        size_t charIndex_ = 0;
+        size_t charIndex_;
         // Number of characters (code points) in buffer_.
-        size_t characterCount_ = 0;
+        size_t characterCount_;
 
         // Current line in file.
         uint line_;
@@ -74,13 +74,13 @@ final class Reader
         // The number of consecutive ASCII characters starting at bufferOffset_.
         //
         // Used to minimize UTF-8 decoding.
-        size_t upcomingASCII_ = 0;
+        size_t upcomingASCII_;
 
         // Index to buffer_ where the last decoded character starts.
-        size_t lastDecodedBufferOffset_ = 0;
+        size_t lastDecodedBufferOffset_;
         // Offset, relative to charIndex_, of the last decoded character,
         // in code points, not chars.
-        size_t lastDecodedCharOffset_ = 0;
+        size_t lastDecodedCharOffset_;
 
     public:
         /// Construct a Reader.
@@ -464,7 +464,7 @@ private:
     // Very few levels as we don't want arbitrarily nested transactions.
     size_t[4] endStack_;
     // The number of elements currently in endStack_.
-    size_t endStackUsed_ = 0;
+    size_t endStackUsed_;
 
     @safe const pure nothrow @nogc invariant()
     {
@@ -616,7 +616,7 @@ public:
     {
     private:
         // The slice builder affected by the transaction.
-        SliceBuilder* builder_ = null;
+        SliceBuilder* builder_;
         // Index of the return point of the transaction in StringBuilder.endStack_.
         size_t stackLevel_;
         // True after commit() has been called.
@@ -842,7 +842,7 @@ bool isPrintableValidUTF8(const char[] chars) @safe pure
                            false, false, false, false, false, false, false, false,
                            false, false, false, false, false, false, false, false];
 
-    for(size_t index = 0; index < chars.length;)
+    for(size_t index; index < chars.length;)
     {
         // Fast path for ASCII.
         // Both this while() block and the if() block below it are optimized, unrolled

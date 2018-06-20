@@ -379,7 +379,7 @@ final class Parser
             //Add any default tag handles that haven't been overridden.
             foreach(ref defaultPair; defaultTagDirectives_)
             {
-                bool found = false;
+                bool found;
                 foreach(ref pair; tagDirectives_) if(defaultPair.handle == pair.handle)
                 {
                     found = true;
@@ -422,8 +422,8 @@ final class Parser
                                   cast(string)token.value);
             }
 
-            string anchor = null;
-            string tag = null;
+            string anchor;
+            string tag;
             Mark startMark, endMark, tagMark;
             bool invalidMarks = true;
             // The index in the tag string where tag handle ends and tag suffix starts.
@@ -536,7 +536,7 @@ final class Parser
         string handleDoubleQuotedScalarEscapes(char[] tokenValue) const @safe
         {
             string notInPlace;
-            bool inEscape = false;
+            bool inEscape;
             auto appender = appender!(string)();
             for(char[] oldValue = tokenValue; !oldValue.empty();)
             {
@@ -624,7 +624,7 @@ final class Parser
 
             if(handle.length > 0)
             {
-                string replacement = null;
+                string replacement;
                 foreach(ref pair; tagDirectives_)
                 {
                     if(pair.handle == handle)

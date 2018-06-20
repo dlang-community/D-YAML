@@ -67,7 +67,7 @@ package abstract class YAMLObject
 
     protected:
         // Compare with another YAMLObject.
-        int cmp(const YAMLObject rhs) const @system {assert(false);};
+        int cmp(const YAMLObject) const @system {assert(false);}
 }
 
 // Stores a user defined YAML data type.
@@ -967,7 +967,7 @@ struct Node
                 }
 
                 /* Input range functionality. */
-                bool empty() @property { return position >= subnodes.length; }
+                bool empty() const @property { return position >= subnodes.length; }
 
                 void popFront()
                 {
@@ -975,7 +975,7 @@ struct Node
                     position++;
                 }
 
-                T front() @property
+                T front() const @property
                 {
                     enforce(!empty, "Attempted to take the front of an empty sequence");
                     static if (is(Unqual!T == Node))
@@ -1226,7 +1226,7 @@ struct Node
                         new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                                   startMark_));
 
-                int result = 0;
+                int result;
                 foreach(ref node; get!(Node[]))
                 {
                     static if(is(Unqual!T == Node))
@@ -1249,7 +1249,7 @@ struct Node
                         new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                                   startMark_));
 
-                int result = 0;
+                int result;
                 foreach(ref node; get!(Node[]))
                 {
                     static if(is(Unqual!T == Node))
@@ -1344,7 +1344,7 @@ struct Node
                         new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                                   startMark_));
 
-                int result = 0;
+                int result;
                 foreach(ref pair; get!(Node.Pair[]))
                 {
                     static if(is(Unqual!K == Node) && is(Unqual!V == Node))
@@ -1379,7 +1379,7 @@ struct Node
                         new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                                   startMark_));
 
-                int result = 0;
+                int result;
                 foreach(ref pair; get!(Node.Pair[]))
                 {
                     static if(is(Unqual!K == Node) && is(Unqual!V == Node))
@@ -2170,7 +2170,7 @@ struct Node
                 else          {node = &pair.value;}
 
 
-                bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) ||
+                const bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) ||
                                  (isIntegral!T && node.isInt) ||
                                  (is(Unqual!T==bool) && node.isBool) ||
                                  (isSomeString!T && node.isString) ||

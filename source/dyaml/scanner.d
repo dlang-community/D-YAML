@@ -1792,7 +1792,7 @@ final class Scanner
                 spacesTransaction = Transaction(&reader_.sliceBuilder);
 
                 const startLength = reader_.sliceBuilder.length;
-                scanPlainSpacesToSlice(startMark);
+                scanPlainSpacesToSlice();
                 if(startLength == reader_.sliceBuilder.length ||
                    (flowLevel_ == 0 && reader_.column < indent))
                 {
@@ -1810,7 +1810,7 @@ final class Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        void scanPlainSpacesToSlice(const Mark startMark) @safe
+        void scanPlainSpacesToSlice() @safe
         {
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
