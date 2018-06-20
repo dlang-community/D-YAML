@@ -1,3 +1,4 @@
+module dyaml.tojson;
 import std.datetime;
 import std.json;
 import std.stdio;
