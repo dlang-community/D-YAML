@@ -32,7 +32,7 @@ bool compareEvents(Event[] events1, Event[] events2) @safe
 {
     if(events1.length != events2.length){return false;}
 
-    for(uint e = 0; e < events1.length; ++e)
+    for(uint e; e < events1.length; ++e)
     {
         auto e1 = events1[e];
         auto e2 = events2[e];

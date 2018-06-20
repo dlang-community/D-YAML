@@ -47,7 +47,7 @@ struct Dumper
         //Stream to write to.
         YStream stream_;
         //True if this Dumper owns stream_ and needs to destroy it in the destructor.
-        bool weOwnStream_ = false;
+        bool weOwnStream_;
 
         //Write scalars in canonical form?
         bool canonical_;
@@ -62,7 +62,7 @@ struct Dumper
         //YAML version string.
         string YAMLVersion_ = "1.1";
         //Tag directives to use.
-        TagDirective[] tags_ = null;
+        TagDirective[] tags_;
         //Always write document start?
         Flag!"explicitStart" explicitStart_ = No.explicitStart;
         //Always write document end?

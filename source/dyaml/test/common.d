@@ -198,8 +198,7 @@ void display(Result[] results) @safe
 {
     if(results.length > 0 && !verbose && !quiet){write("\n");}
 
-    size_t failures = 0;
-    size_t errors = 0;
+    size_t failures, errors;
 
     static if(verbose)
     {

@@ -46,7 +46,7 @@ struct Loader
         // Name of the input file or stream, used in error messages.
         string name_ = "<unknown>";
         // Are we done loading?
-        bool done_ = false;
+        bool done_;
 
     public:
         @disable this();
@@ -255,7 +255,7 @@ struct Loader
                 lazyInitConstructorResolver();
                 auto composer = new Composer(parser_, resolver_, constructor_);
 
-                int result = 0;
+                int result;
                 while(composer.checkNode())
                 {
                     auto node = composer.getNode();

@@ -260,7 +260,7 @@ struct Emitter
         ///Determines if we need specified number of more events.
         bool needEvents(in uint count) @safe nothrow
         {
-            int level = 0;
+            int level;
 
             //Rather ugly, but good enough for now.
             //Couldn't be bothered writing a range as events_ should eventually
@@ -698,7 +698,7 @@ struct Emitter
         ///Check if a simple key is next.
         bool checkSimpleKey() @safe
         {
-            uint length = 0;
+            uint length;
             const id = event_.id;
             const scalar = id == EventID.Scalar;
             const collectionStart = id == EventID.MappingStart ||
@@ -904,9 +904,8 @@ struct Emitter
                     new EmitterException("Tag prefix must not be empty"));
 
             auto appender = appender!string();
-            const offset = prefix[0] == '!' ? 1 : 0;
-            size_t start = 0;
-            size_t end = 0;
+            const int offset = prefix[0] == '!';
+            size_t start, end;
 
             foreach(const size_t i, const dchar c; prefix)
             {
@@ -935,7 +934,7 @@ struct Emitter
 
             string tagString = tag;
             if(tagString == "!"){return tagString;}
-            string handle = null;
+            string handle;
             string suffix = tagString;
 
             //Sort lexicographically by prefix.
@@ -953,8 +952,7 @@ struct Emitter
 
             auto appender = appender!string();
             appender.put(handle !is null && handle != "" ? handle : "!<");
-            size_t start = 0;
-            size_t end = 0;
+            size_t start, end;
             foreach(const dchar c; suffix)
             {
                 if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]"d.canFind(c) ||
@@ -1581,8 +1579,9 @@ struct ScalarWriter
         ///Determine hints (indicators) for block scalar.
         size_t determineBlockHints(char[] hints, uint bestIndent) const pure @safe
         {
-            size_t hintsIdx = 0;
-            if(text_.length == 0){return hintsIdx;}
+            size_t hintsIdx;
+            if(text_.length == 0)
+                return hintsIdx;
 
             dchar lastChar(const string str, ref size_t end)
             {

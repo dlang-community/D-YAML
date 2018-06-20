@@ -165,7 +165,7 @@ struct Serializer
             //If the node has an anchor, emit an anchor (as aliasEvent) on the
             //first occurrence, save it in serializedNodes_, and emit an alias
             //if it reappears.
-            string aliased = null;
+            string aliased;
             if(anchorable(node) && (node in anchors_) !is null)
             {
                 aliased = anchors_[node];
@@ -182,7 +182,7 @@ struct Serializer
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
                 const detectedTag = resolver_.resolve(NodeID.Scalar, null, value, true);
-                bool isDetected = node.tag_ == detectedTag;
+                const bool isDetected = node.tag_ == detectedTag;
 
                 emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
                               isDetected, value, node.scalarStyle));
