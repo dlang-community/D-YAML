@@ -84,19 +84,15 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
 
     public:
         // Get type of the stored value.
-        @property override TypeInfo type() const pure @safe nothrow {return typeid(T);}
+        @property override TypeInfo type() const pure @safe nothrow
+        {
+            return typeid(T);
+        }
 
         // Get string representation of the container.
         override string toString() @system
         {
-            static if(!hasMember!(T, "toString"))
-            {
-                return super.toString();
-            }
-            else
-            {
-                return format("YAMLContainer(%s)", value_.toString());
-            }
+            return format("YAMLContainer(%s)", value_);
         }
 
     protected:
