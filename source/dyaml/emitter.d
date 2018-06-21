@@ -1386,10 +1386,10 @@ struct ScalarWriter
                     if(c != dcharNone)
                     {
                         auto appender = appender!string();
-                        if((c in dyaml.escapes.toEscapes) !is null)
+                        if(const dchar es = toEscape(c))
                         {
                             appender.put('\\');
-                            appender.put(dyaml.escapes.toEscapes[c]);
+                            appender.put(es);
                         }
                         else
                         {

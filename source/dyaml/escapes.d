@@ -7,15 +7,7 @@
 
 module dyaml.escapes;
 
-
 package:
-
-///Translation table from YAML escapes to dchars.
-// immutable dchar[dchar] fromEscapes;
-///Translation table from dchars to YAML escapes.
-immutable dchar[dchar] toEscapes;
-// ///Translation table from prefixes of escaped hexadecimal format characters to their lengths.
-// immutable uint[dchar]  escapeHexCodes;
 
 /// All YAML escapes.
 immutable dchar[] escapes = ['0', 'a', 'b', 't', '\t', 'n', 'v', 'f', 'r', 'e', ' ',
@@ -24,10 +16,7 @@ immutable dchar[] escapes = ['0', 'a', 'b', 't', '\t', 'n', 'v', 'f', 'r', 'e', 
 /// YAML hex codes specifying the length of the hex number.
 immutable dchar[] escapeHexCodeList = ['x', 'u', 'U'];
 
-/// Covert a YAML escape to a dchar.
-///
-/// Need a function as associative arrays don't work with @nogc.
-/// (And this may be even faster with a function.)
+/// Convert a YAML escape to a dchar.
 dchar fromEscape(dchar escape) @safe pure nothrow @nogc
 {
     switch(escape)
@@ -53,6 +42,39 @@ dchar fromEscape(dchar escape) @safe pure nothrow @nogc
     }
 }
 
+/**
+ * Convert a dchar to a YAML escape.
+ *
+ * Params:
+ *      value = The possibly escapable character.
+ *
+ * Returns:
+ *      If the character passed as parameter can be escaped, returns the matching
+ *      escape, otherwise returns a null character.
+ */
+dchar toEscape(dchar value) @safe pure nothrow @nogc
+{
+    switch(value)
+    {
+        case '\0':   return '0';
+        case '\x07': return 'a';
+        case '\x08': return 'b';
+        case '\x09': return 't';
+        case '\x0A': return 'n';
+        case '\x0B': return 'v';
+        case '\x0C': return 'f';
+        case '\x0D': return 'r';
+        case '\x1B': return 'e';
+        case '\"':   return '\"';
+        case '\\':   return '\\';
+        case '\xA0': return '_';
+        case '\x85': return 'N';
+        case '\u2028': return 'L';
+        case '\u2029': return 'P';
+        default: return 0;
+    }
+}
+
 /// Get the length of a hexadecimal number determined by its hex code.
 ///
 /// Need a function as associative arrays don't work with @nogc.
@@ -68,23 +90,3 @@ uint escapeHexLength(dchar hexCode) @safe pure nothrow @nogc
     }
 }
 
-
-static this()
-{
-    toEscapes =
-        ['\0':     '0',
-         '\x07':   'a',
-         '\x08':   'b',
-         '\x09':   't',
-         '\x0A':   'n',
-         '\x0B':   'v',
-         '\x0C':   'f',
-         '\x0D':   'r',
-         '\x1B':   'e',
-         '\"':     '\"',
-         '\\':     '\\',
-         '\u0085': 'N',
-         '\xA0':   '_',
-         '\u2028': 'L',
-         '\u2029': 'P'];
-}
