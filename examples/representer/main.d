@@ -47,7 +47,7 @@ void main()
        resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                     "0123456789abcdefABCDEF");
 
-       auto dumper = Dumper("output.yaml");
+       auto dumper = dumper(File("output.yaml", "w").lockingTextWriter);
        dumper.representer = representer;
        dumper.resolver    = resolver;
 

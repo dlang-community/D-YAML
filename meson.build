@@ -31,7 +31,6 @@ dyaml_src = [
     'source/dyaml/resolver.d',
     'source/dyaml/scanner.d',
     'source/dyaml/serializer.d',
-    'source/dyaml/stream.d',
     'source/dyaml/style.d',
     'source/dyaml/tagdirective.d',
     'source/dyaml/test/common.d',

@@ -297,15 +297,17 @@ void main(string[] args)
         //Generate and dump the nodes.
         Node[] generated = generate(configFile);
 
-        auto dumper     = Dumper(args[1]);
+        auto dumper     = dumper(File(args[1], "w").lockingTextWriter);
         auto encoding   = config["encoding"];
-        dumper.encoding = encoding == "utf-16" ? Encoding.UTF_16:
-                          encoding == "utf-32" ? Encoding.UTF_32:
-                                                 Encoding.UTF_8;
 
         dumper.indent = config["indent"].as!uint;
         dumper.textWidth = config["text-width"].as!uint;
-        dumper.dump(generated);
+        switch(encoding.as!string)
+        {
+            case "utf-16": dumper.dump!wchar(generated); break;
+            case "utf-32": dumper.dump!dchar(generated); break;
+            default: dumper.dump!char(generated); break;
+        }
     }
     catch(YAMLException e)
     {

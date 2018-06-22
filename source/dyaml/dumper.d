@@ -11,13 +11,11 @@
  */
 module dyaml.dumper;
 
-
-//import std.stream;
+import std.array;
+import std.range.primitives;
 import std.typecons;
 
-import dyaml.stream;
 import dyaml.emitter;
-import dyaml.encoding;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.linebreak;
@@ -34,9 +32,15 @@ import dyaml.tagdirective;
  * User specified Representer and/or Resolver can be used to support new
  * tags / data types.
  *
- * Setters are provided to affect output details (style, encoding, etc.).
+ * Setters are provided to affect output details (style, etc.).
  */
-struct Dumper
+auto dumper(Range)(auto ref Range output)
+    if (isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
+{
+    return Dumper!Range(output);
+}
+
+struct Dumper(Range)
 {
     private:
         //Resolver to resolve tags.
@@ -45,9 +49,7 @@ struct Dumper
         Representer representer_;
 
         //Stream to write to.
-        YStream stream_;
-        //True if this Dumper owns stream_ and needs to destroy it in the destructor.
-        bool weOwnStream_;
+        Range stream_;
 
         //Write scalars in canonical form?
         bool canonical_;
@@ -57,8 +59,6 @@ struct Dumper
         uint textWidth_ = 80;
         //Line break to use.
         LineBreak lineBreak_ = LineBreak.Unix;
-        //Character encoding to use.
-        Encoding encoding_ = Encoding.UTF_8;
         //YAML version string.
         string YAMLVersion_ = "1.1";
         //Tag directives to use.
@@ -73,43 +73,19 @@ struct Dumper
 
     public:
         @disable this();
-        @disable bool opEquals(ref Dumper);
-        @disable int opCmp(ref Dumper);
+        @disable bool opEquals(ref Dumper!Range);
+        @disable int opCmp(ref Dumper!Range);
 
         /**
          * Construct a Dumper writing to a file.
          *
          * Params: filename = File name to write to.
-         *
-         * Throws: YAMLException if the file can not be dumped to (e.g. cannot be opened).
          */
-        this(string filename) @safe
-        {
-            name_ = filename;
-            //try{this(new File(filename, FileMode.OutNew));}
-            try{this(new YFile(filename));}
-            //catch(StreamException e)
-            catch(Exception e)
-            {
-                throw new YAMLException("Unable to open file " ~ filename ~
-                                        " for YAML dumping: " ~ e.msg);
-            }
-            // need to destroy the File we constructed.
-            weOwnStream_ = true;
-        }
-
-        ///Construct a Dumper writing to a _stream. This is useful to e.g. write to memory.
-        this(YStream stream) @safe
+        this(Range stream) @safe
         {
             resolver_    = new Resolver();
             representer_ = new Representer();
             stream_ = stream;
-        }
-
-        ///Destroy the Dumper.
-        @trusted ~this()
-        {
-            if(weOwnStream_) { destroy(stream_); }
         }
 
         ///Set stream _name. Used in debugging messages.
@@ -157,12 +133,6 @@ struct Dumper
         @property void lineBreak(LineBreak lineBreak) pure @safe nothrow
         {
             lineBreak_ = lineBreak;
-        }
-
-        ///Set character _encoding to use. UTF-8 by default.
-        @property void encoding(Encoding encoding) pure @safe nothrow
-        {
-            encoding_ = encoding;
         }
 
         ///Always explicitly write document start?
@@ -218,7 +188,7 @@ struct Dumper
         ///
         @safe unittest
         {
-            Dumper dumper = Dumper("example.yaml");
+            auto dumper = dumper(new Appender!string());
             string[string] directives;
             directives["!short!"] = "tag:long.org,2011:";
             //This will emit tags starting with "tag:long.org,2011"
@@ -239,12 +209,13 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(Node[] documents ...) @safe
+        void dump(CharacterType = char)(Node[] documents ...) @trusted
+            if (isOutputRange!(Range, CharacterType))
         {
             try
             {
-                auto emitter = new Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
-                auto serializer = Serializer(emitter, resolver_, encoding_, explicitStart_,
+                auto emitter = new Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto serializer = Serializer!(Range, CharacterType)(emitter, resolver_, explicitStart_,
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)
                 {
@@ -266,11 +237,11 @@ struct Dumper
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(Event[] events) @safe
+        void emit(CharacterType = char)(Event[] events) @safe
         {
             try
             {
-                auto emitter = Emitter(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);
@@ -287,24 +258,23 @@ struct Dumper
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    Dumper("example.yaml").dump(node);
+    dumper(new Appender!string()).dump(node);
 }
 ///Write multiple YAML documents to a file
 @safe unittest
 {
     auto node1 = Node([1, 2, 3, 4, 5]);
     auto node2 = Node("This document contains only one string");
-    Dumper("example.yaml").dump(node1, node2);
+    dumper(new Appender!string()).dump(node1, node2);
     //Or with an array:
-    Dumper("example.yaml").dump([node1, node2]);
+    dumper(new Appender!string()).dump([node1, node2]);
 }
 ///Write to memory
 @safe unittest
 {
-    import dyaml.stream;
-    auto stream = new YMemoryStream();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    Dumper(stream).dump(node);
+    dumper(stream).dump(node);
 }
 ///Use a custom representer/resolver to support custom data types and/or implicit tags
 @safe unittest
@@ -313,7 +283,7 @@ struct Dumper
     auto representer = new Representer();
     auto resolver = new Resolver();
     //Add representer functions / resolver expressions here...
-    auto dumper = Dumper("example.yaml");
+    auto dumper = dumper(new Appender!string());
     dumper.representer = representer;
     dumper.resolver = resolver;
     dumper.dump(node);
@@ -321,10 +291,9 @@ struct Dumper
 // Explicit document start/end markers
 @safe unittest
 {
-    import dyaml.stream;
-    auto stream = new YMemoryStream();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = Dumper(stream);
+    auto dumper = dumper(stream);
     dumper.explicitEnd = true;
     dumper.explicitStart = true;
     dumper.YAMLVersion = null;
@@ -337,10 +306,9 @@ struct Dumper
 // No explicit document start/end markers
 @safe unittest
 {
-    import dyaml.stream;
-    auto stream = new YMemoryStream();
+    auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = Dumper(stream);
+    auto dumper = dumper(stream);
     dumper.explicitEnd = false;
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;

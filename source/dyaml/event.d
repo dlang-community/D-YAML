@@ -13,7 +13,6 @@ module dyaml.event;
 import std.array;
 import std.conv;
 
-import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
 import dyaml.tagdirective;
@@ -80,8 +79,6 @@ struct Event
          */
         bool explicitDocument;
     }
-    ///Encoding of the stream, if this is a StreamStart.
-    Encoding encoding;
     ///Collection style, if this is a SequenceStart or MappingStart.
     CollectionStyle collectionStyle = CollectionStyle.Invalid;
 
@@ -159,16 +156,14 @@ Event collectionStartEvent(EventID id)
  *
  * Params:  start    = Start position of the event in the file/stream.
  *          end      = End position of the event in the file/stream.
- *          encoding = Encoding of the stream.
  */
-Event streamStartEvent(const Mark start, const Mark end, const Encoding encoding)
+Event streamStartEvent(const Mark start, const Mark end)
     pure @safe nothrow
 {
     Event result;
     result.startMark = start;
     result.endMark   = end;
     result.id        = EventID.StreamStart;
-    result.encoding  = encoding;
     return result;
 }
 

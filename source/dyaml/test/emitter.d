@@ -15,7 +15,6 @@ import std.file;
 import std.range;
 import std.typecons;
 
-import dyaml.stream;
 import dyaml.dumper;
 import dyaml.event;
 import dyaml.test.common;
@@ -83,17 +82,17 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader.fromFile(dataFilename);
     auto events = loader.parse();
-    auto emitStream = new YMemoryStream;
-    Dumper(emitStream).emit(events);
+    auto emitStream = new Appender!string;
+    dumper(emitStream).emit(events);
 
     static if(verbose)
     {
         writeln(dataFilename);
         writeln("ORIGINAL:\n", readText(dataFilename));
-        writeln("OUTPUT:\n", cast(char[])emitStream.data);
+        writeln("OUTPUT:\n", emitStream.toString);
     }
 
-    auto loader2        = Loader.fromBuffer(emitStream.data);
+    auto loader2        = Loader.fromString(emitStream.data);
     loader2.name        = "TEST";
     loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
@@ -113,16 +112,16 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
     auto events = loader.parse();
     foreach(canonical; [false, true])
     {
-        auto emitStream = new YMemoryStream;
-        auto dumper = Dumper(emitStream);
+        auto emitStream = new Appender!string;
+        auto dumper = dumper(emitStream);
         dumper.canonical = canonical;
         dumper.emit(events);
         static if(verbose)
         {
             writeln("OUTPUT (canonical=", canonical, "):\n",
-                    cast(char[])emitStream.data);
+                    emitStream.toString);
         }
-        auto loader2        = Loader.fromBuffer(emitStream.data);
+        auto loader2        = Loader.fromString(emitStream.data);
         loader2.name        = "TEST";
         loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
@@ -172,15 +171,15 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                     }
                     styledEvents ~= event;
                 }
-                auto emitStream = new YMemoryStream;
-                Dumper(emitStream).emit(styledEvents);
+                auto emitStream = new Appender!string;
+                dumper(emitStream).emit(styledEvents);
                 static if(verbose)
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",
                             to!string(style), ")");
-                    writeln(cast(char[])emitStream.data);
+                    writeln(emitStream.toString);
                 }
-                auto loader2        = Loader.fromBuffer(emitStream.data);
+                auto loader2        = Loader.fromString(emitStream.data);
                 loader2.name        = "TEST";
                 loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;

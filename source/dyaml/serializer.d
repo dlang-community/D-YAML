@@ -16,7 +16,6 @@ import std.format;
 import std.typecons;
 
 import dyaml.emitter;
-import dyaml.encoding;
 import dyaml.event;
 import dyaml.exception;
 import dyaml.node;
@@ -28,11 +27,11 @@ import dyaml.token;
 package:
 
 ///Serializes represented YAML nodes, generating events which are then emitted by Emitter.
-struct Serializer
+struct Serializer(Range, CharType)
 {
     private:
         ///Emitter to emit events produced.
-        Emitter* emitter_;
+        Emitter!(Range, CharType)* emitter_;
         ///Resolver used to determine which tags are automaticaly resolvable.
         Resolver resolver_;
 
@@ -60,13 +59,12 @@ struct Serializer
          *
          * Params:  emitter       = Emitter to emit events produced.
          *          resolver      = Resolver used to determine which tags are automaticaly resolvable.
-         *          encoding      = Character encoding to use.
          *          explicitStart = Do all document starts have to be specified explicitly?
          *          explicitEnd   = Do all document ends have to be specified explicitly?
          *          YAMLVersion   = YAML version string.
          *          tagDirectives = Tag directives to emit.
          */
-        this(Emitter* emitter, Resolver resolver, Encoding encoding,
+        this(Emitter!(Range, CharType)* emitter, Resolver resolver,
              const Flag!"explicitStart" explicitStart,
              const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
              TagDirective[] tagDirectives) @safe
@@ -78,7 +76,7 @@ struct Serializer
             YAMLVersion_   = YAMLVersion;
             tagDirectives_ = tagDirectives;
 
-            emitter_.emit(streamStartEvent(Mark(), Mark(), encoding));
+            emitter_.emit(streamStartEvent(Mark(), Mark()));
         }
 
         ///Destroy the Serializer.

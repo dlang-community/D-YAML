@@ -156,7 +156,7 @@ struct Loader
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to open %s for YAML loading: %s"
-                                        .format(name_, e.msg));
+                                        .format(name_, e.msg), e.file, e.line);
             }
         }
 
