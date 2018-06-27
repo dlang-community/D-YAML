@@ -1,7 +1,7 @@
 project('D-YAML', 'd',
     meson_version: '>=0.40.0',
     subproject_dir: 'contrib',
-    version: '0.6.5'
+    version: '0.7.0'
 )
 
 project_soversion    = '0'
@@ -47,7 +47,7 @@ dyaml_src = [
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
-tinyendian_dep = dependency('tinyendian', version: '>=0.1.2', fallback: ['tinyendian', 'tinyendian_dep'])
+tinyendian_dep = dependency('tinyendian', version: '>=0.2.0', fallback: ['tinyendian', 'tinyendian_dep'])
 
 dyaml_lib = library('dyaml',
         [dyaml_src],
