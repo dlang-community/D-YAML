@@ -130,6 +130,7 @@ final class Composer
                                           parser_.front.startMark));
 
             skipExpected(EventID.StreamEnd);
+            assert(parser_.empty, "Found event after stream end");
 
             return document;
         }
