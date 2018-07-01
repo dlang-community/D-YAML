@@ -96,11 +96,8 @@ final class Composer
          */
         bool checkNode() @safe
         {
-            //Drop the STREAM-START event.
-            if(parser_.front.id == EventID.StreamStart)
-            {
-                parser_.popFront();
-            }
+            // If next event is stream start, skip it
+            parser_.skipOver!"a.id == b"(EventID.StreamStart);
 
             //True if there are more documents available.
             return parser_.front.id != EventID.StreamEnd;
@@ -133,7 +130,7 @@ final class Composer
                                           parser_.front.startMark));
 
             //Drop the STREAM-END event.
-            parser_.popFront();
+            assert(parser_.skipOver!"a.id == b"(EventID.StreamEnd), "Expected a stream end event.");
 
             return document;
         }
@@ -160,13 +157,13 @@ final class Composer
         Node composeDocument() @safe
         {
             //Drop the DOCUMENT-START event.
-            parser_.popFront();
+            assert(parser_.skipOver!"a.id == b"(EventID.DocumentStart), "Expected a document start event.");
 
             //Compose the root node.
             Node node = composeNode(0, 0);
 
             //Drop the DOCUMENT-END event.
-            parser_.popFront();
+            assert(parser_.skipOver!"a.id == b"(EventID.DocumentEnd), "Expected a document end event.");
 
             anchors_.destroy();
             return node;
@@ -213,19 +210,19 @@ final class Composer
                 anchors_[anchor] = Node();
             }
 
-            if(parser_.front.id == EventID.Scalar)
+            switch (parser_.front.id)
             {
-                result = composeScalarNode();
+                case EventID.Scalar:
+                    result = composeScalarNode();
+                    break;
+                case EventID.SequenceStart:
+                    result = composeSequenceNode(pairAppenderLevel, nodeAppenderLevel);
+                    break;
+                case EventID.MappingStart:
+                    result = composeMappingNode(pairAppenderLevel, nodeAppenderLevel);
+                    break;
+                default: assert(false, "This code should never be reached");
             }
-            else if(parser_.front.id == EventID.SequenceStart)
-            {
-                result = composeSequenceNode(pairAppenderLevel, nodeAppenderLevel);
-            }
-            else if(parser_.front.id == EventID.MappingStart)
-            {
-                result = composeMappingNode(pairAppenderLevel, nodeAppenderLevel);
-            }
-            else{assert(false, "This code should never be reached");}
 
             if(anchor !is null)
             {

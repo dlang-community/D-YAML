@@ -8,7 +8,6 @@
 module dyaml.loader;
 
 
-import std.array;
 import std.exception;
 import std.file;
 import std.stdio : File;
@@ -318,17 +317,9 @@ struct Loader
 
 
         // Parse and return all events. Used for debugging.
-        Event[] parse() @safe
+        auto parse() @safe
         {
-            try
-            {
-                return parser_.array;
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to parse YAML from stream %s : %s "
-                                        .format(name_, e.msg));
-            }
+            return parser_;
         }
 
         // Construct default constructor/resolver if the user has not yet specified

@@ -27,15 +27,11 @@ import dyaml.token;
 ///          events2 = Second event array to compare.
 ///
 /// Returns: true if the events are equivalent, false otherwise.
-bool compareEvents(Event[] events1, Event[] events2) @safe
+bool compareEvents(T, U)(T events1, U events2)
+    if (isInputRange!T && isInputRange!U && is(ElementType!T == Event) && is(ElementType!U == Event))
 {
-    if(events1.length != events2.length){return false;}
-
-    for(uint e; e < events1.length; ++e)
+    foreach (e1, e2; zip(events1, events2))
     {
-        auto e1 = events1[e];
-        auto e2 = events2[e];
-
         //Different event types.
         if(e1.id != e2.id){return false;}
         //Different anchor (if applicable).
