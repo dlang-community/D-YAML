@@ -129,13 +129,18 @@ final class Composer
                                           "but found another document.",
                                           parser_.front.startMark));
 
-            //Drop the STREAM-END event.
-            assert(parser_.skipOver!"a.id == b"(EventID.StreamEnd), "Expected a stream end event.");
+            skipExpected(EventID.StreamEnd);
 
             return document;
         }
 
     private:
+
+        void skipExpected(const EventID id) @safe
+        {
+            const foundExpected = parser_.skipOver!"a.id == b"(id);
+            assert(foundExpected, text("Expected ", id, " not found."));
+        }
         ///Ensure that appenders for specified nesting levels exist.
         ///
         ///Params:  pairAppenderLevel = Current level in the pair appender stack.
@@ -156,14 +161,12 @@ final class Composer
         ///Compose a YAML document and return its root node.
         Node composeDocument() @safe
         {
-            //Drop the DOCUMENT-START event.
-            assert(parser_.skipOver!"a.id == b"(EventID.DocumentStart), "Expected a document start event.");
+            skipExpected(EventID.DocumentStart);
 
             //Compose the root node.
             Node node = composeNode(0, 0);
 
-            //Drop the DOCUMENT-END event.
-            assert(parser_.skipOver!"a.id == b"(EventID.DocumentEnd), "Expected a document end event.");
+            skipExpected(EventID.DocumentEnd);
 
             anchors_.destroy();
             return node;
