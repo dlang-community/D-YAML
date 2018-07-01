@@ -8,6 +8,7 @@
 module dyaml.loader;
 
 
+import std.array;
 import std.exception;
 import std.file;
 import std.stdio : File;
@@ -321,12 +322,7 @@ struct Loader
         {
             try
             {
-                Event[] result;
-                while(parser_.checkEvent())
-                {
-                    result ~= parser_.getEvent();
-                }
-                return result;
+                return parser_.array;
             }
             catch(YAMLException e)
             {
