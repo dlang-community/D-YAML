@@ -315,7 +315,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectStreamStart() @safe
         {
             enforce(eventTypeIs(EventID.StreamStart),
-                    new EmitterException("Expected YStreamStart, but got " ~ event_.idString));
+                    new EmitterException("Expected StreamStart, but got " ~ event_.idString));
 
             writeStreamStart();
             nextExpected(&expectDocumentStart!(Yes.first));
@@ -333,7 +333,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectDocumentStart(Flag!"first" first)() @safe
         {
             enforce(eventTypeIs(EventID.DocumentStart) || eventTypeIs(EventID.StreamEnd),
-                    new EmitterException("Expected DocumentStart or YStreamEnd, but got "
+                    new EmitterException("Expected DocumentStart or StreamEnd, but got "
                               ~ event_.idString));
 
             if(event_.id == EventID.DocumentStart)
