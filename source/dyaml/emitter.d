@@ -1144,6 +1144,50 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             return analysis;
         }
 
+        @safe unittest
+        {
+            with(analyzeScalar("").flags)
+            {
+                assert(empty && allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a").flags)
+            {
+                assert(allowFlowPlain && allowBlockPlain && allowSingleQuoted && allowDoubleQuoted && allowBlock);
+            }
+            with(analyzeScalar(" ").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar(" a").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a ").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\na").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a\n").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\n").flags)
+            {
+                assert(multiline && allowSingleQuoted && allowDoubleQuoted && allowBlock);
+            }
+            with(analyzeScalar(" \n").flags)
+            {
+                assert(multiline && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\n a").flags)
+            {
+                assert(multiline && allowDoubleQuoted && allowBlock);
+            }
+        }
+
         //Writers.
 
         ///Start the YAML stream (write the unicode byte order mark).
