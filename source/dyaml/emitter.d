@@ -27,7 +27,6 @@ import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;
 import dyaml.exception;
-import dyaml.flags;
 import dyaml.linebreak;
 import dyaml.queue;
 import dyaml.style;
@@ -53,9 +52,20 @@ struct ScalarAnalysis
     //Scalar itself.
     string scalar;
 
+    enum AnalysisFlags
+    {
+        empty = 1<<0,
+        multiline = 1<<1,
+        allowFlowPlain = 1<<2,
+        allowBlockPlain = 1<<3,
+        allowSingleQuoted = 1<<4,
+        allowDoubleQuoted = 1<<5,
+        allowBlock = 1<<6,
+        isNull = 1<<7
+    }
+
     ///Analysis results.
-    Flags!("empty", "multiline", "allowFlowPlain", "allowBlockPlain",
-           "allowSingleQuoted", "allowDoubleQuoted", "allowBlock", "isNull") flags;
+    BitFlags!AnalysisFlags flags;
 }
 
 private alias isNewLine = among!('\n', '\u0085', '\u2028', '\u2029');
@@ -991,15 +1001,14 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             analysis.scalar = scalar;
 
             //Empty scalar is a special case.
-            with(analysis.flags) if(scalar is null || scalar == "")
+            if(scalar is null || scalar == "")
             {
-                empty             = true;
-                multiline         = false;
-                allowFlowPlain    = false;
-                allowBlockPlain   = true;
-                allowSingleQuoted = true;
-                allowDoubleQuoted = true;
-                allowBlock        = false;
+                with(ScalarAnalysis.AnalysisFlags)
+                    analysis.flags =
+                        empty |
+                        allowBlockPlain |
+                        allowSingleQuoted |
+                        allowDoubleQuoted;
                 return analysis;
             }
 
@@ -1098,50 +1107,105 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                                        scalar[index + 2].isSpace;
             }
 
-            with(analysis.flags)
+            with(ScalarAnalysis.AnalysisFlags)
             {
                 //Let's decide what styles are allowed.
-                allowFlowPlain = allowBlockPlain = allowSingleQuoted
-                               = allowDoubleQuoted = allowBlock = true;
+                analysis.flags |= allowFlowPlain | allowBlockPlain | allowSingleQuoted |
+                               allowDoubleQuoted | allowBlock;
 
                 //Leading and trailing whitespaces are bad for plain scalars.
                 if(leadingSpace || leadingBreak || trailingSpace || trailingBreak)
                 {
-                    allowFlowPlain = allowBlockPlain = false;
+                    analysis.flags &= ~(allowFlowPlain | allowBlockPlain);
                 }
 
                 //We do not permit trailing spaces for block scalars.
-                if(trailingSpace){allowBlock = false;}
+                if(trailingSpace)
+                {
+                    analysis.flags &= ~allowBlock;
+                }
 
                 //Spaces at the beginning of a new line are only acceptable for block
                 //scalars.
                 if(breakSpace)
                 {
-                    allowFlowPlain = allowBlockPlain = allowSingleQuoted = false;
+                    analysis.flags &= ~(allowFlowPlain | allowBlockPlain | allowSingleQuoted);
                 }
 
                 //Spaces followed by breaks, as well as special character are only
                 //allowed for double quoted scalars.
                 if(spaceBreak || specialCharacters)
                 {
-                    allowFlowPlain = allowBlockPlain = allowSingleQuoted = allowBlock = false;
+                    analysis.flags &= ~(allowFlowPlain | allowBlockPlain | allowSingleQuoted | allowBlock);
                 }
 
                 //Although the plain scalar writer supports breaks, we never emit
                 //multiline plain scalars.
-                if(lineBreaks){allowFlowPlain = allowBlockPlain = false;}
+                if(lineBreaks)
+                {
+                    analysis.flags &= ~(allowFlowPlain | allowBlockPlain);
+                    analysis.flags |= multiline;
+                }
 
                 //Flow indicators are forbidden for flow plain scalars.
-                if(flowIndicators){allowFlowPlain = false;}
+                if(flowIndicators)
+                {
+                    analysis.flags &= ~allowFlowPlain;
+                }
 
                 //Block indicators are forbidden for block plain scalars.
-                if(blockIndicators){allowBlockPlain = false;}
-
-                empty = false;
-                multiline = lineBreaks;
+                if(blockIndicators)
+                {
+                    analysis.flags &= ~allowBlockPlain;
+                }
             }
-
             return analysis;
+        }
+
+        @safe unittest
+        {
+            with(analyzeScalar("").flags)
+            {
+                // workaround for empty being std.range.primitives.empty here
+                alias empty = ScalarAnalysis.AnalysisFlags.empty;
+                assert(empty && allowBlockPlain && allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a").flags)
+            {
+                assert(allowFlowPlain && allowBlockPlain && allowSingleQuoted && allowDoubleQuoted && allowBlock);
+            }
+            with(analyzeScalar(" ").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar(" a").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a ").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\na").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("a\n").flags)
+            {
+                assert(allowSingleQuoted && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\n").flags)
+            {
+                assert(multiline && allowSingleQuoted && allowDoubleQuoted && allowBlock);
+            }
+            with(analyzeScalar(" \n").flags)
+            {
+                assert(multiline && allowDoubleQuoted);
+            }
+            with(analyzeScalar("\n a").flags)
+            {
+                assert(multiline && allowDoubleQuoted && allowBlock);
+            }
         }
 
         //Writers.
