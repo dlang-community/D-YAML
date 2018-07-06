@@ -58,16 +58,16 @@ struct YAMLNull
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
-// Base class for YAMLContainer - used for user defined YAML types.
-package abstract class YAMLObject
+// Interface for YAMLContainer - used for user defined YAML types.
+package interface YAMLObject
 {
     public:
         // Get type of the stored value.
-        @property TypeInfo type() const pure @safe nothrow {assert(false);}
+        @property TypeInfo type() const pure @safe nothrow;
 
     protected:
         // Compare with another YAMLObject.
-        int cmp(const YAMLObject) const @system {assert(false);}
+        int cmp(const YAMLObject) const @system;
 }
 
 // Stores a user defined YAML data type.
@@ -76,22 +76,23 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
     private:
         // Stored value.
         T value_;
+        // Construct a YAMLContainer holding specified value.
+        this(T value) @safe
+        {
+            value_ = value;
+        }
 
     public:
         // Get type of the stored value.
-        @property override TypeInfo type() const pure @safe nothrow {return typeid(T);}
+        @property override TypeInfo type() const pure @safe nothrow
+        {
+            return typeid(T);
+        }
 
         // Get string representation of the container.
         override string toString() @system
         {
-            static if(!hasMember!(T, "toString"))
-            {
-                return super.toString();
-            }
-            else
-            {
-                return format("YAMLContainer(%s)", value_.toString());
-            }
+            return format("YAMLContainer(%s)", value_);
         }
 
     protected:
@@ -107,9 +108,6 @@ package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
             return (*v1).opCmp(*v2);
         }
 
-    private:
-        // Construct a YAMLContainer holding specified value.
-        this(T value) @safe {value_ = value;}
 }
 
 
