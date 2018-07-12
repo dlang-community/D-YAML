@@ -237,7 +237,8 @@ struct Dumper(Range)
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(CharacterType = char)(Event[] events) @safe
+        void emit(CharacterType = char, T)(T events) @safe
+            if (isInputRange!T && is(ElementType!T == Event))
         {
             try
             {

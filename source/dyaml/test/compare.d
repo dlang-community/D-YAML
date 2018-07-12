@@ -11,6 +11,7 @@ version(unittest)
 {
 
 import dyaml.test.common;
+import dyaml.test.emitter;
 import dyaml.token;
 
 
@@ -23,12 +24,7 @@ void testParser(string dataFilename, string canonicalFilename) @safe
     auto dataEvents = Loader.fromFile(dataFilename).parse();
     auto canonicalEvents = Loader.fromFile(canonicalFilename).parse();
 
-    assert(dataEvents.length == canonicalEvents.length);
-
-    foreach(e; 0 .. dataEvents.length)
-    {
-        assert(dataEvents[e].id == canonicalEvents[e].id);
-    }
+    compareEvents(dataEvents, canonicalEvents);
 }
 
 

@@ -142,78 +142,46 @@ final class Parser
         }
 
         /**
-         * Check if the next event is one of specified types.
-         *
-         * If no types are specified, checks if any events are left.
-         *
-         * Params:  ids = Event IDs to check for.
-         *
-         * Returns: true if the next event is one of specified types,
-         *          or if there are any events left if no types specified.
-         *          false otherwise.
+         * Check if any events are left. May have side effects in some cases.
          */
-        bool checkEvent(EventID[] ids...) @safe
+        bool empty() @safe
         {
-            //Check if the next event is one of specified types.
-            if(currentEvent_.isNull && state_ !is null)
-            {
-                currentEvent_ = state_();
-            }
-
-            if(!currentEvent_.isNull)
-            {
-                if(ids.length == 0){return true;}
-                else
-                {
-                    const nextId = currentEvent_.id;
-                    foreach(id; ids)
-                    {
-                        if(nextId == id){return true;}
-                    }
-                }
-            }
-
-            return false;
+            ensureState();
+            return currentEvent_.isNull;
         }
 
         /**
-         * Return the next event, but keep it in the queue.
+         * Return the current event.
          *
          * Must not be called if there are no events left.
          */
-        Event peekEvent() @safe
+        Event front() @safe
         {
-            if(currentEvent_.isNull && state_ !is null)
-            {
-                currentEvent_ = state_();
-            }
-            if(!currentEvent_.isNull){return currentEvent_;}
-            assert(false, "No event left to peek");
+            ensureState();
+            assert(!currentEvent_.isNull, "No event left to peek");
+            return currentEvent_;
         }
 
         /**
-         * Return the next event, removing it from the queue.
+         * Skip to the next event.
          *
          * Must not be called if there are no events left.
          */
-        Event getEvent() @safe
+        void popFront() @safe
         {
-            //Get the next event and proceed further.
-            if(currentEvent_.isNull && state_ !is null)
-            {
-                currentEvent_ = state_();
-            }
-
-            if(!currentEvent_.isNull)
-            {
-                Event result = currentEvent_;
-                currentEvent_.id = EventID.Invalid;
-                return result;
-            }
-            assert(false, "No event left to get");
+            currentEvent_.id = EventID.Invalid;
+            ensureState();
         }
 
     private:
+        /// If current event is invalid, load the next valid one if possible.
+        void ensureState() @safe
+        {
+            if(currentEvent_.isNull && state_ !is null)
+            {
+                currentEvent_ = state_();
+            }
+        }
         ///Pop and return the newest state in states_.
         Event delegate() @safe popState() @safe
         {
