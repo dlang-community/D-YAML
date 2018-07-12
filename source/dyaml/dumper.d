@@ -118,7 +118,7 @@ struct Dumper(Range)
         {
             assert(indent != 0, "Can't use zero YAML indent width");
         }
-        body
+        do
         {
             indent_ = indent;
         }
