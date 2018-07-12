@@ -195,7 +195,7 @@ struct Loader
         {
             assert(!done_, "Loader: Trying to load YAML twice");
         }
-        body
+        do
         {
             try
             {
@@ -258,7 +258,7 @@ struct Loader
         {
             assert(!done_, "Loader: Trying to load YAML twice");
         }
-        body
+        do
         {
             scope(exit) { done_ = true; }
             try

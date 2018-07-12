@@ -142,7 +142,7 @@ string[][string] findTestFilenames(const string dir) @trusted
  */
 void stringsToTuple(uint index, F ...)(ref F tuple, const string[] strings)
 in{assert(F.length == strings.length);}
-body
+do
 {
     tuple[index] = strings[index];
     static if(index > 0){stringsToTuple!(index - 1, F)(tuple, strings);}

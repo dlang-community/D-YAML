@@ -414,7 +414,7 @@ struct Node
                    "Lengths of keys and values arrays to construct " ~
                    "a YAML node from don't match");
         }
-        body
+        do
         {
             tag_ = tag;
 
