@@ -1268,8 +1268,9 @@ struct Node
             Node n3 = Node(13);
             Node n4 = Node(14);
             Node narray = Node([n1, n2, n3, n4]);
+            const cNArray = narray;
 
-            int[] array, array2;
+            int[] array, array2, array3;
             foreach(int value; narray)
             {
                 array ~= value;
@@ -1278,8 +1279,13 @@ struct Node
             {
                 array2 ~= node.as!int;
             }
+            foreach (const Node node; cNArray)
+            {
+                array3 ~= node.as!int;
+            }
             assert(array == [11, 12, 13, 14]);
             assert(array2 == [11, 12, 13, 14]);
+            assert(array3 == [11, 12, 13, 14]);
         }
         @safe unittest
         {
@@ -1305,6 +1311,13 @@ struct Node
                 assert(elem == testStrs[i]);
                 i++;
             }
+        }
+        @safe unittest
+        {
+            auto node = Node(["a":1, "b":2, "c":3]);
+            const cNode = node;
+            assertThrown({foreach (Node n; node) {}}());
+            assertThrown({foreach (const Node n; cNode) {}}());
         }
 
         /** Foreach over a mapping, getting each key/value as K/V.
@@ -1432,6 +1445,19 @@ struct Node
                     default:   assert(false);
                 }
             }
+            const nmap3 = nmap2;
+
+            foreach(const Node key, const Node value; nmap3)
+            {
+                switch(key.as!string)
+                {
+                    case "11": assert(value.as!int    == 5      ); break;
+                    case "12": assert(value.as!bool   == true   ); break;
+                    case "13": assert(value.as!float  == 1.0    ); break;
+                    case "14": assert(value.as!string == "yarly"); break;
+                    default:   assert(false);
+                }
+            }
         }
         @safe unittest
         {
@@ -1451,6 +1477,13 @@ struct Node
             {
                 assert(elem == testStrs[i]);
             }
+        }
+        @safe unittest
+        {
+            auto node = Node(["a", "b", "c"]);
+            const cNode = node;
+            assertThrown({foreach (Node a, Node b; node) {}}());
+            assertThrown({foreach (const Node a, const Node b; cNode) {}}());
         }
 
         /** Add an element to a sequence.
