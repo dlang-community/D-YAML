@@ -332,7 +332,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         }
 
         ///Expect nothing, throwing if we still have something.
-        void expectNothing() const @safe
+        void expectNothing() @safe
         {
             throw new EmitterException("Expected nothing, but got " ~ event_.idString);
         }
