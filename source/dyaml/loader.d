@@ -71,7 +71,7 @@ struct Loader
             catch(FileException e)
             {
                 throw new YAMLException("Unable to open file %s for YAML loading: %s"
-                                        .format(filename, e.msg));
+                                        .format(filename, e.msg), e.file, e.line);
             }
          }
          /// ditto
@@ -208,7 +208,7 @@ struct Loader
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to load YAML from %s : %s"
-                                        .format(name_, e.msg));
+                                        .format(name_, e.msg), e.file, e.line);
             }
         }
 
@@ -279,7 +279,7 @@ struct Loader
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to load YAML from %s : %s "
-                                        .format(name_, e.msg));
+                                        .format(name_, e.msg), e.file, e.line);
             }
         }
         // Scan and return all tokens. Used for debugging.
@@ -297,7 +297,7 @@ struct Loader
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to scan YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg);
+                                        name_ ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 
@@ -311,7 +311,7 @@ struct Loader
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to scan YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg);
+                                        name_ ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 
