@@ -1216,70 +1216,51 @@ struct Node
          * Throws:  NodeException if the node is not a sequence or an
          *          element could not be converted to specified type.
          */
-        template opApply(T)
+        int opApply(D)(D dg) if (isDelegate!D && (Parameters!D.length == 1))
         {
-            int opApplyImpl(DG)(DG dg)
-            {
-                enforce(isSequence,
-                        new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
-                                  startMark_));
+            enforce(isSequence,
+                    new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
+                              startMark_));
 
-                int result;
-                foreach(ref node; get!(Node[]))
-                {
-                    static if(is(Unqual!T == Node))
-                    {
-                        result = dg(node);
-                    }
-                    else
-                    {
-                        T temp = node.as!T;
-                        result = dg(temp);
-                    }
-                    if(result){break;}
-                }
-                return result;
-            }
-            // Ugly workaround due to issues with inout and delegate params
-            int opApplyImpl(DG)(DG dg) const
+            int result;
+            foreach(ref node; get!(Node[]))
             {
-                enforce(isSequence,
-                        new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
-                                  startMark_));
+                static if(is(Unqual!(Parameters!D[0]) == Node))
+                {
+                    result = dg(node);
+                }
+                else
+                {
+                    Parameters!D[0] temp = node.as!(Parameters!D[0]);
+                    result = dg(temp);
+                }
+                if(result){break;}
+            }
+            return result;
+        }
+        /// ditto
+        int opApply(D)(D dg) const if (isDelegate!D && (Parameters!D.length == 1))
+        {
+            enforce(isSequence,
+                    new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
+                              startMark_));
 
-                int result;
-                foreach(ref node; get!(Node[]))
+            int result;
+            foreach(ref node; get!(Node[]))
+            {
+                static if(is(Unqual!(Parameters!D[0]) == Node))
                 {
-                    static if(is(Unqual!T == Node))
-                    {
-                        result = dg(node);
-                    }
-                    else
-                    {
-                        T temp = node.as!T;
-                        result = dg(temp);
-                    }
-                    if(result){break;}
+                    result = dg(node);
                 }
-                return result;
+                else
+                {
+                    Parameters!D[0] temp = node.as!(Parameters!D[0]);
+                    result = dg(temp);
+                }
+                if(result){break;}
             }
-            int opApply(scope int delegate(ref T) @system dg)
-            {
-                return opApplyImpl(dg);
-            }
-            int opApply(scope int delegate(ref T) @safe dg)
-            {
-                return opApplyImpl(dg);
-            }
-            int opApply(scope int delegate(ref const T) @system dg) const
-            {
-                return opApplyImpl(dg);
-            }
-            int opApply(scope int delegate(ref const T) @safe dg) const
-            {
-                return opApplyImpl(dg);
-            }
-         }
+            return result;
+        }
         @safe unittest
         {
             Node n1 = Node(11);
@@ -1334,94 +1315,79 @@ struct Node
          * Throws:  NodeException if the node is not a mapping or an
          *          element could not be converted to specified type.
          */
-         template opApply(K, V)
-         {
-            int opApplyImpl(DG)(DG dg)
-            {
-                enforce(isMapping,
-                        new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
-                                  startMark_));
+        int opApply(DG)(DG dg) if (isDelegate!DG && (Parameters!DG.length == 2))
+        {
+            alias K = Parameters!DG[0];
+            alias V = Parameters!DG[1];
+            enforce(isMapping,
+                    new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
+                              startMark_));
 
-                int result;
-                foreach(ref pair; get!(Node.Pair[]))
+            int result;
+            foreach(ref pair; get!(Node.Pair[]))
+            {
+                static if(is(Unqual!K == Node) && is(Unqual!V == Node))
                 {
-                    static if(is(Unqual!K == Node) && is(Unqual!V == Node))
-                    {
-                        result = dg(pair.key, pair.value);
-                    }
-                    else static if(is(Unqual!K == Node))
-                    {
-                        V tempValue = pair.value.as!V;
-                        result = dg(pair.key, tempValue);
-                    }
-                    else static if(is(Unqual!V == Node))
-                    {
-                        K tempKey   = pair.key.as!K;
-                        result = dg(tempKey, pair.value);
-                    }
-                    else
-                    {
-                        K tempKey   = pair.key.as!K;
-                        V tempValue = pair.value.as!V;
-                        result = dg(tempKey, tempValue);
-                    }
-
-                    if(result){break;}
+                    result = dg(pair.key, pair.value);
                 }
-                return result;
-            }
-            // Ugly workaround due to issues with inout and delegate params
-            int opApplyImpl(DG)(DG dg) const
-            {
-                enforce(isMapping,
-                        new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
-                                  startMark_));
-
-                int result;
-                foreach(ref pair; get!(Node.Pair[]))
+                else static if(is(Unqual!K == Node))
                 {
-                    static if(is(Unqual!K == Node) && is(Unqual!V == Node))
-                    {
-                        result = dg(pair.key, pair.value);
-                    }
-                    else static if(is(Unqual!K == Node))
-                    {
-                        V tempValue = pair.value.as!V;
-                        result = dg(pair.key, tempValue);
-                    }
-                    else static if(is(Unqual!V == Node))
-                    {
-                        K tempKey   = pair.key.as!K;
-                        result = dg(tempKey, pair.value);
-                    }
-                    else
-                    {
-                        K tempKey   = pair.key.as!K;
-                        V tempValue = pair.value.as!V;
-                        result = dg(tempKey, tempValue);
-                    }
-
-                    if(result){break;}
+                    V tempValue = pair.value.as!V;
+                    result = dg(pair.key, tempValue);
                 }
-                return result;
+                else static if(is(Unqual!V == Node))
+                {
+                    K tempKey   = pair.key.as!K;
+                    result = dg(tempKey, pair.value);
+                }
+                else
+                {
+                    K tempKey   = pair.key.as!K;
+                    V tempValue = pair.value.as!V;
+                    result = dg(tempKey, tempValue);
+                }
+
+                if(result){break;}
             }
-            int opApply(scope int delegate(ref K, ref V) @system dg)
+            return result;
+        }
+        /// ditto
+        int opApply(DG)(DG dg) const if (isDelegate!DG && (Parameters!DG.length == 2))
+        {
+            alias K = Parameters!DG[0];
+            alias V = Parameters!DG[1];
+            enforce(isMapping,
+                    new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
+                              startMark_));
+
+            int result;
+            foreach(ref pair; get!(Node.Pair[]))
             {
-                return opApplyImpl(dg);
+                static if(is(Unqual!K == Node) && is(Unqual!V == Node))
+                {
+                    result = dg(pair.key, pair.value);
+                }
+                else static if(is(Unqual!K == Node))
+                {
+                    V tempValue = pair.value.as!V;
+                    result = dg(pair.key, tempValue);
+                }
+                else static if(is(Unqual!V == Node))
+                {
+                    K tempKey   = pair.key.as!K;
+                    result = dg(tempKey, pair.value);
+                }
+                else
+                {
+                    K tempKey   = pair.key.as!K;
+                    V tempValue = pair.value.as!V;
+                    result = dg(tempKey, tempValue);
+                }
+
+                if(result){break;}
             }
-            int opApply(scope int delegate(ref K, ref V) @safe dg)
-            {
-                return opApplyImpl(dg);
-            }
-            int opApply(scope int delegate(ref const K, ref const V) @system dg) const
-            {
-                return opApplyImpl(dg);
-            }
-            int opApply(scope int delegate(ref const K, ref const V) @safe dg) const
-            {
-                return opApplyImpl(dg);
-            }
-         }
+            return result;
+        }
         @safe unittest
         {
             Node n1 = Node(cast(long)11);
