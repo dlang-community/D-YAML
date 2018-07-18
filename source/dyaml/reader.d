@@ -526,7 +526,7 @@ public:
     /// end of the slice being built, the slice is extended (trivial operation).
     ///
     /// See_Also: begin
-    void write(char[] str) @safe pure nothrow @nogc
+    void write(scope char[] str) @safe pure nothrow @nogc
     {
         assert(inProgress, "write called without begin");
         assert(end_ <= reader_.bufferOffset_,
