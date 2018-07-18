@@ -225,7 +225,7 @@ struct Dumper(Range)
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to dump YAML to stream "
-                                        ~ name_ ~ " : " ~ e.msg);
+                                        ~ name_ ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 
@@ -251,7 +251,7 @@ struct Dumper(Range)
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to emit YAML to stream "
-                                        ~ name_ ~ " : " ~ e.msg);
+                                        ~ name_ ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 }
