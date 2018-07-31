@@ -319,3 +319,28 @@ struct Dumper(Range)
     //account for newline at end
     assert(stream.data[$-4..$-1] != "...");
 }
+// Windows, macOS line breaks
+@safe unittest
+{
+    auto node = Node(0);
+    {
+        auto stream = new Appender!string();
+        auto dumper = dumper(stream);
+        dumper.explicitEnd = true;
+        dumper.explicitStart = true;
+        dumper.YAMLVersion = null;
+        dumper.lineBreak = LineBreak.Windows;
+        dumper.dump(node);
+        assert(stream.data == "--- 0\r\n...\r\n");
+    }
+    {
+        auto stream = new Appender!string();
+        auto dumper = dumper(stream);
+        dumper.explicitEnd = true;
+        dumper.explicitStart = true;
+        dumper.YAMLVersion = null;
+        dumper.lineBreak = LineBreak.Macintosh;
+        dumper.dump(node);
+        assert(stream.data == "--- 0\r...\r");
+    }
+}
