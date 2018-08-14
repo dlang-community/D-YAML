@@ -5,9 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * Class that processes YAML mappings, sequences and scalars into nodes. This can be
- * used to add custom data types. A tutorial can be found
- * $(LINK2 ../tutorials/custom_types.html, here).
+ * Class that processes YAML mappings, sequences and scalars into nodes.
+ * This can be used to add custom data types. A tutorial can be found
+ * $(LINK2 https://dlang-community.github.io/D-YAML/, here).
  */
 module dyaml.constructor;
 
