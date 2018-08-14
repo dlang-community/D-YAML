@@ -5,19 +5,12 @@
 
 ## Introduction
 
-D:YAML is an open source YAML parser and emitter library for the D
-programming language. It is
-([almost](https://github.com/dlang-community/D-YAML/wiki/Differences-between-D:YAML-and-the-YAML-specification))
-compliant to the YAML 1.1 specification. D:YAML is based on
-[PyYAML](http://www.pyyaml.org) created by Kirill Simonov.
+D:YAML is an open source YAML parser and emitter library for the D programming language.
+It is [almost](https://dlang-community.github.io/D-YAML/articles/spec_differences.html) compliant to the YAML 1.1 specification.
+D:YAML is based on [PyYAML](http://www.pyyaml.org) created by Kirill Simonov.
 
-D:YAML is designed to be easy to use while supporting the full feature
-set of YAML. To start using it in your project, see the [Getting
-Started](https://github.com/dlang-community/D-YAML/wiki/Getting-Started)
-tutorial.
-
-D:YAML is still a work in progress. Its API is not stable and there
-might be compatibility breaking changes.
+D:YAML is designed to be easy to use while supporting the full feature set of YAML.
+To start using it in your project, see the [Getting Started](https://dlang-community.github.io/D-YAML/tutorials/getting_started.html) tutorial.
 
 ## Features
 
@@ -57,11 +50,9 @@ might be compatibility breaking changes.
 
 ## Installing and tutorial
 
-See the [Getting
-Started](https://github.com/dlang-community/D-YAML/wiki/Getting-Started)
-tutorial and other tutorials that can be found at the [GitHub
-wiki](https://github.com/dlang-community/D-YAML/wiki) and in the
-`doc/html/tutorials/` directory in the package.
+See the [Getting Started](https://dlang-community.github.io/D-YAML/tutorials/getting_started.html)
+tutorial and other tutorials that can be found at the [GitHub pages](https://dlang-community.github.io/D-YAML/) 
+or in the `docs` directory of the repository.
 
 ## License
 
@@ -101,12 +92,5 @@ also displayed here:
 
 ## Credits
 
-D:YAML was created by Ferdinand Majerech aka Kiith-Sa
-kiithsacmp\[AT\]gmail.com .
-
-Parts of code based on [PyYAML](http://www.pyyaml.org) created by Kirill
-Simonov.
-
-D:YAML was created using Vim and DMD on Debian, Ubuntu and Linux Mint as
-a YAML parsing library for the [D programming
-language](http://www.dlang.org).
+D:YAML was created by Ferdinand Majerech aka Kiith-Sa and is handled by the [dlang-community](https://github.com/dlang-community) organization since 2017.
+Parts of code based on [PyYAML](http://www.pyyaml.org) created by Kirill Simonov.
