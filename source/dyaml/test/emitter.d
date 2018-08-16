@@ -85,7 +85,7 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     {
         writeln(dataFilename);
         writeln("ORIGINAL:\n", readText(dataFilename));
-        writeln("OUTPUT:\n", emitStream.toString);
+        writeln("OUTPUT:\n", emitStream.data);
     }
 
     auto loader2        = Loader.fromString(emitStream.data);
@@ -115,7 +115,7 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
         static if(verbose)
         {
             writeln("OUTPUT (canonical=", canonical, "):\n",
-                    emitStream.toString);
+                    emitStream.data);
         }
         auto loader2        = Loader.fromString(emitStream.data);
         loader2.name        = "TEST";
@@ -173,7 +173,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",
                             to!string(style), ")");
-                    writeln(emitStream.toString);
+                    writeln(emitStream.data);
                 }
                 auto loader2        = Loader.fromString(emitStream.data);
                 loader2.name        = "TEST";
