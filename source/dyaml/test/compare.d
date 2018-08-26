@@ -34,8 +34,9 @@ void testParser(string dataFilename, string canonicalFilename) @safe
 ///          canonicalFilename = Another file to load, in canonical YAML format.
 void testLoader(string dataFilename, string canonicalFilename) @safe
 {
-    auto data = Loader.fromFile(dataFilename).loadAll();
-    auto canonical = Loader.fromFile(canonicalFilename).loadAll();
+    import std.array : array;
+    auto data = Loader.fromFile(dataFilename).array;
+    auto canonical = Loader.fromFile(canonicalFilename).array;
 
     assert(data.length == canonical.length, "Unequal node count");
     foreach(n; 0 .. data.length)

@@ -47,6 +47,10 @@ struct Loader
         string name_ = "<unknown>";
         // Are we done loading?
         bool done_;
+        // Last node read from stream
+        Node currentNode;
+        // Has the range interface been initialized yet?
+        bool rangeInitialized;
 
     public:
         @disable this();
@@ -191,25 +195,12 @@ struct Loader
          *          or on a YAML parsing error.
          */
         Node load() @safe
-        in
         {
-            assert(!done_, "Loader: Trying to load YAML twice");
-        }
-        do
-        {
-            try
-            {
-                lazyInitConstructorResolver();
-                scope(exit) { done_ = true; }
-                auto composer = new Composer(parser_, resolver_, constructor_);
-                enforce(composer.checkNode(), new YAMLException("No YAML document to load"));
-                return composer.getSingleNode();
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to load YAML from %s : %s"
-                                        .format(name_, e.msg), e.file, e.line);
-            }
+            enforce!YAMLException(!empty, "Zero documents in stream");
+            auto output = front;
+            popFront();
+            enforce!YAMLException(empty, "More than one document in stream");
+            return output;
         }
 
         /** Load all YAML documents.
@@ -224,63 +215,61 @@ struct Loader
          *
          * Throws:  YAMLException on a parsing error.
          */
-        Node[] loadAll() @safe
+        deprecated("Redundant, loader is now an InputRange") Node[] loadAll() @safe
         {
-            Node[] nodes;
-            foreach(ref node; this)
+            import std.array: array;
+            return this.array;
+        }
+        /** Implements the empty range primitive.
+        *
+        * If there's no more documents left in the stream, this will be true.
+        */
+        bool empty() @safe
+        {
+            // currentNode and done_ are both invalid until popFront is called once
+            if (!rangeInitialized)
             {
-                nodes ~= node;
+                popFront();
             }
-            return nodes;
+            return done_;
         }
-
-        /** Foreach over YAML documents.
-         *
-         * Parses documents lazily, when they are needed.
-         *
-         * Foreach over a Loader can only be used once; this is enforced by contract.
-         *
-         * Throws: YAMLException on a parsing error.
-         */
-        int opApply(int delegate(ref Node) @safe dg) @safe
+        /** Implements the popFront range primitive.
+        *
+        * Reads the next document from the stream, if possible.
+        */
+        void popFront() @safe
         {
-            return opApplyImpl(dg);
-        }
-        /// Ditto
-        int opApply(int delegate(ref Node) @system dg) @system
-        {
-            return opApplyImpl(dg);
-        }
-
-    package:
-        int opApplyImpl(T)(T dg)
-        in
-        {
-            assert(!done_, "Loader: Trying to load YAML twice");
-        }
-        do
-        {
-            scope(exit) { done_ = true; }
-            try
+            // Composer initialization is done here in case the constructor is
+            // modified, which is a pretty common case.
+            static Composer composer;
+            if (!rangeInitialized)
             {
                 lazyInitConstructorResolver();
-                auto composer = new Composer(parser_, resolver_, constructor_);
-
-                int result;
-                while(composer.checkNode())
-                {
-                    auto node = composer.getNode();
-                    result = dg(node);
-                    if(result) { break; }
-                }
-
-                return result;
+                composer = new Composer(parser_, resolver_, constructor_);
+                rangeInitialized = true;
             }
-            catch(YAMLException e)
+            assert(!done_, "Loader.popFront called on empty range");
+            if (composer.checkNode())
             {
-                throw new YAMLException("Unable to load YAML from %s : %s "
-                                        .format(name_, e.msg), e.file, e.line);
+                currentNode = composer.getNode();
             }
+            else
+            {
+                done_ = true;
+            }
+        }
+        /** Implements the front range primitive.
+        *
+        * Returns the current document as a Node.
+        */
+        Node front() @safe
+        {
+            // currentNode and done_ are both invalid until popFront is called once
+            if (!rangeInitialized)
+            {
+                popFront();
+            }
+            return currentNode;
         }
         // Scan and return all tokens. Used for debugging.
         Token[] scan() @safe
@@ -353,6 +342,7 @@ struct Loader
 /// Load all YAML documents from a file:
 @safe unittest
 {
+    import std.array : array;
     import std.file : write;
     write("example.yaml",
         "---\n"~
@@ -362,7 +352,7 @@ struct Loader
         "Hello world 2!\n"~
         "...\n"
     );
-    auto nodes = Loader.fromFile("example.yaml").loadAll();
+    auto nodes = Loader.fromFile("example.yaml").array;
     assert(nodes.length == 2);
 }
 /// Iterate over YAML documents in a file, lazily loading them:

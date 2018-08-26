@@ -20,8 +20,9 @@ import dyaml.test.common;
 /// Params:  errorFilename = File name to read from.
 void testLoaderError(string errorFilename) @safe
 {
+    import std.array : array;
     Node[] nodes;
-    try { nodes = Loader.fromFile(errorFilename).loadAll(); }
+    try { nodes = Loader.fromFile(errorFilename).array; }
     catch(YAMLException e)
     {
         printException(e);
@@ -35,9 +36,10 @@ void testLoaderError(string errorFilename) @safe
 /// Params:  errorFilename = File name to read from.
 void testLoaderErrorString(string errorFilename) @safe
 {
+    import std.array : array;
     try
     {
-        auto nodes = Loader.fromFile(errorFilename).loadAll();
+        auto nodes = Loader.fromFile(errorFilename).array;
     }
     catch(YAMLException e)
     {
@@ -52,7 +54,8 @@ void testLoaderErrorString(string errorFilename) @safe
 /// Params:  errorFilename = File name to read from.
 void testLoaderErrorFilename(string errorFilename) @safe
 {
-    try { auto nodes = Loader.fromFile(errorFilename).loadAll(); }
+    import std.array : array;
+    try { auto nodes = Loader.fromFile(errorFilename).array; }
     catch(YAMLException e)
     {
         printException(e);
