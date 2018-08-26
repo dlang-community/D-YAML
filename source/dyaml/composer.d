@@ -114,27 +114,6 @@ final class Composer
             return composeDocument();
         }
 
-        ///Get single YAML document, throwing if there is more than one document.
-        Node getSingleNode() @safe
-        {
-            assert(parser_.front.id != EventID.streamEnd,
-                   "Trying to get a node from Composer when there is no node to " ~
-                   "get. use checkNode() to determine if there is a node.");
-
-            Node document = composeDocument();
-
-            //Ensure that the stream contains no more documents.
-            enforce(parser_.front.id == EventID.streamEnd,
-                    new ComposerException("Expected single document in the stream, " ~
-                                          "but found another document.",
-                                          parser_.front.startMark));
-
-            skipExpected(EventID.streamEnd);
-            assert(parser_.empty, "Found event after stream end");
-
-            return document;
-        }
-
     private:
 
         void skipExpected(const EventID id) @safe
