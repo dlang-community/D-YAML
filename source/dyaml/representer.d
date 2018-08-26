@@ -555,7 +555,7 @@ Node representPairs(ref Node node, Representer representer) @safe
     bool hasDuplicates(Node.Pair[] pairs) @safe
     {
         //TODO this should be replaced by something with deterministic memory allocation.
-        auto keys = redBlackTree!Node();
+        auto keys = new RedBlackTree!Node();
         foreach(ref pair; pairs)
         {
             if(pair.key in keys){return true;}

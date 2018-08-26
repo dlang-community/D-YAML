@@ -2,7 +2,6 @@
     "name": "dyaml",
     "description": "YAML parser and emitter",
     "authors": [ "Ferdinand Majerech" ],
-    "libs": [],
     "importPaths": ["source"],
     "license": "Boost 1.0",
     "dependencies": { "tinyendian" : { "version" : "~>0.2.0" } },
@@ -17,5 +16,6 @@
         "examples/yaml_bench",
         "examples/yaml_gen",
         "examples/yaml_stats"
-    ]
+    ],
+    "dflags" : ["-dip1000"],
 }
