@@ -2218,20 +2218,22 @@ struct Node
         }
 }
 
-package:
-// Merge pairs into an array of pairs based on merge rules in the YAML spec.
-//
-// Any new pair will only be added if there is not already a pair
-// with the same key.
-//
-// Params:  pairs   = Appender managing the array of pairs to merge into.
-//          toMerge = Pairs to merge.
-void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
-{
-    bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
+/** Merge pairs into an array of pairs based on merge rules in the YAML spec.
 
-    foreach(ref pair; toMerge) if(!canFind!eq(pairs.data, pair))
+ Any new pair will only be added if there is not already a pair
+ with the same key.
+
+ Params:  pairs   = Appender managing the array of pairs to merge into.
+          toMerge = Pairs to merge.
+*/
+package void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
+{
+    foreach (ref pair; toMerge)
     {
+        foreach (ref existing; pairs.data)
+            if (pair.key == existing.key)
+                goto LNext;
         pairs.put(pair);
+        LNext:
     }
 }
