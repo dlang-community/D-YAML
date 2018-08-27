@@ -98,9 +98,9 @@ private:
 ///Unittest status.
 enum TestStatus
 {
-    Success, //Unittest passed.
-    Failure, //Unittest failed.
-    Error    //There's an error in the unittest.
+    success, //Unittest passed.
+    failure, //Unittest failed.
+    error    //There's an error in the unittest.
 }
 
 ///Unittest result.
@@ -166,7 +166,7 @@ Result execute(D)(const string testName, D testFunction,
         writeln(testName ~ "(" ~ filenames.join(", ") ~ ")...");
     }
 
-    auto kind = TestStatus.Success;
+    auto kind = TestStatus.success;
     string info = "";
     try
     {
@@ -180,7 +180,7 @@ Result execute(D)(const string testName, D testFunction,
     catch(Throwable e)
     {
         info = to!string(typeid(e)) ~ "\n" ~ to!string(e);
-        kind = (typeid(e) is typeid(AssertError)) ? TestStatus.Failure : TestStatus.Error;
+        kind = (typeid(e) is typeid(AssertError)) ? TestStatus.failure : TestStatus.error;
         write((verbose ? to!string(e) : to!string(kind)) ~ " ");
     }
 
@@ -213,10 +213,10 @@ void display(Result[] results) @safe
                     to!string(result.kind));
         }
 
-        if(result.kind == TestStatus.Success){continue;}
+        if(result.kind == TestStatus.success){continue;}
 
-        if(result.kind == TestStatus.Failure){++failures;}
-        else if(result.kind == TestStatus.Error){++errors;}
+        if(result.kind == TestStatus.failure){++failures;}
+        else if(result.kind == TestStatus.error){++errors;}
         writeln(result.info);
         writeln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     }

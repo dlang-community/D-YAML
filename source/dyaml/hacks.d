@@ -33,13 +33,13 @@ ScalarStyle scalarStyleHack(ref const(Node) node) @safe nothrow
     Node node = Loader.fromString(`"42"`).load(); // loaded from a file
     if(node.isScalar)
     {
-        assert(node.scalarStyleHack() == ScalarStyle.DoubleQuoted);
+        assert(node.scalarStyleHack() == ScalarStyle.doubleQuoted);
     }
 }
 @safe unittest
 {
     auto node = Node(5);
-    assert(node.scalarStyleHack() == ScalarStyle.Invalid);
+    assert(node.scalarStyleHack() == ScalarStyle.invalid);
 }
 
 /** Get the collection style a YAML node had in the file it was loaded from.
@@ -56,7 +56,7 @@ CollectionStyle collectionStyleHack(ref const(Node) node) @safe nothrow
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    assert(node.collectionStyleHack() == CollectionStyle.Invalid);
+    assert(node.collectionStyleHack() == CollectionStyle.invalid);
 }
 
 
@@ -75,8 +75,8 @@ void scalarStyleHack(ref Node node, const ScalarStyle rhs) @safe nothrow
 @safe unittest
 {
     auto node = Node(5);
-    node.scalarStyleHack = ScalarStyle.DoubleQuoted;
-    assert(node.scalarStyleHack() == ScalarStyle.DoubleQuoted);
+    node.scalarStyleHack = ScalarStyle.doubleQuoted;
+    assert(node.scalarStyleHack() == ScalarStyle.doubleQuoted);
 }
 
 /** Set the collection style node should have when written to a file.
@@ -94,6 +94,6 @@ void collectionStyleHack(ref Node node, const CollectionStyle rhs) @safe nothrow
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    node.collectionStyleHack = CollectionStyle.Block;
-    assert(node.collectionStyleHack() == CollectionStyle.Block);
+    node.collectionStyleHack = CollectionStyle.block;
+    assert(node.collectionStyleHack() == CollectionStyle.block);
 }

@@ -58,7 +58,7 @@ struct Dumper(Range)
         //Preferred text width.
         uint textWidth_ = 80;
         //Line break to use.
-        LineBreak lineBreak_ = LineBreak.Unix;
+        LineBreak lineBreak_ = LineBreak.unix;
         //YAML version string.
         string YAMLVersion_ = "1.1";
         //Tag directives to use.
@@ -329,7 +329,7 @@ struct Dumper(Range)
         dumper.explicitEnd = true;
         dumper.explicitStart = true;
         dumper.YAMLVersion = null;
-        dumper.lineBreak = LineBreak.Windows;
+        dumper.lineBreak = LineBreak.windows;
         dumper.dump(node);
         assert(stream.data == "--- 0\r\n...\r\n");
     }
@@ -339,7 +339,7 @@ struct Dumper(Range)
         dumper.explicitEnd = true;
         dumper.explicitStart = true;
         dumper.YAMLVersion = null;
-        dumper.lineBreak = LineBreak.Macintosh;
+        dumper.lineBreak = LineBreak.macintosh;
         dumper.dump(node);
         assert(stream.data == "--- 0\r...\r");
     }

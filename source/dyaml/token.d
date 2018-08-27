@@ -22,38 +22,39 @@ package:
 /// Token types.
 enum TokenID : ubyte
 {
-    Invalid = 0,        /// Invalid (uninitialized) token
-    Directive,          /// DIRECTIVE
-    DocumentStart,      /// DOCUMENT-START
-    DocumentEnd,        /// DOCUMENT-END
-    StreamStart,        /// STREAM-START
-    StreamEnd,          /// STREAM-END
-    BlockSequenceStart, /// BLOCK-SEQUENCE-START
-    BlockMappingStart,  /// BLOCK-MAPPING-START
-    BlockEnd,           /// BLOCK-END
-    FlowSequenceStart,  /// FLOW-SEQUENCE-START
-    FlowMappingStart,   /// FLOW-MAPPING-START
-    FlowSequenceEnd,    /// FLOW-SEQUENCE-END
-    FlowMappingEnd,     /// FLOW-MAPPING-END
-    Key,                /// KEY
-    Value,              /// VALUE
-    BlockEntry,         /// BLOCK-ENTRY
-    FlowEntry,          /// FLOW-ENTRY
-    Alias,              /// ALIAS
-    Anchor,             /// ANCHOR
-    Tag,                /// TAG
-    Scalar              /// SCALAR
+    // Invalid (uninitialized) token
+    invalid = 0,
+    directive,
+    documentStart,
+    documentEnd,
+    streamStart,
+    streamEnd,
+    blockSequenceStart,
+    blockMappingStart,
+    blockEnd,
+    flowSequenceStart,
+    flowMappingStart,
+    flowSequenceEnd,
+    flowMappingEnd,
+    key,
+    value,
+    blockEntry,
+    flowEntry,
+    alias_,
+    anchor,
+    tag,
+    scalar
 }
 
 /// Specifies the type of a tag directive token.
 enum DirectiveType : ubyte
 {
     // YAML version directive.
-    YAML,
+    yaml,
     // Tag directive.
-    TAG,
+    tag,
     // Any other directive is "reserved" for future YAML versions.
-    Reserved
+    reserved
 }
 
 /// Token produced by scanner.
@@ -107,7 +108,7 @@ static assert(Token.sizeof <= 32, "Token has unexpected size");
 Token directiveToken(const Mark start, const Mark end, char[] value,
                      DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {
-    return Token(value, start, end, TokenID.Directive, ScalarStyle.init, Encoding.init,
+    return Token(value, start, end, TokenID.directive, ScalarStyle.init, Encoding.init,
                  directive, nameEnd);
 }
 
@@ -128,18 +129,18 @@ Token simpleToken(TokenID id)(const Mark start, const Mark end)
 ///          encoding = Encoding of the stream.
 Token streamStartToken(const Mark start, const Mark end, const Encoding encoding) @safe pure nothrow @nogc
 {
-    return Token(null, start, end, TokenID.StreamStart, ScalarStyle.Invalid, encoding);
+    return Token(null, start, end, TokenID.streamStart, ScalarStyle.invalid, encoding);
 }
 
 /// Aliases for construction of simple token types.
-alias streamEndToken = simpleToken!(TokenID.StreamEnd);
-alias blockSequenceStartToken = simpleToken!(TokenID.BlockSequenceStart);
-alias blockMappingStartToken = simpleToken!(TokenID.BlockMappingStart);
-alias blockEndToken = simpleToken!(TokenID.BlockEnd);
-alias keyToken = simpleToken!(TokenID.Key);
-alias valueToken = simpleToken!(TokenID.Value);
-alias blockEntryToken = simpleToken!(TokenID.BlockEntry);
-alias flowEntryToken = simpleToken!(TokenID.FlowEntry);
+alias streamEndToken = simpleToken!(TokenID.streamEnd);
+alias blockSequenceStartToken = simpleToken!(TokenID.blockSequenceStart);
+alias blockMappingStartToken = simpleToken!(TokenID.blockMappingStart);
+alias blockEndToken = simpleToken!(TokenID.blockEnd);
+alias keyToken = simpleToken!(TokenID.key);
+alias valueToken = simpleToken!(TokenID.value);
+alias blockEntryToken = simpleToken!(TokenID.blockEntry);
+alias flowEntryToken = simpleToken!(TokenID.flowEntry);
 
 /// Construct a simple token with value with specified type.
 ///
@@ -152,14 +153,14 @@ alias flowEntryToken = simpleToken!(TokenID.FlowEntry);
 Token simpleValueToken(TokenID id)(const Mark start, const Mark end, char[] value,
                                    const uint valueDivider = uint.max)
 {
-    return Token(value, start, end, id, ScalarStyle.Invalid, Encoding.init,
+    return Token(value, start, end, id, ScalarStyle.invalid, Encoding.init,
                  DirectiveType.init, valueDivider);
 }
 
 /// Alias for construction of tag token.
-alias tagToken = simpleValueToken!(TokenID.Tag);
-alias aliasToken = simpleValueToken!(TokenID.Alias);
-alias anchorToken = simpleValueToken!(TokenID.Anchor);
+alias tagToken = simpleValueToken!(TokenID.tag);
+alias aliasToken = simpleValueToken!(TokenID.alias_);
+alias anchorToken = simpleValueToken!(TokenID.anchor);
 
 /// Construct a scalar token.
 ///
@@ -169,5 +170,5 @@ alias anchorToken = simpleValueToken!(TokenID.Anchor);
 ///          style = Style of the token.
 Token scalarToken(const Mark start, const Mark end, char[] value, const ScalarStyle style) @safe pure nothrow @nogc
 {
-    return Token(value, start, end, TokenID.Scalar, style);
+    return Token(value, start, end, TokenID.scalar, style);
 }

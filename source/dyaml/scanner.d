@@ -113,11 +113,11 @@ final class Scanner
         enum Chomping
         {
             /// Strip all trailing line breaks. '-' indicator.
-            Strip,
+            strip,
             /// Line break of the last line is preserved, others discarded. Default.
-            Clip,
+            clip,
             /// All trailing line breaks are preserved. '+' indicator.
-            Keep
+            keep
         }
 
         /// Reader used to read from a file/stream.
@@ -495,7 +495,7 @@ final class Scanner
 
         /// Add DOCUMENT-START or DOCUMENT-END token.
         void fetchDocumentIndicator(TokenID id)()
-            if(id == TokenID.DocumentStart || id == TokenID.DocumentEnd)
+            if(id == TokenID.documentStart || id == TokenID.documentEnd)
         {
             // Set indentation to -1 .
             unwindIndent(-1);
@@ -509,8 +509,8 @@ final class Scanner
         }
 
         /// Aliases to add DOCUMENT-START or DOCUMENT-END token.
-        alias fetchDocumentStart = fetchDocumentIndicator!(TokenID.DocumentStart);
-        alias fetchDocumentEnd = fetchDocumentIndicator!(TokenID.DocumentEnd);
+        alias fetchDocumentStart = fetchDocumentIndicator!(TokenID.documentStart);
+        alias fetchDocumentEnd = fetchDocumentIndicator!(TokenID.documentEnd);
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionStart(TokenID id)() @safe
@@ -527,8 +527,8 @@ final class Scanner
         }
 
         /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
-        alias fetchFlowSequenceStart = fetchFlowCollectionStart!(TokenID.FlowSequenceStart);
-        alias fetchFlowMappingStart = fetchFlowCollectionStart!(TokenID.FlowMappingStart);
+        alias fetchFlowSequenceStart = fetchFlowCollectionStart!(TokenID.flowSequenceStart);
+        alias fetchFlowMappingStart = fetchFlowCollectionStart!(TokenID.flowMappingStart);
 
         /// Add FLOW-SEQUENCE-START or FLOW-MAPPING-START token.
         void fetchFlowCollectionEnd(TokenID id)()
@@ -545,8 +545,8 @@ final class Scanner
         }
 
         /// Aliases to add FLOW-SEQUENCE-START or FLOW-MAPPING-START token/
-        alias fetchFlowSequenceEnd = fetchFlowCollectionEnd!(TokenID.FlowSequenceEnd);
-        alias fetchFlowMappingEnd = fetchFlowCollectionEnd!(TokenID.FlowMappingEnd);
+        alias fetchFlowSequenceEnd = fetchFlowCollectionEnd!(TokenID.flowSequenceEnd);
+        alias fetchFlowMappingEnd = fetchFlowCollectionEnd!(TokenID.flowMappingEnd);
 
         /// Add FLOW-ENTRY token;
         void fetchFlowEntry() @safe
@@ -580,7 +580,7 @@ final class Scanner
         /// Add BLOCK-ENTRY token. Might add BLOCK-SEQUENCE-START in the process.
         void fetchBlockEntry() @safe
         {
-            if(flowLevel_ == 0) { blockChecks!("Sequence", TokenID.BlockSequenceStart)(); }
+            if(flowLevel_ == 0) { blockChecks!("Sequence", TokenID.blockSequenceStart)(); }
 
             // It's an error for the block entry to occur in the flow context,
             // but we let the parser detect this.
@@ -598,7 +598,7 @@ final class Scanner
         /// Add KEY token. Might add BLOCK-MAPPING-START in the process.
         void fetchKey() @safe
         {
-            if(flowLevel_ == 0) { blockChecks!("Mapping", TokenID.BlockMappingStart)(); }
+            if(flowLevel_ == 0) { blockChecks!("Mapping", TokenID.blockMappingStart)(); }
 
             // Reset possible simple key on the current level.
             removePossibleSimpleKey();
@@ -665,7 +665,7 @@ final class Scanner
 
         /// Add ALIAS or ANCHOR token.
         void fetchAnchor_(TokenID id)() @safe
-            if(id == TokenID.Alias || id == TokenID.Anchor)
+            if(id == TokenID.alias_ || id == TokenID.anchor)
         {
             // ALIAS/ANCHOR could be a simple key.
             savePossibleSimpleKey();
@@ -678,8 +678,8 @@ final class Scanner
         }
 
         /// Aliases to add ALIAS or ANCHOR token.
-        alias fetchAlias = fetchAnchor_!(TokenID.Alias);
-        alias fetchAnchor = fetchAnchor_!(TokenID.Anchor);
+        alias fetchAlias = fetchAnchor_!(TokenID.alias_);
+        alias fetchAnchor = fetchAnchor_!(TokenID.anchor);
 
         /// Add TAG token.
         void fetchTag() @safe
@@ -695,7 +695,7 @@ final class Scanner
 
         /// Add block SCALAR token.
         void fetchBlockScalar(ScalarStyle style)() @safe
-            if(style == ScalarStyle.Literal || style == ScalarStyle.Folded)
+            if(style == ScalarStyle.literal || style == ScalarStyle.folded)
         {
             // Reset possible simple key on the current level.
             removePossibleSimpleKey();
@@ -708,8 +708,8 @@ final class Scanner
         }
 
         /// Aliases to add literal or folded block scalar.
-        alias fetchLiteral = fetchBlockScalar!(ScalarStyle.Literal);
-        alias fetchFolded = fetchBlockScalar!(ScalarStyle.Folded);
+        alias fetchLiteral = fetchBlockScalar!(ScalarStyle.literal);
+        alias fetchFolded = fetchBlockScalar!(ScalarStyle.folded);
 
         /// Add quoted flow SCALAR token.
         void fetchFlowScalar(ScalarStyle quotes)()
@@ -726,8 +726,8 @@ final class Scanner
         }
 
         /// Aliases to add single or double quoted block scalar.
-        alias fetchSingle = fetchFlowScalar!(ScalarStyle.SingleQuoted);
-        alias fetchDouble = fetchFlowScalar!(ScalarStyle.DoubleQuoted);
+        alias fetchSingle = fetchFlowScalar!(ScalarStyle.singleQuoted);
+        alias fetchDouble = fetchFlowScalar!(ScalarStyle.doubleQuoted);
 
         /// Add plain SCALAR token.
         void fetchPlain() @safe
@@ -932,11 +932,11 @@ final class Scanner
             Mark endMark = reader_.mark;
 
             DirectiveType directive;
-            if(name == "YAML")     { directive = DirectiveType.YAML; }
-            else if(name == "TAG") { directive = DirectiveType.TAG; }
+            if(name == "YAML")     { directive = DirectiveType.yaml; }
+            else if(name == "TAG") { directive = DirectiveType.tag; }
             else
             {
-                directive = DirectiveType.Reserved;
+                directive = DirectiveType.reserved;
                 scanToNextBreak();
             }
 
@@ -1119,11 +1119,11 @@ final class Scanner
                 return Token.init;
             }
 
-            if(id == TokenID.Alias)
+            if(id == TokenID.alias_)
             {
                 return aliasToken(startMark, reader_.mark, value);
             }
-            if(id == TokenID.Anchor)
+            if(id == TokenID.anchor)
             {
                 return anchorToken(startMark, reader_.mark, value);
             }
@@ -1279,7 +1279,7 @@ final class Scanner
                     // Unfortunately, folding rules are ambiguous.
 
                     // This is the folding according to the specification:
-                    if(style == ScalarStyle.Folded && lineBreak == '\n' &&
+                    if(style == ScalarStyle.folded && lineBreak == '\n' &&
                        leadingNonSpace && !" \t"d.canFind(reader_.peekByte()))
                     {
                         // No breaks were scanned; no need to insert the space in the
@@ -1299,7 +1299,7 @@ final class Scanner
                     ////this is Clark Evans's interpretation (also in the spec
                     ////examples):
                     //
-                    //if(style == ScalarStyle.Folded && lineBreak == '\n')
+                    //if(style == ScalarStyle.folded && lineBreak == '\n')
                     //{
                     //    if(startLen == endLen)
                     //    {
@@ -1327,14 +1327,14 @@ final class Scanner
             // If chompint is Keep, we keep (commit) the last scanned line breaks
             // (which are at the end of the scalar). Otherwise re remove them (end the
             // transaction).
-            if(chomping == Chomping.Keep)  { breaksTransaction.commit(); }
+            if(chomping == Chomping.keep)  { breaksTransaction.commit(); }
             else                           { breaksTransaction.end(); }
-            if(chomping != Chomping.Strip && lineBreak != int.max)
+            if(chomping != Chomping.strip && lineBreak != int.max)
             {
                 // If chomping is Keep, we keep the line break but the first line break
                 // that isn't stripped (since chomping isn't Strip in this branch) must
                 // be inserted _before_ the other line breaks.
-                if(chomping == Chomping.Keep)
+                if(chomping == Chomping.keep)
                 {
                     reader_.sliceBuilder.insert(lineBreak, startLen);
                 }
@@ -1356,7 +1356,7 @@ final class Scanner
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark) @safe
         {
-            auto chomping = Chomping.Clip;
+            auto chomping = Chomping.clip;
             int increment = int.min;
             dchar c       = reader_.peek();
 
@@ -1393,7 +1393,7 @@ final class Scanner
         bool getChomping(ref dchar c, ref Chomping chomping) @safe
         {
             if(!"+-"d.canFind(c)) { return false; }
-            chomping = c == '+' ? Chomping.Keep : Chomping.Strip;
+            chomping = c == '+' ? Chomping.keep : Chomping.strip;
             reader_.forward();
             c = reader_.peek();
             return true;
@@ -1525,7 +1525,7 @@ final class Scanner
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @safe
         {
-            for(;;) with(ScalarStyle)
+            for(;;)
             {
                 dchar c = reader_.peek();
 
@@ -1556,18 +1556,18 @@ final class Scanner
                 reader_.sliceBuilder.write(reader_.get(numCodePoints));
 
                 c = reader_.peek();
-                if(quotes == SingleQuoted && c == '\'' && reader_.peek(1) == '\'')
+                if(quotes == ScalarStyle.singleQuoted && c == '\'' && reader_.peek(1) == '\'')
                 {
                     reader_.forward(2);
                     reader_.sliceBuilder.write('\'');
                 }
-                else if((quotes == DoubleQuoted && c == '\'') ||
-                        (quotes == SingleQuoted && "\"\\"d.canFind(c)))
+                else if((quotes == ScalarStyle.doubleQuoted && c == '\'') ||
+                        (quotes == ScalarStyle.singleQuoted && "\"\\"d.canFind(c)))
                 {
                     reader_.forward();
                     reader_.sliceBuilder.write(c);
                 }
-                else if(quotes == DoubleQuoted && c == '\\')
+                else if(quotes == ScalarStyle.doubleQuoted && c == '\\')
                 {
                     reader_.forward();
                     c = reader_.peek();
@@ -1803,7 +1803,7 @@ final class Scanner
             spacesTransaction.end();
             char[] slice = reader_.sliceBuilder.finish();
 
-            return scalarToken(startMark, endMark, slice, ScalarStyle.Plain);
+            return scalarToken(startMark, endMark, slice, ScalarStyle.plain);
         }
 
         /// Scan spaces in a plain scalar.

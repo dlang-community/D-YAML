@@ -110,13 +110,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         enum Context
         {
             /// Root node of a document.
-            Root,
+            root,
             /// Sequence.
-            Sequence,
+            sequence,
             /// Mapping.
-            MappingNoSimpleKey,
+            mappingNoSimpleKey,
             /// Mapping, in a simple key.
-            MappingSimpleKey
+            mappingSimpleKey,
         }
         /// Current context.
         Context context_;
@@ -157,7 +157,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Analysis result of the current scalar.
         ScalarAnalysis analysis_;
         ///Style of the current scalar.
-        ScalarStyle style_ = ScalarStyle.Invalid;
+        ScalarStyle style_ = ScalarStyle.invalid;
 
     public:
         @disable int opCmp(ref Emitter);
@@ -258,9 +258,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             if(events_.length == 0){return true;}
 
             const event = events_.peek();
-            if(event.id == EventID.DocumentStart){return needEvents(1);}
-            if(event.id == EventID.SequenceStart){return needEvents(2);}
-            if(event.id == EventID.MappingStart) {return needEvents(3);}
+            if(event.id == EventID.documentStart){return needEvents(1);}
+            if(event.id == EventID.sequenceStart){return needEvents(2);}
+            if(event.id == EventID.mappingStart) {return needEvents(3);}
 
             return false;
         }
@@ -278,11 +278,11 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             while(!events_.iterationOver())
             {
                 const event = events_.next();
-                static starts = [EventID.DocumentStart, EventID.SequenceStart, EventID.MappingStart];
-                static ends   = [EventID.DocumentEnd, EventID.SequenceEnd, EventID.MappingEnd];
+                static starts = [EventID.documentStart, EventID.sequenceStart, EventID.mappingStart];
+                static ends   = [EventID.documentEnd, EventID.sequenceEnd, EventID.mappingEnd];
                 if(starts.canFind(event.id))   {++level;}
                 else if(ends.canFind(event.id)){--level;}
-                else if(event.id == EventID.StreamStart){level = -1;}
+                else if(event.id == EventID.streamStart){level = -1;}
 
                 if(level < 0)
                 {
@@ -324,8 +324,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle start of a file/stream.
         void expectStreamStart() @safe
         {
-            enforce(eventTypeIs(EventID.StreamStart),
-                    new EmitterException("Expected StreamStart, but got " ~ event_.idString));
+            enforce(eventTypeIs(EventID.streamStart),
+                    new EmitterException("Expected streamStart, but got " ~ event_.idString));
 
             writeStreamStart();
             nextExpected(&expectDocumentStart!(Yes.first));
@@ -342,11 +342,11 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle start of a document.
         void expectDocumentStart(Flag!"first" first)() @safe
         {
-            enforce(eventTypeIs(EventID.DocumentStart) || eventTypeIs(EventID.StreamEnd),
-                    new EmitterException("Expected DocumentStart or StreamEnd, but got "
+            enforce(eventTypeIs(EventID.documentStart) || eventTypeIs(EventID.streamEnd),
+                    new EmitterException("Expected documentStart or streamEnd, but got "
                               ~ event_.idString));
 
-            if(event_.id == EventID.DocumentStart)
+            if(event_.id == EventID.documentStart)
             {
                 const YAMLVersion = event_.value;
                 auto tagDirectives = event_.tagDirectives;
@@ -394,7 +394,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                 }
                 nextExpected(&expectRootNode);
             }
-            else if(event_.id == EventID.StreamEnd)
+            else if(event_.id == EventID.streamEnd)
             {
                 if(openEnded_)
                 {
@@ -409,7 +409,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle end of a document.
         void expectDocumentEnd() @safe
         {
-            enforce(eventTypeIs(EventID.DocumentEnd),
+            enforce(eventTypeIs(EventID.documentEnd),
                     new EmitterException("Expected DocumentEnd, but got " ~ event_.idString));
 
             writeIndent();
@@ -425,7 +425,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectRootNode() @safe
         {
             pushState(&expectDocumentEnd);
-            expectNode(Context.Root);
+            expectNode(Context.root);
         }
 
         ///Handle a mapping node.
@@ -433,13 +433,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         //Params: simpleKey = Are we in a simple key?
         void expectMappingNode(const bool simpleKey = false) @safe
         {
-            expectNode(simpleKey ? Context.MappingSimpleKey : Context.MappingNoSimpleKey);
+            expectNode(simpleKey ? Context.mappingSimpleKey : Context.mappingNoSimpleKey);
         }
 
         ///Handle a sequence node.
         void expectSequenceNode() @safe
         {
-            expectNode(Context.Sequence);
+            expectNode(Context.sequence);
         }
 
         ///Handle a new node. Context specifies where in the document we are.
@@ -447,17 +447,17 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             context_ = context;
 
-            const flowCollection = event_.collectionStyle == CollectionStyle.Flow;
+            const flowCollection = event_.collectionStyle == CollectionStyle.flow;
 
             switch(event_.id)
             {
-                case EventID.Alias: expectAlias(); break;
-                case EventID.Scalar:
+                case EventID.alias_: expectAlias(); break;
+                case EventID.scalar:
                      processAnchor("&");
                      processTag();
                      expectScalar();
                      break;
-                case EventID.SequenceStart:
+                case EventID.sequenceStart:
                      processAnchor("&");
                      processTag();
                      if(flowLevel_ > 0 || canonical_ || flowCollection || checkEmptySequence())
@@ -469,7 +469,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                          expectBlockSequence();
                      }
                      break;
-                case EventID.MappingStart:
+                case EventID.mappingStart:
                      processAnchor("&");
                      processTag();
                      if(flowLevel_ > 0 || canonical_ || flowCollection || checkEmptyMapping())
@@ -482,8 +482,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                      }
                      break;
                 default:
-                     throw new EmitterException("Expected Alias, Scalar, SequenceStart or " ~
-                                     "MappingStart, but got: " ~ event_.idString);
+                     throw new EmitterException("Expected alias_, scalar, sequenceStart or " ~
+                                     "mappingStart, but got: " ~ event_.idString);
             }
         }
         ///Handle an alias.
@@ -517,7 +517,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle a flow sequence item.
         void expectFlowSequenceItem(Flag!"first" first)() @safe
         {
-            if(event_.id == EventID.SequenceEnd)
+            if(event_.id == EventID.sequenceEnd)
             {
                 indent_ = popIndent();
                 --flowLevel_;
@@ -550,7 +550,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle a key in a flow mapping.
         void expectFlowMappingKey(Flag!"first" first)() @safe
         {
-            if(event_.id == EventID.MappingEnd)
+            if(event_.id == EventID.mappingEnd)
             {
                 indent_ = popIndent();
                 --flowLevel_;
@@ -600,8 +600,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle a block sequence.
         void expectBlockSequence() @safe
         {
-            const indentless = (context_ == Context.MappingNoSimpleKey ||
-                                context_ == Context.MappingSimpleKey) && !indentation_;
+            const indentless = (context_ == Context.mappingNoSimpleKey ||
+                                context_ == Context.mappingSimpleKey) && !indentation_;
             increaseIndent(No.flow, indentless);
             nextExpected(&expectBlockSequenceItem!(Yes.first));
         }
@@ -609,7 +609,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle a block sequence item.
         void expectBlockSequenceItem(Flag!"first" first)() @safe
         {
-            static if(!first) if(event_.id == EventID.SequenceEnd)
+            static if(!first) if(event_.id == EventID.sequenceEnd)
             {
                 indent_ = popIndent();
                 nextExpected(popState());
@@ -634,7 +634,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Handle a key in a block mapping.
         void expectBlockMappingKey(Flag!"first" first)() @safe
         {
-            static if(!first) if(event_.id == EventID.MappingEnd)
+            static if(!first) if(event_.id == EventID.mappingEnd)
             {
                 indent_ = popIndent();
                 nextExpected(popState());
@@ -676,27 +676,27 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Check if an empty sequence is next.
         bool checkEmptySequence() const @safe pure nothrow
         {
-            return event_.id == EventID.SequenceStart && events_.length > 0
-                   && events_.peek().id == EventID.SequenceEnd;
+            return event_.id == EventID.sequenceStart && events_.length > 0
+                   && events_.peek().id == EventID.sequenceEnd;
         }
 
         ///Check if an empty mapping is next.
         bool checkEmptyMapping() const @safe pure nothrow
         {
-            return event_.id == EventID.MappingStart && events_.length > 0
-                   && events_.peek().id == EventID.MappingEnd;
+            return event_.id == EventID.mappingStart && events_.length > 0
+                   && events_.peek().id == EventID.mappingEnd;
         }
 
         ///Check if an empty document is next.
         bool checkEmptyDocument() const @safe pure nothrow
         {
-            if(event_.id != EventID.DocumentStart || events_.length == 0)
+            if(event_.id != EventID.documentStart || events_.length == 0)
             {
                 return false;
             }
 
             const event = events_.peek();
-            const emptyScalar = event.id == EventID.Scalar && (event.anchor is null) &&
+            const emptyScalar = event.id == EventID.scalar && (event.anchor is null) &&
                                 (event.tag is null) && event.implicit && event.value == "";
             return emptyScalar;
         }
@@ -706,11 +706,11 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             uint length;
             const id = event_.id;
-            const scalar = id == EventID.Scalar;
-            const collectionStart = id == EventID.MappingStart ||
-                                    id == EventID.SequenceStart;
+            const scalar = id == EventID.scalar;
+            const collectionStart = id == EventID.mappingStart ||
+                                    id == EventID.sequenceStart;
 
-            if((id == EventID.Alias || scalar || collectionStart)
+            if((id == EventID.alias_ || scalar || collectionStart)
                && (event_.anchor !is null))
             {
                 if(preparedAnchor_ is null)
@@ -734,7 +734,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             if(length >= 128){return false;}
 
-            return id == EventID.Alias ||
+            return id == EventID.alias_ ||
                    (scalar && !analysis_.flags.empty && !analysis_.flags.multiline) ||
                    checkEmptySequence() ||
                    checkEmptyMapping();
@@ -744,30 +744,30 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void processScalar() @safe
         {
             if(analysis_.flags.isNull){analysis_ = analyzeScalar(event_.value);}
-            if(style_ == ScalarStyle.Invalid)
+            if(style_ == ScalarStyle.invalid)
             {
                 style_ = chooseScalarStyle();
             }
 
-            //if(analysis_.flags.multiline && (context_ != Context.MappingSimpleKey) &&
-            //   ([ScalarStyle.Invalid, ScalarStyle.Plain, ScalarStyle.SingleQuoted, ScalarStyle.DoubleQuoted)
+            //if(analysis_.flags.multiline && (context_ != Context.mappingSimpleKey) &&
+            //   ([ScalarStyle.invalid, ScalarStyle.plain, ScalarStyle.singleQuoted, ScalarStyle.doubleQuoted)
             //    .canFind(style_))
             //{
             //    writeIndent();
             //}
             auto writer = ScalarWriter!(Range, CharType)(this, analysis_.scalar,
-                                       context_ != Context.MappingSimpleKey);
+                                       context_ != Context.mappingSimpleKey);
             with(writer) final switch(style_)
             {
-                case ScalarStyle.Invalid:      assert(false);
-                case ScalarStyle.DoubleQuoted: writeDoubleQuoted(); break;
-                case ScalarStyle.SingleQuoted: writeSingleQuoted(); break;
-                case ScalarStyle.Folded:       writeFolded();       break;
-                case ScalarStyle.Literal:      writeLiteral();      break;
-                case ScalarStyle.Plain:        writePlain();        break;
+                case ScalarStyle.invalid:      assert(false);
+                case ScalarStyle.doubleQuoted: writeDoubleQuoted(); break;
+                case ScalarStyle.singleQuoted: writeSingleQuoted(); break;
+                case ScalarStyle.folded:       writeFolded();       break;
+                case ScalarStyle.literal:      writeLiteral();      break;
+                case ScalarStyle.plain:        writePlain();        break;
             }
             analysis_.flags.isNull = true;
-            style_ = ScalarStyle.Invalid;
+            style_ = ScalarStyle.invalid;
         }
 
         ///Process and write an anchor/alias.
@@ -795,11 +795,11 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             string tag = event_.tag;
 
-            if(event_.id == EventID.Scalar)
+            if(event_.id == EventID.scalar)
             {
-                if(style_ == ScalarStyle.Invalid){style_ = chooseScalarStyle();}
+                if(style_ == ScalarStyle.invalid){style_ = chooseScalarStyle();}
                 if((!canonical_ || (tag is null)) &&
-                   (style_ == ScalarStyle.Plain ? event_.implicit : !event_.implicit && (tag is null)))
+                   (style_ == ScalarStyle.plain ? event_.implicit : !event_.implicit && (tag is null)))
                 {
                     preparedTag_ = null;
                     return;
@@ -831,28 +831,28 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             if(analysis_.flags.isNull){analysis_ = analyzeScalar(event_.value);}
 
             const style          = event_.scalarStyle;
-            const invalidOrPlain = style == ScalarStyle.Invalid || style == ScalarStyle.Plain;
-            const block          = style == ScalarStyle.Literal || style == ScalarStyle.Folded;
-            const singleQuoted   = style == ScalarStyle.SingleQuoted;
-            const doubleQuoted   = style == ScalarStyle.DoubleQuoted;
+            const invalidOrPlain = style == ScalarStyle.invalid || style == ScalarStyle.plain;
+            const block          = style == ScalarStyle.literal || style == ScalarStyle.folded;
+            const singleQuoted   = style == ScalarStyle.singleQuoted;
+            const doubleQuoted   = style == ScalarStyle.doubleQuoted;
 
             const allowPlain     = flowLevel_ > 0 ? analysis_.flags.allowFlowPlain
                                                   : analysis_.flags.allowBlockPlain;
             //simple empty or multiline scalars can't be written in plain style
-            const simpleNonPlain = (context_ == Context.MappingSimpleKey) &&
+            const simpleNonPlain = (context_ == Context.mappingSimpleKey) &&
                                    (analysis_.flags.empty || analysis_.flags.multiline);
 
             if(doubleQuoted || canonical_)
             {
-                return ScalarStyle.DoubleQuoted;
+                return ScalarStyle.doubleQuoted;
             }
 
             if(invalidOrPlain && event_.implicit && !simpleNonPlain && allowPlain)
             {
-                return ScalarStyle.Plain;
+                return ScalarStyle.plain;
             }
 
-            if(block && flowLevel_ == 0 && context_ != Context.MappingSimpleKey &&
+            if(block && flowLevel_ == 0 && context_ != Context.mappingSimpleKey &&
                analysis_.flags.allowBlock)
             {
                 return style;
@@ -860,12 +860,12 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             if((invalidOrPlain || singleQuoted) &&
                analysis_.flags.allowSingleQuoted &&
-               !(context_ == Context.MappingSimpleKey && analysis_.flags.multiline))
+               !(context_ == Context.mappingSimpleKey && analysis_.flags.multiline))
             {
-                return ScalarStyle.SingleQuoted;
+                return ScalarStyle.singleQuoted;
             }
 
-            return ScalarStyle.DoubleQuoted;
+            return ScalarStyle.doubleQuoted;
         }
 
         ///Prepare YAML version string for output.
@@ -1548,7 +1548,7 @@ struct ScalarWriter(Range, CharType)
         ///Write text as plain scalar.
         void writePlain() @safe
         {
-            if(emitter_.context_ == Emitter!(Range, CharType).Context.Root){emitter_.openEnded_ = true;}
+            if(emitter_.context_ == Emitter!(Range, CharType).Context.root){emitter_.openEnded_ = true;}
             if(text_ == ""){return;}
             if(!emitter_.whitespace_)
             {

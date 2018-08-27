@@ -11,11 +11,11 @@ module dyaml.linebreak;
 enum LineBreak
 {
     ///Unix line break ("\n").
-    Unix,
+    unix,
     ///Windows line break ("\r\n").
-    Windows,
+    windows,
     ///Macintosh line break ("\r").
-    Macintosh
+    macintosh
 }
 
 package:
@@ -25,8 +25,8 @@ string lineBreak(in LineBreak b) pure @safe nothrow
 {
     final switch(b)
     {
-        case LineBreak.Unix:      return "\n";
-        case LineBreak.Windows:   return "\r\n";
-        case LineBreak.Macintosh: return "\r";
+        case LineBreak.unix:      return "\n";
+        case LineBreak.windows:   return "\r\n";
+        case LineBreak.macintosh: return "\r";
     }
 }
