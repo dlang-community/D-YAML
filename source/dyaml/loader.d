@@ -223,6 +223,8 @@ struct Loader
         /** Implements the empty range primitive.
         *
         * If there's no more documents left in the stream, this will be true.
+        *
+        * Returns: true if no more documents left, false otherwise.
         */
         bool empty() @safe
         {
@@ -260,7 +262,7 @@ struct Loader
         }
         /** Implements the front range primitive.
         *
-        * Returns the current document as a Node.
+        * Returns: the current document as a Node.
         */
         Node front() @safe
         {
