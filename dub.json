@@ -1,13 +1,16 @@
 {
     "name": "dyaml",
     "description": "YAML parser and emitter",
-    "authors": [ "Ferdinand Majerech" ],
-    "libs": [],
-    "importPaths": ["source"],
-    "license": "Boost 1.0",
-    "dependencies": { "tinyendian" : { "version" : "~>0.2.0" } },
+    "authors": [
+        "Ferdinand Majerech",
+        "Cameron \"Herringway\" Ross"
+    ],
+    "license": "BSL-1.0",
+    "dependencies": {
+        "tinyendian" :  "~>0.2.0"
+    },
     "homepage": "https://github.com/dlang-community/D-YAML",
-    "copyright": "Copyright © 2011-2014, Ferdinand Majerech",
+    "copyright": "Copyright © 2011-2018, Ferdinand Majerech",
     "subPackages": [
         "examples/constructor",
         "examples/getting_started",
