@@ -88,10 +88,10 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         Range stream_;
 
         ///Stack of states.
-        Appender!(void function() @safe[]) states_;
+        Appender!(void function(typeof(this)*) @safe[]) states_;
         ///Current state.
         //WARNING! DO NOT CALL DIRECTLY! Use callNext() instead!
-        void function() @safe state_;
+        void function(typeof(this)*) @safe state_;
 
         ///Event queue.
         Queue!Event events_;
@@ -172,13 +172,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
          *          lineBreak = Line break character/s.
          */
         this(Range stream, const bool canonical, const int indent, const int width,
-             const LineBreak lineBreak) @trusted
+             const LineBreak lineBreak) @safe
         {
             states_.reserve(32);
             indents_.reserve(32);
             stream_ = stream;
             canonical_ = canonical;
-            nextExpected(&expectStreamStart);
+            nextExpected!"expectStreamStart"();
 
             if(indent > 1 && indent < 10){bestIndent_ = indent;}
             if(width > bestIndent_ * 2)  {bestWidth_ = width;}
@@ -201,7 +201,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
     private:
         ///Pop and return the newest state in states_.
-        void function() @safe popState() @safe
+        void function(typeof(this)*) @safe popState() @safe
         {
             enforce(states_.data.length > 0,
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
@@ -210,9 +210,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             return result;
         }
 
-        void pushState(void delegate() @safe func) @trusted
+        void pushState(string D)() @safe
         {
-            states_ ~= func.funcptr;
+            states_ ~= mixin("function(typeof(this)* self) { self."~D~"(); }");
         }
 
         ///Pop and return the newest indent in indents_.
@@ -328,7 +328,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                     new EmitterException("Expected streamStart, but got " ~ event_.idString));
 
             writeStreamStart();
-            nextExpected(&expectDocumentStart!(Yes.first));
+            nextExpected!"expectDocumentStart!(Yes.first)"();
         }
 
         ///Expect nothing, throwing if we still have something.
@@ -392,7 +392,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                     writeIndicator("---", Yes.needWhitespace);
                     if(canonical_){writeIndent();}
                 }
-                nextExpected(&expectRootNode);
+                nextExpected!"expectRootNode"();
             }
             else if(event_.id == EventID.streamEnd)
             {
@@ -402,7 +402,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                     writeIndent();
                 }
                 writeStreamEnd();
-                nextExpected(&expectNothing);
+                nextExpected!"expectNothing"();
             }
         }
 
@@ -418,13 +418,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                 writeIndicator("...", Yes.needWhitespace);
                 writeIndent();
             }
-            nextExpected(&expectDocumentStart!(No.first));
+            nextExpected!"expectDocumentStart!(No.first)"();
         }
 
         ///Handle the root node of a document.
         void expectRootNode() @safe
         {
-            pushState(&expectDocumentEnd);
+            pushState!"expectDocumentEnd"();
             expectNode(Context.root);
         }
 
@@ -511,7 +511,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             writeIndicator("[", Yes.needWhitespace, Yes.whitespace);
             ++flowLevel_;
             increaseIndent(Yes.flow);
-            nextExpected(&expectFlowSequenceItem!(Yes.first));
+            nextExpected!"expectFlowSequenceItem!(Yes.first)"();
         }
 
         ///Handle a flow sequence item.
@@ -532,7 +532,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             }
             static if(!first){writeIndicator(",", No.needWhitespace);}
             if(canonical_ || column_ > bestWidth_){writeIndent();}
-            pushState(&expectFlowSequenceItem!(No.first));
+            pushState!"expectFlowSequenceItem!(No.first)"();
             expectSequenceNode();
         }
 
@@ -544,7 +544,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             writeIndicator("{", Yes.needWhitespace, Yes.whitespace);
             ++flowLevel_;
             increaseIndent(Yes.flow);
-            nextExpected(&expectFlowMappingKey!(Yes.first));
+            nextExpected!"expectFlowMappingKey!(Yes.first)"();
         }
 
         ///Handle a key in a flow mapping.
@@ -568,13 +568,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             if(canonical_ || column_ > bestWidth_){writeIndent();}
             if(!canonical_ && checkSimpleKey())
             {
-                pushState(&expectFlowMappingSimpleValue);
+                pushState!"expectFlowMappingSimpleValue"();
                 expectMappingNode(true);
                 return;
             }
 
             writeIndicator("?", Yes.needWhitespace);
-            pushState(&expectFlowMappingValue);
+            pushState!"expectFlowMappingValue"();
             expectMappingNode();
         }
 
@@ -582,7 +582,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectFlowMappingSimpleValue() @safe
         {
             writeIndicator(":", No.needWhitespace);
-            pushState(&expectFlowMappingKey!(No.first));
+            pushState!"expectFlowMappingKey!(No.first)"();
             expectMappingNode();
         }
 
@@ -591,7 +591,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             if(canonical_ || column_ > bestWidth_){writeIndent();}
             writeIndicator(":", Yes.needWhitespace);
-            pushState(&expectFlowMappingKey!(No.first));
+            pushState!"expectFlowMappingKey!(No.first)"();
             expectMappingNode();
         }
 
@@ -603,7 +603,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             const indentless = (context_ == Context.mappingNoSimpleKey ||
                                 context_ == Context.mappingSimpleKey) && !indentation_;
             increaseIndent(No.flow, indentless);
-            nextExpected(&expectBlockSequenceItem!(Yes.first));
+            nextExpected!"expectBlockSequenceItem!(Yes.first)"();
         }
 
         ///Handle a block sequence item.
@@ -618,7 +618,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             writeIndent();
             writeIndicator("-", Yes.needWhitespace, No.whitespace, Yes.indentation);
-            pushState(&expectBlockSequenceItem!(No.first));
+            pushState!"expectBlockSequenceItem!(No.first)"();
             expectSequenceNode();
         }
 
@@ -628,7 +628,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectBlockMapping() @safe
         {
             increaseIndent(No.flow);
-            nextExpected(&expectBlockMappingKey!(Yes.first));
+            nextExpected!"expectBlockMappingKey!(Yes.first)"();
         }
 
         ///Handle a key in a block mapping.
@@ -644,13 +644,13 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             writeIndent();
             if(checkSimpleKey())
             {
-                pushState(&expectBlockMappingSimpleValue);
+                pushState!"expectBlockMappingSimpleValue"();
                 expectMappingNode(true);
                 return;
             }
 
             writeIndicator("?", Yes.needWhitespace, No.whitespace, Yes.indentation);
-            pushState(&expectBlockMappingValue);
+            pushState!"expectBlockMappingValue"();
             expectMappingNode();
         }
 
@@ -658,7 +658,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void expectBlockMappingSimpleValue() @safe
         {
             writeIndicator(":", No.needWhitespace);
-            pushState(&expectBlockMappingKey!(No.first));
+            pushState!"expectBlockMappingKey!(No.first)"();
             expectMappingNode();
         }
 
@@ -667,7 +667,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             writeIndent();
             writeIndicator(":", Yes.needWhitespace, No.whitespace, Yes.indentation);
-            pushState(&expectBlockMappingKey!(No.first));
+            pushState!"expectBlockMappingKey!(No.first)"();
             expectMappingNode();
         }
 
@@ -1294,21 +1294,17 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             writeString(prefix);
             writeLineBreak();
         }
-
-        void nextExpected(void delegate() @safe func) @trusted
+        void nextExpected(string D)() @safe
         {
-            state_ = func.funcptr;
+            state_ = mixin("function(typeof(this)* self) { self."~D~"(); }");
         }
-        void nextExpected(void function() @safe func) @safe
+        void nextExpected(void function(typeof(this)*) @safe f) @safe
         {
-            state_ = func;
+            state_ = f;
         }
-        void callNext() @trusted
+        void callNext() @safe
         {
-            void delegate() @safe func;
-            func.funcptr = state_;
-            func.ptr = &this;
-            func();
+            state_(&this);
         }
 }
 
