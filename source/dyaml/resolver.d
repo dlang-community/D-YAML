@@ -138,7 +138,7 @@ final class Resolver
         {
             if((tag !is null) && tag != "!"){return tag;}
 
-            if(kind == NodeID.Scalar)
+            if(kind == NodeID.scalar)
             {
                 if(!implicit){return defaultScalarTag_;}
 
@@ -156,8 +156,8 @@ final class Resolver
                 }
                 return defaultScalarTag_;
             }
-            else if(kind == NodeID.Sequence){return defaultSequenceTag_;}
-            else if(kind == NodeID.Mapping) {return defaultMappingTag_;}
+            else if(kind == NodeID.sequence){return defaultSequenceTag_;}
+            else if(kind == NodeID.mapping) {return defaultMappingTag_;}
             assert(false, "This line of code should never be reached");
         }
         @safe unittest
@@ -169,7 +169,7 @@ final class Resolver
                 const string expected = tag;
                 foreach(value; values)
                 {
-                    const string resolved = resolver.resolve(NodeID.Scalar, null, value, true);
+                    const string resolved = resolver.resolve(NodeID.scalar, null, value, true);
                     if(expected != resolved)
                     {
                         return false;

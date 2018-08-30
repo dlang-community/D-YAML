@@ -35,20 +35,20 @@ bool compareEvents(T, U)(T events1, U events2)
         //Different event types.
         if(e1.id != e2.id){return false;}
         //Different anchor (if applicable).
-        if([EventID.SequenceStart,
-            EventID.MappingStart,
-            EventID.Alias,
-            EventID.Scalar].canFind(e1.id)
+        if([EventID.sequenceStart,
+            EventID.mappingStart,
+            EventID.alias_,
+            EventID.scalar].canFind(e1.id)
             && e1.anchor != e2.anchor)
         {
             return false;
         }
         //Different collection tag (if applicable).
-        if([EventID.SequenceStart, EventID.MappingStart].canFind(e1.id) && e1.tag != e2.tag)
+        if([EventID.sequenceStart, EventID.mappingStart].canFind(e1.id) && e1.tag != e2.tag)
         {
             return false;
         }
-        if(e1.id == EventID.Scalar)
+        if(e1.id == EventID.scalar)
         {
             //Different scalar tag (if applicable).
             if(!(e1.implicit || e2.implicit)
@@ -140,27 +140,27 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
         //must exist due to Anchor, Tags reference counts
         auto loader = Loader.fromFile(canonicalFilename);
         auto events = loader.parse();
-        foreach(flowStyle; [CollectionStyle.Block, CollectionStyle.Flow])
+        foreach(flowStyle; [CollectionStyle.block, CollectionStyle.flow])
         {
-            foreach(style; [ScalarStyle.Literal, ScalarStyle.Folded,
-                            ScalarStyle.DoubleQuoted, ScalarStyle.SingleQuoted,
-                            ScalarStyle.Plain])
+            foreach(style; [ScalarStyle.literal, ScalarStyle.folded,
+                            ScalarStyle.doubleQuoted, ScalarStyle.singleQuoted,
+                            ScalarStyle.plain])
             {
                 Event[] styledEvents;
                 foreach(event; events)
                 {
-                    if(event.id == EventID.Scalar)
+                    if(event.id == EventID.scalar)
                     {
                         event = scalarEvent(Mark(), Mark(), event.anchor, event.tag,
                                             event.implicit,
                                             event.value, style);
                     }
-                    else if(event.id == EventID.SequenceStart)
+                    else if(event.id == EventID.sequenceStart)
                     {
                         event = sequenceStartEvent(Mark(), Mark(), event.anchor,
                                                    event.tag, event.implicit, flowStyle);
                     }
-                    else if(event.id == EventID.MappingStart)
+                    else if(event.id == EventID.mappingStart)
                     {
                         event = mappingStartEvent(Mark(), Mark(), event.anchor,
                                                   event.tag, event.implicit, flowStyle);

@@ -11,18 +11,27 @@ module dyaml.style;
 ///Scalar styles.
 enum ScalarStyle : ubyte
 {
-    Invalid = 0,  /// Invalid (uninitialized) style
-    Literal,      /// `|` (Literal block style)
-    Folded,       /// `>` (Folded block style)
-    Plain,        /// Plain scalar
-    SingleQuoted, /// Single quoted scalar
-    DoubleQuoted  /// Double quoted scalar
+    /// Invalid (uninitialized) style
+    invalid = 0,
+    /// `|` (Literal block style)
+    literal,
+    /// `>` (Folded block style)
+    folded,
+    /// Plain scalar
+    plain,
+    /// Single quoted scalar
+    singleQuoted,
+    /// Double quoted scalar
+    doubleQuoted
 }
 
 ///Collection styles.
 enum CollectionStyle : ubyte
 {
-    Invalid = 0, /// Invalid (uninitialized) style
-    Block,       /// Block style.
-    Flow         /// Flow style.
+    /// Invalid (uninitialized) style
+    invalid = 0,
+    /// Block style.
+    block,
+    /// Flow style.
+    flow
 }

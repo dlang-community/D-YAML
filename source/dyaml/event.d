@@ -23,17 +23,17 @@ package:
 ///Event types.
 enum EventID : ubyte
 {
-    Invalid = 0,     /// Invalid (uninitialized) event.
-    StreamStart,     /// Stream start
-    StreamEnd,       /// Stream end
-    DocumentStart,   /// Document start
-    DocumentEnd,     /// Document end
-    Alias,           /// Alias
-    Scalar,          /// Scalar
-    SequenceStart,   /// Sequence start
-    SequenceEnd,     /// Sequence end
-    MappingStart,    /// Mapping start
-    MappingEnd       /// Mapping end
+    invalid = 0,     /// Invalid (uninitialized) event.
+    streamStart,     /// Stream start
+    streamEnd,       /// Stream end
+    documentStart,   /// Document start
+    documentEnd,     /// Document end
+    alias_,           /// Alias
+    scalar,          /// Scalar
+    sequenceStart,   /// Sequence start
+    sequenceEnd,     /// Sequence end
+    mappingStart,    /// Mapping start
+    mappingEnd       /// Mapping end
 }
 
 /**
@@ -65,9 +65,9 @@ struct Event
         TagDirective[] _tagDirectives;
     }
     ///Event type.
-    EventID id = EventID.Invalid;
+    EventID id = EventID.invalid;
     ///Style of scalar event, if this is a scalar event.
-    ScalarStyle scalarStyle = ScalarStyle.Invalid;
+    ScalarStyle scalarStyle = ScalarStyle.invalid;
     union
     {
         ///Should the tag be implicitly resolved?
@@ -80,26 +80,26 @@ struct Event
         bool explicitDocument;
     }
     ///Collection style, if this is a SequenceStart or MappingStart.
-    CollectionStyle collectionStyle = CollectionStyle.Invalid;
+    CollectionStyle collectionStyle = CollectionStyle.invalid;
 
     ///Is this a null (uninitialized) event?
-    @property bool isNull() const pure @safe nothrow {return id == EventID.Invalid;}
+    @property bool isNull() const pure @safe nothrow {return id == EventID.invalid;}
 
     ///Get string representation of the token ID.
     @property string idString() const @safe {return to!string(id);}
 
     auto ref anchor() inout @trusted pure {
-        assert(id != EventID.DocumentStart, "DocumentStart events cannot have anchors.");
+        assert(id != EventID.documentStart, "DocumentStart events cannot have anchors.");
         return _anchor;
     }
 
     auto ref tag() inout @trusted pure {
-        assert(id != EventID.DocumentStart, "DocumentStart events cannot have tags.");
+        assert(id != EventID.documentStart, "DocumentStart events cannot have tags.");
         return _tag;
     }
 
     auto ref tagDirectives() inout @trusted pure {
-        assert(id == EventID.DocumentStart, "Only DocumentStart events have tag directives.");
+        assert(id == EventID.documentStart, "Only DocumentStart events have tag directives.");
         return _tagDirectives;
     }
 
@@ -138,8 +138,8 @@ Event collectionStartEvent(EventID id)
     (const Mark start, const Mark end, const string anchor, const string tag,
      const bool implicit, const CollectionStyle style) pure @safe nothrow
 {
-    static assert(id == EventID.SequenceStart || id == EventID.SequenceEnd ||
-                  id == EventID.MappingStart || id == EventID.MappingEnd);
+    static assert(id == EventID.sequenceStart || id == EventID.sequenceEnd ||
+                  id == EventID.mappingStart || id == EventID.mappingEnd);
     Event result;
     result.startMark       = start;
     result.endMark         = end;
@@ -163,19 +163,19 @@ Event streamStartEvent(const Mark start, const Mark end)
     Event result;
     result.startMark = start;
     result.endMark   = end;
-    result.id        = EventID.StreamStart;
+    result.id        = EventID.streamStart;
     return result;
 }
 
 ///Aliases for simple events.
-alias streamEndEvent = event!(EventID.StreamEnd);
-alias aliasEvent = event!(EventID.Alias);
-alias sequenceEndEvent = event!(EventID.SequenceEnd);
-alias mappingEndEvent = event!(EventID.MappingEnd);
+alias streamEndEvent = event!(EventID.streamEnd);
+alias aliasEvent = event!(EventID.alias_);
+alias sequenceEndEvent = event!(EventID.sequenceEnd);
+alias mappingEndEvent = event!(EventID.mappingEnd);
 
 ///Aliases for collection start events.
-alias sequenceStartEvent = collectionStartEvent!(EventID.SequenceStart);
-alias mappingStartEvent = collectionStartEvent!(EventID.MappingStart);
+alias sequenceStartEvent = collectionStartEvent!(EventID.sequenceStart);
+alias mappingStartEvent = collectionStartEvent!(EventID.mappingStart);
 
 /**
  * Construct a document start event.
@@ -193,7 +193,7 @@ Event documentStartEvent(const Mark start, const Mark end, const bool explicit, 
     result.value            = YAMLVersion;
     result.startMark        = start;
     result.endMark          = end;
-    result.id               = EventID.DocumentStart;
+    result.id               = EventID.documentStart;
     result.explicitDocument = explicit;
     result.tagDirectives    = tagDirectives;
     return result;
@@ -211,7 +211,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
     Event result;
     result.startMark        = start;
     result.endMark          = end;
-    result.id               = EventID.DocumentEnd;
+    result.id               = EventID.documentEnd;
     result.explicitDocument = explicit;
     return result;
 }
@@ -227,7 +227,7 @@ Event documentEndEvent(const Mark start, const Mark end, const bool explicit) pu
 ///          style    = Scalar style.
 Event scalarEvent(const Mark start, const Mark end, const string anchor, const string tag,
                   const bool implicit, const string value,
-                  const ScalarStyle style = ScalarStyle.Invalid) @safe pure nothrow @nogc
+                  const ScalarStyle style = ScalarStyle.invalid) @safe pure nothrow @nogc
 {
     Event result;
     result.value       = value;
@@ -237,7 +237,7 @@ Event scalarEvent(const Mark start, const Mark end, const string anchor, const s
     result.anchor  = anchor;
     result.tag     = tag;
 
-    result.id          = EventID.Scalar;
+    result.id          = EventID.scalar;
     result.scalarStyle = style;
     result.implicit    = implicit;
     return result;

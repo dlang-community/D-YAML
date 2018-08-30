@@ -97,17 +97,17 @@ final class Composer
         bool checkNode() @safe
         {
             // If next event is stream start, skip it
-            parser_.skipOver!"a.id == b"(EventID.StreamStart);
+            parser_.skipOver!"a.id == b"(EventID.streamStart);
 
             //True if there are more documents available.
-            return parser_.front.id != EventID.StreamEnd;
+            return parser_.front.id != EventID.streamEnd;
         }
 
         ///Get a YAML document as a node (the root of the document).
         Node getNode() @safe
         {
             //Get the root node of the next document.
-            assert(parser_.front.id != EventID.StreamEnd,
+            assert(parser_.front.id != EventID.streamEnd,
                    "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
@@ -117,19 +117,19 @@ final class Composer
         ///Get single YAML document, throwing if there is more than one document.
         Node getSingleNode() @safe
         {
-            assert(parser_.front.id != EventID.StreamEnd,
+            assert(parser_.front.id != EventID.streamEnd,
                    "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
             Node document = composeDocument();
 
             //Ensure that the stream contains no more documents.
-            enforce(parser_.front.id == EventID.StreamEnd,
+            enforce(parser_.front.id == EventID.streamEnd,
                     new ComposerException("Expected single document in the stream, " ~
                                           "but found another document.",
                                           parser_.front.startMark));
 
-            skipExpected(EventID.StreamEnd);
+            skipExpected(EventID.streamEnd);
             assert(parser_.empty, "Found event after stream end");
 
             return document;
@@ -162,12 +162,12 @@ final class Composer
         ///Compose a YAML document and return its root node.
         Node composeDocument() @safe
         {
-            skipExpected(EventID.DocumentStart);
+            skipExpected(EventID.documentStart);
 
             //Compose the root node.
             Node node = composeNode(0, 0);
 
-            skipExpected(EventID.DocumentEnd);
+            skipExpected(EventID.documentEnd);
 
             anchors_.destroy();
             return node;
@@ -179,7 +179,7 @@ final class Composer
         ///         nodeAppenderLevel = Current level of the node appender stack.
         Node composeNode(const uint pairAppenderLevel, const uint nodeAppenderLevel) @safe
         {
-            if(parser_.front.id == EventID.Alias)
+            if(parser_.front.id == EventID.alias_)
             {
                 const event = parser_.front;
                 parser_.popFront();
@@ -216,13 +216,13 @@ final class Composer
 
             switch (parser_.front.id)
             {
-                case EventID.Scalar:
+                case EventID.scalar:
                     result = composeScalarNode();
                     break;
-                case EventID.SequenceStart:
+                case EventID.sequenceStart:
                     result = composeSequenceNode(pairAppenderLevel, nodeAppenderLevel);
                     break;
-                case EventID.MappingStart:
+                case EventID.mappingStart:
                     result = composeMappingNode(pairAppenderLevel, nodeAppenderLevel);
                     break;
                 default: assert(false, "This code should never be reached");
@@ -240,7 +240,7 @@ final class Composer
         {
             const event = parser_.front;
             parser_.popFront();
-            const tag = resolver_.resolve(NodeID.Scalar, event.tag, event.value,
+            const tag = resolver_.resolve(NodeID.scalar, event.tag, event.value,
                                           event.implicit);
 
             Node node = constructor_.node(event.startMark, event.endMark, tag,
@@ -261,10 +261,10 @@ final class Composer
 
             const startEvent = parser_.front;
             parser_.popFront();
-            const tag = resolver_.resolve(NodeID.Sequence, startEvent.tag, null,
+            const tag = resolver_.resolve(NodeID.sequence, startEvent.tag, null,
                                           startEvent.implicit);
 
-            while(parser_.front.id != EventID.SequenceEnd)
+            while(parser_.front.id != EventID.sequenceEnd)
             {
                 nodeAppender.put(composeNode(pairAppenderLevel, nodeAppenderLevel + 1));
             }
@@ -358,12 +358,12 @@ final class Composer
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             const startEvent = parser_.front;
             parser_.popFront();
-            const tag = resolver_.resolve(NodeID.Mapping, startEvent.tag, null,
+            const tag = resolver_.resolve(NodeID.mapping, startEvent.tag, null,
                                           startEvent.implicit);
             auto pairAppender = &(pairAppenders_[pairAppenderLevel]);
 
             Tuple!(Node, Mark)[] toMerge;
-            while(parser_.front.id != EventID.MappingEnd)
+            while(parser_.front.id != EventID.mappingEnd)
             {
                 auto pair = Node.Pair(composeNode(pairAppenderLevel + 1, nodeAppenderLevel),
                                       composeNode(pairAppenderLevel + 1, nodeAppenderLevel));

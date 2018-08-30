@@ -179,7 +179,7 @@ struct Serializer(Range, CharType)
             {
                 assert(node.isType!string, "Scalar node type must be string before serialized");
                 auto value = node.as!string;
-                const detectedTag = resolver_.resolve(NodeID.Scalar, null, value, true);
+                const detectedTag = resolver_.resolve(NodeID.scalar, null, value, true);
                 const bool isDetected = node.tag_ == detectedTag;
 
                 emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,

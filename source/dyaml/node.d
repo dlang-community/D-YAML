@@ -43,9 +43,9 @@ class NodeException : YAMLException
 // Node kinds.
 package enum NodeID : ubyte
 {
-    Scalar,
-    Sequence,
-    Mapping
+    scalar,
+    sequence,
+    mapping
 }
 
 /// Null YAML type. Used in nodes with _null values.
@@ -181,9 +181,9 @@ struct Node
         // Tag of the node.
         string tag_;
         // Node scalar style. Used to remember style this node was loaded with.
-        ScalarStyle scalarStyle = ScalarStyle.Invalid;
+        ScalarStyle scalarStyle = ScalarStyle.invalid;
         // Node collection style. Used to remember style this node was loaded with.
-        CollectionStyle collectionStyle = CollectionStyle.Invalid;
+        CollectionStyle collectionStyle = CollectionStyle.invalid;
 
         static assert(Value.sizeof <= 24, "Unexpected YAML value size");
         static assert(Node.sizeof <= 56, "Unexpected YAML node size");
@@ -2010,7 +2010,7 @@ struct Node
             import dyaml.dumper;
             auto stream = new Appender!string();
             auto node = Node([1, 2, 3, 4, 5]);
-            node.setStyle(CollectionStyle.Block);
+            node.setStyle(CollectionStyle.block);
 
             auto dumper = dumper(stream);
             dumper.dump(node);
@@ -2021,15 +2021,15 @@ struct Node
             import dyaml.dumper;
             auto stream = new Appender!string();
             auto node = Node(4);
-            node.setStyle(ScalarStyle.Literal);
+            node.setStyle(ScalarStyle.literal);
 
             auto dumper = dumper(stream);
             dumper.dump(node);
         }
         @safe unittest
         {
-            assertThrown!NodeException(Node(4).setStyle(CollectionStyle.Block));
-            assertThrown!NodeException(Node([4]).setStyle(ScalarStyle.Literal));
+            assertThrown!NodeException(Node(4).setStyle(CollectionStyle.block));
+            assertThrown!NodeException(Node([4]).setStyle(ScalarStyle.literal));
         }
         @safe unittest
         {
@@ -2037,7 +2037,7 @@ struct Node
             {
                 auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
-                node.setStyle(CollectionStyle.Block);
+                node.setStyle(CollectionStyle.block);
                 auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
@@ -2050,7 +2050,7 @@ struct Node
             {
                 auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
-                node.setStyle(CollectionStyle.Flow);
+                node.setStyle(CollectionStyle.flow);
                 auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
@@ -2063,7 +2063,7 @@ struct Node
             {
                 auto stream = new Appender!string();
                 auto node = Node(1);
-                node.setStyle(ScalarStyle.SingleQuoted);
+                node.setStyle(ScalarStyle.singleQuoted);
                 auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
@@ -2075,7 +2075,7 @@ struct Node
             {
                 auto stream = new Appender!string();
                 auto node = Node(1);
-                node.setStyle(ScalarStyle.DoubleQuoted);
+                node.setStyle(ScalarStyle.doubleQuoted);
                 auto dumper = dumper(stream);
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;

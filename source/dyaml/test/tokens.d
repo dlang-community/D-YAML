@@ -26,24 +26,26 @@ import dyaml.token;
 void testTokens(string dataFilename, string tokensFilename) @safe
 {
     //representations of YAML tokens in tokens file.
-    auto replace = [TokenID.Directive          : "%"   ,
-                    TokenID.DocumentStart      : "---" ,
-                    TokenID.DocumentEnd        : "..." ,
-                    TokenID.Alias              : "*"   ,
-                    TokenID.Anchor             : "&"   ,
-                    TokenID.Tag                : "!"   ,
-                    TokenID.Scalar             : "_"   ,
-                    TokenID.BlockSequenceStart : "[["  ,
-                    TokenID.BlockMappingStart  : "{{"  ,
-                    TokenID.BlockEnd           : "]}"  ,
-                    TokenID.FlowSequenceStart  : "["   ,
-                    TokenID.FlowSequenceEnd    : "]"   ,
-                    TokenID.FlowMappingStart   : "{"   ,
-                    TokenID.FlowMappingEnd     : "}"   ,
-                    TokenID.BlockEntry         : ","   ,
-                    TokenID.FlowEntry          : ","   ,
-                    TokenID.Key                : "?"   ,
-                    TokenID.Value              : ":"   ];
+    auto replace = [
+        TokenID.directive: "%",
+        TokenID.documentStart: "---",
+        TokenID.documentEnd: "...",
+        TokenID.alias_: "*",
+        TokenID.anchor: "&",
+        TokenID.tag: "!",
+        TokenID.scalar: "_",
+        TokenID.blockSequenceStart: "[[",
+        TokenID.blockMappingStart: "{{",
+        TokenID.blockEnd: "]}",
+        TokenID.flowSequenceStart: "[",
+        TokenID.flowSequenceEnd: "]",
+        TokenID.flowMappingStart: "{",
+        TokenID.flowMappingEnd: "}",
+        TokenID.blockEntry: ",",
+        TokenID.flowEntry: ",",
+        TokenID.key: "?",
+        TokenID.value: ":"
+    ];
 
     string[] tokens1;
     string[] tokens2 = readText(tokensFilename).split();
@@ -55,7 +57,7 @@ void testTokens(string dataFilename, string tokensFilename) @safe
     auto loader = Loader.fromFile(dataFilename);
     foreach(token; loader.scan())
     {
-        if(token.id != TokenID.StreamStart && token.id != TokenID.StreamEnd)
+        if(token.id != TokenID.streamStart && token.id != TokenID.streamEnd)
         {
             tokens1 ~= replace[token.id];
         }

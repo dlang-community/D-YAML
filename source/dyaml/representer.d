@@ -50,9 +50,9 @@ final class Representer
         // Representer functions indexed by types.
         Node function(ref Node, Representer) @safe[TypeInfo] representers_;
         // Default style for scalar nodes.
-        ScalarStyle defaultScalarStyle_ = ScalarStyle.Invalid;
+        ScalarStyle defaultScalarStyle_ = ScalarStyle.invalid;
         // Default style for collection nodes.
-        CollectionStyle defaultCollectionStyle_ = CollectionStyle.Invalid;
+        CollectionStyle defaultCollectionStyle_ = CollectionStyle.invalid;
 
     public:
         @disable bool opEquals(ref Representer);
@@ -81,13 +81,13 @@ final class Representer
             addRepresenter!SysTime(&representSysTime);
         }
 
-        ///Set default _style for scalars. If style is $(D ScalarStyle.Invalid), the _style is chosen automatically.
+        ///Set default _style for scalars. If style is $(D ScalarStyle.invalid), the _style is chosen automatically.
         @property void defaultScalarStyle(ScalarStyle style) pure @safe nothrow
         {
             defaultScalarStyle_ = style;
         }
 
-        ///Set default _style for collections. If style is $(D CollectionStyle.Invalid), the _style is chosen automatically.
+        ///Set default _style for collections. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
         @property void defaultCollectionStyle(CollectionStyle style) pure @safe nothrow
         {
             defaultCollectionStyle_ = style;
@@ -231,9 +231,9 @@ final class Representer
          * Returns: The represented node.
          */
         Node representScalar(string tag, string scalar,
-                             ScalarStyle style = ScalarStyle.Invalid) @safe
+                             ScalarStyle style = ScalarStyle.invalid) @safe
         {
-            if(style == ScalarStyle.Invalid){style = defaultScalarStyle_;}
+            if(style == ScalarStyle.invalid){style = defaultScalarStyle_;}
             auto newNode = Node(scalar, tag);
             newNode.scalarStyle = style;
             return newNode;
@@ -285,26 +285,26 @@ final class Representer
          * Throws:  $(D RepresenterException) if a child could not be represented.
          */
         Node representSequence(string tag, Node[] sequence,
-                               CollectionStyle style = CollectionStyle.Invalid) @safe
+                               CollectionStyle style = CollectionStyle.invalid) @safe
         {
             Node[] value;
             value.length = sequence.length;
 
-            auto bestStyle = CollectionStyle.Flow;
+            auto bestStyle = CollectionStyle.flow;
             foreach(idx, ref item; sequence)
             {
                 value[idx] = representData(item);
                 const isScalar = value[idx].isScalar;
                 const s = value[idx].scalarStyle;
-                if(!isScalar || (s != ScalarStyle.Invalid && s != ScalarStyle.Plain))
+                if(!isScalar || (s != ScalarStyle.invalid && s != ScalarStyle.plain))
                 {
-                    bestStyle = CollectionStyle.Block;
+                    bestStyle = CollectionStyle.block;
                 }
             }
 
-            if(style == CollectionStyle.Invalid)
+            if(style == CollectionStyle.invalid)
             {
-                style = defaultCollectionStyle_ != CollectionStyle.Invalid
+                style = defaultCollectionStyle_ != CollectionStyle.invalid
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
@@ -336,7 +336,7 @@ final class Representer
                 auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
                 //use flow style
                 return representer.representSequence("!mystruct.tag", nodes,
-                    CollectionStyle.Flow);
+                    CollectionStyle.flow);
             }
 
             auto dumper = dumper(new Appender!string);
@@ -360,12 +360,12 @@ final class Representer
          * Throws:  $(D RepresenterException) if a child could not be represented.
          */
         Node representMapping(string tag, Node.Pair[] pairs,
-                              CollectionStyle style = CollectionStyle.Invalid) @safe
+                              CollectionStyle style = CollectionStyle.invalid) @safe
         {
             Node.Pair[] value;
             value.length = pairs.length;
 
-            auto bestStyle = CollectionStyle.Flow;
+            auto bestStyle = CollectionStyle.flow;
             foreach(idx, ref pair; pairs)
             {
                 value[idx] = Node.Pair(representData(pair.key), representData(pair.value));
@@ -374,20 +374,20 @@ final class Representer
                 const keyStyle = value[idx].key.scalarStyle;
                 const valStyle = value[idx].value.scalarStyle;
                 if(!keyScalar ||
-                   (keyStyle != ScalarStyle.Invalid && keyStyle != ScalarStyle.Plain))
+                   (keyStyle != ScalarStyle.invalid && keyStyle != ScalarStyle.plain))
                 {
-                    bestStyle = CollectionStyle.Block;
+                    bestStyle = CollectionStyle.block;
                 }
                 if(!valScalar ||
-                   (valStyle != ScalarStyle.Invalid && valStyle != ScalarStyle.Plain))
+                   (valStyle != ScalarStyle.invalid && valStyle != ScalarStyle.plain))
                 {
-                    bestStyle = CollectionStyle.Block;
+                    bestStyle = CollectionStyle.block;
                 }
             }
 
-            if(style == CollectionStyle.Invalid)
+            if(style == CollectionStyle.invalid)
             {
-                style = defaultCollectionStyle_ != CollectionStyle.Invalid
+                style = defaultCollectionStyle_ != CollectionStyle.invalid
                         ? defaultCollectionStyle_
                         : bestStyle;
             }
@@ -445,11 +445,11 @@ final class Representer
             if(data.tag_ !is null){result.tag_ = data.tag_;}
 
             //Remember style if this was loaded before.
-            if(data.scalarStyle != ScalarStyle.Invalid)
+            if(data.scalarStyle != ScalarStyle.invalid)
             {
                 result.scalarStyle = data.scalarStyle;
             }
-            if(data.collectionStyle != CollectionStyle.Invalid)
+            if(data.collectionStyle != CollectionStyle.invalid)
             {
                 result.collectionStyle = data.collectionStyle;
             }
@@ -487,7 +487,7 @@ Node representBytes(ref Node node, Representer representer) @safe
     if(value is null){return representNull(node, representer);}
     return representer.representScalar("tag:yaml.org,2002:binary",
                                        Base64.encode(value).idup,
-                                       ScalarStyle.Literal);
+                                       ScalarStyle.literal);
 }
 
 ///Represent a bool _node as a bool scalar.
