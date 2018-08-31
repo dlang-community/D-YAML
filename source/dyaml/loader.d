@@ -224,7 +224,7 @@ struct Loader
         *
         * If there's no more documents left in the stream, this will be true.
         *
-        * Returns: true if no more documents left, false otherwise.
+        * Returns: `true` if no more documents left, `false` otherwise.
         */
         bool empty() @safe
         {
