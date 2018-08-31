@@ -87,11 +87,14 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Stream to write to.
         Range stream_;
 
+        /// Type used for upcoming emitter steps
+        alias EmitterFunction = void function(typeof(this)*) @safe;
+
         ///Stack of states.
-        Appender!(void function(typeof(this)*) @safe[]) states_;
+        Appender!(EmitterFunction[]) states_;
+
         ///Current state.
-        //WARNING! DO NOT CALL DIRECTLY! Use callNext() instead!
-        void function(typeof(this)*) @safe state_;
+        EmitterFunction state_;
 
         ///Event queue.
         Queue!Event events_;
@@ -201,7 +204,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
     private:
         ///Pop and return the newest state in states_.
-        void function(typeof(this)*) @safe popState() @safe
+        EmitterFunction popState() @safe
         {
             enforce(states_.data.length > 0,
                     new YAMLException("Emitter: Need to pop a state but there are no states left"));
@@ -1298,7 +1301,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             state_ = mixin("function(typeof(this)* self) { self."~D~"(); }");
         }
-        void nextExpected(void function(typeof(this)*) @safe f) @safe
+        void nextExpected(EmitterFunction f) @safe
         {
             state_ = f;
         }
