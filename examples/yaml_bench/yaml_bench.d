@@ -45,6 +45,7 @@ void extract(ref Node document) @safe
 
 void main(string[] args) //@safe
 {
+    import std.array : array;
     bool get = false;
     bool dump = false;
     bool reload = false;
@@ -113,7 +114,7 @@ void main(string[] args) //@safe
 
             loader.resolver    = resolver;
             loader.constructor = constructor;
-            nodes = loader.loadAll();
+            nodes = loader.array;
         }
         void runDumpBenchmark() @safe
         {

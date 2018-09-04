@@ -68,7 +68,7 @@ void testRepresenterTypes(string codeFilename) @safe
         auto loader        = Loader.fromString(emitStream.data.toUTF8);
         loader.name        = "TEST";
         loader.constructor = constructor;
-        readNodes          = loader.loadAll();
+        readNodes          = loader.array;
 
         assert(expectedNodes.length == readNodes.length);
         foreach(n; 0 .. expectedNodes.length)
