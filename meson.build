@@ -18,7 +18,6 @@ dyaml_src = [
     'source/dyaml/escapes.d',
     'source/dyaml/event.d',
     'source/dyaml/exception.d',
-    'source/dyaml/hacks.d',
     'source/dyaml/linebreak.d',
     'source/dyaml/loader.d',
     'source/dyaml/node.d',
