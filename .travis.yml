@@ -10,6 +10,10 @@ d:
  # - dmd-nightly
  - ldc
  # - ldc-beta
+ 
+ branches:
+  only:
+  - master
 
 before_install:
   - pyenv global system 3.6
