@@ -11,7 +11,7 @@ d:
  - ldc
  # - ldc-beta
  
- branches:
+branches:
   only:
   - master
 
