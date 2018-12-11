@@ -57,8 +57,6 @@ struct Mark
         }
 }
 
-static assert(Mark.sizeof == 4, "Unexpected Mark size");
-
 // A struct storing parameters to the MarkedYAMLException constructor.
 struct MarkedYAMLExceptionData
 {
