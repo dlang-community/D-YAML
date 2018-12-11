@@ -185,9 +185,6 @@ struct Node
         // Node collection style. Used to remember style this node was loaded with.
         CollectionStyle collectionStyle = CollectionStyle.invalid;
 
-        static assert(Value.sizeof <= 24, "Unexpected YAML value size");
-        static assert(Node.sizeof <= 56, "Unexpected YAML node size");
-
     public:
         /** Construct a Node from a value.
          *
