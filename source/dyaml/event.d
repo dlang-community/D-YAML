@@ -102,8 +102,6 @@ struct Event
         assert(id == EventID.documentStart, "Only DocumentStart events have tag directives.");
         return _tagDirectives;
     }
-
-    static assert(Event.sizeof <= 64, "Event struct larger than expected");
 }
 
 /**
