@@ -19,6 +19,7 @@
         "examples/tojson",
         "examples/yaml_bench",
         "examples/yaml_gen",
-        "examples/yaml_stats"
+        "examples/yaml_stats",
+        "testsuite"
     ]
 }
