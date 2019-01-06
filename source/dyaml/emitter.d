@@ -230,7 +230,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         }
 
         ///Write a string to the file/stream.
-        void writeString(const char[] str) @safe
+        void writeString(const scope char[] str) @safe
         {
             try
             {
@@ -1227,7 +1227,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         void writeStreamEnd() @safe {}
 
         ///Write an indicator (e.g. ":", "[", ">", etc.).
-        void writeIndicator(const char[] indicator,
+        void writeIndicator(const scope char[] indicator,
                             const Flag!"needWhitespace" needWhitespace,
                             const Flag!"whitespace" whitespace = No.whitespace,
                             const Flag!"indentation" indentation = No.indentation) @safe
@@ -1272,7 +1272,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         }
 
         ///Start new line.
-        void writeLineBreak(const char[] data = null) @safe
+        void writeLineBreak(const scope char[] data = null) @safe
         {
             whitespace_ = indentation_ = true;
             ++line_;
