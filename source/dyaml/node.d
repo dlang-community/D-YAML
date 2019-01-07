@@ -58,59 +58,6 @@ struct YAMLNull
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
-// Interface for YAMLContainer - used for user defined YAML types.
-package interface YAMLObject
-{
-    public:
-        // Get type of the stored value.
-        @property TypeInfo type() const pure @safe nothrow;
-
-    protected:
-        // Compare with another YAMLObject.
-        int cmp(const YAMLObject) const @system;
-}
-
-// Stores a user defined YAML data type.
-package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
-{
-    private:
-        // Stored value.
-        T value_;
-        // Construct a YAMLContainer holding specified value.
-        this(T value) @safe
-        {
-            value_ = value;
-        }
-
-    public:
-        // Get type of the stored value.
-        @property override TypeInfo type() const pure @safe nothrow
-        {
-            return typeid(T);
-        }
-
-        // Get string representation of the container.
-        override string toString() @system
-        {
-            return format("YAMLContainer(%s)", value_);
-        }
-
-    protected:
-        // Compare with another YAMLObject.
-        override int cmp(const YAMLObject rhs) const @system
-        {
-            const typeCmp = type.opCmp(rhs.type);
-            if(typeCmp != 0){return typeCmp;}
-
-            // Const-casting here as Object opCmp is not const.
-            T* v1 = cast(T*)&value_;
-            T* v2 = cast(T*)&((cast(YAMLContainer)rhs).value_);
-            return (*v1).opCmp(*v2);
-        }
-
-}
-
-
 // Key-value pair of YAML nodes, used in mappings.
 private struct Pair
 {
@@ -164,9 +111,9 @@ struct Node
     package:
         // YAML value type.
         alias Value = Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
-                         Node.Pair[], Node[], YAMLObject);
+                         Node.Pair[], Node[]);
 
-        // Can Value hold this type without wrapping it in a YAMLObject?
+        // Can Value hold this type naturally?
         enum allowed(T) = isIntegral!T ||
                        isFloatingPoint!T ||
                        isSomeString!T ||
@@ -212,7 +159,8 @@ struct Node
          *                  be in full form, e.g. "tag:yaml.org,2002:int", not
          *                  a shortcut, like "!!int".
          */
-        this(T)(T value, const string tag = null)
+        this(T)(T value, const string tag = null) @safe
+            if (allowed!T || isArray!T || isAssociativeArray!T || is(Unqual!T == Node) || castableToNode!T)
         {
             tag_ = tag;
 
@@ -333,15 +281,10 @@ struct Node
         {
             {
                 auto node = Node(42);
-                assert(node.isScalar && !node.isSequence && !node.isMapping && !node.isUserType);
+                assert(node.isScalar && !node.isSequence && !node.isMapping);
                 assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
-                assert(!node.isUserType);
             }
 
-            {
-                auto node = Node(new class{int a = 5;});
-                assert(node.isUserType);
-            }
             {
                 auto node = Node("string");
                 assert(node.as!string == "string");
@@ -351,7 +294,7 @@ struct Node
         {
             with(Node([1, 2, 3]))
             {
-                assert(!isScalar() && isSequence && !isMapping && !isUserType);
+                assert(!isScalar() && isSequence && !isMapping);
                 assert(length == 3);
                 assert(opIndex(2).as!int == 3);
             }
@@ -364,7 +307,7 @@ struct Node
             aa["2"] = 2;
             with(Node(aa))
             {
-                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(!isScalar() && !isSequence && isMapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -433,7 +376,7 @@ struct Node
         {
             with(Node(["1", "2"], [1, 2]))
             {
-                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(!isScalar() && !isSequence && isMapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -462,12 +405,6 @@ struct Node
         @property bool isMapping()  const @safe nothrow
         {
             return isType!(Pair[]);
-        }
-
-        /// Is this node a user defined type?
-        @property bool isUserType() const @safe nothrow
-        {
-            return isType!YAMLObject;
         }
 
         /// Is this node null?
@@ -552,64 +489,61 @@ struct Node
          *          the value is out of range of requested type.
          */
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
+            if (allowed!(Unqual!T) || isConvertable!(Unqual!T))
         {
             if(isType!(Unqual!T)){return getValue!T;}
 
-            /// Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!allowed!(Unqual!T)) if(isUserType)
+            static if(!allowed!(Unqual!T))
             {
-                auto object = getValue!YAMLObject();
-                enforce(object.type is typeid(T),
-                    new NodeException("Node has unexpected type: " ~ object.type.toString() ~
-                        ". Expected: " ~ typeid(T).toString, startMark_));
-                return (cast(inout YAMLContainer!(Unqual!T))(object)).value_;
-            }
+                return T(this);
+            } else {
 
-            // If we're getting from a mapping and we're not getting Node.Pair[],
-            // we're getting the default value.
-            if(isMapping){return this["="].get!( T, stringConversion);}
+                // If we're getting from a mapping and we're not getting Node.Pair[],
+                // we're getting the default value.
+                if(isMapping){return this["="].get!( T, stringConversion);}
 
-            static if(isSomeString!T)
-            {
-                static if(!stringConversion)
+                static if(isSomeString!T)
                 {
-                    if(isString){return to!T(getValue!string);}
-                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                        ". Expected: " ~ typeid(T).toString(), startMark_);
-                }
-                else
-                {
-                    // Try to convert to string.
-                    try
+                    static if(!stringConversion)
                     {
-                        return coerceValue!T();
+                        if(isString){return to!T(getValue!string);}
+                        throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                            ". Expected: " ~ typeid(T).toString(), startMark_);
                     }
-                    catch(VariantException e)
+                    else
                     {
-                        throw new NodeException("Unable to convert node value to string", startMark_);
+                        // Try to convert to string.
+                        try
+                        {
+                            return coerceValue!T();
+                        }
+                        catch(VariantException e)
+                        {
+                            throw new NodeException("Unable to convert node value to string", startMark_);
+                        }
                     }
                 }
-            }
-            else static if(isFloatingPoint!T)
-            {
-                /// Can convert int to float.
-                if(isInt())       {return to!T(getValue!long);}
-                else if(isFloat()){return to!T(getValue!real);}
+                else static if(isFloatingPoint!T)
+                {
+                    /// Can convert int to float.
+                    if(isInt())       {return to!T(getValue!long);}
+                    else if(isFloat()){return to!T(getValue!real);}
+                    else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                        ". Expected: " ~ typeid(T).toString, startMark_);
+                }
+                else static if(isIntegral!T)
+                {
+                    enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                                    ". Expected: " ~ typeid(T).toString, startMark_));
+                    immutable temp = getValue!long;
+                    enforce(temp >= T.min && temp <= T.max,
+                        new NodeException("Integer value of type " ~ typeid(T).toString() ~
+                            " out of range. Value: " ~ to!string(temp), startMark_));
+                    return temp.to!T;
+                }
                 else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                     ". Expected: " ~ typeid(T).toString, startMark_);
             }
-            else static if(isIntegral!T)
-            {
-                enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                ". Expected: " ~ typeid(T).toString, startMark_));
-                immutable temp = getValue!long;
-                enforce(temp >= T.min && temp <= T.max,
-                    new NodeException("Integer value of type " ~ typeid(T).toString() ~
-                        " out of range. Value: " ~ to!string(temp), startMark_));
-                return temp.to!T;
-            }
-            else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                ". Expected: " ~ typeid(T).toString, startMark_);
         }
         /// Automatic type conversion
         @safe unittest
@@ -1876,10 +1810,6 @@ struct Node
                 const t2 = rhs.getValue!SysTime;
                 return cmp(t1, t2);
             }
-            else if(isUserType)
-            {
-                return getValue!YAMLObject.cmp(rhs.getValue!YAMLObject);
-            }
             assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
 
@@ -1923,7 +1853,7 @@ struct Node
             assert(false);
         }
 
-        // Get type of the node value (YAMLObject for user types).
+        // Get type of the node value.
         @property TypeInfo type() const @safe nothrow
         {
             return value_.type;
@@ -2210,7 +2140,7 @@ struct Node
             }
             else
             {
-                value_ = cast(YAMLObject)new YAMLContainer!T(value);
+                value_ = (cast(Node)value).value_;
             }
         }
 }
@@ -2232,3 +2162,6 @@ void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
         pairs.put(pair);
     }
 }
+
+enum isConvertable(T) = (is(T == struct) && is(typeof(T(Node.init)))) || (is(T == class) && is(typeof(new T(Node.init))));
+enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCast!Node()) : Node);

@@ -344,6 +344,19 @@ class TestClass
     {
         return format("TestClass(", x, ", ", y, ", ", z, ")");
     }
+    ///Constructor function for TestClass.
+
+    this(ref Node node) @safe
+    {
+        this(node["x"].as!int, node["y"].as!int, node["z"].as!int);
+    }
+    Node opCast(T: Node)() @safe
+    {
+        auto pairs = [Node.Pair("x", x),
+                      Node.Pair("y", y),
+                      Node.Pair("z", z)];
+        return Node(pairs, "!tag1");
+    }
 }
 
 ///Testing custom YAML struct type.
@@ -351,43 +364,29 @@ struct TestStruct
 {
     int value;
 
+    this (int x) @safe
+    {
+        value = x;
+    }
+
     //Any D:YAML type must have a custom opCmp operator.
     //This is used for ordering in mappings.
     int opCmp(ref const TestStruct s) const @safe
     {
         return value - s.value;
     }
-}
 
-///Constructor function for TestClass.
-TestClass constructClass(ref Node node) @safe
-{
-    return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-}
+    ///Constructor function for TestStruct.
+    this(ref Node node) @safe
+    {
+        value = node.as!string.to!int;
+    }
 
-Node representClass(ref Node node, Representer representer) @safe
-{
-    auto value = node.as!TestClass;
-    auto pairs = [Node.Pair("x", value.x),
-                  Node.Pair("y", value.y),
-                  Node.Pair("z", value.z)];
-    auto result = representer.representMapping("!tag1", pairs);
-
-    return result;
-}
-
-///Constructor function for TestStruct.
-TestStruct constructStruct(ref Node node) @safe
-{
-    return TestStruct(to!int(node.as!string));
-}
-
-///Representer function for TestStruct.
-Node representStruct(ref Node node, Representer representer) @safe
-{
-    string[] keys, values;
-    auto value = node.as!TestStruct;
-    return representer.representScalar("!tag2", to!string(value.value));
+    ///Representer function for TestStruct.
+    Node opCast(T: Node)() @safe
+    {
+        return Node(value.to!string, "!tag2");
+    }
 }
 
 /**
@@ -404,8 +403,8 @@ void testConstructor(string dataFilename, string codeDummy) @safe
             new Exception("Unimplemented constructor test: " ~ base));
 
     auto constructor = new Constructor;
-    constructor.addConstructorMapping("!tag1", &constructClass);
-    constructor.addConstructorScalar("!tag2", &constructStruct);
+    //constructor.addConstructorMapping("!tag1", &constructClass);
+    //constructor.addConstructorScalar("!tag2", &constructStruct);
 
     auto loader        = Loader.fromFile(dataFilename);
     loader.constructor = constructor;

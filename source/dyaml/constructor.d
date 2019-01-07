@@ -62,12 +62,8 @@ package class ConstructorException : YAMLException
 final class Constructor
 {
     private:
-        // Constructor functions from scalars.
-        Node delegate(ref Node) @safe[string] fromScalar_;
-        // Constructor functions from sequences.
-        Node delegate(ref Node) @safe[string] fromSequence_;
-        // Constructor functions from mappings.
-        Node delegate(ref Node) @safe[string] fromMapping_;
+        // Constructor functions.
+        Node delegate(ref Node) @safe[string] constructors;
 
     public:
         /// Construct a Constructor.
@@ -81,23 +77,23 @@ final class Constructor
         {
             if(!defaultConstructors){return;}
 
-            addConstructorScalar("tag:yaml.org,2002:null",      &constructNull);
-            addConstructorScalar("tag:yaml.org,2002:bool",      &constructBool);
-            addConstructorScalar("tag:yaml.org,2002:int",       &constructLong);
-            addConstructorScalar("tag:yaml.org,2002:float",     &constructReal);
-            addConstructorScalar("tag:yaml.org,2002:binary",    &constructBinary);
-            addConstructorScalar("tag:yaml.org,2002:timestamp", &constructTimestamp);
-            addConstructorScalar("tag:yaml.org,2002:str",       &constructString);
+            addConstructor("tag:yaml.org,2002:null",      &constructNull);
+            addConstructor("tag:yaml.org,2002:bool",      &constructBool);
+            addConstructor("tag:yaml.org,2002:int",       &constructLong);
+            addConstructor("tag:yaml.org,2002:float",     &constructReal);
+            addConstructor("tag:yaml.org,2002:binary",    &constructBinary);
+            addConstructor("tag:yaml.org,2002:timestamp", &constructTimestamp);
+            addConstructor("tag:yaml.org,2002:str",       &constructString);
 
             ///In a mapping, the default value is kept as an entry with the '=' key.
-            addConstructorScalar("tag:yaml.org,2002:value",     &constructString);
+            addConstructor("tag:yaml.org,2002:value",     &constructString);
 
-            addConstructorSequence("tag:yaml.org,2002:omap",    &constructOrderedMap);
-            addConstructorSequence("tag:yaml.org,2002:pairs",   &constructPairs);
-            addConstructorMapping("tag:yaml.org,2002:set",      &constructSet);
-            addConstructorSequence("tag:yaml.org,2002:seq",     &constructSequence);
-            addConstructorMapping("tag:yaml.org,2002:map",      &constructMap);
-            addConstructorScalar("tag:yaml.org,2002:merge",     &constructMerge);
+            addConstructor("tag:yaml.org,2002:omap",    &constructOrderedMap);
+            addConstructor("tag:yaml.org,2002:pairs",   &constructPairs);
+            addConstructor("tag:yaml.org,2002:set",      &constructSet);
+            addConstructor("tag:yaml.org,2002:seq",     &constructSequence);
+            addConstructor("tag:yaml.org,2002:map",      &constructMap);
+            addConstructor("tag:yaml.org,2002:merge",     &constructMerge);
         }
 
         /** Add a constructor function from scalar.
@@ -126,11 +122,9 @@ final class Constructor
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        void addConstructorScalar(T)(const string tag, T function(ref Node) @safe ctor)
+        deprecated private void addConstructorScalar(T)(const string tag, T function(ref Node) @safe ctor)
         {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!string)[t] = deleg;
+            addConstructor!T(tag, ctor);
         }
         ///
         @safe unittest
@@ -148,35 +142,36 @@ final class Constructor
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                this(Node node) @safe
+                {
+                    //Guaranteed to be string as we construct from scalar.
+                    //!mystruct x:y:z
+                    auto parts = node.as!string().split(":");
+                    // If this throws, the D:YAML will handle it and throw a YAMLException.
+                    x = parts[0].to!int;
+                    y = parts[1].to!int;
+                    z = parts[2].to!int;
+                }
             }
+            MyStruct example;
+            example.x = 11;
+            example.y = 22;
+            example.z = 33;
 
-            static MyStruct constructMyStructScalar(ref Node node) @safe
-            {
-                //Guaranteed to be string as we construct from scalar.
-                //!mystruct x:y:z
-                auto parts = node.as!string().split(":");
-                // If this throws, the D:YAML will handle it and throw a YAMLException.
-                return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-            }
 
             import dyaml.loader : Loader;
-            auto loader = Loader.fromString("!mystruct 12:34:56");
-            auto constructor = new Constructor;
-            constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-            loader.constructor = constructor;
+            auto loader = Loader.fromString(text("!mystruct ", example.x, ":", example.y, ":", example.z));
             Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(12, 34, 56));
+            assert(node.get!MyStruct == example);
         }
 
         /** Add a constructor function from sequence.
          *
          * See_Also:    addConstructorScalar
          */
-        void addConstructorSequence(T)(const string tag, T function(ref Node) @safe ctor)
+        deprecated private void addConstructorSequence(T)(const string tag, T function(ref Node) @safe ctor)
         {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!(Node[]))[t] = deleg;
+            addConstructor!T(tag, ctor);
         }
         ///
         @safe unittest
@@ -194,33 +189,33 @@ final class Constructor
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                this(Node node) @safe
+                {
+                    //node is guaranteed to be sequence.
+                    //!mystruct [x, y, z]
+                    x = node[0].as!int;
+                    y = node[1].as!int;
+                    z = node[2].as!int;
+                }
             }
-
-            static MyStruct constructMyStructSequence(ref Node node) @safe
-            {
-                //node is guaranteed to be sequence.
-                //!mystruct [x, y, z]
-                return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-            }
+            MyStruct example;
+            example.x = 1;
+            example.y = 2;
+            example.z = 3;
 
             import dyaml.loader : Loader;
-            auto loader = Loader.fromString("!mystruct [1,2,3]");
-            auto constructor = new Constructor;
-            constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-            loader.constructor = constructor;
+            auto loader = Loader.fromString(text("!mystruct [", example.x, ",", example.y, ",", example.z, "]"));
             Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(1, 2, 3));
+            assert(node.get!MyStruct == example);
          }
 
         /** Add a constructor function from a mapping.
          *
          * See_Also:    addConstructorScalar
          */
-        void addConstructorMapping(T)(const string tag, T function(ref Node) @safe ctor)
+        deprecated private void addConstructorMapping(T)(const string tag, T function(ref Node) @safe ctor)
         {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!(Node.Pair[]))[t] = deleg;
+            addConstructor!T(tag, ctor);
         }
         ///
         @safe unittest {
@@ -237,22 +232,24 @@ final class Constructor
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                this(Node node) @safe
+                {
+                    //node is guaranteed to be mapping.
+                    //!mystruct {"x": x, "y": y, "z": z}
+                    x = node["x"].as!int;
+                    y = node["y"].as!int;
+                    z = node["z"].as!int;
+                }
             }
-
-            static MyStruct constructMyStructMapping(ref Node node) @safe
-            {
-                //node is guaranteed to be mapping.
-                //!mystruct {"x": x, "y": y, "z": z}
-                return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-            }
+            MyStruct example;
+            example.x = 11;
+            example.y = 22;
+            example.z = 33;
 
             import dyaml.loader : Loader;
-            auto loader = Loader.fromString(`!mystruct {"x": 11, "y": 22, "z": 33}`);
-            auto constructor = new Constructor;
-            constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-            loader.constructor = constructor;
+            auto loader = Loader.fromString(text(`!mystruct {"x": `, example.x, `, "y": `, example.y, `, "z": `, example.z, `}`));
             Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(11, 22, 33));
+            assert(node.get!MyStruct == example);
         }
 
     package:
@@ -276,33 +273,33 @@ final class Constructor
                         is(T == Node[])      ? "sequence" :
                         is(T == Node.Pair[]) ? "mapping"  :
                                                "ERROR";
-            enforce((tag in *delegates!T) !is null,
-                    new ConstructorException("No constructor function from " ~ type ~
-                              " for tag " ~ tag, start, end));
-
-            Node node = Node(value);
-            try
-            {
-                static if(is(U : ScalarStyle))
+            if ((tag in constructors) is null) {
+                return Node(value, tag);
+            } else {
+                Node node = Node(value);
+                try
                 {
-                    auto newNode = (*delegates!T)[tag](node);
-                    newNode.startMark_ = start;
-                    newNode.scalarStyle = style;
-                    return newNode;
+                    static if(is(U : ScalarStyle))
+                    {
+                        auto newNode = constructors[tag](node);
+                        newNode.startMark_ = start;
+                        newNode.scalarStyle = style;
+                        return newNode;
+                    }
+                    else static if(is(U : CollectionStyle))
+                    {
+                        auto newNode = constructors[tag](node);
+                        newNode.startMark_ = start;
+                        newNode.collectionStyle = style;
+                        return newNode;
+                    }
+                    else static assert(false);
                 }
-                else static if(is(U : CollectionStyle))
+                catch(Exception e)
                 {
-                    auto newNode = (*delegates!T)[tag](node);
-                    newNode.startMark_ = start;
-                    newNode.collectionStyle = style;
-                    return newNode;
+                    throw new ConstructorException("Error constructing " ~ typeid(T).toString()
+                                    ~ ":\n" ~ e.msg, start, end);
                 }
-                else static assert(false);
-            }
-            catch(Exception e)
-            {
-                throw new ConstructorException("Error constructing " ~ typeid(T).toString()
-                                ~ ":\n" ~ e.msg, start, end);
             }
         }
 
@@ -315,26 +312,15 @@ final class Constructor
          */
         auto addConstructor(T)(const string tag, T function(ref Node) @safe ctor)
         {
-            assert((tag in fromScalar_) is null &&
-                   (tag in fromSequence_) is null &&
-                   (tag in fromMapping_) is null,
+            assert((tag in constructors) is null,
                    "Constructor function for tag " ~ tag ~ " is already " ~
                    "specified. Can't specify another one.");
 
 
-            return (ref Node n) @safe
+            constructors[tag] = (ref Node n) @safe
             {
                 return Node(ctor(n), tag);
             };
-        }
-
-        //Get the array of constructor functions for scalar, sequence or mapping.
-        @property auto delegates(T)()
-        {
-            static if(is(T : string))          {return &fromScalar_;}
-            else static if(is(T : Node[]))     {return &fromSequence_;}
-            else static if(is(T : Node.Pair[])){return &fromMapping_;}
-            else static assert(false);
         }
 }
 
@@ -352,24 +338,26 @@ final class Constructor
             if(z != s.z){return z - s.z;}
             return 0;
         }
+        this(Node node) @safe
+        {
+            // Guaranteed to be string as we construct from scalar.
+            auto parts = node.as!string().split(":");
+            x = parts[0].to!int;
+            y = parts[1].to!int;
+            z = parts[2].to!int;
+        }
     }
-
-    static MyStruct constructMyStructScalar(ref Node node) @safe
-    {
-        // Guaranteed to be string as we construct from scalar.
-        auto parts = node.as!string().split(":");
-        return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-    }
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
 
     import dyaml.loader : Loader;
-    string data = "!mystruct 1:2:3";
+    string data = text("!mystruct ", example.x, ":", example.y, ":", example.z);
     auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-    loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == example);
 }
 ///Construct a struct from a sequence
 @safe unittest
@@ -385,22 +373,24 @@ final class Constructor
             if(z != s.z){return z - s.z;}
             return 0;
         }
+        this(Node node) @safe
+        {
+            // node is guaranteed to be sequence.
+            x = node[0].as!int;
+            y = node[1].as!int;
+            z = node[2].as!int;
+        }
     }
-    static MyStruct constructMyStructSequence(ref Node node) @safe
-    {
-        // node is guaranteed to be sequence.
-        return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-    }
-
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
     import dyaml.loader : Loader;
-    string data = "!mystruct [1, 2, 3]";
+    string data = text("!mystruct [", example.x, ", ", example.y, ", ", example.z, "]");
     auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-    loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == example);
 }
 ///Construct a struct from a mapping
 @safe unittest
@@ -416,22 +406,24 @@ final class Constructor
             if(z != s.z){return z - s.z;}
             return 0;
         }
+        this(Node node) @safe
+        {
+            // node is guaranteed to be mapping.
+            x = node["x"].as!int;
+            y = node["y"].as!int;
+            z = node["z"].as!int;
+        }
     }
-    static MyStruct constructMyStructMapping(ref Node node) @safe
-    {
-        // node is guaranteed to be mapping.
-        return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-    }
-
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
     import dyaml.loader : Loader;
-    string data = "!mystruct {x: 1, y: 2, z: 3}";
+    string data = text("!mystruct {x: ", example.x, ", y: ", example.y, ", z: ", example.z, "}");
     auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-    loader.constructor = constructor;
     Node node = loader.load();
 
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+    assert(node.as!MyStruct == example);
 }
 
 /// Construct a _null _node.

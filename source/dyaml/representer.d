@@ -142,22 +142,17 @@ final class Representer
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!mystruct.tag");
+                }
             }
 
-            static Node representMyStruct(ref Node node, Representer representer) @safe
-            {
-                //The node is guaranteed to be MyStruct as we add representer for MyStruct.
-                auto value = node.as!MyStruct;
-                //Using custom scalar format, x:y:z.
-                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-                //Representing as a scalar, with custom tag to specify this data type.
-                return representer.representScalar("!mystruct.tag", scalar);
-            }
 
             auto dumper = dumper(new Appender!string);
-            auto representer = new Representer;
-            representer.addRepresenter!MyStruct(&representMyStruct);
-            dumper.representer = representer;
             dumper.dump(Node(MyStruct(1,2,3)));
         }
         /// Representing a class:
@@ -194,23 +189,17 @@ final class Representer
                 {
                     return format("MyClass(%s, %s, %s)", x, y, z);
                 }
-            }
 
-            //Same as representMyStruct.
-            static Node representMyClass(ref Node node, Representer representer) @safe
-            {
-                //The node is guaranteed to be MyClass as we add representer for MyClass.
-                auto value = node.as!MyClass;
-                //Using custom scalar format, x:y:z.
-                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-                //Representing as a scalar, with custom tag to specify this data type.
-                return representer.representScalar("!myclass.tag", scalar);
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!myclass.tag");
+                }
             }
 
             auto dumper = dumper(new Appender!string);
-            auto representer = new Representer;
-            representer.addRepresenter!MyClass(&representMyClass);
-            dumper.representer = representer;
             dumper.dump(Node(new MyClass(1,2,3)));
         }
 
@@ -241,6 +230,7 @@ final class Representer
         ///
         @safe unittest
         {
+            import dyaml.dumper : dumper;
             struct MyStruct
             {
                 int x, y, z;
@@ -254,20 +244,14 @@ final class Representer
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                Node opCast(T: Node)()
+                {
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    return Node(scalar, "!mystruct.tag");
+                }
             }
 
-            static Node representMyStruct(ref Node node, Representer representer)
-            {
-                auto value = node.as!MyStruct;
-                auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-                return representer.representScalar("!mystruct.tag", scalar);
-            }
-
-            auto dumper = dumper(new Appender!string);
-            auto representer = new Representer;
-            representer.addRepresenter!MyStruct(&representMyStruct);
-            dumper.representer = representer;
-            dumper.dump(Node(MyStruct(1,2,3)));
+            dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
         }
 
         /**
@@ -315,6 +299,7 @@ final class Representer
         ///
         @safe unittest
         {
+            import dyaml.dumper : dumper;
             struct MyStruct
             {
                 int x, y, z;
@@ -328,22 +313,18 @@ final class Representer
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                Node opCast(T: Node)()
+                {
+                    auto nodes = [Node(x), Node(y), Node(z)];
+                    auto node = Node(nodes, "!mystruct.tag");
+                    //use flow style
+                    node.setStyle(CollectionStyle.flow);
+                    return node;
+                }
             }
 
-            static Node representMyStruct(ref Node node, Representer representer)
-            {
-                auto value = node.as!MyStruct;
-                auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
-                //use flow style
-                return representer.representSequence("!mystruct.tag", nodes,
-                    CollectionStyle.flow);
-            }
 
-            auto dumper = dumper(new Appender!string);
-            auto representer = new Representer;
-            representer.addRepresenter!MyStruct(&representMyStruct);
-            dumper.representer = representer;
-            dumper.dump(Node(MyStruct(1,2,3)));
+            dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
         }
         /**
          * Represent a mapping with specified _tag, representing children first.
@@ -398,6 +379,7 @@ final class Representer
         ///
         @safe unittest
         {
+            import dyaml.dumper : dumper;
             struct MyStruct
             {
                 int x, y, z;
@@ -411,30 +393,23 @@ final class Representer
                     if(z != s.z){return z - s.z;}
                     return 0;
                 }
+                Node opCast(T: Node)()
+                {
+                    auto pairs = [Node.Pair("x", x),
+                        Node.Pair("y", y),
+                        Node.Pair("z", z)];
+                    return Node(pairs, "!mystruct.tag");
+                }
             }
 
-            static Node representMyStruct(ref Node node, Representer representer)
-            {
-                auto value = node.as!MyStruct;
-                auto pairs = [Node.Pair("x", value.x),
-                Node.Pair("y", value.y),
-                Node.Pair("z", value.z)];
-                return representer.representMapping("!mystruct.tag", pairs);
-            }
-
-            auto dumper = dumper(new Appender!string);
-            auto representer = new Representer;
-            representer.addRepresenter!MyStruct(&representMyStruct);
-            dumper.representer = representer;
-            dumper.dump(Node(MyStruct(1,2,3)));
+            dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
         }
 
     package:
         //Represent a node based on its type, and return the represented result.
         Node representData(ref Node data) @safe
         {
-            //User types are wrapped in YAMLObject.
-            auto type = data.isUserType ? data.as!YAMLObject.type : data.type;
+            auto type = data.type;
 
             enforce((type in representers_) !is null,
                     new RepresenterException("No representer function for type "
@@ -591,111 +566,4 @@ Node representPairs(ref Node node, Representer representer) @safe
                 new RepresenterException("Duplicate entry in an unordered map"));
         return representer.representMapping("tag:yaml.org,2002:map", pairs);
     }
-}
-
-//Unittests
-//These should really all be encapsulated in unittests.
-private:
-
-import dyaml.dumper;
-
-struct MyStruct
-{
-    int x, y, z;
-
-    int opCmp(ref const MyStruct s) const pure @safe nothrow
-    {
-        if(x != s.x){return x - s.x;}
-        if(y != s.y){return y - s.y;}
-        if(z != s.z){return z - s.z;}
-        return 0;
-    }
-}
-
-Node representMyStruct(ref Node node, Representer representer) @safe
-{
-    //The node is guaranteed to be MyStruct as we add representer for MyStruct.
-    auto value = node.as!MyStruct;
-    //Using custom scalar format, x:y:z.
-    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-    //Representing as a scalar, with custom tag to specify this data type.
-    return representer.representScalar("!mystruct.tag", scalar);
-}
-
-Node representMyStructSeq(ref Node node, Representer representer) @safe
-{
-    auto value = node.as!MyStruct;
-    auto nodes = [Node(value.x), Node(value.y), Node(value.z)];
-    return representer.representSequence("!mystruct.tag", nodes);
-}
-
-Node representMyStructMap(ref Node node, Representer representer) @safe
-{
-    auto value = node.as!MyStruct;
-    auto pairs = [Node.Pair("x", value.x),
-                  Node.Pair("y", value.y),
-                  Node.Pair("z", value.z)];
-    return representer.representMapping("!mystruct.tag", pairs);
-}
-
-class MyClass
-{
-    int x, y, z;
-
-    this(int x, int y, int z) pure @safe nothrow
-    {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
-    override int opCmp(Object o) pure @safe nothrow
-    {
-        MyClass s = cast(MyClass)o;
-        if(s is null){return -1;}
-        if(x != s.x){return x - s.x;}
-        if(y != s.y){return y - s.y;}
-        if(z != s.z){return z - s.z;}
-        return 0;
-    }
-
-    ///Useful for Node.as!string .
-    override string toString() @safe
-    {
-        return format("MyClass(%s, %s, %s)", x, y, z);
-    }
-}
-
-//Same as representMyStruct.
-Node representMyClass(ref Node node, Representer representer) @safe
-{
-    //The node is guaranteed to be MyClass as we add representer for MyClass.
-    auto value = node.as!MyClass;
-    //Using custom scalar format, x:y:z.
-    auto scalar = format("%s:%s:%s", value.x, value.y, value.z);
-    //Representing as a scalar, with custom tag to specify this data type.
-    return representer.representScalar("!myclass.tag", scalar);
-}
-
-@safe unittest
-{
-    foreach(r; [&representMyStruct,
-                &representMyStructSeq,
-                &representMyStructMap])
-    {
-        auto dumper = dumper(new Appender!string);
-        auto representer = new Representer;
-        representer.addRepresenter!MyStruct(r);
-        dumper.representer = representer;
-        dumper.dump(Node(MyStruct(1,2,3)));
-    }
-}
-
-@safe unittest
-{
-    auto dumper = dumper(new Appender!string);
-    auto representer = new Representer;
-    representer.addRepresenter!MyClass(&representMyClass);
-    dumper.representer = representer;
-    dumper.dump(Node(new MyClass(1,2,3)));
 }
