@@ -2169,6 +2169,108 @@ struct Node
         }
 }
 
+///Construct a struct from a scalar
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        this(Node node) @safe
+        {
+            // Guaranteed to be string as we construct from scalar.
+            auto parts = node.as!string().split(":");
+            x = parts[0].to!int;
+            y = parts[1].to!int;
+            z = parts[2].to!int;
+        }
+    }
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
+
+    import dyaml.loader : Loader;
+    string data = text("!mystruct ", example.x, ":", example.y, ":", example.z);
+    auto loader = Loader.fromString(data);
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == example);
+}
+///Construct a struct from a sequence
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        this(Node node) @safe
+        {
+            // node is guaranteed to be sequence.
+            x = node[0].as!int;
+            y = node[1].as!int;
+            z = node[2].as!int;
+        }
+    }
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
+    import dyaml.loader : Loader;
+    string data = text("!mystruct [", example.x, ", ", example.y, ", ", example.z, "]");
+    auto loader = Loader.fromString(data);
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == example);
+}
+///Construct a struct from a mapping
+@safe unittest
+{
+    static struct MyStruct
+    {
+        int x, y, z;
+
+        int opCmp(ref const MyStruct s) const pure @safe nothrow
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        this(Node node) @safe
+        {
+            // node is guaranteed to be mapping.
+            x = node["x"].as!int;
+            y = node["y"].as!int;
+            z = node["z"].as!int;
+        }
+    }
+    MyStruct example;
+    example.x = 1;
+    example.y = 2;
+    example.z = 3;
+    import dyaml.loader : Loader;
+    string data = text("!mystruct {x: ", example.x, ", y: ", example.y, ", z: ", example.z, "}");
+    auto loader = Loader.fromString(data);
+    Node node = loader.load();
+
+    assert(node.as!MyStruct == example);
+}
+
 package:
 // Merge pairs into an array of pairs based on merge rules in the YAML spec.
 //
