@@ -489,13 +489,37 @@ struct Node
          *          the value is out of range of requested type.
          */
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
-            if (allowed!(Unqual!T) || isConvertable!(Unqual!T))
+            if (allowed!(Unqual!T) || hasNodeConstructor!(Unqual!T))
         {
             if(isType!(Unqual!T)){return getValue!T;}
 
             static if(!allowed!(Unqual!T))
             {
-                return T(this);
+                static if (hasSimpleNodeConstructor!T)
+                {
+                    alias params = AliasSeq!(this);
+                }
+                else static if (hasExpandedNodeConstructor!T)
+                {
+                    alias params = AliasSeq!(this, tag_);
+                }
+                else
+                {
+                    static assert(0, "Unknown Node constructor?");
+                }
+
+                static if (is(T == class))
+                {
+                    return new T(params);
+                }
+                else static if (is(T == struct))
+                {
+                    return T(params);
+                }
+                else
+                {
+                    static assert(0, "Unhandled user type");
+                }
             } else {
 
                 // If we're getting from a mapping and we're not getting Node.Pair[],
@@ -2163,5 +2187,29 @@ void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
     }
 }
 
-enum isConvertable(T) = (is(T == struct) && is(typeof(T(Node.init)))) || (is(T == class) && is(typeof(new T(Node.init))));
+enum hasNodeConstructor(T) = hasSimpleNodeConstructor!T || hasExpandedNodeConstructor!T;
+template hasSimpleNodeConstructor(T)
+{
+    static if (is(T == struct))
+    {
+        enum hasSimpleNodeConstructor = is(typeof(T(Node.init)));
+    }
+    else static if (is(T == class))
+    {
+        enum hasSimpleNodeConstructor = is(typeof(new T(Node.init)));
+    }
+    else enum hasSimpleNodeConstructor = false;
+}
+template hasExpandedNodeConstructor(T)
+{
+    static if (is(T == struct))
+    {
+        enum hasExpandedNodeConstructor = is(typeof(T(Node.init, "")));
+    }
+    else static if (is(T == class))
+    {
+        enum hasExpandedNodeConstructor = is(typeof(new T(Node.init, "")));
+    }
+    else enum hasExpandedNodeConstructor = false;
+}
 enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCast!Node()) : Node);
