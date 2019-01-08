@@ -296,6 +296,39 @@ struct Dumper(Range)
     dumper.resolver = resolver;
     dumper.dump(node);
 }
+/// Set default scalar style
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node("Hello world!");
+    auto dumper = dumper(stream);
+    dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
+    dumper.dump(node);
+}
+/// Set default collection style
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node(["Hello", "world!"]);
+    auto dumper = dumper(stream);
+    dumper.defaultCollectionStyle = CollectionStyle.flow;
+    dumper.dump(node);
+}
+// Make sure the styles are actually used
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node([Node("Hello world!"), Node(["Hello", "world!"])]);
+    auto dumper = dumper(stream);
+    dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
+    dumper.defaultCollectionStyle = CollectionStyle.flow;
+    dumper.explicitEnd = false;
+    dumper.explicitStart = false;
+    dumper.YAMLVersion = null;
+    dumper.dump(node);
+    import std.stdio;
+    assert(stream.data == "[!!str 'Hello world!', [!!str 'Hello', !!str 'world!']]\n");
+}
 // Explicit document start/end markers
 @safe unittest
 {
