@@ -15,13 +15,6 @@ struct Color
         blue = b;
    }
 
-   const int opCmp(ref const Color c)
-   {
-       if(red   != c.red)  {return red   - c.red;}
-       if(green != c.green){return green - c.green;}
-       if(blue  != c.blue) {return blue  - c.blue;}
-       return 0;
-   }
    this(const Node node, string tag) @safe
    {
         if (tag == "!color-mapping")

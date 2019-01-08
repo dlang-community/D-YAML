@@ -7,13 +7,6 @@ struct Color
    ubyte green;
    ubyte blue;
 
-   const int opCmp(ref const Color c)
-   {
-       if(red   != c.red)  {return red   - c.red;}
-       if(green != c.green){return green - c.green;}
-       if(blue  != c.blue) {return blue  - c.blue;}
-       return 0;
-   }
    Node opCast(T: Node)() const
    {
        static immutable hex = "0123456789ABCDEF";

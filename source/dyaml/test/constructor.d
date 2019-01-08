@@ -328,18 +328,6 @@ class TestClass
         this.z = z;
     }
 
-    //Any D:YAML type must have a custom opCmp operator.
-    //This is used for ordering in mappings.
-    override int opCmp(Object o) @safe
-    {
-        TestClass s = cast(TestClass)o;
-        if(s is null){return -1;}
-        if(x != s.x){return x - s.x;}
-        if(y != s.y){return y - s.y;}
-        if(z != s.z){return z - s.z;}
-        return 0;
-    }
-
     override string toString() @safe
     {
         return format("TestClass(", x, ", ", y, ", ", z, ")");
@@ -367,13 +355,6 @@ struct TestStruct
     this (int x) @safe
     {
         value = x;
-    }
-
-    //Any D:YAML type must have a custom opCmp operator.
-    //This is used for ordering in mappings.
-    int opCmp(ref const TestStruct s) const @safe
-    {
-        return value - s.value;
     }
 
     ///Constructor function for TestStruct.

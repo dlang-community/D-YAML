@@ -2236,13 +2236,6 @@ struct Node
     {
         int x, y, z;
 
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         this(Node node) @safe
         {
             // Guaranteed to be string as we construct from scalar.
@@ -2271,13 +2264,6 @@ struct Node
     {
         int x, y, z;
 
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         this(Node node) @safe
         {
             // node is guaranteed to be sequence.
@@ -2304,13 +2290,6 @@ struct Node
     {
         int x, y, z;
 
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         this(Node node) @safe
         {
             // node is guaranteed to be mapping.
@@ -2341,15 +2320,6 @@ unittest {
     {
         int x, y, z;
 
-        //Any D:YAML type must have a custom opCmp operator.
-        //This is used for ordering in mappings.
-        const int opCmp(ref const MyStruct s)
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         Node opCast(T: Node)() @safe
         {
             //Using custom scalar format, x:y:z.
@@ -2380,18 +2350,6 @@ unittest {
             this.z = z;
         }
 
-        //Any D:YAML type must have a custom opCmp operator.
-        //This is used for ordering in mappings.
-        override int opCmp(Object o)
-        {
-            MyClass s = cast(MyClass)o;
-            if(s is null){return -1;}
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
-
         ///Useful for Node.as!string .
         override string toString()
         {
@@ -2418,15 +2376,6 @@ unittest {
     {
         int x, y, z;
 
-        //Any D:YAML type must have a custom opCmp operator.
-        //This is used for ordering in mappings.
-        const int opCmp(ref const MyStruct s)
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         Node opCast(T: Node)()
         {
             auto nodes = [Node(x), Node(y), Node(z)];
@@ -2449,15 +2398,6 @@ unittest {
     {
         int x, y, z;
 
-        //Any D:YAML type must have a custom opCmp operator.
-        //This is used for ordering in mappings.
-        const int opCmp(ref const MyStruct s)
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         Node opCast(T: Node)()
         {
             auto scalar = format("%s:%s:%s", x, y, z);
@@ -2476,15 +2416,6 @@ unittest {
     {
         int x, y, z;
 
-        //Any D:YAML type must have a custom opCmp operator.
-        //This is used for ordering in mappings.
-        const int opCmp(ref const MyStruct s)
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
         Node opCast(T: Node)()
         {
             auto pairs = [Node.Pair("x", x),
