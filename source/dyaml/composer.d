@@ -219,7 +219,8 @@ final class Composer
                                           event.implicit);
 
             Node node = constructNode(event.startMark, event.endMark, tag,
-                                          event.value, event.scalarStyle);
+                                          event.value);
+            node.scalarStyle = event.scalarStyle;
 
             return node;
         }
@@ -245,7 +246,8 @@ final class Composer
             }
 
             Node node = constructNode(startEvent.startMark, parser_.front.endMark,
-                                          tag, nodeAppender.data.dup, startEvent.collectionStyle);
+                                          tag, nodeAppender.data.dup);
+            node.collectionStyle = startEvent.collectionStyle;
             parser_.popFront();
             nodeAppender.clear();
 
@@ -367,7 +369,8 @@ final class Composer
                     new ComposerException("Duplicate key found in mapping", parser_.front.startMark));
 
             Node node = constructNode(startEvent.startMark, parser_.front.endMark,
-                                          tag, pairAppender.data.dup, startEvent.collectionStyle);
+                                          tag, pairAppender.data.dup);
+            node.collectionStyle = startEvent.collectionStyle;
             parser_.popFront();
 
             pairAppender.clear();

@@ -70,10 +70,9 @@ package class ConstructorException : YAMLException
  *
  * Returns: Constructed node.
  */
-package Node constructNode(T, U)(const Mark start, const Mark end, const string tag,
-                T value, U style) @safe
-    if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
-       (is(U : CollectionStyle) || is(U : ScalarStyle)))
+package Node constructNode(T)(const Mark start, const Mark end, const string tag,
+                T value) @safe
+    if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])))
 {
     Node newNode;
     try
@@ -134,15 +133,6 @@ package Node constructNode(T, U)(const Mark start, const Mark end, const string 
     }
 
     newNode.startMark_ = start;
-    static if(is(U : ScalarStyle))
-    {
-        newNode.scalarStyle = style;
-    }
-    else static if(is(U : CollectionStyle))
-    {
-        newNode.collectionStyle = style;
-    }
-    else static assert(false);
 
     return newNode;
 }
