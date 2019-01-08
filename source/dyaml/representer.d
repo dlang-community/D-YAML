@@ -30,7 +30,7 @@ import dyaml.node;
 import dyaml.serializer;
 import dyaml.style;
 
-
+package:
 ///Exception thrown on Representer errors.
 class RepresenterException : YAMLException
 {
@@ -45,7 +45,7 @@ class RepresenterException : YAMLException
  * It can also override default node formatting styles for output.
  */
 //Represent a node based on its type, and return the represented result.
-package Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
+Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
 {
     Node result;
     final switch(data.newType) {
@@ -105,14 +105,15 @@ package Node representData(const Node data, ScalarStyle defaultScalarStyle, Coll
     return result;
 }
 
+private:
 
-///Represent a _null _node as a _null YAML value.
+//Represent a _null _node as a _null YAML value.
 Node representNull() @safe
 {
     return Node("null", "tag:yaml.org,2002:null");
 }
 
-///Represent a string _node as a string scalar.
+//Represent a string _node as a string scalar.
 Node representString(const Node node) @safe
 {
     string value = node.as!string;
@@ -121,7 +122,7 @@ Node representString(const Node node) @safe
            : Node(value, "tag:yaml.org,2002:str");
 }
 
-///Represent a bytes _node as a binary scalar.
+//Represent a bytes _node as a binary scalar.
 Node representBytes(const Node node) @safe
 {
     const ubyte[] value = node.as!(ubyte[]);
@@ -132,19 +133,19 @@ Node representBytes(const Node node) @safe
     return newNode;
 }
 
-///Represent a bool _node as a bool scalar.
+//Represent a bool _node as a bool scalar.
 Node representBool(const Node node) @safe
 {
     return Node(node.as!bool ? "true" : "false", "tag:yaml.org,2002:bool");
 }
 
-///Represent a long _node as an integer scalar.
+//Represent a long _node as an integer scalar.
 Node representLong(const Node node) @safe
 {
     return Node(node.as!long.to!string, "tag:yaml.org,2002:int");
 }
 
-///Represent a real _node as a floating point scalar.
+//Represent a real _node as a floating point scalar.
 Node representReal(const Node node) @safe
 {
     real f = node.as!real;
@@ -158,19 +159,19 @@ Node representReal(const Node node) @safe
     return Node(value, "tag:yaml.org,2002:float");
 }
 
-///Represent a SysTime _node as a timestamp.
+//Represent a SysTime _node as a timestamp.
 Node representSysTime(const Node node) @safe
 {
     return Node(node.as!SysTime.toISOExtString(), "tag:yaml.org,2002:timestamp");
 }
 
-///Represent a sequence _node as sequence/set.
+//Represent a sequence _node as sequence/set.
 Node representNodes(const Node node, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
 {
     auto nodes = node.as!(Node[]);
     if(node.tag_ == "tag:yaml.org,2002:set")
     {
-        ///YAML sets are mapping with null values.
+        //YAML sets are mapping with null values.
         Node.Pair[] pairs;
         pairs.length = nodes.length;
         Node dummy;
@@ -243,7 +244,7 @@ bool shouldUseBlockStyle(const Node.Pair value) @safe
     return false;
 }
 
-///Represent a mapping _node as map/ordered map/pairs.
+//Represent a mapping _node as map/ordered map/pairs.
 Node representPairs(const Node node, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
 {
     auto pairs = node.as!(Node.Pair[]);

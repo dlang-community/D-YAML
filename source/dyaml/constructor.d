@@ -28,9 +28,10 @@ import dyaml.node;
 import dyaml.exception;
 import dyaml.style;
 
+package:
 
 // Exception thrown at constructor errors.
-package class ConstructorException : YAMLException
+class ConstructorException : YAMLException
 {
     /// Construct a ConstructorException.
     ///
@@ -70,7 +71,7 @@ package class ConstructorException : YAMLException
  *
  * Returns: Constructed node.
  */
-package Node constructNode(T)(const Mark start, const Mark end, const string tag,
+Node constructNode(T)(const Mark start, const Mark end, const string tag,
                 T value) @safe
     if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])))
 {
@@ -185,7 +186,8 @@ package Node constructNode(T)(const Mark start, const Mark end, const string tag
     return newNode;
 }
 
-/// Construct a boolean _node.
+private:
+// Construct a boolean _node.
 bool constructBool(const string str) @safe
 {
     static yes = ["yes", "true", "on"];
@@ -196,7 +198,7 @@ bool constructBool(const string str) @safe
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
-/// Construct an integer (long) _node.
+// Construct an integer (long) _node.
 long constructLong(const string str) @safe
 {
     string value = str.replace("_", "");
@@ -259,7 +261,7 @@ long constructLong(const string str) @safe
     assert(685230 == constructLong(sexagesimal));
 }
 
-/// Construct a floating point (real) _node.
+// Construct a floating point (real) _node.
 real constructReal(const string str) @safe
 {
     string value = str.replace("_", "").toLower();
@@ -324,7 +326,7 @@ real constructReal(const string str) @safe
     assert(to!string(constructReal(NaN)) == "nan");
 }
 
-/// Construct a binary (base64) _node.
+// Construct a binary (base64) _node.
 ubyte[] constructBinary(const string value) @safe
 {
     import std.ascii : newline;
@@ -352,7 +354,7 @@ ubyte[] constructBinary(const string value) @safe
     assert(value == [84, 104, 101, 32, 65, 110, 115, 119, 101, 114, 58, 32, 52, 50]);
 }
 
-/// Construct a timestamp (SysTime) _node.
+// Construct a timestamp (SysTime) _node.
 SysTime constructTimestamp(const string str) @safe
 {
     string value = str;
@@ -451,13 +453,13 @@ SysTime constructTimestamp(const string str) @safe
     assert(timestamp(ymd)            == "20021214T000000Z");
 }
 
-/// Construct a string _node.
+// Construct a string _node.
 string constructString(const string str) @safe
 {
     return str;
 }
 
-/// Convert a sequence of single-element mappings into a sequence of pairs.
+// Convert a sequence of single-element mappings into a sequence of pairs.
 Node.Pair[] getPairs(string type, const Node[] nodes) @safe
 {
     Node.Pair[] pairs;
@@ -474,7 +476,7 @@ Node.Pair[] getPairs(string type, const Node[] nodes) @safe
     return pairs;
 }
 
-/// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
+// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
 Node.Pair[] constructOrderedMap(const Node[] nodes) @safe
 {
     auto pairs = getPairs("ordered map", nodes);
@@ -523,13 +525,13 @@ Node.Pair[] constructOrderedMap(const Node[] nodes) @safe
     assertNotThrown(constructOrderedMap(alternateTypes(64)));
 }
 
-/// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
+// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
 Node.Pair[] constructPairs(const Node[] nodes) @safe
 {
     return getPairs("pairs", nodes);
 }
 
-/// Construct a set _node.
+// Construct a set _node.
 Node[] constructSet(const Node.Pair[] pairs) @safe
 {
     // In future, the map here should be replaced with something with deterministic
@@ -589,13 +591,13 @@ Node[] constructSet(const Node.Pair[] pairs) @safe
     assertNotThrown(constructSet(nodeNoDuplicatesLong));
 }
 
-/// Construct a sequence (array) _node.
+// Construct a sequence (array) _node.
 Node[] constructSequence(Node[] nodes) @safe
 {
     return nodes;
 }
 
-/// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
+// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
 Node.Pair[] constructMap(Node.Pair[] pairs) @safe
 {
     //Detect duplicates.

@@ -68,7 +68,6 @@ final class Composer
          *
          * Params:  parser      = Parser to provide YAML events.
          *          resolver    = Resolver to resolve tags (data types).
-         *          constructor = Constructor to construct nodes.
          */
         this(Parser parser, Resolver resolver) @safe
         {
