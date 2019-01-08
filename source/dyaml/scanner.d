@@ -1974,7 +1974,14 @@ final class Scanner
                 }
                 else
                 {
-                    c = decode(bytes[], nextChar);
+                    try
+                    {
+                        c = decode(bytes[], nextChar);
+                    }
+                    catch (UTFException)
+                    {
+                        return size_t.max;
+                    }
                 }
                 reader_.sliceBuilder.write(c);
                 if(bytes.length - nextChar > 0)
@@ -2016,8 +2023,8 @@ final class Scanner
 
                     uint digit;
                     if(c - '0' < 10)     { digit = c - '0'; }
-                    else if(c - 'A' < 6) { digit = c - 'A'; }
-                    else if(c - 'a' < 6) { digit = c - 'a'; }
+                    else if(c - 'A' < 6) { digit = 10 + c - 'A'; }
+                    else if(c - 'a' < 6) { digit = 10 + c - 'a'; }
                     else                 { assert(false); }
                     b += mult * digit;
                     mult /= 16;
@@ -2028,6 +2035,13 @@ final class Scanner
             }
 
             bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
+            if(bytesUsed == size_t.max)
+            {
+                error(contextMsg, startMark,
+                        "Invalid UTF-8 data encoded in URI escape sequence",
+                        reader_.mark);
+                return;
+            }
         }
 
 
