@@ -97,6 +97,20 @@ private struct Pair
         @disable int opCmp(ref Pair);
 }
 
+enum NodeType
+{
+    null_,
+    merge,
+    boolean,
+    integer,
+    decimal,
+    binary,
+    timestamp,
+    string,
+    mapping,
+    sequence
+}
+
 /** YAML node.
  *
  * This is a pseudo-dynamic type that can store any YAML value, including a
@@ -1883,6 +1897,52 @@ struct Node
             return value_.type;
         }
 
+        // Get type of the node value.
+        @property NodeType newType() const @safe nothrow
+        {
+            if (value_.type is typeid(bool))
+            {
+                return NodeType.boolean;
+            }
+            else if (value_.type is typeid(long))
+            {
+                return NodeType.integer;
+            }
+            else if (value_.type is typeid(Node[]))
+            {
+                return NodeType.sequence;
+            }
+            else if (value_.type is typeid(ubyte[]))
+            {
+                return NodeType.binary;
+            }
+            else if (value_.type is typeid(string))
+            {
+                return NodeType.string;
+            }
+            else if (value_.type is typeid(Node.Pair[]))
+            {
+                return NodeType.mapping;
+            }
+            else if (value_.type is typeid(SysTime))
+            {
+                return NodeType.timestamp;
+            }
+            else if (value_.type is typeid(YAMLNull))
+            {
+                return NodeType.null_;
+            }
+            else if (value_.type is typeid(YAMLMerge))
+            {
+                return NodeType.merge;
+            }
+            else if (value_.type is typeid(real))
+            {
+                return NodeType.decimal;
+            }
+            else assert(0, text(value_.type));
+        }
+
     public:
         // Determine if the value stored by the node is of specified type.
         //
@@ -2269,6 +2329,172 @@ struct Node
     Node node = loader.load();
 
     assert(node.as!MyStruct == example);
+}
+
+/// Representing a simple struct:
+unittest {
+    import std.string;
+
+    import dyaml;
+
+    struct MyStruct
+    {
+        int x, y, z;
+
+        //Any D:YAML type must have a custom opCmp operator.
+        //This is used for ordering in mappings.
+        const int opCmp(ref const MyStruct s)
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        Node opCast(T: Node)() @safe
+        {
+            //Using custom scalar format, x:y:z.
+            auto scalar = format("%s:%s:%s", x, y, z);
+            //Representing as a scalar, with custom tag to specify this data type.
+            return Node(scalar, "!mystruct.tag");
+        }
+    }
+
+
+    auto dumper = dumper(new Appender!string);
+    dumper.dump(Node(MyStruct(1,2,3)));
+}
+/// Representing a class:
+unittest {
+    import std.string;
+
+    import dyaml;
+
+    class MyClass
+    {
+        int x, y, z;
+
+        this(int x, int y, int z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        //Any D:YAML type must have a custom opCmp operator.
+        //This is used for ordering in mappings.
+        override int opCmp(Object o)
+        {
+            MyClass s = cast(MyClass)o;
+            if(s is null){return -1;}
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+
+        ///Useful for Node.as!string .
+        override string toString()
+        {
+            return format("MyClass(%s, %s, %s)", x, y, z);
+        }
+
+        Node opCast(T: Node)() @safe
+        {
+            //Using custom scalar format, x:y:z.
+            auto scalar = format("%s:%s:%s", x, y, z);
+            //Representing as a scalar, with custom tag to specify this data type.
+            return Node(scalar, "!myclass.tag");
+        }
+    }
+
+    auto dumper = dumper(new Appender!string);
+    dumper.dump(Node(new MyClass(1,2,3)));
+}
+///
+@safe unittest
+{
+    import dyaml.dumper : dumper;
+    struct MyStruct
+    {
+        int x, y, z;
+
+        //Any D:YAML type must have a custom opCmp operator.
+        //This is used for ordering in mappings.
+        const int opCmp(ref const MyStruct s)
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        Node opCast(T: Node)()
+        {
+            auto nodes = [Node(x), Node(y), Node(z)];
+            auto node = Node(nodes, "!mystruct.tag");
+            //use flow style
+            node.setStyle(CollectionStyle.flow);
+            return node;
+        }
+    }
+
+
+    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
+}
+
+///
+@safe unittest
+{
+    import dyaml.dumper : dumper;
+    struct MyStruct
+    {
+        int x, y, z;
+
+        //Any D:YAML type must have a custom opCmp operator.
+        //This is used for ordering in mappings.
+        const int opCmp(ref const MyStruct s)
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        Node opCast(T: Node)()
+        {
+            auto scalar = format("%s:%s:%s", x, y, z);
+            return Node(scalar, "!mystruct.tag");
+        }
+    }
+
+    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
+}
+
+///
+@safe unittest
+{
+    import dyaml.dumper : dumper;
+    struct MyStruct
+    {
+        int x, y, z;
+
+        //Any D:YAML type must have a custom opCmp operator.
+        //This is used for ordering in mappings.
+        const int opCmp(ref const MyStruct s)
+        {
+            if(x != s.x){return x - s.x;}
+            if(y != s.y){return y - s.y;}
+            if(z != s.z){return z - s.z;}
+            return 0;
+        }
+        Node opCast(T: Node)()
+        {
+            auto pairs = [Node.Pair("x", x),
+                Node.Pair("y", y),
+                Node.Pair("z", z)];
+            return Node(pairs, "!mystruct.tag");
+        }
+    }
+
+    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
 }
 
 package:
