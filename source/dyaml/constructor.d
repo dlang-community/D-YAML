@@ -59,113 +59,93 @@ package class ConstructorException : YAMLException
  *
  * If a tag is detected with no known constructor function, it is considered an error.
  */
-final class Constructor
+/*
+ * Construct a node.
+ *
+ * Params:  start = Start position of the node.
+ *          end   = End position of the node.
+ *          tag   = Tag (data type) of the node.
+ *          value = Value to construct node from (string, nodes or pairs).
+ *          style = Style of the node (scalar or collection style).
+ *
+ * Returns: Constructed node.
+ */
+package Node constructNode(T, U)(const Mark start, const Mark end, const string tag,
+                T value, U style) @safe
+    if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
+       (is(U : CollectionStyle) || is(U : ScalarStyle)))
 {
-    private:
-        // Constructor functions.
-        Node delegate(ref Node) @safe[string] constructors;
-
-    public:
-        /// Construct a Constructor.
-        ///
-        /// If you don't want to support default YAML tags/data types, you can use
-        /// defaultConstructors to disable constructor functions for these.
-        ///
-        /// Params:  defaultConstructors = Use constructors for default YAML tags?
-        this(const Flag!"useDefaultConstructors" defaultConstructors = Yes.useDefaultConstructors)
-            @safe nothrow
+    Node node = Node(value, tag);
+    Node newNode;
+    try
+    {
+        switch(tag)
         {
-            if(!defaultConstructors){return;}
-
-            addConstructor("tag:yaml.org,2002:null",      &constructNull);
-            addConstructor("tag:yaml.org,2002:bool",      &constructBool);
-            addConstructor("tag:yaml.org,2002:int",       &constructLong);
-            addConstructor("tag:yaml.org,2002:float",     &constructReal);
-            addConstructor("tag:yaml.org,2002:binary",    &constructBinary);
-            addConstructor("tag:yaml.org,2002:timestamp", &constructTimestamp);
-            addConstructor("tag:yaml.org,2002:str",       &constructString);
-
-            ///In a mapping, the default value is kept as an entry with the '=' key.
-            addConstructor("tag:yaml.org,2002:value",     &constructString);
-
-            addConstructor("tag:yaml.org,2002:omap",    &constructOrderedMap);
-            addConstructor("tag:yaml.org,2002:pairs",   &constructPairs);
-            addConstructor("tag:yaml.org,2002:set",      &constructSet);
-            addConstructor("tag:yaml.org,2002:seq",     &constructSequence);
-            addConstructor("tag:yaml.org,2002:map",      &constructMap);
-            addConstructor("tag:yaml.org,2002:merge",     &constructMerge);
+            case "tag:yaml.org,2002:null":
+                newNode = Node(constructNull(node), tag);
+                break;
+            case "tag:yaml.org,2002:bool":
+                newNode = Node(constructBool(node), tag);
+                break;
+            case "tag:yaml.org,2002:int":
+                newNode = Node(constructLong(node), tag);
+                break;
+            case "tag:yaml.org,2002:float":
+                newNode = Node(constructReal(node), tag);
+                break;
+            case "tag:yaml.org,2002:binary":
+                newNode = Node(constructBinary(node), tag);
+                break;
+            case "tag:yaml.org,2002:timestamp":
+                newNode = Node(constructTimestamp(node), tag);
+                break;
+            case "tag:yaml.org,2002:str":
+                newNode = Node(constructString(node), tag);
+                break;
+            case "tag:yaml.org,2002:value":
+                newNode = Node(constructString(node), tag);
+                break;
+            case "tag:yaml.org,2002:omap":
+                newNode = Node(constructOrderedMap(node), tag);
+                break;
+            case "tag:yaml.org,2002:pairs":
+                newNode = Node(constructPairs(node), tag);
+                break;
+            case "tag:yaml.org,2002:set":
+                newNode = Node(constructSet(node), tag);
+                break;
+            case "tag:yaml.org,2002:seq":
+                newNode = Node(constructSequence(node), tag);
+                break;
+            case "tag:yaml.org,2002:map":
+                newNode = Node(constructMap(node), tag);
+                break;
+            case "tag:yaml.org,2002:merge":
+                newNode = Node(constructMerge(node), tag);
+                break;
+            default:
+                newNode = node;
+                break;
         }
+    }
+    catch(Exception e)
+    {
+        throw new ConstructorException("Error constructing " ~ typeid(T).toString()
+                        ~ ":\n" ~ e.msg, start, end);
+    }
 
-    package:
-        /*
-         * Construct a node.
-         *
-         * Params:  start = Start position of the node.
-         *          end   = End position of the node.
-         *          tag   = Tag (data type) of the node.
-         *          value = Value to construct node from (string, nodes or pairs).
-         *          style = Style of the node (scalar or collection style).
-         *
-         * Returns: Constructed node.
-         */
-        Node node(T, U)(const Mark start, const Mark end, const string tag,
-                        T value, U style) @safe
-            if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
-               (is(U : CollectionStyle) || is(U : ScalarStyle)))
-        {
-            enum type = is(T : string)       ? "scalar"   :
-                        is(T == Node[])      ? "sequence" :
-                        is(T == Node.Pair[]) ? "mapping"  :
-                                               "ERROR";
-            if ((tag in constructors) is null) {
-                return Node(value, tag);
-            } else {
-                Node node = Node(value);
-                try
-                {
-                    static if(is(U : ScalarStyle))
-                    {
-                        auto newNode = constructors[tag](node);
-                        newNode.startMark_ = start;
-                        newNode.scalarStyle = style;
-                        return newNode;
-                    }
-                    else static if(is(U : CollectionStyle))
-                    {
-                        auto newNode = constructors[tag](node);
-                        newNode.startMark_ = start;
-                        newNode.collectionStyle = style;
-                        return newNode;
-                    }
-                    else static assert(false);
-                }
-                catch(Exception e)
-                {
-                    throw new ConstructorException("Error constructing " ~ typeid(T).toString()
-                                    ~ ":\n" ~ e.msg, start, end);
-                }
-            }
-        }
+    newNode.startMark_ = start;
+    static if(is(U : ScalarStyle))
+    {
+        newNode.scalarStyle = style;
+    }
+    else static if(is(U : CollectionStyle))
+    {
+        newNode.collectionStyle = style;
+    }
+    else static assert(false);
 
-    private:
-        /*
-         * Add a constructor function.
-         *
-         * Params:  tag  = Tag for the function to handle.
-         *          ctor = Constructor function.
-         */
-        auto addConstructor(T)(const string tag, T function(ref Node) @safe ctor)
-        {
-            assert((tag in constructors) is null,
-                   "Constructor function for tag " ~ tag ~ " is already " ~
-                   "specified. Can't specify another one.");
-
-
-            constructors[tag] = (ref Node n) @safe
-            {
-                return Node(ctor(n), tag);
-            };
-        }
+    return newNode;
 }
 
 /// Construct a _null _node.

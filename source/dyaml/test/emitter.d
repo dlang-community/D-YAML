@@ -90,7 +90,6 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
 
     auto loader2        = Loader.fromString(emitStream.data);
     loader2.name        = "TEST";
-    loader2.constructor = new Constructor;
     loader2.resolver    = new Resolver;
     auto newEvents = loader2.parse();
     assert(compareEvents(events, newEvents));
@@ -119,7 +118,6 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
         }
         auto loader2        = Loader.fromString(emitStream.data);
         loader2.name        = "TEST";
-        loader2.constructor = new Constructor;
         loader2.resolver    = new Resolver;
         auto newEvents = loader2.parse();
         assert(compareEvents(events, newEvents));
@@ -177,7 +175,6 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                 }
                 auto loader2        = Loader.fromString(emitStream.data);
                 loader2.name        = "TEST";
-                loader2.constructor = new Constructor;
                 loader2.resolver    = new Resolver;
                 auto newEvents = loader2.parse();
                 assert(compareEvents(events, newEvents));

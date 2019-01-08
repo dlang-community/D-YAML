@@ -91,7 +91,6 @@ void main(string[] args) //@safe
         // Instead of constructing a resolver/constructor with each Loader,
         // construct them once to remove noise when profiling.
         auto resolver    = new Resolver();
-        auto constructor = new Constructor();
 
         auto constructTime = stopWatch.peek();
 
@@ -113,7 +112,6 @@ void main(string[] args) //@safe
             }
 
             loader.resolver    = resolver;
-            loader.constructor = constructor;
             nodes = loader.array;
         }
         void runDumpBenchmark() @safe
@@ -150,7 +148,7 @@ void main(string[] args) //@safe
                 {
                     writeln("Time to load file: ", loadTime);
                 }
-                writeln("Time to set up resolver & constructor: ", constructTime);
+                writeln("Time to set up resolver: ", constructTime);
             }
             writeln("Runs: ", runs);
             foreach(time, func, enabled; lockstep(totalTime[], only("Loader", "Dumper", "Get"), only(true, dump, get)))

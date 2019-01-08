@@ -402,12 +402,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     enforce((base in expected) !is null,
             new Exception("Unimplemented constructor test: " ~ base));
 
-    auto constructor = new Constructor;
-    //constructor.addConstructorMapping("!tag1", &constructClass);
-    //constructor.addConstructorScalar("!tag2", &constructStruct);
-
     auto loader        = Loader.fromFile(dataFilename);
-    loader.constructor = constructor;
     loader.resolver    = new Resolver;
 
     Node[] exp = expected[base];
