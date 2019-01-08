@@ -14,42 +14,28 @@ struct Color
        if(blue  != c.blue) {return blue  - c.blue;}
        return 0;
    }
-}
-
-Node representColor(ref Node node, Representer representer) @safe
-{
-   //The node is guaranteed to be Color as we add representer for Color.
-   Color color = node.as!Color;
-
-   static immutable hex = "0123456789ABCDEF";
-
-   //Using the color format from the Constructor example.
-   string scalar;
-   foreach(channel; [color.red, color.green, color.blue])
+   Node opCast(T: Node)() const
    {
-       scalar ~= hex[channel / 16];
-       scalar ~= hex[channel % 16];
-   }
+       static immutable hex = "0123456789ABCDEF";
 
-   //Representing as a scalar, with custom tag to specify this data type.
-   return representer.representScalar("!color", scalar);
+       //Using the color format from the Constructor example.
+       string scalar;
+       foreach(channel; [red, green, blue])
+       {
+           scalar ~= hex[channel / 16];
+           scalar ~= hex[channel % 16];
+       }
+
+       //Representing as a scalar, with custom tag to specify this data type.
+       return Node(scalar, "!color");
+   }
 }
 
 void main()
 {
    try
    {
-       auto representer = new Representer;
-       representer.addRepresenter!Color(&representColor);
-
-       auto resolver = new Resolver;
-       import std.regex;
-       resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
-                                    "0123456789abcdefABCDEF");
-
        auto dumper = dumper(File("output.yaml", "w").lockingTextWriter);
-       dumper.representer = representer;
-       dumper.resolver    = resolver;
 
        auto document = Node([Color(255, 0, 0),
                              Color(0, 255, 0),
