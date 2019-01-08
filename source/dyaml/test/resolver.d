@@ -16,12 +16,6 @@ import std.string;
 import dyaml.test.common;
 
 
-string construct(ref Node node) @safe
-{
-    return node.as!string;
-}
-
-
 /**
  * Implicit tag resolution unittest.
  *

@@ -328,16 +328,6 @@ class TestClass
         this.z = z;
     }
 
-    override string toString() @safe
-    {
-        return format("TestClass(", x, ", ", y, ", ", z, ")");
-    }
-    ///Constructor function for TestClass.
-
-    this(ref Node node) @safe
-    {
-        this(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-    }
     Node opCast(T: Node)() @safe
     {
         auto pairs = [Node.Pair("x", x),
