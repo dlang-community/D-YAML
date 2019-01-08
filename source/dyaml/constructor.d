@@ -722,6 +722,7 @@ SysTime constructTimestamp(ref Node node) @safe
 /// Construct a string _node.
 string constructString(ref Node node) @safe
 {
+    enforce(node.isScalar, "While constructing string, expected a scalar");
     return node.as!string;
 }
 
