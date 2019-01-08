@@ -75,56 +75,55 @@ package Node constructNode(T, U)(const Mark start, const Mark end, const string 
     if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
        (is(U : CollectionStyle) || is(U : ScalarStyle)))
 {
-    Node node = Node(value, tag);
     Node newNode;
     try
     {
         switch(tag)
         {
             case "tag:yaml.org,2002:null":
-                newNode = Node(constructNull(node), tag);
+                newNode = Node(constructNull(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:bool":
-                newNode = Node(constructBool(node), tag);
+                newNode = Node(constructBool(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:int":
-                newNode = Node(constructLong(node), tag);
+                newNode = Node(constructLong(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:float":
-                newNode = Node(constructReal(node), tag);
+                newNode = Node(constructReal(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:binary":
-                newNode = Node(constructBinary(node), tag);
+                newNode = Node(constructBinary(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:timestamp":
-                newNode = Node(constructTimestamp(node), tag);
+                newNode = Node(constructTimestamp(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:str":
-                newNode = Node(constructString(node), tag);
+                newNode = Node(constructString(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:value":
-                newNode = Node(constructString(node), tag);
+                newNode = Node(constructString(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:omap":
-                newNode = Node(constructOrderedMap(node), tag);
+                newNode = Node(constructOrderedMap(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:pairs":
-                newNode = Node(constructPairs(node), tag);
+                newNode = Node(constructPairs(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:set":
-                newNode = Node(constructSet(node), tag);
+                newNode = Node(constructSet(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:seq":
-                newNode = Node(constructSequence(node), tag);
+                newNode = Node(constructSequence(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:map":
-                newNode = Node(constructMap(node), tag);
+                newNode = Node(constructMap(Node(value)), tag);
                 break;
             case "tag:yaml.org,2002:merge":
-                newNode = Node(constructMerge(node), tag);
+                newNode = Node(constructMerge(Node(value)), tag);
                 break;
             default:
-                newNode = node;
+                newNode = Node(value, tag);
                 break;
         }
     }
@@ -149,19 +148,19 @@ package Node constructNode(T, U)(const Mark start, const Mark end, const string 
 }
 
 /// Construct a _null _node.
-YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc
+YAMLNull constructNull(const Node node) @safe pure nothrow @nogc
 {
     return YAMLNull();
 }
 
 /// Construct a merge _node - a _node that merges another _node into a mapping.
-YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc
+YAMLMerge constructMerge(const Node node) @safe pure nothrow @nogc
 {
     return YAMLMerge();
 }
 
 /// Construct a boolean _node.
-bool constructBool(ref Node node) @safe
+bool constructBool(const Node node) @safe
 {
     static yes = ["yes", "true", "on"];
     static no = ["no", "false", "off"];
@@ -172,7 +171,7 @@ bool constructBool(ref Node node) @safe
 }
 
 /// Construct an integer (long) _node.
-long constructLong(ref Node node) @safe
+long constructLong(const Node node) @safe
 {
     string value = node.as!string().replace("_", "");
     const char c = value[0];
@@ -241,7 +240,7 @@ long constructLong(ref Node node) @safe
 }
 
 /// Construct a floating point (real) _node.
-real constructReal(ref Node node) @safe
+real constructReal(const Node node) @safe
 {
     string value = node.as!string().replace("_", "").toLower();
     const char c = value[0];
@@ -312,7 +311,7 @@ real constructReal(ref Node node) @safe
 }
 
 /// Construct a binary (base64) _node.
-ubyte[] constructBinary(ref Node node) @safe
+ubyte[] constructBinary(const Node node) @safe
 {
     import std.ascii : newline;
     import std.array : array;
@@ -342,7 +341,7 @@ ubyte[] constructBinary(ref Node node) @safe
 }
 
 /// Construct a timestamp (SysTime) _node.
-SysTime constructTimestamp(ref Node node) @safe
+SysTime constructTimestamp(const Node node) @safe
 {
     string value = node.as!string;
 
@@ -442,18 +441,18 @@ SysTime constructTimestamp(ref Node node) @safe
 }
 
 /// Construct a string _node.
-string constructString(ref Node node) @safe
+string constructString(const Node node) @safe
 {
     enforce(node.isScalar, "While constructing string, expected a scalar");
     return node.as!string;
 }
 
 /// Convert a sequence of single-element mappings into a sequence of pairs.
-Node.Pair[] getPairs(string type, Node[] nodes) @safe
+Node.Pair[] getPairs(string type, const Node[] nodes) @safe
 {
     Node.Pair[] pairs;
     pairs.reserve(nodes.length);
-    foreach(ref node; nodes)
+    foreach(node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
                 new Exception("While constructing " ~ type ~
@@ -466,7 +465,7 @@ Node.Pair[] getPairs(string type, Node[] nodes) @safe
 }
 
 /// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
-Node.Pair[] constructOrderedMap(ref Node node) @safe
+Node.Pair[] constructOrderedMap(const Node node) @safe
 {
     auto pairs = getPairs("ordered map", node.as!(Node[]));
 
@@ -521,13 +520,13 @@ Node.Pair[] constructOrderedMap(ref Node node) @safe
 }
 
 /// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
-Node.Pair[] constructPairs(ref Node node) @safe
+Node.Pair[] constructPairs(const Node node) @safe
 {
     return getPairs("pairs", node.as!(Node[]));
 }
 
 /// Construct a set _node.
-Node[] constructSet(ref Node node) @safe
+Node[] constructSet(const Node node) @safe
 {
     auto pairs = node.as!(Node.Pair[]);
 
@@ -589,13 +588,13 @@ Node[] constructSet(ref Node node) @safe
 }
 
 /// Construct a sequence (array) _node.
-Node[] constructSequence(ref Node node) @safe
+Node[] constructSequence(Node node) @safe
 {
     return node.as!(Node[]);
 }
 
 /// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
-Node.Pair[] constructMap(ref Node node) @safe
+Node.Pair[] constructMap(Node node) @safe
 {
     auto pairs = node.as!(Node.Pair[]);
     //Detect duplicates.
