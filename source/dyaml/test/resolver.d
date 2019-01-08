@@ -44,12 +44,7 @@ void testImplicitResolver(string dataFilename, string detectFilename) @safe
 
     correctTag = readText(detectFilename).strip();
 
-    auto constructor = new Constructor;
-    constructor.addConstructorScalar("tag:example.com,2000:app/tag🤔", &construct);
-    auto loader = Loader.fromFile(dataFilename);
-    loader.constructor = constructor;
-
-    node = loader.load();
+    node = Loader.fromFile(dataFilename).load();
     assert(node.isSequence);
     foreach(ref Node scalar; node)
     {

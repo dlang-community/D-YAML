@@ -1951,91 +1951,36 @@ final class Scanner
         /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanURIEscapesToSlice(string name)(const Mark startMark)
         {
+            import core.exception : UnicodeException;
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
-            char[4] bytes;
-            size_t bytesUsed;
+            Appender!string buffer;
 
-            // Get one dchar by decoding data from bytes.
-            //
-            // This is probably slow, but simple and URI escapes are extremely uncommon
-            // in YAML.
-            //
-            // Returns the number of bytes used by the dchar in bytes on success,
-            // size_t.max on failure.
-            static size_t getDchar(char[] bytes, Reader reader_) @safe
-            {
-                size_t nextChar;
-                dchar c;
-                if(bytes[0] < 0x80)
-                {
-                    c = bytes[0];
-                    ++nextChar;
-                }
-                else
-                {
-                    try
-                    {
-                        c = decode(bytes[], nextChar);
-                    }
-                    catch (UTFException)
-                    {
-                        return size_t.max;
-                    }
-                }
-                reader_.sliceBuilder.write(c);
-                if(bytes.length - nextChar > 0)
-                {
-                    copy(bytes[nextChar..bytes.length], bytes[0..bytes.length-nextChar]);
-                }
-                return bytes.length - nextChar;
-            }
 
             enum contextMsg = "While scanning a " ~ name;
             while(reader_.peekByte() == '%')
             {
                 reader_.forward();
-                if(bytesUsed == bytes.length)
+                char[2] nextByte = [reader_.peekByte(), reader_.peekByte(1)];
+                if(!nextByte[0].isHexDigit || !nextByte[1].isHexDigit)
                 {
-                    bytesUsed = getDchar(bytes[], reader_);
-                    if(bytesUsed == size_t.max)
-                    {
-                        error(contextMsg, startMark,
-                                "Invalid UTF-8 data encoded in URI escape sequence",
-                                reader_.mark);
-                        return;
-                    }
+                    auto msg = expected("URI escape sequence of 2 hexadecimal " ~
+                                        "numbers", nextByte);
+                    error(contextMsg, startMark, msg, reader_.mark);
+                    return;
                 }
-
-                char b = 0;
-                uint mult = 16;
-                // Converting 2 hexadecimal digits to a byte.
-                foreach(k; 0 .. 2)
-                {
-                    const dchar c = reader_.peek(k);
-                    if(!c.isHexDigit)
-                    {
-                        auto msg = expected("URI escape sequence of 2 hexadecimal " ~
-                                            "numbers", c);
-                        error(contextMsg, startMark, msg, reader_.mark);
-                        return;
-                    }
-
-                    uint digit;
-                    if(c - '0' < 10)     { digit = c - '0'; }
-                    else if(c - 'A' < 6) { digit = 10 + c - 'A'; }
-                    else if(c - 'a' < 6) { digit = 10 + c - 'a'; }
-                    else                 { assert(false); }
-                    b += mult * digit;
-                    mult /= 16;
-                }
-                bytes[bytesUsed++] = b;
+                buffer ~= nextByte[].to!ubyte(16);
 
                 reader_.forward(2);
             }
-
-            bytesUsed = getDchar(bytes[0 .. bytesUsed], reader_);
-            if(bytesUsed == size_t.max)
+            try
+            {
+                foreach (dchar chr; buffer.data)
+                {
+                    reader_.sliceBuilder.write(chr);
+                }
+            }
+            catch (UnicodeException)
             {
                 error(contextMsg, startMark,
                         "Invalid UTF-8 data encoded in URI escape sequence",
