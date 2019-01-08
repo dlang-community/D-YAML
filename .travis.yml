@@ -7,7 +7,7 @@ os:
 d:
  - dmd
  - ldc
- 
+
 branches:
   only:
   - master
@@ -32,6 +32,7 @@ script:
   - "dub build dyaml:getting-started"
   - "dub build dyaml:representer"
   - "dub build dyaml:resolver"
+  - "dub build dyaml:testsuite"
   - "dub build dyaml:tojson"
   - "dub build dyaml:yaml_gen"
   - "dub build dyaml:yaml_stats"

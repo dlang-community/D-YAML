@@ -1,0 +1,8 @@
+{
+    "name": "testsuite",
+    "targetType": "executable",
+    "dependencies":
+    {
+        "dyaml": "*"
+    }
+}
