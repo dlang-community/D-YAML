@@ -524,7 +524,7 @@ struct Node
 
                 static if (is(T == class))
                 {
-                    return new T(params);
+                    return new inout T(params);
                 }
                 else static if (is(T == struct))
                 {
@@ -591,6 +591,186 @@ struct Node
             assert(node.get!int == 42);
             assert(node.get!string == "42");
             assert(node.get!double == 42.0);
+        }
+        /// Scalar node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                this(int x, int y, int z) @safe
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    auto parts = node.as!string().split(":");
+                    x = parts[0].to!int;
+                    y = parts[1].to!int;
+                    z = parts[2].to!int;
+                }
+
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!mystruct.tag");
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Sequence node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                this(int x, int y, int z) @safe
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    x = node[0].as!int;
+                    y = node[1].as!int;
+                    z = node[2].as!int;
+                }
+
+                Node opCast(T: Node)()
+                {
+                    return Node([x, y, z], "!mystruct.tag");
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Mapping node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                Node opCast(T: Node)()
+                {
+                    auto pairs = [Node.Pair("x", x),
+                        Node.Pair("y", y),
+                        Node.Pair("z", z)];
+                    return Node(pairs, "!mystruct.tag");
+                }
+
+                this(int x, int y, int z)
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    x = node["x"].as!int;
+                    y = node["y"].as!int;
+                    z = node["z"].as!int;
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Classes can be used too
+        @system unittest {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+
+            static class MyClass
+            {
+                int x, y, z;
+
+                this(int x, int y, int z)
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe inout
+                {
+                    auto parts = node.as!string().split(":");
+                    x = parts[0].to!int;
+                    y = parts[1].to!int;
+                    z = parts[2].to!int;
+                }
+
+                ///Useful for Node.as!string.
+                override string toString()
+                {
+                    return format("MyClass(%s, %s, %s)", x, y, z);
+                }
+
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!myclass.tag");
+                }
+                override bool opEquals(Object o)
+                {
+                    if (auto other = cast(MyClass)o)
+                    {
+                        return (other.x == x) && (other.y == y) && (other.z == z);
+                    }
+                    return false;
+                }
+            }
+            auto appender = new Appender!string;
+
+            // Dump class to yaml document
+            dumper(appender).dump(Node(new MyClass(1,2,3)));
+
+            // Read yaml document back as a MyClass
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyClass == new MyClass(1,2,3));
         }
         @safe unittest
         {
@@ -2229,205 +2409,6 @@ struct Node
         }
 }
 
-///Construct a struct from a scalar
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        this(Node node) @safe
-        {
-            // Guaranteed to be string as we construct from scalar.
-            auto parts = node.as!string().split(":");
-            x = parts[0].to!int;
-            y = parts[1].to!int;
-            z = parts[2].to!int;
-        }
-    }
-    MyStruct example;
-    example.x = 1;
-    example.y = 2;
-    example.z = 3;
-
-    import dyaml.loader : Loader;
-    string data = text("!mystruct ", example.x, ":", example.y, ":", example.z);
-    auto loader = Loader.fromString(data);
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == example);
-}
-///Construct a struct from a sequence
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        this(Node node) @safe
-        {
-            // node is guaranteed to be sequence.
-            x = node[0].as!int;
-            y = node[1].as!int;
-            z = node[2].as!int;
-        }
-    }
-    MyStruct example;
-    example.x = 1;
-    example.y = 2;
-    example.z = 3;
-    import dyaml.loader : Loader;
-    string data = text("!mystruct [", example.x, ", ", example.y, ", ", example.z, "]");
-    auto loader = Loader.fromString(data);
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == example);
-}
-///Construct a struct from a mapping
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        this(Node node) @safe
-        {
-            // node is guaranteed to be mapping.
-            x = node["x"].as!int;
-            y = node["y"].as!int;
-            z = node["z"].as!int;
-        }
-    }
-    MyStruct example;
-    example.x = 1;
-    example.y = 2;
-    example.z = 3;
-    import dyaml.loader : Loader;
-    string data = text("!mystruct {x: ", example.x, ", y: ", example.y, ", z: ", example.z, "}");
-    auto loader = Loader.fromString(data);
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == example);
-}
-
-/// Representing a simple struct:
-unittest {
-    import std.string;
-
-    import dyaml;
-
-    struct MyStruct
-    {
-        int x, y, z;
-
-        Node opCast(T: Node)() @safe
-        {
-            //Using custom scalar format, x:y:z.
-            auto scalar = format("%s:%s:%s", x, y, z);
-            //Representing as a scalar, with custom tag to specify this data type.
-            return Node(scalar, "!mystruct.tag");
-        }
-    }
-
-
-    auto dumper = dumper(new Appender!string);
-    dumper.dump(Node(MyStruct(1,2,3)));
-}
-/// Representing a class:
-unittest {
-    import std.string;
-
-    import dyaml;
-
-    class MyClass
-    {
-        int x, y, z;
-
-        this(int x, int y, int z)
-        {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        ///Useful for Node.as!string .
-        override string toString()
-        {
-            return format("MyClass(%s, %s, %s)", x, y, z);
-        }
-
-        Node opCast(T: Node)() @safe
-        {
-            //Using custom scalar format, x:y:z.
-            auto scalar = format("%s:%s:%s", x, y, z);
-            //Representing as a scalar, with custom tag to specify this data type.
-            return Node(scalar, "!myclass.tag");
-        }
-    }
-
-    auto dumper = dumper(new Appender!string);
-    dumper.dump(Node(new MyClass(1,2,3)));
-}
-///
-@safe unittest
-{
-    import dyaml.dumper : dumper;
-    struct MyStruct
-    {
-        int x, y, z;
-
-        Node opCast(T: Node)()
-        {
-            auto nodes = [Node(x), Node(y), Node(z)];
-            auto node = Node(nodes, "!mystruct.tag");
-            //use flow style
-            node.setStyle(CollectionStyle.flow);
-            return node;
-        }
-    }
-
-
-    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
-}
-
-///
-@safe unittest
-{
-    import dyaml.dumper : dumper;
-    struct MyStruct
-    {
-        int x, y, z;
-
-        Node opCast(T: Node)()
-        {
-            auto scalar = format("%s:%s:%s", x, y, z);
-            return Node(scalar, "!mystruct.tag");
-        }
-    }
-
-    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
-}
-
-///
-@safe unittest
-{
-    import dyaml.dumper : dumper;
-    struct MyStruct
-    {
-        int x, y, z;
-
-        Node opCast(T: Node)()
-        {
-            auto pairs = [Node.Pair("x", x),
-                Node.Pair("y", y),
-                Node.Pair("z", z)];
-            return Node(pairs, "!mystruct.tag");
-        }
-    }
-
-    dumper(new Appender!string).dump(Node(MyStruct(1,2,3)));
-}
-
 package:
 // Merge pairs into an array of pairs based on merge rules in the YAML spec.
 //
@@ -2455,7 +2436,7 @@ template hasSimpleNodeConstructor(T)
     }
     else static if (is(T == class))
     {
-        enum hasSimpleNodeConstructor = is(typeof(new T(Node.init)));
+        enum hasSimpleNodeConstructor = is(typeof(new inout T(Node.init)));
     }
     else enum hasSimpleNodeConstructor = false;
 }
@@ -2467,7 +2448,7 @@ template hasExpandedNodeConstructor(T)
     }
     else static if (is(T == class))
     {
-        enum hasExpandedNodeConstructor = is(typeof(new T(Node.init, "")));
+        enum hasExpandedNodeConstructor = is(typeof(new inout T(Node.init, "")));
     }
     else enum hasExpandedNodeConstructor = false;
 }
