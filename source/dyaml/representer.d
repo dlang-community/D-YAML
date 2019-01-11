@@ -39,12 +39,7 @@ class RepresenterException : YAMLException
 
 /**
  * Represents YAML nodes as scalar, sequence and mapping nodes ready for output.
- *
- * This class is used to add support for dumping of custom data types.
- *
- * It can also override default node formatting styles for output.
  */
-//Represent a node based on its type, and return the represented result.
 Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
 {
     Node result;
