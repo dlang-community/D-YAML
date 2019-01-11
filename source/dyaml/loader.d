@@ -203,23 +203,6 @@ struct Loader
             return output;
         }
 
-        /** Load all YAML documents.
-         *
-         * This is just a shortcut that iterates over all documents and returns them
-         * all at once. Calling loadAll after iterating over the node or vice versa
-         * will not return any documents, as they have all been parsed already.
-         *
-         * This can only be called once; this is enforced by contract.
-         *
-         * Returns: Array of root nodes of all documents in the file/stream.
-         *
-         * Throws:  YAMLException on a parsing error.
-         */
-        deprecated("Redundant, loader is now an InputRange") Node[] loadAll() @safe
-        {
-            import std.array: array;
-            return this.array;
-        }
         /** Implements the empty range primitive.
         *
         * If there's no more documents left in the stream, this will be true.
