@@ -326,7 +326,6 @@ struct Dumper(Range)
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;
     dumper.dump(node);
-    import std.stdio;
     assert(stream.data == "[!!str 'Hello world!', [!!str 'Hello', !!str 'world!']]\n");
 }
 // Explicit document start/end markers
