@@ -100,6 +100,173 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
     return result;
 }
 
+@safe unittest
+{
+    // We don't emit yaml merge nodes.
+    assert(representData(Node(YAMLMerge()), ScalarStyle.invalid, CollectionStyle.invalid) == Node.init);
+}
+
+@safe unittest
+{
+    assert(representData(Node(YAMLNull()), ScalarStyle.invalid, CollectionStyle.invalid) == Node("null", "tag:yaml.org,2002:null"));
+}
+
+@safe unittest
+{
+    assert(representData(Node(cast(string)null), ScalarStyle.invalid, CollectionStyle.invalid) == Node("null", "tag:yaml.org,2002:null"));
+    assert(representData(Node("Hello world!"), ScalarStyle.invalid, CollectionStyle.invalid) == Node("Hello world!", "tag:yaml.org,2002:str"));
+}
+
+@safe unittest
+{
+    assert(representData(Node(64), ScalarStyle.invalid, CollectionStyle.invalid) == Node("64", "tag:yaml.org,2002:int"));
+}
+
+@safe unittest
+{
+    assert(representData(Node(true), ScalarStyle.invalid, CollectionStyle.invalid) == Node("true", "tag:yaml.org,2002:bool"));
+    assert(representData(Node(false), ScalarStyle.invalid, CollectionStyle.invalid) == Node("false", "tag:yaml.org,2002:bool"));
+}
+
+@safe unittest
+{
+    // Float comparison is pretty unreliable...
+    auto result = representData(Node(1.0), ScalarStyle.invalid, CollectionStyle.invalid);
+    assert(approxEqual(result.as!string.to!real, 1.0));
+    assert(result.tag == "tag:yaml.org,2002:float");
+
+    assert(representData(Node(real.nan), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".nan", "tag:yaml.org,2002:float"));
+    assert(representData(Node(real.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".inf", "tag:yaml.org,2002:float"));
+    assert(representData(Node(-real.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node("-.inf", "tag:yaml.org,2002:float"));
+}
+
+@safe unittest
+{
+    assert(representData(Node(SysTime(DateTime(2000, 03, 14, 12, 34, 56), UTC())), ScalarStyle.invalid, CollectionStyle.invalid) == Node("2000-03-14T12:34:56Z", "tag:yaml.org,2002:timestamp"));
+}
+
+@safe unittest
+{
+    assert(representData(Node(Node[].init, "tag:yaml.org,2002:set"), ScalarStyle.invalid, CollectionStyle.invalid) == Node(Node.Pair[].init, "tag:yaml.org,2002:set"));
+    assert(representData(Node(Node[].init, "tag:yaml.org,2002:seq"), ScalarStyle.invalid, CollectionStyle.invalid) == Node(Node[].init, "tag:yaml.org,2002:seq"));
+    {
+        auto nodes = [
+            Node("a"),
+            Node("b"),
+            Node("c"),
+        ];
+        assert(representData(Node(nodes, "tag:yaml.org,2002:set"), ScalarStyle.invalid, CollectionStyle.invalid) ==
+            Node([
+                Node.Pair(
+                    Node("a", "tag:yaml.org,2002:str"),
+                    Node("null", "tag:yaml.org,2002:null")
+                ),
+                Node.Pair(
+                    Node("b", "tag:yaml.org,2002:str"),
+                    Node("null", "tag:yaml.org,2002:null")
+                ),
+                Node.Pair(
+                    Node("c", "tag:yaml.org,2002:str"),
+                    Node("null", "tag:yaml.org,2002:null")
+                )
+            ], "tag:yaml.org,2002:set"));
+    }
+    {
+        auto nodes = [
+            Node("a"),
+            Node("b"),
+            Node("c"),
+        ];
+        assert(representData(Node(nodes, "tag:yaml.org,2002:seq"), ScalarStyle.invalid, CollectionStyle.invalid) ==
+            Node([
+                Node("a", "tag:yaml.org,2002:str"),
+                Node("b", "tag:yaml.org,2002:str"),
+                Node("c", "tag:yaml.org,2002:str")
+            ], "tag:yaml.org,2002:seq"));
+    }
+}
+
+@safe unittest
+{
+    assert(representData(Node(Node.Pair[].init, "tag:yaml.org,2002:omap"), ScalarStyle.invalid, CollectionStyle.invalid) == Node(Node[].init, "tag:yaml.org,2002:omap"));
+    assert(representData(Node(Node.Pair[].init, "tag:yaml.org,2002:pairs"), ScalarStyle.invalid, CollectionStyle.invalid) == Node(Node[].init, "tag:yaml.org,2002:pairs"));
+    assert(representData(Node(Node.Pair[].init, "tag:yaml.org,2002:map"), ScalarStyle.invalid, CollectionStyle.invalid) == Node(Node.Pair[].init, "tag:yaml.org,2002:map"));
+    {
+        auto nodes = [
+            Node.Pair("a", "b"),
+            Node.Pair("a", "c")
+        ];
+        assertThrown(representData(Node(nodes, "tag:yaml.org,2002:omap"), ScalarStyle.invalid, CollectionStyle.invalid));
+    }
+    // Yeah, this gets ugly really fast.
+    {
+        auto nodes = [
+            Node.Pair("a", "b"),
+            Node.Pair("a", "c")
+        ];
+        assert(representData(Node(nodes, "tag:yaml.org,2002:pairs"), ScalarStyle.invalid, CollectionStyle.invalid) ==
+            Node([
+                Node(
+                    [Node.Pair(
+                        Node("a", "tag:yaml.org,2002:str"),
+                        Node("b", "tag:yaml.org,2002:str")
+                    )],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [Node.Pair(
+                        Node("a", "tag:yaml.org,2002:str"),
+                        Node("c", "tag:yaml.org,2002:str")
+                    )],
+                "tag:yaml.org,2002:map"),
+        ], "tag:yaml.org,2002:pairs"));
+    }
+    {
+        auto nodes = [
+            Node.Pair("a", "b"),
+            Node.Pair("a", "c")
+        ];
+        assertThrown(representData(Node(nodes, "tag:yaml.org,2002:map"), ScalarStyle.invalid, CollectionStyle.invalid));
+    }
+    {
+        auto nodes = [
+            Node.Pair("a", "b"),
+            Node.Pair("c", "d")
+        ];
+        assert(representData(Node(nodes, "tag:yaml.org,2002:omap"), ScalarStyle.invalid, CollectionStyle.invalid) ==
+            Node([
+                Node([
+                    Node.Pair(
+                        Node("a", "tag:yaml.org,2002:str"),
+                        Node("b", "tag:yaml.org,2002:str")
+                    )
+                ], "tag:yaml.org,2002:map"),
+                Node([
+                    Node.Pair(
+                        Node("c", "tag:yaml.org,2002:str"),
+                        Node("d", "tag:yaml.org,2002:str")
+                    )
+                ], "tag:yaml.org,2002:map"
+            )], "tag:yaml.org,2002:omap"));
+    }
+    {
+        auto nodes = [
+            Node.Pair("a", "b"),
+            Node.Pair("c", "d")
+        ];
+        assert(representData(Node(nodes, "tag:yaml.org,2002:map"), ScalarStyle.invalid, CollectionStyle.invalid) ==
+            Node([
+                Node.Pair(
+                    Node("a", "tag:yaml.org,2002:str"),
+                    Node("b", "tag:yaml.org,2002:str")
+                ),
+                Node.Pair(
+                    Node("c", "tag:yaml.org,2002:str"),
+                    Node("d", "tag:yaml.org,2002:str")
+                ),
+            ], "tag:yaml.org,2002:map"));
+    }
+}
+
 private:
 
 //Represent a _null _node as a _null YAML value.
@@ -169,7 +336,7 @@ Node representNodes(const Node node, ScalarStyle defaultScalarStyle, CollectionS
         //YAML sets are mapping with null values.
         Node.Pair[] pairs;
         pairs.length = nodes.length;
-        Node dummy;
+
         foreach(idx, key; nodes)
         {
             pairs[idx] = Node.Pair(key, Node("null", "tag:yaml.org,2002:null"));
