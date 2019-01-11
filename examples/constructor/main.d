@@ -19,9 +19,7 @@ struct Color
    {
         if (tag == "!color-mapping")
         {
-            //Might throw if a value is missing is not an integer, or is out of range.
-            //If this happens, D:YAML will handle the exception and use its message
-            //in a YAMLException thrown when loading.
+            //Will throw if a value is missing, is not an integer, or is out of range.
             red = node["r"].as!ubyte;
             green = node["g"].as!ubyte;
             blue = node["b"].as!ubyte;
