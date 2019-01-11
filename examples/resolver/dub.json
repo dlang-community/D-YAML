@@ -1,0 +1,10 @@
+{
+    "name": "resolver",
+    "targetType": "executable",
+    "sourceFiles": ["main.d"],
+    "mainSourceFile": "main.d",
+    "dependencies":
+    {
+        "dyaml": { "version" : "*" }
+    }
+}

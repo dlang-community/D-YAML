@@ -15,6 +15,7 @@
         "examples/constructor",
         "examples/getting_started",
         "examples/representer",
+        "examples/resolver",
         "examples/tojson",
         "examples/yaml_bench",
         "examples/yaml_gen",
