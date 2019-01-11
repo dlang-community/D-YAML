@@ -1,7 +1,8 @@
 # D:YAML
 
-[![image](https://travis-ci.org/dlang-community/D-YAML.svg?branch=master)](https://travis-ci.org/dlang-community/D-YAML)
-[![image](https://img.shields.io/dub/v/dyaml.svg)](http://code.dlang.org/packages/dyaml)
+[![travis-ci](https://travis-ci.org/dlang-community/D-YAML.svg?branch=master)](https://travis-ci.org/dlang-community/D-YAML)
+[![codecov](https://codecov.io/gh/dlang-community/D-YAML/branch/master/graph/badge.svg)](https://codecov.io/gh/dlang-community/D-YAML)
+[![code.dlang.org](https://img.shields.io/dub/v/dyaml.svg)](http://code.dlang.org/packages/dyaml)
 
 ## Introduction
 
