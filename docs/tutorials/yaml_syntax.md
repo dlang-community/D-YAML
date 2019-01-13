@@ -228,14 +228,14 @@ Implicit tags:
 This table shows D types stored in *yaml.Node* default YAML tags are converted to.
 Some of these might change in the future (especially !!map and !!set).
 
-|YAML tag               |D type               |
-|-----------------------|---------------------|
-|!!null                 |yaml.YAMLNull        |
-|!!bool                 |bool                 |
-|!!int                  |long                 |
-|!!float                |real                 |
-|!!binary               |ubyte[]              |
-|!!timestamp            |std.datetime.SysTime |
-|!!map, !!omap, !!pairs |yaml.Node.Pair[]     |
-|!!seq, !!set           |yaml.Node[]          |
-|!!str                  |string               |
+|YAML tag               |D type                 |
+|-----------------------|-----------------------|
+|!!null                 |dyaml.node.YAMLNull    |
+|!!bool                 |bool                   |
+|!!int                  |long                   |
+|!!float                |real                   |
+|!!binary               |ubyte[]                |
+|!!timestamp            |std.datetime.SysTime   |
+|!!map, !!omap, !!pairs |dyaml.node.Node.Pair[] |
+|!!seq, !!set           |dyaml.node.Node[]      |
+|!!str                  |string                 |
