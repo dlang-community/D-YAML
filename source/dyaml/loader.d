@@ -152,7 +152,7 @@ struct Loader
             try
             {
                 reader_      = new Reader(yamlData);
-                scanner_     = new Scanner(reader_);
+                scanner_     = Scanner(reader_);
                 parser_      = new Parser(scanner_);
             }
             catch(YAMLException e)
