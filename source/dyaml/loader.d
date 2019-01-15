@@ -222,7 +222,7 @@ struct Loader
             if (!rangeInitialized)
             {
                 lazyInitConstructorResolver();
-                composer = new Composer(parser_, resolver_);
+                composer = Composer(parser_, resolver_);
                 rangeInitialized = true;
             }
             assert(!done_, "Loader.popFront called on empty range");

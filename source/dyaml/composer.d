@@ -39,7 +39,7 @@ class ComposerException : MarkedYAMLException
 }
 
 ///Composes YAML documents from events provided by a Parser.
-final class Composer
+struct Composer
 {
     private:
         ///Parser providing YAML events.
