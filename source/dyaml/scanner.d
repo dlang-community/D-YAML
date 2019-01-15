@@ -79,7 +79,7 @@ class ScannerException : MarkedYAMLException
 }
 
 /// Generates tokens from data provided by a Reader.
-final class Scanner
+struct Scanner
 {
     private:
         /// A simple key is a key that is not denoted by the '?' indicator.
