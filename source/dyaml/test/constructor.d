@@ -328,21 +328,12 @@ class TestClass
         this.z = z;
     }
 
-    //Any D:YAML type must have a custom opCmp operator.
-    //This is used for ordering in mappings.
-    override int opCmp(Object o) @safe
+    Node opCast(T: Node)() @safe
     {
-        TestClass s = cast(TestClass)o;
-        if(s is null){return -1;}
-        if(x != s.x){return x - s.x;}
-        if(y != s.y){return y - s.y;}
-        if(z != s.z){return z - s.z;}
-        return 0;
-    }
-
-    override string toString() @safe
-    {
-        return format("TestClass(", x, ", ", y, ", ", z, ")");
+        auto pairs = [Node.Pair("x", x),
+                      Node.Pair("y", y),
+                      Node.Pair("z", z)];
+        return Node(pairs, "!tag1");
     }
 }
 
@@ -351,43 +342,22 @@ struct TestStruct
 {
     int value;
 
-    //Any D:YAML type must have a custom opCmp operator.
-    //This is used for ordering in mappings.
-    int opCmp(ref const TestStruct s) const @safe
+    this (int x) @safe
     {
-        return value - s.value;
+        value = x;
     }
-}
 
-///Constructor function for TestClass.
-TestClass constructClass(ref Node node) @safe
-{
-    return new TestClass(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-}
+    ///Constructor function for TestStruct.
+    this(ref Node node) @safe
+    {
+        value = node.as!string.to!int;
+    }
 
-Node representClass(ref Node node, Representer representer) @safe
-{
-    auto value = node.as!TestClass;
-    auto pairs = [Node.Pair("x", value.x),
-                  Node.Pair("y", value.y),
-                  Node.Pair("z", value.z)];
-    auto result = representer.representMapping("!tag1", pairs);
-
-    return result;
-}
-
-///Constructor function for TestStruct.
-TestStruct constructStruct(ref Node node) @safe
-{
-    return TestStruct(to!int(node.as!string));
-}
-
-///Representer function for TestStruct.
-Node representStruct(ref Node node, Representer representer) @safe
-{
-    string[] keys, values;
-    auto value = node.as!TestStruct;
-    return representer.representScalar("!tag2", to!string(value.value));
+    ///Representer function for TestStruct.
+    Node opCast(T: Node)() @safe
+    {
+        return Node(value.to!string, "!tag2");
+    }
 }
 
 /**
@@ -403,12 +373,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     enforce((base in expected) !is null,
             new Exception("Unimplemented constructor test: " ~ base));
 
-    auto constructor = new Constructor;
-    constructor.addConstructorMapping("!tag1", &constructClass);
-    constructor.addConstructorScalar("!tag2", &constructStruct);
-
     auto loader        = Loader.fromFile(dataFilename);
-    loader.constructor = constructor;
     loader.resolver    = new Resolver;
 
     Node[] exp = expected[base];

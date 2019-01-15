@@ -28,9 +28,10 @@ import dyaml.node;
 import dyaml.exception;
 import dyaml.style;
 
+package:
 
 // Exception thrown at constructor errors.
-package class ConstructorException : YAMLException
+class ConstructorException : YAMLException
 {
     /// Construct a ConstructorException.
     ///
@@ -59,408 +60,148 @@ package class ConstructorException : YAMLException
  *
  * If a tag is detected with no known constructor function, it is considered an error.
  */
-final class Constructor
+/*
+ * Construct a node.
+ *
+ * Params:  start = Start position of the node.
+ *          end   = End position of the node.
+ *          tag   = Tag (data type) of the node.
+ *          value = Value to construct node from (string, nodes or pairs).
+ *          style = Style of the node (scalar or collection style).
+ *
+ * Returns: Constructed node.
+ */
+Node constructNode(T)(const Mark start, const Mark end, const string tag,
+                T value) @safe
+    if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])))
 {
-    private:
-        // Constructor functions from scalars.
-        Node delegate(ref Node) @safe[string] fromScalar_;
-        // Constructor functions from sequences.
-        Node delegate(ref Node) @safe[string] fromSequence_;
-        // Constructor functions from mappings.
-        Node delegate(ref Node) @safe[string] fromMapping_;
-
-    public:
-        /// Construct a Constructor.
-        ///
-        /// If you don't want to support default YAML tags/data types, you can use
-        /// defaultConstructors to disable constructor functions for these.
-        ///
-        /// Params:  defaultConstructors = Use constructors for default YAML tags?
-        this(const Flag!"useDefaultConstructors" defaultConstructors = Yes.useDefaultConstructors)
-            @safe nothrow
+    Node newNode;
+    try
+    {
+        switch(tag)
         {
-            if(!defaultConstructors){return;}
-
-            addConstructorScalar("tag:yaml.org,2002:null",      &constructNull);
-            addConstructorScalar("tag:yaml.org,2002:bool",      &constructBool);
-            addConstructorScalar("tag:yaml.org,2002:int",       &constructLong);
-            addConstructorScalar("tag:yaml.org,2002:float",     &constructReal);
-            addConstructorScalar("tag:yaml.org,2002:binary",    &constructBinary);
-            addConstructorScalar("tag:yaml.org,2002:timestamp", &constructTimestamp);
-            addConstructorScalar("tag:yaml.org,2002:str",       &constructString);
-
-            ///In a mapping, the default value is kept as an entry with the '=' key.
-            addConstructorScalar("tag:yaml.org,2002:value",     &constructString);
-
-            addConstructorSequence("tag:yaml.org,2002:omap",    &constructOrderedMap);
-            addConstructorSequence("tag:yaml.org,2002:pairs",   &constructPairs);
-            addConstructorMapping("tag:yaml.org,2002:set",      &constructSet);
-            addConstructorSequence("tag:yaml.org,2002:seq",     &constructSequence);
-            addConstructorMapping("tag:yaml.org,2002:map",      &constructMap);
-            addConstructorScalar("tag:yaml.org,2002:merge",     &constructMerge);
-        }
-
-        /** Add a constructor function from scalar.
-         *
-         * The function must take a reference to $(D Node) to construct from.
-         * The node contains a string for scalars, $(D Node[]) for sequences and
-         * $(D Node.Pair[]) for mappings.
-         *
-         * Any exception thrown by this function will be caught by D:YAML and
-         * its message will be added to a $(D YAMLException) that will also tell
-         * the user which type failed to construct, and position in the file.
-         *
-         *
-         * The value returned by this function will be stored in the resulting node.
-         *
-         * Only one constructor function can be set for one tag.
-         *
-         *
-         * Structs and classes must implement the $(D opCmp()) operator for D:YAML
-         * support. The signature of the operator that must be implemented
-         * is $(D const int opCmp(ref const MyStruct s)) for structs where
-         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for
-         * classes. Note that the class $(D opCmp()) should not alter the compared
-         * values - it is not const for compatibility reasons.
-         *
-         * Params:  tag  = Tag for the function to handle.
-         *          ctor = Constructor function.
-         */
-        void addConstructorScalar(T)(const string tag, T function(ref Node) @safe ctor)
-        {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!string)[t] = deleg;
-        }
-        ///
-        @safe unittest
-        {
-            static struct MyStruct
-            {
-                int x, y, z;
-
-                //Any D:YAML type must have a custom opCmp operator.
-                //This is used for ordering in mappings.
-                int opCmp(ref const MyStruct s) const
+            case "tag:yaml.org,2002:null":
+                newNode = Node(YAMLNull(), tag);
+                break;
+            case "tag:yaml.org,2002:bool":
+                static if(is(T == string))
                 {
-                    if(x != s.x){return x - s.x;}
-                    if(y != s.y){return y - s.y;}
-                    if(z != s.z){return z - s.z;}
-                    return 0;
+                    newNode = Node(constructBool(value), tag);
+                    break;
                 }
-            }
-
-            static MyStruct constructMyStructScalar(ref Node node) @safe
-            {
-                //Guaranteed to be string as we construct from scalar.
-                //!mystruct x:y:z
-                auto parts = node.as!string().split(":");
-                // If this throws, the D:YAML will handle it and throw a YAMLException.
-                return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-            }
-
-            import dyaml.loader : Loader;
-            auto loader = Loader.fromString("!mystruct 12:34:56");
-            auto constructor = new Constructor;
-            constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-            loader.constructor = constructor;
-            Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(12, 34, 56));
-        }
-
-        /** Add a constructor function from sequence.
-         *
-         * See_Also:    addConstructorScalar
-         */
-        void addConstructorSequence(T)(const string tag, T function(ref Node) @safe ctor)
-        {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!(Node[]))[t] = deleg;
-        }
-        ///
-        @safe unittest
-        {
-            static struct MyStruct
-            {
-                int x, y, z;
-
-                //Any D:YAML type must have a custom opCmp operator.
-                //This is used for ordering in mappings.
-                int opCmp(ref const MyStruct s) const
+                else throw new Exception("Only scalars can be bools");
+            case "tag:yaml.org,2002:int":
+                static if(is(T == string))
                 {
-                    if(x != s.x){return x - s.x;}
-                    if(y != s.y){return y - s.y;}
-                    if(z != s.z){return z - s.z;}
-                    return 0;
+                    newNode = Node(constructLong(value), tag);
+                    break;
                 }
-            }
-
-            static MyStruct constructMyStructSequence(ref Node node) @safe
-            {
-                //node is guaranteed to be sequence.
-                //!mystruct [x, y, z]
-                return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
-            }
-
-            import dyaml.loader : Loader;
-            auto loader = Loader.fromString("!mystruct [1,2,3]");
-            auto constructor = new Constructor;
-            constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-            loader.constructor = constructor;
-            Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(1, 2, 3));
-         }
-
-        /** Add a constructor function from a mapping.
-         *
-         * See_Also:    addConstructorScalar
-         */
-        void addConstructorMapping(T)(const string tag, T function(ref Node) @safe ctor)
-        {
-            const t = tag;
-            const deleg = addConstructor!T(t, ctor);
-            (*delegates!(Node.Pair[]))[t] = deleg;
-        }
-        ///
-        @safe unittest {
-            static struct MyStruct
-            {
-                int x, y, z;
-
-                //Any D:YAML type must have a custom opCmp operator.
-                //This is used for ordering in mappings.
-                int opCmp(ref const MyStruct s) const
+                else throw new Exception("Only scalars can be ints");
+            case "tag:yaml.org,2002:float":
+                static if(is(T == string))
                 {
-                    if(x != s.x){return x - s.x;}
-                    if(y != s.y){return y - s.y;}
-                    if(z != s.z){return z - s.z;}
-                    return 0;
+                    newNode = Node(constructReal(value), tag);
+                    break;
                 }
-            }
-
-            static MyStruct constructMyStructMapping(ref Node node) @safe
-            {
-                //node is guaranteed to be mapping.
-                //!mystruct {"x": x, "y": y, "z": z}
-                return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-            }
-
-            import dyaml.loader : Loader;
-            auto loader = Loader.fromString(`!mystruct {"x": 11, "y": 22, "z": 33}`);
-            auto constructor = new Constructor;
-            constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-            loader.constructor = constructor;
-            Node node = loader.load();
-            assert(node.get!MyStruct == MyStruct(11, 22, 33));
-        }
-
-    package:
-        /*
-         * Construct a node.
-         *
-         * Params:  start = Start position of the node.
-         *          end   = End position of the node.
-         *          tag   = Tag (data type) of the node.
-         *          value = Value to construct node from (string, nodes or pairs).
-         *          style = Style of the node (scalar or collection style).
-         *
-         * Returns: Constructed node.
-         */
-        Node node(T, U)(const Mark start, const Mark end, const string tag,
-                        T value, U style) @safe
-            if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
-               (is(U : CollectionStyle) || is(U : ScalarStyle)))
-        {
-            enum type = is(T : string)       ? "scalar"   :
-                        is(T == Node[])      ? "sequence" :
-                        is(T == Node.Pair[]) ? "mapping"  :
-                                               "ERROR";
-            enforce((tag in *delegates!T) !is null,
-                    new ConstructorException("No constructor function from " ~ type ~
-                              " for tag " ~ tag, start, end));
-
-            Node node = Node(value);
-            try
-            {
-                static if(is(U : ScalarStyle))
+                else throw new Exception("Only scalars can be floats");
+            case "tag:yaml.org,2002:binary":
+                static if(is(T == string))
                 {
-                    auto newNode = (*delegates!T)[tag](node);
-                    newNode.startMark_ = start;
-                    newNode.scalarStyle = style;
-                    return newNode;
+                    newNode = Node(constructBinary(value), tag);
+                    break;
                 }
-                else static if(is(U : CollectionStyle))
+                else throw new Exception("Only scalars can be binary data");
+            case "tag:yaml.org,2002:timestamp":
+                static if(is(T == string))
                 {
-                    auto newNode = (*delegates!T)[tag](node);
-                    newNode.startMark_ = start;
-                    newNode.collectionStyle = style;
-                    return newNode;
+                    newNode = Node(constructTimestamp(value), tag);
+                    break;
                 }
-                else static assert(false);
-            }
-            catch(Exception e)
-            {
-                throw new ConstructorException("Error constructing " ~ typeid(T).toString()
-                                ~ ":\n" ~ e.msg, start, end);
-            }
-        }
-
-    private:
-        /*
-         * Add a constructor function.
-         *
-         * Params:  tag  = Tag for the function to handle.
-         *          ctor = Constructor function.
-         */
-        auto addConstructor(T)(const string tag, T function(ref Node) @safe ctor)
-        {
-            assert((tag in fromScalar_) is null &&
-                   (tag in fromSequence_) is null &&
-                   (tag in fromMapping_) is null,
-                   "Constructor function for tag " ~ tag ~ " is already " ~
-                   "specified. Can't specify another one.");
-
-
-            return (ref Node n) @safe
-            {
-                return Node(ctor(n), tag);
-            };
-        }
-
-        //Get the array of constructor functions for scalar, sequence or mapping.
-        @property auto delegates(T)()
-        {
-            static if(is(T : string))          {return &fromScalar_;}
-            else static if(is(T : Node[]))     {return &fromSequence_;}
-            else static if(is(T : Node.Pair[])){return &fromMapping_;}
-            else static assert(false);
-        }
-}
-
-///Construct a struct from a scalar
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
-    }
-
-    static MyStruct constructMyStructScalar(ref Node node) @safe
-    {
-        // Guaranteed to be string as we construct from scalar.
-        auto parts = node.as!string().split(":");
-        return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
-    }
-
-    import dyaml.loader : Loader;
-    string data = "!mystruct 1:2:3";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
-    loader.constructor = constructor;
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
-}
-///Construct a struct from a sequence
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
+                else throw new Exception("Only scalars can be timestamps");
+            case "tag:yaml.org,2002:str":
+                static if(is(T == string))
+                {
+                    newNode = Node(constructString(value), tag);
+                    break;
+                }
+                else throw new Exception("Only scalars can be strings");
+            case "tag:yaml.org,2002:value":
+                static if(is(T == string))
+                {
+                    newNode = Node(constructString(value), tag);
+                    break;
+                }
+                else throw new Exception("Only scalars can be values");
+            case "tag:yaml.org,2002:omap":
+                static if(is(T == Node[]))
+                {
+                    newNode = Node(constructOrderedMap(value), tag);
+                    break;
+                }
+                else throw new Exception("Only sequences can be ordered maps");
+            case "tag:yaml.org,2002:pairs":
+                static if(is(T == Node[]))
+                {
+                    newNode = Node(constructPairs(value), tag);
+                    break;
+                }
+                else throw new Exception("Only sequences can be pairs");
+            case "tag:yaml.org,2002:set":
+                static if(is(T == Node.Pair[]))
+                {
+                    newNode = Node(constructSet(value), tag);
+                    break;
+                }
+                else throw new Exception("Only mappings can be sets");
+            case "tag:yaml.org,2002:seq":
+                static if(is(T == Node[]))
+                {
+                    newNode = Node(constructSequence(value), tag);
+                    break;
+                }
+                else throw new Exception("Only sequences can be sequences");
+            case "tag:yaml.org,2002:map":
+                static if(is(T == Node.Pair[]))
+                {
+                    newNode = Node(constructMap(value), tag);
+                    break;
+                }
+                else throw new Exception("Only mappings can be maps");
+            case "tag:yaml.org,2002:merge":
+                newNode = Node(YAMLMerge(), tag);
+                break;
+            default:
+                newNode = Node(value, tag);
+                break;
         }
     }
-    static MyStruct constructMyStructSequence(ref Node node) @safe
+    catch(Exception e)
     {
-        // node is guaranteed to be sequence.
-        return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
+        throw new ConstructorException("Error constructing " ~ typeid(T).toString()
+                        ~ ":\n" ~ e.msg, start, end);
     }
 
-    import dyaml.loader : Loader;
-    string data = "!mystruct [1, 2, 3]";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
-    loader.constructor = constructor;
-    Node node = loader.load();
+    newNode.startMark_ = start;
 
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
-}
-///Construct a struct from a mapping
-@safe unittest
-{
-    static struct MyStruct
-    {
-        int x, y, z;
-
-        int opCmp(ref const MyStruct s) const pure @safe nothrow
-        {
-            if(x != s.x){return x - s.x;}
-            if(y != s.y){return y - s.y;}
-            if(z != s.z){return z - s.z;}
-            return 0;
-        }
-    }
-    static MyStruct constructMyStructMapping(ref Node node) @safe
-    {
-        // node is guaranteed to be mapping.
-        return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
-    }
-
-    import dyaml.loader : Loader;
-    string data = "!mystruct {x: 1, y: 2, z: 3}";
-    auto loader = Loader.fromString(data);
-    auto constructor = new Constructor;
-    constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
-    loader.constructor = constructor;
-    Node node = loader.load();
-
-    assert(node.as!MyStruct == MyStruct(1, 2, 3));
+    return newNode;
 }
 
-/// Construct a _null _node.
-YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc
-{
-    return YAMLNull();
-}
-
-/// Construct a merge _node - a _node that merges another _node into a mapping.
-YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc
-{
-    return YAMLMerge();
-}
-
-/// Construct a boolean _node.
-bool constructBool(ref Node node) @safe
+private:
+// Construct a boolean _node.
+bool constructBool(const string str) @safe
 {
     static yes = ["yes", "true", "on"];
     static no = ["no", "false", "off"];
-    string value = node.as!string().toLower();
+    string value = str.toLower();
     if(yes.canFind(value)){return true;}
     if(no.canFind(value)) {return false;}
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
-/// Construct an integer (long) _node.
-long constructLong(ref Node node) @safe
+// Construct an integer (long) _node.
+long constructLong(const string str) @safe
 {
-    string value = node.as!string().replace("_", "");
+    string value = str.replace("_", "");
     const char c = value[0];
     const long sign = c != '-' ? 1 : -1;
     if(c == '-' || c == '+')
@@ -505,12 +246,6 @@ long constructLong(ref Node node) @safe
 }
 @safe unittest
 {
-    long getLong(string str) @safe
-    {
-        auto node = Node(str);
-        return constructLong(node);
-    }
-
     string canonical   = "685230";
     string decimal     = "+685_230";
     string octal       = "02472256";
@@ -518,18 +253,18 @@ long constructLong(ref Node node) @safe
     string binary      = "0b1010_0111_0100_1010_1110";
     string sexagesimal = "190:20:30";
 
-    assert(685230 == getLong(canonical));
-    assert(685230 == getLong(decimal));
-    assert(685230 == getLong(octal));
-    assert(685230 == getLong(hexadecimal));
-    assert(685230 == getLong(binary));
-    assert(685230 == getLong(sexagesimal));
+    assert(685230 == constructLong(canonical));
+    assert(685230 == constructLong(decimal));
+    assert(685230 == constructLong(octal));
+    assert(685230 == constructLong(hexadecimal));
+    assert(685230 == constructLong(binary));
+    assert(685230 == constructLong(sexagesimal));
 }
 
-/// Construct a floating point (real) _node.
-real constructReal(ref Node node) @safe
+// Construct a floating point (real) _node.
+real constructReal(const string str) @safe
 {
-    string value = node.as!string().replace("_", "").toLower();
+    string value = str.replace("_", "").toLower();
     const char c = value[0];
     const real sign = c != '-' ? 1.0 : -1.0;
     if(c == '-' || c == '+')
@@ -576,12 +311,6 @@ real constructReal(ref Node node) @safe
         return a >= (b - epsilon) && a <= (b + epsilon);
     }
 
-    real getReal(string str) @safe
-    {
-        auto node = Node(str);
-        return constructReal(node);
-    }
-
     string canonical   = "6.8523015e+5";
     string exponential = "685.230_15e+03";
     string fixed       = "685_230.15";
@@ -589,21 +318,20 @@ real constructReal(ref Node node) @safe
     string negativeInf = "-.inf";
     string NaN         = ".NaN";
 
-    assert(eq(685230.15, getReal(canonical)));
-    assert(eq(685230.15, getReal(exponential)));
-    assert(eq(685230.15, getReal(fixed)));
-    assert(eq(685230.15, getReal(sexagesimal)));
-    assert(eq(-real.infinity, getReal(negativeInf)));
-    assert(to!string(getReal(NaN)) == "nan");
+    assert(eq(685230.15, constructReal(canonical)));
+    assert(eq(685230.15, constructReal(exponential)));
+    assert(eq(685230.15, constructReal(fixed)));
+    assert(eq(685230.15, constructReal(sexagesimal)));
+    assert(eq(-real.infinity, constructReal(negativeInf)));
+    assert(to!string(constructReal(NaN)) == "nan");
 }
 
-/// Construct a binary (base64) _node.
-ubyte[] constructBinary(ref Node node) @safe
+// Construct a binary (base64) _node.
+ubyte[] constructBinary(const string value) @safe
 {
     import std.ascii : newline;
     import std.array : array;
 
-    string value = node.as!string;
     // For an unknown reason, this must be nested to work (compiler bug?).
     try
     {
@@ -621,16 +349,15 @@ ubyte[] constructBinary(ref Node node) @safe
     char[] buffer;
     buffer.length = 256;
     string input = Base64.encode(test, buffer).idup;
-    auto node = Node(input);
-    const value = constructBinary(node);
+    const value = constructBinary(input);
     assert(value == test);
     assert(value == [84, 104, 101, 32, 65, 110, 115, 119, 101, 114, 58, 32, 52, 50]);
 }
 
-/// Construct a timestamp (SysTime) _node.
-SysTime constructTimestamp(ref Node node) @safe
+// Construct a timestamp (SysTime) _node.
+SysTime constructTimestamp(const string str) @safe
 {
-    string value = node.as!string;
+    string value = str;
 
     auto YMDRegexp = regex("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)");
     auto HMSRegexp = regex("^[Tt \t]+([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(\\.[0-9]*)?");
@@ -704,8 +431,7 @@ SysTime constructTimestamp(ref Node node) @safe
 {
     string timestamp(string value)
     {
-        auto node = Node(value);
-        return constructTimestamp(node).toISOString();
+        return constructTimestamp(value).toISOString();
     }
 
     string canonical      = "2001-12-15T02:59:43.1Z";
@@ -727,18 +453,18 @@ SysTime constructTimestamp(ref Node node) @safe
     assert(timestamp(ymd)            == "20021214T000000Z");
 }
 
-/// Construct a string _node.
-string constructString(ref Node node) @safe
+// Construct a string _node.
+string constructString(const string str) @safe
 {
-    return node.as!string;
+    return str;
 }
 
-/// Convert a sequence of single-element mappings into a sequence of pairs.
-Node.Pair[] getPairs(string type, Node[] nodes) @safe
+// Convert a sequence of single-element mappings into a sequence of pairs.
+Node.Pair[] getPairs(string type, const Node[] nodes) @safe
 {
     Node.Pair[] pairs;
     pairs.reserve(nodes.length);
-    foreach(ref node; nodes)
+    foreach(node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
                 new Exception("While constructing " ~ type ~
@@ -750,10 +476,10 @@ Node.Pair[] getPairs(string type, Node[] nodes) @safe
     return pairs;
 }
 
-/// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
-Node.Pair[] constructOrderedMap(ref Node node) @safe
+// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
+Node.Pair[] constructOrderedMap(const Node[] nodes) @safe
 {
-    auto pairs = getPairs("ordered map", node.as!(Node[]));
+    auto pairs = getPairs("ordered map", nodes);
 
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
@@ -791,38 +517,30 @@ Node.Pair[] constructOrderedMap(ref Node node) @safe
         return pairs;
     }
 
-    bool hasDuplicates(Node[] nodes) @safe
-    {
-        auto node = Node(nodes);
-        return null !is collectException(constructOrderedMap(node));
-    }
-
-    assert(hasDuplicates(alternateTypes(8) ~ alternateTypes(2)));
-    assert(!hasDuplicates(alternateTypes(8)));
-    assert(hasDuplicates(sameType(64) ~ sameType(16)));
-    assert(hasDuplicates(alternateTypes(64) ~ alternateTypes(16)));
-    assert(!hasDuplicates(sameType(64)));
-    assert(!hasDuplicates(alternateTypes(64)));
+    assertThrown(constructOrderedMap(alternateTypes(8) ~ alternateTypes(2)));
+    assertNotThrown(constructOrderedMap(alternateTypes(8)));
+    assertThrown(constructOrderedMap(sameType(64) ~ sameType(16)));
+    assertThrown(constructOrderedMap(alternateTypes(64) ~ alternateTypes(16)));
+    assertNotThrown(constructOrderedMap(sameType(64)));
+    assertNotThrown(constructOrderedMap(alternateTypes(64)));
 }
 
-/// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
-Node.Pair[] constructPairs(ref Node node) @safe
+// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
+Node.Pair[] constructPairs(const Node[] nodes) @safe
 {
-    return getPairs("pairs", node.as!(Node[]));
+    return getPairs("pairs", nodes);
 }
 
-/// Construct a set _node.
-Node[] constructSet(ref Node node) @safe
+// Construct a set _node.
+Node[] constructSet(const Node.Pair[] pairs) @safe
 {
-    auto pairs = node.as!(Node.Pair[]);
-
     // In future, the map here should be replaced with something with deterministic
     // memory allocation if possible.
     // Detect duplicates.
     ubyte[Node] map;
     Node[] nodes;
     nodes.reserve(pairs.length);
-    foreach(ref pair; pairs)
+    foreach(pair; pairs)
     {
         enforce((pair.key in map) is null, new Exception("Duplicate entry in a set"));
         map[pair.key] = 0;
@@ -862,27 +580,26 @@ Node[] constructSet(ref Node node) @safe
         return true;
     }
 
-    auto nodeDuplicatesShort   = Node(DuplicatesShort.dup);
-    auto nodeNoDuplicatesShort = Node(noDuplicatesShort.dup);
-    auto nodeDuplicatesLong    = Node(DuplicatesLong.dup);
-    auto nodeNoDuplicatesLong  = Node(noDuplicatesLong.dup);
+    auto nodeDuplicatesShort   = DuplicatesShort.dup;
+    auto nodeNoDuplicatesShort = noDuplicatesShort.dup;
+    auto nodeDuplicatesLong    = DuplicatesLong.dup;
+    auto nodeNoDuplicatesLong  = noDuplicatesLong.dup;
 
-    assert(null !is collectException(constructSet(nodeDuplicatesShort)));
-    assert(null is  collectException(constructSet(nodeNoDuplicatesShort)));
-    assert(null !is collectException(constructSet(nodeDuplicatesLong)));
-    assert(null is  collectException(constructSet(nodeNoDuplicatesLong)));
+    assertThrown(constructSet(nodeDuplicatesShort));
+    assertNotThrown(constructSet(nodeNoDuplicatesShort));
+    assertThrown(constructSet(nodeDuplicatesLong));
+    assertNotThrown(constructSet(nodeNoDuplicatesLong));
 }
 
-/// Construct a sequence (array) _node.
-Node[] constructSequence(ref Node node) @safe
+// Construct a sequence (array) _node.
+Node[] constructSequence(Node[] nodes) @safe
 {
-    return node.as!(Node[]);
+    return nodes;
 }
 
-/// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
-Node.Pair[] constructMap(ref Node node) @safe
+// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
+Node.Pair[] constructMap(Node.Pair[] pairs) @safe
 {
-    auto pairs = node.as!(Node.Pair[]);
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();

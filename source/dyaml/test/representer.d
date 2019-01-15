@@ -53,21 +53,13 @@ void testRepresenterTypes(string codeFilename) @safe
         }
 
         auto emitStream  = new Appender!(immutable(encoding)[]);
-        auto representer = new Representer;
-        representer.addRepresenter!TestClass(&representClass);
-        representer.addRepresenter!TestStruct(&representStruct);
         auto dumper = dumper(emitStream);
-        dumper.representer = representer;
         dumper.dump!encoding(expectedNodes);
 
         output = emitStream.data;
-        auto constructor = new Constructor;
-        constructor.addConstructorMapping("!tag1", &constructClass);
-        constructor.addConstructorScalar("!tag2", &constructStruct);
 
         auto loader        = Loader.fromString(emitStream.data.toUTF8);
         loader.name        = "TEST";
-        loader.constructor = constructor;
         readNodes          = loader.array;
 
         assert(expectedNodes.length == readNodes.length);

@@ -16,12 +16,6 @@ import std.string;
 import dyaml.test.common;
 
 
-string construct(ref Node node) @safe
-{
-    return node.as!string;
-}
-
-
 /**
  * Implicit tag resolution unittest.
  *
@@ -44,12 +38,7 @@ void testImplicitResolver(string dataFilename, string detectFilename) @safe
 
     correctTag = readText(detectFilename).strip();
 
-    auto constructor = new Constructor;
-    constructor.addConstructorScalar("tag:example.com,2000:app/tag🤔", &construct);
-    auto loader = Loader.fromFile(dataFilename);
-    loader.constructor = constructor;
-
-    node = loader.load();
+    node = Loader.fromFile(dataFilename).load();
     assert(node.isSequence);
     foreach(ref Node scalar; node)
     {

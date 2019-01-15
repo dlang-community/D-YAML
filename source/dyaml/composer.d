@@ -46,8 +46,6 @@ final class Composer
         Parser parser_;
         ///Resolver resolving tags (data types).
         Resolver resolver_;
-        ///Constructor constructing YAML values.
-        Constructor constructor_;
         ///Nodes associated with anchors. Used by YAML aliases.
         Node[string] anchors_;
 
@@ -70,13 +68,11 @@ final class Composer
          *
          * Params:  parser      = Parser to provide YAML events.
          *          resolver    = Resolver to resolve tags (data types).
-         *          constructor = Constructor to construct nodes.
          */
-        this(Parser parser, Resolver resolver, Constructor constructor) @safe
+        this(Parser parser, Resolver resolver) @safe
         {
             parser_ = parser;
             resolver_ = resolver;
-            constructor_ = constructor;
         }
 
         ///Destroy the composer.
@@ -84,7 +80,6 @@ final class Composer
         {
             parser_ = null;
             resolver_ = null;
-            constructor_ = null;
             anchors_.destroy();
             anchors_ = null;
         }
@@ -222,8 +217,9 @@ final class Composer
             const tag = resolver_.resolve(NodeID.scalar, event.tag, event.value,
                                           event.implicit);
 
-            Node node = constructor_.node(event.startMark, event.endMark, tag,
-                                          event.value, event.scalarStyle);
+            Node node = constructNode(event.startMark, event.endMark, tag,
+                                          event.value);
+            node.scalarStyle = event.scalarStyle;
 
             return node;
         }
@@ -248,8 +244,9 @@ final class Composer
                 nodeAppender.put(composeNode(pairAppenderLevel, nodeAppenderLevel + 1));
             }
 
-            Node node = constructor_.node(startEvent.startMark, parser_.front.endMark,
-                                          tag, nodeAppender.data.dup, startEvent.collectionStyle);
+            Node node = constructNode(startEvent.startMark, parser_.front.endMark,
+                                          tag, nodeAppender.data.dup);
+            node.collectionStyle = startEvent.collectionStyle;
             parser_.popFront();
             nodeAppender.clear();
 
@@ -370,8 +367,9 @@ final class Composer
             enforce(numUnique == pairAppender.data.length,
                     new ComposerException("Duplicate key found in mapping", parser_.front.startMark));
 
-            Node node = constructor_.node(startEvent.startMark, parser_.front.endMark,
-                                          tag, pairAppender.data.dup, startEvent.collectionStyle);
+            Node node = constructNode(startEvent.startMark, parser_.front.endMark,
+                                          tag, pairAppender.data.dup);
+            node.collectionStyle = startEvent.collectionStyle;
             parser_.popFront();
 
             pairAppender.clear();

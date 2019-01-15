@@ -23,6 +23,7 @@ import dyaml.node;
 import dyaml.representer;
 import dyaml.resolver;
 import dyaml.serializer;
+import dyaml.style;
 import dyaml.tagdirective;
 
 
@@ -45,8 +46,6 @@ struct Dumper(Range)
     private:
         //Resolver to resolve tags.
         Resolver resolver_;
-        //Representer to represent data types.
-        Representer representer_;
 
         //Stream to write to.
         Range stream_;
@@ -71,7 +70,24 @@ struct Dumper(Range)
         //Name of the output file or stream, used in error messages.
         string name_ = "<unknown>";
 
+        // Default style for scalar nodes.
+        ScalarStyle defaultScalarStyle_ = ScalarStyle.invalid;
+        // Default style for collection nodes.
+        CollectionStyle defaultCollectionStyle_ = CollectionStyle.invalid;
+
+
     public:
+        ///Set default _style for scalars. If style is $(D ScalarStyle.invalid), the _style is chosen automatically.
+        @property void defaultScalarStyle(ScalarStyle style) pure @safe nothrow
+        {
+            defaultScalarStyle_ = style;
+        }
+
+        ///Set default _style for collections. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
+        @property void defaultCollectionStyle(CollectionStyle style) pure @safe nothrow
+        {
+            defaultCollectionStyle_ = style;
+        }
         @disable this();
         @disable bool opEquals(ref Dumper!Range);
         @disable int opCmp(ref Dumper!Range);
@@ -84,7 +100,6 @@ struct Dumper(Range)
         this(Range stream) @safe
         {
             resolver_    = new Resolver();
-            representer_ = new Representer();
             stream_ = stream;
         }
 
@@ -98,12 +113,6 @@ struct Dumper(Range)
         @property void resolver(Resolver resolver) @safe
         {
             resolver_ = resolver;
-        }
-
-        ///Specify custom Representer to use.
-        @property void representer(Representer representer) @safe
-        {
-            representer_ = representer;
         }
 
         ///Write scalars in _canonical form?
@@ -219,7 +228,8 @@ struct Dumper(Range)
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)
                 {
-                    representer_.represent(serializer, document);
+                    auto data = representData(document, defaultScalarStyle_, defaultCollectionStyle_);
+                    serializer.serialize(data);
                 }
             }
             catch(YAMLException e)
@@ -277,17 +287,46 @@ struct Dumper(Range)
     auto node = Node([1, 2, 3, 4, 5]);
     dumper(stream).dump(node);
 }
-///Use a custom representer/resolver to support custom data types and/or implicit tags
+///Use a custom resolver to support custom data types and/or implicit tags
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    auto representer = new Representer();
     auto resolver = new Resolver();
-    //Add representer functions / resolver expressions here...
     auto dumper = dumper(new Appender!string());
-    dumper.representer = representer;
     dumper.resolver = resolver;
     dumper.dump(node);
+}
+/// Set default scalar style
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node("Hello world!");
+    auto dumper = dumper(stream);
+    dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
+    dumper.dump(node);
+}
+/// Set default collection style
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node(["Hello", "world!"]);
+    auto dumper = dumper(stream);
+    dumper.defaultCollectionStyle = CollectionStyle.flow;
+    dumper.dump(node);
+}
+// Make sure the styles are actually used
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node([Node("Hello world!"), Node(["Hello", "world!"])]);
+    auto dumper = dumper(stream);
+    dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
+    dumper.defaultCollectionStyle = CollectionStyle.flow;
+    dumper.explicitEnd = false;
+    dumper.explicitStart = false;
+    dumper.YAMLVersion = null;
+    dumper.dump(node);
+    assert(stream.data == "[!!str 'Hello world!', [!!str 'Hello', !!str 'world!']]\n");
 }
 // Explicit document start/end markers
 @safe unittest

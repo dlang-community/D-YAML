@@ -58,59 +58,6 @@ struct YAMLNull
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
-// Interface for YAMLContainer - used for user defined YAML types.
-package interface YAMLObject
-{
-    public:
-        // Get type of the stored value.
-        @property TypeInfo type() const pure @safe nothrow;
-
-    protected:
-        // Compare with another YAMLObject.
-        int cmp(const YAMLObject) const @system;
-}
-
-// Stores a user defined YAML data type.
-package class YAMLContainer(T) if (!Node.allowed!T): YAMLObject
-{
-    private:
-        // Stored value.
-        T value_;
-        // Construct a YAMLContainer holding specified value.
-        this(T value) @safe
-        {
-            value_ = value;
-        }
-
-    public:
-        // Get type of the stored value.
-        @property override TypeInfo type() const pure @safe nothrow
-        {
-            return typeid(T);
-        }
-
-        // Get string representation of the container.
-        override string toString() @system
-        {
-            return format("YAMLContainer(%s)", value_);
-        }
-
-    protected:
-        // Compare with another YAMLObject.
-        override int cmp(const YAMLObject rhs) const @system
-        {
-            const typeCmp = type.opCmp(rhs.type);
-            if(typeCmp != 0){return typeCmp;}
-
-            // Const-casting here as Object opCmp is not const.
-            T* v1 = cast(T*)&value_;
-            T* v2 = cast(T*)&((cast(YAMLContainer)rhs).value_);
-            return (*v1).opCmp(*v2);
-        }
-
-}
-
-
 // Key-value pair of YAML nodes, used in mappings.
 private struct Pair
 {
@@ -150,6 +97,20 @@ private struct Pair
         @disable int opCmp(ref Pair);
 }
 
+enum NodeType
+{
+    null_,
+    merge,
+    boolean,
+    integer,
+    decimal,
+    binary,
+    timestamp,
+    string,
+    mapping,
+    sequence
+}
+
 /** YAML node.
  *
  * This is a pseudo-dynamic type that can store any YAML value, including a
@@ -164,9 +125,9 @@ struct Node
     package:
         // YAML value type.
         alias Value = Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
-                         Node.Pair[], Node[], YAMLObject);
+                         Node.Pair[], Node[]);
 
-        // Can Value hold this type without wrapping it in a YAMLObject?
+        // Can Value hold this type naturally?
         enum allowed(T) = isIntegral!T ||
                        isFloatingPoint!T ||
                        isSomeString!T ||
@@ -212,7 +173,8 @@ struct Node
          *                  be in full form, e.g. "tag:yaml.org,2002:int", not
          *                  a shortcut, like "!!int".
          */
-        this(T)(T value, const string tag = null)
+        this(T)(T value, const string tag = null) @safe
+            if (allowed!T || isArray!T || isAssociativeArray!T || is(Unqual!T == Node) || castableToNode!T)
         {
             tag_ = tag;
 
@@ -333,15 +295,10 @@ struct Node
         {
             {
                 auto node = Node(42);
-                assert(node.isScalar && !node.isSequence && !node.isMapping && !node.isUserType);
+                assert(node.isScalar && !node.isSequence && !node.isMapping);
                 assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
-                assert(!node.isUserType);
             }
 
-            {
-                auto node = Node(new class{int a = 5;});
-                assert(node.isUserType);
-            }
             {
                 auto node = Node("string");
                 assert(node.as!string == "string");
@@ -351,7 +308,7 @@ struct Node
         {
             with(Node([1, 2, 3]))
             {
-                assert(!isScalar() && isSequence && !isMapping && !isUserType);
+                assert(!isScalar() && isSequence && !isMapping);
                 assert(length == 3);
                 assert(opIndex(2).as!int == 3);
             }
@@ -364,7 +321,7 @@ struct Node
             aa["2"] = 2;
             with(Node(aa))
             {
-                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(!isScalar() && !isSequence && isMapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -433,7 +390,7 @@ struct Node
         {
             with(Node(["1", "2"], [1, 2]))
             {
-                assert(!isScalar() && !isSequence && isMapping && !isUserType);
+                assert(!isScalar() && !isSequence && isMapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -462,12 +419,6 @@ struct Node
         @property bool isMapping()  const @safe nothrow
         {
             return isType!(Pair[]);
-        }
-
-        /// Is this node a user defined type?
-        @property bool isUserType() const @safe nothrow
-        {
-            return isType!YAMLObject;
         }
 
         /// Is this node null?
@@ -552,64 +503,85 @@ struct Node
          *          the value is out of range of requested type.
          */
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
+            if (allowed!(Unqual!T) || hasNodeConstructor!(Unqual!T))
         {
             if(isType!(Unqual!T)){return getValue!T;}
 
-            /// Must go before others, as even string/int/etc could be stored in a YAMLObject.
-            static if(!allowed!(Unqual!T)) if(isUserType)
+            static if(!allowed!(Unqual!T))
             {
-                auto object = getValue!YAMLObject();
-                enforce(object.type is typeid(T),
-                    new NodeException("Node has unexpected type: " ~ object.type.toString() ~
-                        ". Expected: " ~ typeid(T).toString, startMark_));
-                return (cast(inout YAMLContainer!(Unqual!T))(object)).value_;
-            }
-
-            // If we're getting from a mapping and we're not getting Node.Pair[],
-            // we're getting the default value.
-            if(isMapping){return this["="].get!( T, stringConversion);}
-
-            static if(isSomeString!T)
-            {
-                static if(!stringConversion)
+                static if (hasSimpleNodeConstructor!T)
                 {
-                    if(isString){return to!T(getValue!string);}
-                    throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                        ". Expected: " ~ typeid(T).toString(), startMark_);
+                    alias params = AliasSeq!(this);
+                }
+                else static if (hasExpandedNodeConstructor!T)
+                {
+                    alias params = AliasSeq!(this, tag_);
                 }
                 else
                 {
-                    // Try to convert to string.
-                    try
+                    static assert(0, "Unknown Node constructor?");
+                }
+
+                static if (is(T == class))
+                {
+                    return new inout T(params);
+                }
+                else static if (is(T == struct))
+                {
+                    return T(params);
+                }
+                else
+                {
+                    static assert(0, "Unhandled user type");
+                }
+            } else {
+
+                // If we're getting from a mapping and we're not getting Node.Pair[],
+                // we're getting the default value.
+                if(isMapping){return this["="].get!( T, stringConversion);}
+
+                static if(isSomeString!T)
+                {
+                    static if(!stringConversion)
                     {
-                        return coerceValue!T();
+                        if(isString){return to!T(getValue!string);}
+                        throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                            ". Expected: " ~ typeid(T).toString(), startMark_);
                     }
-                    catch(VariantException e)
+                    else
                     {
-                        throw new NodeException("Unable to convert node value to string", startMark_);
+                        // Try to convert to string.
+                        try
+                        {
+                            return coerceValue!T();
+                        }
+                        catch(VariantException e)
+                        {
+                            throw new NodeException("Unable to convert node value to string", startMark_);
+                        }
                     }
                 }
-            }
-            else static if(isFloatingPoint!T)
-            {
-                /// Can convert int to float.
-                if(isInt())       {return to!T(getValue!long);}
-                else if(isFloat()){return to!T(getValue!real);}
+                else static if(isFloatingPoint!T)
+                {
+                    /// Can convert int to float.
+                    if(isInt())       {return to!T(getValue!long);}
+                    else if(isFloat()){return to!T(getValue!real);}
+                    else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                        ". Expected: " ~ typeid(T).toString, startMark_);
+                }
+                else static if(isIntegral!T)
+                {
+                    enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                                    ". Expected: " ~ typeid(T).toString, startMark_));
+                    immutable temp = getValue!long;
+                    enforce(temp >= T.min && temp <= T.max,
+                        new NodeException("Integer value of type " ~ typeid(T).toString() ~
+                            " out of range. Value: " ~ to!string(temp), startMark_));
+                    return temp.to!T;
+                }
                 else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
                     ". Expected: " ~ typeid(T).toString, startMark_);
             }
-            else static if(isIntegral!T)
-            {
-                enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                                ". Expected: " ~ typeid(T).toString, startMark_));
-                immutable temp = getValue!long;
-                enforce(temp >= T.min && temp <= T.max,
-                    new NodeException("Integer value of type " ~ typeid(T).toString() ~
-                        " out of range. Value: " ~ to!string(temp), startMark_));
-                return temp.to!T;
-            }
-            else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                ". Expected: " ~ typeid(T).toString, startMark_);
         }
         /// Automatic type conversion
         @safe unittest
@@ -619,6 +591,186 @@ struct Node
             assert(node.get!int == 42);
             assert(node.get!string == "42");
             assert(node.get!double == 42.0);
+        }
+        /// Scalar node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                this(int x, int y, int z) @safe
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    auto parts = node.as!string().split(":");
+                    x = parts[0].to!int;
+                    y = parts[1].to!int;
+                    z = parts[2].to!int;
+                }
+
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!mystruct.tag");
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Sequence node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                this(int x, int y, int z) @safe
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    x = node[0].as!int;
+                    y = node[1].as!int;
+                    z = node[2].as!int;
+                }
+
+                Node opCast(T: Node)()
+                {
+                    return Node([x, y, z], "!mystruct.tag");
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Mapping node to struct and vice versa
+        @safe unittest
+        {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+            static struct MyStruct
+            {
+                int x, y, z;
+
+                Node opCast(T: Node)()
+                {
+                    auto pairs = [Node.Pair("x", x),
+                        Node.Pair("y", y),
+                        Node.Pair("z", z)];
+                    return Node(pairs, "!mystruct.tag");
+                }
+
+                this(int x, int y, int z)
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe
+                {
+                    x = node["x"].as!int;
+                    y = node["y"].as!int;
+                    z = node["z"].as!int;
+                }
+            }
+
+            auto appender = new Appender!string;
+
+            // Dump struct to yaml document
+            dumper(appender).dump(Node(MyStruct(1,2,3)));
+
+            // Read yaml document back as a MyStruct
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyStruct == MyStruct(1,2,3));
+        }
+        /// Classes can be used too
+        @system unittest {
+            import dyaml.dumper : dumper;
+            import dyaml.loader : Loader;
+
+            static class MyClass
+            {
+                int x, y, z;
+
+                this(int x, int y, int z)
+                {
+                    this.x = x;
+                    this.y = y;
+                    this.z = z;
+                }
+
+                this(Node node) @safe inout
+                {
+                    auto parts = node.as!string().split(":");
+                    x = parts[0].to!int;
+                    y = parts[1].to!int;
+                    z = parts[2].to!int;
+                }
+
+                ///Useful for Node.as!string.
+                override string toString()
+                {
+                    return format("MyClass(%s, %s, %s)", x, y, z);
+                }
+
+                Node opCast(T: Node)() @safe
+                {
+                    //Using custom scalar format, x:y:z.
+                    auto scalar = format("%s:%s:%s", x, y, z);
+                    //Representing as a scalar, with custom tag to specify this data type.
+                    return Node(scalar, "!myclass.tag");
+                }
+                override bool opEquals(Object o)
+                {
+                    if (auto other = cast(MyClass)o)
+                    {
+                        return (other.x == x) && (other.y == y) && (other.z == z);
+                    }
+                    return false;
+                }
+            }
+            auto appender = new Appender!string;
+
+            // Dump class to yaml document
+            dumper(appender).dump(Node(new MyClass(1,2,3)));
+
+            // Read yaml document back as a MyClass
+            auto loader = Loader.fromString(appender.data);
+            Node node = loader.load();
+            assert(node.as!MyClass == new MyClass(1,2,3));
         }
         @safe unittest
         {
@@ -1876,10 +2028,6 @@ struct Node
                 const t2 = rhs.getValue!SysTime;
                 return cmp(t1, t2);
             }
-            else if(isUserType)
-            {
-                return getValue!YAMLObject.cmp(rhs.getValue!YAMLObject);
-            }
             assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
 
@@ -1923,10 +2071,56 @@ struct Node
             assert(false);
         }
 
-        // Get type of the node value (YAMLObject for user types).
+        // Get type of the node value.
         @property TypeInfo type() const @safe nothrow
         {
             return value_.type;
+        }
+
+        // Get type of the node value.
+        @property NodeType newType() const @safe nothrow
+        {
+            if (value_.type is typeid(bool))
+            {
+                return NodeType.boolean;
+            }
+            else if (value_.type is typeid(long))
+            {
+                return NodeType.integer;
+            }
+            else if (value_.type is typeid(Node[]))
+            {
+                return NodeType.sequence;
+            }
+            else if (value_.type is typeid(ubyte[]))
+            {
+                return NodeType.binary;
+            }
+            else if (value_.type is typeid(string))
+            {
+                return NodeType.string;
+            }
+            else if (value_.type is typeid(Node.Pair[]))
+            {
+                return NodeType.mapping;
+            }
+            else if (value_.type is typeid(SysTime))
+            {
+                return NodeType.timestamp;
+            }
+            else if (value_.type is typeid(YAMLNull))
+            {
+                return NodeType.null_;
+            }
+            else if (value_.type is typeid(YAMLMerge))
+            {
+                return NodeType.merge;
+            }
+            else if (value_.type is typeid(real))
+            {
+                return NodeType.decimal;
+            }
+            else assert(0, text(value_.type));
         }
 
     public:
@@ -2210,7 +2404,7 @@ struct Node
             }
             else
             {
-                value_ = cast(YAMLObject)new YAMLContainer!T(value);
+                value_ = (cast(Node)value).value_;
             }
         }
 }
@@ -2232,3 +2426,30 @@ void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
         pairs.put(pair);
     }
 }
+
+enum hasNodeConstructor(T) = hasSimpleNodeConstructor!T || hasExpandedNodeConstructor!T;
+template hasSimpleNodeConstructor(T)
+{
+    static if (is(T == struct))
+    {
+        enum hasSimpleNodeConstructor = is(typeof(T(Node.init)));
+    }
+    else static if (is(T == class))
+    {
+        enum hasSimpleNodeConstructor = is(typeof(new inout T(Node.init)));
+    }
+    else enum hasSimpleNodeConstructor = false;
+}
+template hasExpandedNodeConstructor(T)
+{
+    static if (is(T == struct))
+    {
+        enum hasExpandedNodeConstructor = is(typeof(T(Node.init, "")));
+    }
+    else static if (is(T == class))
+    {
+        enum hasExpandedNodeConstructor = is(typeof(new inout T(Node.init, "")));
+    }
+    else enum hasExpandedNodeConstructor = false;
+}
+enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCast!Node()) : Node);
