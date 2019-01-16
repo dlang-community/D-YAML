@@ -9,12 +9,12 @@ module dyaml.escapes;
 
 package:
 
-/// All YAML escapes.
-immutable dchar[] escapes = ['0', 'a', 'b', 't', '\t', 'n', 'v', 'f', 'r', 'e', ' ',
-                             '\"', '\\', 'N', '_', 'L', 'P'];
+import std.meta : AliasSeq;
+alias escapes = AliasSeq!('0', 'a', 'b', 't', '\t', 'n', 'v', 'f', 'r', 'e', ' ',
+                             '\"', '\\', 'N', '_', 'L', 'P');
 
 /// YAML hex codes specifying the length of the hex number.
-immutable dchar[] escapeHexCodeList = ['x', 'u', 'U'];
+alias escapeHexCodeList = AliasSeq!('x', 'u', 'U');
 
 /// Convert a YAML escape to a dchar.
 dchar fromEscape(dchar escape) @safe pure nothrow @nogc

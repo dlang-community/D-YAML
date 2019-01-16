@@ -528,7 +528,7 @@ final class Parser
                 scope(exit) { inEscape = false; }
 
                 // 'Normal' escape sequence.
-                if(dyaml.escapes.escapes.canFind(c))
+                if(c.among!(escapes))
                 {
                     if(notInPlace is null)
                     {
@@ -550,7 +550,7 @@ final class Parser
                 }
 
                 // Unicode char written in hexadecimal in an escape sequence.
-                if(dyaml.escapes.escapeHexCodeList.canFind(c))
+                if(c.among!(escapeHexCodeList))
                 {
                     // Scanner has already checked that the hex string is valid.
 

@@ -835,7 +835,7 @@ struct Scanner
         {
             size_t length;
             dchar c = reader_.peek();
-            while(c.isAlphaNum || "-_"d.canFind(c)) { c = reader_.peek(++length); }
+            while(c.isAlphaNum || c.among!('-', '_')) { c = reader_.peek(++length); }
 
             if(length == 0)
             {
@@ -958,7 +958,7 @@ struct Scanner
             scanAlphaNumericToSlice!"a directive"(startMark);
             if(error_) { return; }
 
-            if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
+            if(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029')) { return; }
             error("While scanning a directive", startMark,
                   expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
         }
@@ -989,7 +989,7 @@ struct Scanner
             scanYAMLDirectiveNumberToSlice(startMark);
             if(error_) { return; }
 
-            if(!" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            if(!reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'))
             {
                 error("While scanning a directive", startMark,
                       expected("digit or '.'", reader_.peek()), reader_.mark);
@@ -1063,7 +1063,7 @@ struct Scanner
         void scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             scanTagURIToSlice!"directive"(startMark);
-            if(" \0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { return; }
+            if(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029')) { return; }
             error("While scanning a directive prefix", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
         }
@@ -1110,7 +1110,7 @@ struct Scanner
             if(error_)   { return Token.init; }
 
             if(!reader_.peek().isWhiteSpace &&
-               !"?:,]}%@"d.canFind(reader_.peekByte()))
+               !reader_.peekByte().among!('?', ':', ',', ']', '}', '%', '@'))
             {
                 enum anchorCtx = "While scanning an anchor";
                 enum aliasCtx  = "While scanning an alias";
@@ -1257,7 +1257,7 @@ struct Scanner
             while(reader_.column == indent && reader_.peekByte() != '\0')
             {
                 breaksTransaction.commit();
-                const bool leadingNonSpace = !" \t"d.canFind(reader_.peekByte());
+                const bool leadingNonSpace = !reader_.peekByte().among!(' ', '\t');
                 // This is where the 'interesting' non-whitespace data gets read.
                 scanToNextBreakToSlice();
                 lineBreak = scanLineBreak();
@@ -1280,7 +1280,7 @@ struct Scanner
 
                     // This is the folding according to the specification:
                     if(style == ScalarStyle.folded && lineBreak == '\n' &&
-                       leadingNonSpace && !" \t"d.canFind(reader_.peekByte()))
+                       leadingNonSpace && !reader_.peekByte().among!(' ', '\t'))
                     {
                         // No breaks were scanned; no need to insert the space in the
                         // middle of slice.
@@ -1373,7 +1373,7 @@ struct Scanner
                 if(gotIncrement) { getChomping(c, chomping); }
             }
 
-            if(" \0\n\r\u0085\u2028\u2029"d.canFind(c))
+            if(c.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'))
             {
                 return tuple(chomping, increment);
             }
@@ -1392,7 +1392,7 @@ struct Scanner
         /// chomping = Write the chomping value here, if detected.
         bool getChomping(ref dchar c, ref Chomping chomping) @safe
         {
-            if(!"+-"d.canFind(c)) { return false; }
+            if(!c.among!('+', '-')) { return false; }
             chomping = c == '+' ? Chomping.keep : Chomping.strip;
             reader_.forward();
             c = reader_.peek();
@@ -1455,7 +1455,7 @@ struct Scanner
             uint maxIndent;
             Mark endMark = reader_.mark;
 
-            while(" \n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))
+            while(reader_.peek().among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'))
             {
                 if(reader_.peekByte() != ' ')
                 {
@@ -1481,7 +1481,7 @@ struct Scanner
             for(;;)
             {
                 while(reader_.column < indent && reader_.peekByte() == ' ') { reader_.forward(); }
-                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek()))  { break; }
+                if(!reader_.peek().among!('\n', '\r', '\u0085', '\u2028', '\u2029'))  { break; }
                 reader_.sliceBuilder.write(scanLineBreak());
                 endMark = reader_.mark;
             }
@@ -1562,7 +1562,7 @@ struct Scanner
                     reader_.sliceBuilder.write('\'');
                 }
                 else if((quotes == ScalarStyle.doubleQuoted && c == '\'') ||
-                        (quotes == ScalarStyle.singleQuoted && "\"\\"d.canFind(c)))
+                        (quotes == ScalarStyle.singleQuoted && c.among!('"', '\\')))
                 {
                     reader_.forward();
                     reader_.sliceBuilder.write(c);
@@ -1571,7 +1571,7 @@ struct Scanner
                 {
                     reader_.forward();
                     c = reader_.peek();
-                    if(dyaml.escapes.escapes.canFind(c))
+                    if(c.among!(escapes))
                     {
                         reader_.forward();
                         // Escaping has been moved to Parser as it can't be done in
@@ -1580,7 +1580,7 @@ struct Scanner
                         char[2] escapeSequence = ['\\', cast(char)c];
                         reader_.sliceBuilder.write(escapeSequence);
                     }
-                    else if(dyaml.escapes.escapeHexCodeList.canFind(c))
+                    else if(c.among!(escapeHexCodeList))
                     {
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.forward();
@@ -1612,7 +1612,7 @@ struct Scanner
                             return;
                         }
                     }
-                    else if("\n\r\u0085\u2028\u2029"d.canFind(c))
+                    else if(c.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
                     {
                         scanLineBreak();
                         scanFlowScalarBreaksToSlice(startMark);
@@ -1640,7 +1640,7 @@ struct Scanner
         {
             // Increase length as long as we see whitespace.
             size_t length;
-            while(" \t"d.canFind(reader_.peekByte(length))) { ++length; }
+            while(reader_.peekByte(length).among!(' ', '\t')) { ++length; }
             auto whitespaces = reader_.prefixBytes(length);
 
             // Can check the last byte without striding because '\0' is ASCII
@@ -1653,7 +1653,7 @@ struct Scanner
             }
 
             // Spaces not followed by a line break.
-            if(!"\n\r\u0085\u2028\u2029"d.canFind(c))
+            if(!c.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
             {
                 reader_.forward(length);
                 reader_.sliceBuilder.write(whitespaces);
@@ -1698,10 +1698,10 @@ struct Scanner
                 }
 
                 // Skip any whitespaces.
-                while(" \t"d.canFind(reader_.peekByte())) { reader_.forward(); }
+                while(reader_.peekByte().among!(' ', '\t')) { reader_.forward(); }
 
                 // Encountered a non-whitespace non-linebreak character, so we're done.
-                if(!"\n\r\u0085\u2028\u2029"d.canFind(reader_.peek())) { break; }
+                if(!reader_.peek().among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029')) { break; }
 
                 const lineBreak = scanLineBreak();
                 anyBreaks = true;
@@ -1756,7 +1756,7 @@ struct Scanner
                     for(;;)
                     {
                         c = reader_.peek(length);
-                        if(c.isWhiteSpace || ",:?[]{}"d.canFind(c))
+                        if(c.isWhiteSpace || c.among!(',', ':', '?', '[', ']', '{', '}'))
                         {
                             break;
                         }
@@ -1767,7 +1767,7 @@ struct Scanner
                 // It's not clear what we should do with ':' in the flow context.
                 if(flowLevel_ > 0 && c == ':' &&
                    !reader_.peek(length + 1).isWhiteSpace &&
-                   !",[]{}"d.canFind(reader_.peek(length + 1)))
+                   !reader_.peek(length + 1).among!(',', '[', ']', '{', '}'))
                 {
                     // This is an error; throw the slice away.
                     spacesTransaction.commit();
@@ -1837,7 +1837,7 @@ struct Scanner
             {
                 const prefix = reader_.prefix(3);
                 return ("---" == prefix || "..." == prefix)
-                        && " \t\0\n\r\u0085\u2028\u2029"d.canFind(reader_.peek(3));
+                        && reader_.peek(3).among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
             }
 
             if(end(reader_)) { return; }
@@ -1885,7 +1885,7 @@ struct Scanner
             c = reader_.peek(length);
             if(c != ' ')
             {
-                while(c.isAlphaNum || "-_"d.canFind(c))
+                while(c.isAlphaNum || c.among!('-', '_'))
                 {
                     ++length;
                     c = reader_.peek(length);

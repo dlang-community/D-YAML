@@ -275,10 +275,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             foreach(const event; events_.range)
             {
-                static starts = [EventID.documentStart, EventID.sequenceStart, EventID.mappingStart];
-                static ends   = [EventID.documentEnd, EventID.sequenceEnd, EventID.mappingEnd];
-                if(starts.canFind(event.id))   {++level;}
-                else if(ends.canFind(event.id)){--level;}
+                if(event.id.among!(EventID.documentStart, EventID.sequenceStart, EventID.mappingStart)) {++level;}
+                else if(event.id.among!(EventID.documentEnd, EventID.sequenceEnd, EventID.mappingEnd)) {--level;}
                 else if(event.id == EventID.streamStart){level = -1;}
 
                 if(level < 0)
@@ -893,7 +891,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             if(handle.length > 1) foreach(const dchar c; handle[1 .. $ - 1])
             {
-                enforce(isAlphaNum(c) || "-_"d.canFind(c),
+                enforce(isAlphaNum(c) || c.among!('-', '_'),
                         new EmitterException("Invalid character: " ~ to!string(c)  ~
                                   " in tag handle " ~ handle));
             }
@@ -913,7 +911,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             foreach(const size_t i, const dchar c; prefix)
             {
                 const size_t idx = i + offset;
-                if(isAlphaNum(c) || "-;/?:@&=+$,_.!~*\'()[]%"d.canFind(c))
+                if(isAlphaNum(c) || c.among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '!', '~', '*', '\\', '\'', '(', ')', '[', ']', '%'))
                 {
                     end = idx + 1;
                     continue;
@@ -958,7 +956,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             size_t start, end;
             foreach(const dchar c; suffix)
             {
-                if(isAlphaNum(c) || "-;/?:@&=+$,_.~*\'()[]"d.canFind(c) ||
+                if(isAlphaNum(c) || c.among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '~', '*', '\\', '\'', '(', ')', '[', ']') ||
                    (c == '!' && handle != "!"))
                 {
                     ++end;
@@ -984,7 +982,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             const str = anchor;
             foreach(const dchar c; str)
             {
-                enforce(isAlphaNum(c) || "-_"d.canFind(c),
+                enforce(isAlphaNum(c) || c.among!('-', '_'),
                         new EmitterException("Invalid character: " ~ to!string(c) ~ " in anchor: " ~ str));
             }
             return str;
@@ -1027,7 +1025,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
             //Last character or followed by a whitespace.
             bool followedByWhitespace = scalar.length == 1 ||
-                                        " \t\0\n\r\u0085\u2028\u2029"d.canFind(scalar[1]);
+                                        scalar[1].among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
             //The previous character is a space/break (false by default).
             bool previousSpace, previousBreak;
@@ -1412,7 +1410,7 @@ struct ScalarWriter(Range, CharType)
             {
                 const dchar c = nextChar();
                 //handle special characters
-                if(c == dcharNone || "\"\\\u0085\u2028\u2029\uFEFF"d.canFind(c) ||
+                if(c == dcharNone || c.among!('\"', '\\', '\u0085', '\u2028', '\u2029', '\uFEFF') ||
                    !((c >= '\x20' && c <= '\x7E') ||
                      ((c >= '\xA0' && c <= '\uD7FF') || (c >= '\uE000' && c <= '\uFFFD'))))
                 {
