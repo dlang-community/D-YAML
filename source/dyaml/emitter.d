@@ -273,14 +273,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
             int level;
 
-            //Rather ugly, but good enough for now.
-            //Couldn't be bothered writing a range as events_ should eventually
-            //become a Phobos queue/linked list.
-            events_.startIteration();
-            events_.next();
-            while(!events_.iterationOver())
+            foreach(const event; events_.range)
             {
-                const event = events_.next();
                 static starts = [EventID.documentStart, EventID.sequenceStart, EventID.mappingStart];
                 static ends   = [EventID.documentEnd, EventID.sequenceEnd, EventID.mappingEnd];
                 if(starts.canFind(event.id))   {++level;}

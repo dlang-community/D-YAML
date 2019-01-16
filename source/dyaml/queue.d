@@ -36,8 +36,6 @@ private:
     Node* first_;
     // Last element of the linked list - last element added in time (start of the queue).
     Node* last_;
-    // Cursor pointing to the current node in iteration.
-    Node* cursor_;
     // free-list
     Node* stock;
 
@@ -119,30 +117,28 @@ public:
         freeStock();
     }
 
-    /// Start iterating over the queue.
-    void startIteration() @safe pure nothrow @nogc
+    /// Returns a forward range iterating over this queue.
+    auto range() @safe pure nothrow @nogc
     {
-        cursor_ = first_;
-    }
+        static struct Result
+        {
+            private Node* cursor;
 
-    /// Returns: The next element in the queue.
-    ref const(T) next() @safe pure nothrow @nogc
-    in
-    {
-        assert(!empty);
-        assert(cursor_ !is null);
-    }
-    do
-    {
-        const previous = cursor_;
-        cursor_ = cursor_.next_;
-        return previous.payload_;
-    }
-
-    /// Returns: true if itrating is not possible anymore, false otherwise.
-    bool iterationOver() @safe pure nothrow const @nogc
-    {
-        return cursor_ is null;
+            void popFront() @safe pure nothrow @nogc
+            {
+                cursor = cursor.next_;
+            }
+            ref T front() @safe pure nothrow @nogc
+            in(cursor !is null)
+            {
+                return cursor.payload_;
+            }
+            bool empty() @safe pure nothrow @nogc const
+            {
+                return cursor is null;
+            }
+        }
+        return Result(first_);
     }
 
     /// Push a new item to the queue.
