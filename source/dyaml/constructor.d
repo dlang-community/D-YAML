@@ -190,11 +190,9 @@ private:
 // Construct a boolean _node.
 bool constructBool(const string str) @safe
 {
-    static yes = ["yes", "true", "on"];
-    static no = ["no", "false", "off"];
     string value = str.toLower();
-    if(yes.canFind(value)){return true;}
-    if(no.canFind(value)) {return false;}
+    if(value.among("yes", "true", "on")){return true;}
+    if(value.among("no", "false", "off")){return false;}
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 

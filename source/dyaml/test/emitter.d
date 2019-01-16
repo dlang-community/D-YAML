@@ -35,16 +35,16 @@ bool compareEvents(T, U)(T events1, U events2)
         //Different event types.
         if(e1.id != e2.id){return false;}
         //Different anchor (if applicable).
-        if([EventID.sequenceStart,
+        if(e1.id.among(EventID.sequenceStart,
             EventID.mappingStart,
             EventID.alias_,
-            EventID.scalar].canFind(e1.id)
+            EventID.scalar)
             && e1.anchor != e2.anchor)
         {
             return false;
         }
         //Different collection tag (if applicable).
-        if([EventID.sequenceStart, EventID.mappingStart].canFind(e1.id) && e1.tag != e2.tag)
+        if(e1.id.among(EventID.sequenceStart, EventID.mappingStart) && e1.tag != e2.tag)
         {
             return false;
         }
