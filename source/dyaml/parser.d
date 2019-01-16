@@ -528,7 +528,7 @@ final class Parser
                 scope(exit) { inEscape = false; }
 
                 // 'Normal' escape sequence.
-                if(c.among(escapes))
+                if(c.among!(escapes))
                 {
                     if(notInPlace is null)
                     {
@@ -550,7 +550,7 @@ final class Parser
                 }
 
                 // Unicode char written in hexadecimal in an escape sequence.
-                if(c.among(escapeHexCodeList))
+                if(c.among!(escapeHexCodeList))
                 {
                     // Scanner has already checked that the hex string is valid.
 

@@ -191,8 +191,8 @@ private:
 bool constructBool(const string str) @safe
 {
     string value = str.toLower();
-    if(value.among("yes", "true", "on")){return true;}
-    if(value.among("no", "false", "off")){return false;}
+    if(value.among!("yes", "true", "on")){return true;}
+    if(value.among!("no", "false", "off")){return false;}
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
