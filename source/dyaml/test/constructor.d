@@ -943,7 +943,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     size_t i;
     foreach(node; loader)
     {
-        if(!node.equals!(Yes.useTag)(exp[i]))
+        if(node != exp[i])
         {
             static if(verbose)
             {
