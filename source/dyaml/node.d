@@ -84,13 +84,11 @@ private struct Pair
 
     private:
         // Comparison with another Pair.
-        //
-        // Note: @safe isn't properly inferred in single-file builds due to a bug.
         int opCmp(ref const(Pair) rhs) const @safe
         {
-            const keyCmp = key > rhs.key;
+            const keyCmp = key.opCmp(rhs.key);
             return keyCmp != 0 ? keyCmp
-                                : value > rhs.value;
+                                : value.opCmp(rhs.value);
         }
 }
 
