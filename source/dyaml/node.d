@@ -772,6 +772,40 @@ struct Node
             Node node = loader.load();
             assert(node.as!MyClass == new MyClass(1,2,3));
         }
+        // Make sure custom tags and styles are kept.
+        @safe unittest
+        {
+            static struct MyStruct
+            {
+                Node opCast(T: Node)()
+                {
+                    auto node = Node("hi", "!mystruct.tag");
+                    node.setStyle(ScalarStyle.doubleQuoted);
+                    return node;
+                }
+            }
+
+            auto node = Node(MyStruct.init);
+            assert(node.tag == "!mystruct.tag");
+            assert(node.scalarStyle == ScalarStyle.doubleQuoted);
+        }
+        // ditto, but for collection style
+        @safe unittest
+        {
+            static struct MyStruct
+            {
+                Node opCast(T: Node)()
+                {
+                    auto node = Node(["hi"], "!mystruct.tag");
+                    node.setStyle(CollectionStyle.flow);
+                    return node;
+                }
+            }
+
+            auto node = Node(MyStruct.init);
+            assert(node.tag == "!mystruct.tag");
+            assert(node.collectionStyle == CollectionStyle.flow);
+        }
         @safe unittest
         {
             assertThrown!NodeException(Node("42").get!int);
@@ -2404,7 +2438,11 @@ struct Node
             }
             else
             {
-                value_ = (cast(Node)value).value_;
+                auto tmpNode = cast(Node)value;
+                tag_ = tmpNode.tag;
+                scalarStyle = tmpNode.scalarStyle;
+                collectionStyle = tmpNode.collectionStyle;
+                value_ = tmpNode.value_;
             }
         }
 }
