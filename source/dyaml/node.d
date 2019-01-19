@@ -441,28 +441,28 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
+        bool opEquals(const Node rhs) const @safe
+        {
+            return opCmp(rhs) == 0;
+        }
         bool opEquals(T)(const auto ref T rhs) const
         {
-            static if(is(Unqual!T == Node))
+            try
             {
-                return opCmp(rhs) == 0;
-            }
-            else
-            {
-                try
+                auto stored = get!(T, No.stringConversion);
+                // NaNs aren't normally equal to each other, but we'll pretend they are.
+                static if(isFloatingPoint!T)
                 {
-                    auto stored = get!(T, No.stringConversion);
-                    // Need to handle NaNs separately.
-                    static if(isFloatingPoint!T)
-                    {
-                        return rhs == stored || (isNaN(rhs) && isNaN(stored));
-                    }
-                    else
-                    {
-                        return rhs == get!T;
-                    }
+                    return rhs == stored || (isNaN(rhs) && isNaN(stored));
                 }
-                catch(NodeException e){return false;}
+                else
+                {
+                    return rhs == stored;
+                }
+            }
+            catch(NodeException e)
+            {
+                return false;
             }
         }
         ///
