@@ -82,7 +82,6 @@ private struct Pair
             return key == rhs.key && value == rhs.value;
         }
 
-    private:
         // Comparison with another Pair.
         int opCmp(ref const(Pair) rhs) const @safe
         {
