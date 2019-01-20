@@ -1958,7 +1958,7 @@ struct Node
                 // Equal lengths, compare items.
                 foreach(i; 0 .. c1.length)
                 {
-                    const itemCmp = c1[i] > c2[i];
+                    const itemCmp = c1[i].opCmp(c2[i]);
                     if(itemCmp != 0){return itemCmp;}
                 }
                 return 0;
@@ -2020,6 +2020,25 @@ struct Node
                 return cmp(t1, t2);
             }
             assert(false, "Unknown type of node for comparison : " ~ type.toString());
+        }
+
+        // Ensure opCmp is symmetric for collections
+        @safe unittest
+        {
+            auto node1 = Node(
+                [
+                    Node("New York Yankees", "tag:yaml.org,2002:str"),
+                    Node("Atlanta Braves", "tag:yaml.org,2002:str")
+                ], "tag:yaml.org,2002:seq"
+            );
+            auto node2 = Node(
+                [
+                    Node("Detroit Tigers", "tag:yaml.org,2002:str"),
+                    Node("Chicago cubs", "tag:yaml.org,2002:str")
+                ], "tag:yaml.org,2002:seq"
+            );
+            assert(node1 > node2);
+            assert(node2 < node1);
         }
 
         // Compute hash of the node.
