@@ -66,7 +66,14 @@ Node.Pair pair(A, B)(A a, B b)
 
 Node[] constructAliasesCDumperBug() @safe
 {
-    return [Node(["today", "today"])];
+    return [
+        Node(
+            [
+                Node("today", "tag:yaml.org,2002:str"),
+                Node("today", "tag:yaml.org,2002:str")
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] constructBinary() @safe
@@ -75,9 +82,24 @@ Node[] constructBinary() @safe
     auto generic     = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation.dup;
     auto description = "The binary value above is a tiny arrow encoded as a gif image.";
 
-    return [Node([pair("canonical",   canonical),
-                  pair("generic",     generic),
-                  pair("description", description)])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(canonical, "tag:yaml.org,2002:binary")
+                ),
+                pair(
+                    Node("generic", "tag:yaml.org,2002:str"),
+                    Node(generic, "tag:yaml.org,2002:binary")
+                ),
+                pair(
+                    Node("description", "tag:yaml.org,2002:str"),
+                    Node(description, "tag:yaml.org,2002:str")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructBool() @safe
@@ -86,234 +108,761 @@ Node[] constructBool() @safe
     immutable(bool) b = true;
     const bool aa = true;
     immutable bool bb = true;
-    return [Node([pair("canonical", true),
-                  pair("answer",    false),
-                  pair("logical",   true),
-                  pair("option",    true),
-                  pair("constbool", a),
-                  pair("imutbool", b),
-                  pair("const_bool", aa),
-                  pair("imut_bool", bb),
-                  pair("but", [pair("y", "is a string"), pair("n", "is a string")])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(true, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("answer", "tag:yaml.org,2002:str"),
+                    Node(false, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("logical", "tag:yaml.org,2002:str"),
+                    Node(true, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("option", "tag:yaml.org,2002:str"),
+                    Node(true, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("constbool", "tag:yaml.org,2002:str"),
+                    Node(a, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("imutbool", "tag:yaml.org,2002:str"),
+                    Node(b, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("const_bool", "tag:yaml.org,2002:str"),
+                    Node(aa, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("imut_bool", "tag:yaml.org,2002:str"),
+                    Node(bb, "tag:yaml.org,2002:bool")
+                ),
+                pair(
+                    Node("but", "tag:yaml.org,2002:str"),
+                    Node(
+                            [
+                            pair(
+                                Node("y", "tag:yaml.org,2002:str"),
+                                Node("is a string", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("n", "tag:yaml.org,2002:str"),
+                                Node("is a string", "tag:yaml.org,2002:str")
+                            )
+                        ],
+                    "tag:yaml.org,2002:map")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructCustom() @safe
 {
-    return [Node([Node(new TestClass(1, 2, 3)),
-                  Node(TestStruct(10))])];
+    return [
+        Node(
+            [
+                Node(new TestClass(1, 2, 3)),
+                Node(TestStruct(10))
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] constructFloat() @safe
 {
-    return [Node([pair("canonical",         685230.15L),
-                  pair("exponential",       685230.15L),
-                  pair("fixed",             685230.15L),
-                  pair("sexagesimal",       685230.15L),
-                  pair("negative infinity", -real.infinity),
-                  pair("not a number",      real.nan)])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(685230.15L, "tag:yaml.org,2002:float")
+                ),
+                pair(
+                    Node("exponential", "tag:yaml.org,2002:str"),
+                    Node(685230.15L, "tag:yaml.org,2002:float")
+                ),
+                pair(
+                    Node("fixed", "tag:yaml.org,2002:str"),
+                    Node(685230.15L, "tag:yaml.org,2002:float")
+                ),
+                pair(
+                    Node("sexagesimal", "tag:yaml.org,2002:str"),
+                    Node(685230.15L, "tag:yaml.org,2002:float")
+                ),
+                pair(
+                    Node("negative infinity", "tag:yaml.org,2002:str"),
+                    Node(-real.infinity, "tag:yaml.org,2002:float")
+                ),
+                pair(
+                    Node("not a number", "tag:yaml.org,2002:str"),
+                    Node(real.nan, "tag:yaml.org,2002:float")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructInt() @safe
 {
-    return [Node([pair("canonical",   685230L),
-                  pair("decimal",     685230L),
-                  pair("octal",       685230L),
-                  pair("hexadecimal", 685230L),
-                  pair("binary",      685230L),
-                  pair("sexagesimal", 685230L)])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("decimal", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("octal", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("hexadecimal", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("binary", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("sexagesimal", "tag:yaml.org,2002:str"),
+                    Node(685230L, "tag:yaml.org,2002:int")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructMap() @safe
 {
-    return [Node([pair("Block style",
-                       [pair("Clark", "Evans"),
-                        pair("Brian", "Ingerson"),
-                        pair("Oren", "Ben-Kiki")]),
-                  pair("Flow style",
-                       [pair("Clark", "Evans"),
-                        pair("Brian", "Ingerson"),
-                        pair("Oren", "Ben-Kiki")])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("Block style", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(
+                                Node("Clark", "tag:yaml.org,2002:str"),
+                                Node("Evans", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("Brian", "tag:yaml.org,2002:str"),
+                                Node("Ingerson", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("Oren", "tag:yaml.org,2002:str"),
+                                Node("Ben-Kiki", "tag:yaml.org,2002:str")
+                            )
+                        ],
+                    "tag:yaml.org,2002:map")
+                ),
+                pair(
+                    Node("Flow style", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(
+                                Node("Clark", "tag:yaml.org,2002:str"),
+                                Node("Evans", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("Brian", "tag:yaml.org,2002:str"),
+                                Node("Ingerson", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("Oren", "tag:yaml.org,2002:str"),
+                                Node("Ben-Kiki", "tag:yaml.org,2002:str")
+                            )
+                        ],
+                    "tag:yaml.org,2002:map")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructMerge() @safe
 {
-    return [Node([Node([pair("x", 1L), pair("y", 2L)]),
-                  Node([pair("x", 0L), pair("y", 2L)]),
-                  Node([pair("r", 10L)]),
-                  Node([pair("r", 1L)]),
-                  Node([pair("x", 1L), pair("y", 2L), pair("r", 10L), pair("label", "center/big")]),
-                  Node([pair("r", 10L), pair("label", "center/big"), pair("x", 1L), pair("y", 2L)]),
-                  Node([pair("label", "center/big"), pair("x", 1L), pair("y", 2L), pair("r", 10L)]),
-                  Node([pair("x", 1L), pair("label", "center/big"), pair("r", 10L), pair("y", 2L)])])];
+    return [
+        Node(
+            [
+                Node(
+                    [
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(0L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(10L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(10L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("label", "tag:yaml.org,2002:str"),
+                            Node("center/big", "tag:yaml.org,2002:str")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(10L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("label", "tag:yaml.org,2002:str"),
+                            Node("center/big", "tag:yaml.org,2002:str")
+                        ),
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("label", "tag:yaml.org,2002:str"),
+                            Node("center/big", "tag:yaml.org,2002:str")
+                        ),
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(10L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map"),
+                Node(
+                    [
+                        pair(
+                            Node("x", "tag:yaml.org,2002:str"),
+                            Node(1L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("label", "tag:yaml.org,2002:str"),
+                            Node("center/big", "tag:yaml.org,2002:str")
+                        ),
+                        pair(
+                            Node("r", "tag:yaml.org,2002:str"),
+                            Node(10L, "tag:yaml.org,2002:int")
+                        ),
+                        pair(
+                            Node("y", "tag:yaml.org,2002:str"),
+                            Node(2L, "tag:yaml.org,2002:int")
+                        )
+                    ],
+                "tag:yaml.org,2002:map")
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] constructNull() @safe
 {
-    return [Node(YAMLNull()),
-            Node([pair("empty", YAMLNull()),
-                  pair("canonical", YAMLNull()),
-                  pair("english", YAMLNull()),
-                  pair(YAMLNull(), "null key")]),
-            Node([pair("sparse",
-                       [Node(YAMLNull()),
-                        Node("2nd entry"),
-                        Node(YAMLNull()),
-                        Node("4th entry"),
-                        Node(YAMLNull())])])];
+    return [
+        Node(YAMLNull(), "tag:yaml.org,2002:null"),
+        Node(
+            [
+                pair(
+                    Node("empty", "tag:yaml.org,2002:str"),
+                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                ),
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                ),
+                pair(
+                    Node("english", "tag:yaml.org,2002:str"),
+                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                ),
+                pair(
+                    Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                    Node("null key", "tag:yaml.org,2002:str")
+                )
+            ],
+        "tag:yaml.org,2002:map"),
+        Node(
+            [
+                pair(
+                    Node("sparse", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                            Node("2nd entry", "tag:yaml.org,2002:str"),
+                            Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                            Node("4th entry", "tag:yaml.org,2002:str"),
+                            Node(YAMLNull(), "tag:yaml.org,2002:null")
+                        ],
+                    "tag:yaml.org,2002:seq")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructOMap() @safe
 {
-    return [Node([pair("Bestiary",
-                       [pair("aardvark", "African pig-like ant eater. Ugly."),
-                        pair("anteater", "South-American ant eater. Two species."),
-                        pair("anaconda", "South-American constrictor snake. Scaly.")]),
-                  pair("Numbers",[pair("one", 1L),
-                                  pair("two", 2L),
-                                  pair("three", 3L)])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("Bestiary", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(
+                                Node("aardvark", "tag:yaml.org,2002:str"),
+                                Node("African pig-like ant eater. Ugly.", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("anteater", "tag:yaml.org,2002:str"),
+                                Node("South-American ant eater. Two species.", "tag:yaml.org,2002:str")
+                            ),
+                            pair(
+                                Node("anaconda", "tag:yaml.org,2002:str"),
+                                Node("South-American constrictor snake. Scaly.", "tag:yaml.org,2002:str")
+                            )
+                        ],
+                    "tag:yaml.org,2002:omap")
+                ),
+                pair(
+                    Node("Numbers", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(
+                                Node("one", "tag:yaml.org,2002:str"),
+                                Node(1L, "tag:yaml.org,2002:int")
+                            ),
+                            pair(
+                                Node("two", "tag:yaml.org,2002:str"),
+                                Node(2L, "tag:yaml.org,2002:int")
+                            ),
+                            pair(
+                                Node("three", "tag:yaml.org,2002:str"),
+                                Node(3L, "tag:yaml.org,2002:int")
+                            )
+                        ],
+                    "tag:yaml.org,2002:omap")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructPairs() @safe
 {
-    return [Node([pair("Block tasks",
-                       Node([pair("meeting", "with team."),
-                             pair("meeting", "with boss."),
-                             pair("break", "lunch."),
-                             pair("meeting", "with client.")], "tag:yaml.org,2002:pairs")),
-                  pair("Flow tasks",
-                       Node([pair("meeting", "with team"),
-                             pair("meeting", "with boss")], "tag:yaml.org,2002:pairs"))])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("Block tasks", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(Node("meeting", "tag:yaml.org,2002:str"), Node("with team.", "tag:yaml.org,2002:str")),
+                            pair(Node("meeting", "tag:yaml.org,2002:str"), Node("with boss.", "tag:yaml.org,2002:str")),
+                            pair(Node("break", "tag:yaml.org,2002:str"), Node("lunch.", "tag:yaml.org,2002:str")),
+                            pair(Node("meeting", "tag:yaml.org,2002:str"), Node("with client.", "tag:yaml.org,2002:str"))
+                        ],
+                    "tag:yaml.org,2002:pairs")
+                ),
+                pair(
+                    Node("Flow tasks", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            pair(Node("meeting", "tag:yaml.org,2002:str"), Node("with team", "tag:yaml.org,2002:str")),
+                            pair(Node("meeting", "tag:yaml.org,2002:str"), Node("with boss", "tag:yaml.org,2002:str"))
+                        ],
+                    "tag:yaml.org,2002:pairs")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructSeq() @safe
 {
-    return [Node([pair("Block style",
-                       [Node("Mercury"), Node("Venus"), Node("Earth"), Node("Mars"),
-                        Node("Jupiter"), Node("Saturn"), Node("Uranus"), Node("Neptune"),
-                        Node("Pluto")]),
-                  pair("Flow style",
-                       [Node("Mercury"), Node("Venus"), Node("Earth"), Node("Mars"),
-                        Node("Jupiter"), Node("Saturn"), Node("Uranus"), Node("Neptune"),
-                        Node("Pluto")])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("Block style", "tag:yaml.org,2002:str"),
+                    Node([
+                          Node("Mercury", "tag:yaml.org,2002:str"),
+                          Node("Venus", "tag:yaml.org,2002:str"),
+                          Node("Earth", "tag:yaml.org,2002:str"),
+                          Node("Mars", "tag:yaml.org,2002:str"),
+                          Node("Jupiter", "tag:yaml.org,2002:str"),
+                          Node("Saturn", "tag:yaml.org,2002:str"),
+                          Node("Uranus", "tag:yaml.org,2002:str"),
+                          Node("Neptune", "tag:yaml.org,2002:str"),
+                          Node("Pluto", "tag:yaml.org,2002:str")
+                    ], "tag:yaml.org,2002:seq")
+                ),
+                pair(
+                    Node("Flow style", "tag:yaml.org,2002:str"),
+                    Node([
+                        Node("Mercury", "tag:yaml.org,2002:str"),
+                        Node("Venus", "tag:yaml.org,2002:str"),
+                        Node("Earth", "tag:yaml.org,2002:str"),
+                        Node("Mars", "tag:yaml.org,2002:str"),
+                        Node("Jupiter", "tag:yaml.org,2002:str"),
+                        Node("Saturn", "tag:yaml.org,2002:str"),
+                        Node("Uranus", "tag:yaml.org,2002:str"),
+                        Node("Neptune", "tag:yaml.org,2002:str"),
+                        Node("Pluto", "tag:yaml.org,2002:str")
+                    ], "tag:yaml.org,2002:seq")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructSet() @safe
 {
-    return [Node([pair("baseball players",
-                       [Node("Mark McGwire"), Node("Sammy Sosa"), Node("Ken Griffey")]),
-                  pair("baseball teams",
-                       [Node("Boston Red Sox"), Node("Detroit Tigers"), Node("New York Yankees")])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("baseball players", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            Node("Mark McGwire", "tag:yaml.org,2002:str"),
+                            Node("Sammy Sosa", "tag:yaml.org,2002:str"),
+                            Node("Ken Griffey", "tag:yaml.org,2002:str")
+                        ],
+                    "tag:yaml.org,2002:set")
+                ),
+                pair(
+                    Node("baseball teams", "tag:yaml.org,2002:str"),
+                    Node(
+                            [
+                            Node("Boston Red Sox", "tag:yaml.org,2002:str"),
+                            Node("Detroit Tigers", "tag:yaml.org,2002:str"),
+                            Node("New York Yankees", "tag:yaml.org,2002:str")
+                        ],
+                    "tag:yaml.org,2002:set")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructStrASCII() @safe
 {
-    return [Node("ascii string")];
+    return [
+        Node("ascii string", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] constructStr() @safe
 {
-    return [Node([pair("string", "abcd")])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("string", "tag:yaml.org,2002:str"),
+                    Node("abcd", "tag:yaml.org,2002:str")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructStrUTF8() @safe
 {
-    return [Node("\u042d\u0442\u043e \u0443\u043d\u0438\u043a\u043e\u0434\u043d\u0430\u044f \u0441\u0442\u0440\u043e\u043a\u0430")];
+    return [
+        Node("\u042d\u0442\u043e \u0443\u043d\u0438\u043a\u043e\u0434\u043d\u0430\u044f \u0441\u0442\u0440\u043e\u043a\u0430", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] constructTimestamp() @safe
 {
-    alias DT = DateTime;
-    alias ST = SysTime;
-    return [Node([pair("canonical",        ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
-                  pair("valid iso8601",    ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
-                  pair("space separated",  ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
-                  pair("no time zone (Z)", ST(DT(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC())),
-                  pair("date (00:00:00Z)", ST(DT(2002, 12, 14), UTC()))])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("canonical", "tag:yaml.org,2002:str"),
+                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                ),
+                pair(
+                    Node("valid iso8601", "tag:yaml.org,2002:str"),
+                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                ),
+                pair(
+                    Node("space separated", "tag:yaml.org,2002:str"),
+                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                ),
+                pair(
+                    Node("no time zone (Z)", "tag:yaml.org,2002:str"),
+                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                ),
+                pair(
+                    Node("date (00:00:00Z)", "tag:yaml.org,2002:str"),
+                    Node(SysTime(DateTime(2002, 12, 14), UTC()), "tag:yaml.org,2002:timestamp")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] constructValue() @safe
 {
-    return[Node([pair("link with",
-                      [Node("library1.dll"), Node("library2.dll")])]),
-           Node([pair("link with",
-                      [Node([pair("=", "library1.dll"), pair("version", 1.2L)]),
-                       Node([pair("=", "library2.dll"), pair("version", 2.3L)])])])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("link with", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            Node("library1.dll", "tag:yaml.org,2002:str"),
+                            Node("library2.dll", "tag:yaml.org,2002:str")
+                        ],
+                    "tag:yaml.org,2002:seq")
+                )
+            ],
+        "tag:yaml.org,2002:map"),
+        Node(
+            [
+                pair(
+                    Node("link with", "tag:yaml.org,2002:str"),
+                    Node(
+                        [
+                            Node(
+                                [
+                                    pair(
+                                        Node("=", "tag:yaml.org,2002:value"),
+                                        Node("library1.dll", "tag:yaml.org,2002:str")
+                                    ),
+                                    pair(
+                                        Node("version", "tag:yaml.org,2002:str"),
+                                        Node(1.2L, "tag:yaml.org,2002:float")
+                                    )
+                                ],
+                            "tag:yaml.org,2002:map"),
+                            Node(
+                                [
+                                    pair(
+                                        Node("=", "tag:yaml.org,2002:value"),
+                                        Node("library2.dll", "tag:yaml.org,2002:str")
+                                    ),
+                                    pair(
+                                        Node("version", "tag:yaml.org,2002:str"),
+                                        Node(2.3L, "tag:yaml.org,2002:float")
+                                    )
+                                ],
+                            "tag:yaml.org,2002:map")
+                        ],
+                    "tag:yaml.org,2002:seq")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] duplicateMergeKey() @safe
 {
-    return [Node([pair("foo", "bar"),
-                  pair("x", 1L),
-                  pair("y", 2L),
-                  pair("z", 3L),
-                  pair("t", 4L)])];
+    return [
+        Node(
+            [
+                pair(
+                    Node("foo", "tag:yaml.org,2002:str"),
+                    Node("bar", "tag:yaml.org,2002:str")
+                ),
+                pair(
+                    Node("x", "tag:yaml.org,2002:str"),
+                    Node(1L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("y", "tag:yaml.org,2002:str"),
+                    Node(2L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("z", "tag:yaml.org,2002:str"),
+                    Node(3L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node("t", "tag:yaml.org,2002:str"),
+                    Node(4L, "tag:yaml.org,2002:int")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] floatRepresenterBug() @safe
 {
-    return [Node([pair(1.0L, 1L),
-                  pair(real.infinity, 10L),
-                  pair(-real.infinity, -10L),
-                  pair(real.nan, 100L)])];
+    return [
+        Node(
+            [
+                pair(
+                    Node(1.0L, "tag:yaml.org,2002:float"),
+                    Node(1L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node(real.infinity, "tag:yaml.org,2002:float"),
+                    Node(10L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node(-real.infinity, "tag:yaml.org,2002:float"),
+                    Node(-10L, "tag:yaml.org,2002:int")
+                ),
+                pair(
+                    Node(real.nan, "tag:yaml.org,2002:float"),
+                    Node(100L, "tag:yaml.org,2002:int")
+                )
+            ],
+        "tag:yaml.org,2002:map")
+    ];
 }
 
 Node[] invalidSingleQuoteBug() @safe
 {
-    return [Node([Node("foo \'bar\'"), Node("foo\n\'bar\'")])];
+    return [
+        Node(
+            [
+                Node("foo \'bar\'", "tag:yaml.org,2002:str"),
+                Node("foo\n\'bar\'", "tag:yaml.org,2002:str")
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] moreFloats() @safe
 {
-    return [Node([Node(0.0L),
-                  Node(1.0L),
-                  Node(-1.0L),
-                  Node(real.infinity),
-                  Node(-real.infinity),
-                  Node(real.nan),
-                  Node(real.nan)])];
+    return [
+        Node(
+            [
+                Node(0.0L, "tag:yaml.org,2002:float"),
+                Node(1.0L, "tag:yaml.org,2002:float"),
+                Node(-1.0L, "tag:yaml.org,2002:float"),
+                Node(real.infinity, "tag:yaml.org,2002:float"),
+                Node(-real.infinity, "tag:yaml.org,2002:float"),
+                Node(real.nan, "tag:yaml.org,2002:float"),
+                Node(real.nan, "tag:yaml.org,2002:float")
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] negativeFloatBug() @safe
 {
-    return [Node(-1.0L)];
+    return [
+        Node(-1.0L, "tag:yaml.org,2002:float")
+    ];
 }
 
 Node[] singleDotFloatBug() @safe
 {
-    return [Node(".")];
+    return [
+        Node(".", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] timestampBugs() @safe
 {
-    alias DT = DateTime;
-    alias ST = SysTime;
-    alias STZ = immutable SimpleTimeZone;
-    return [Node([Node(ST(DT(2001, 12, 15, 3, 29, 43),  1000000.dur!"hnsecs", UTC())),
-                  Node(ST(DT(2001, 12, 14, 16, 29, 43), 1000000.dur!"hnsecs", UTC())),
-                  Node(ST(DT(2001, 12, 14, 21, 59, 43), 10100.dur!"hnsecs", UTC())),
-                  Node(ST(DT(2001, 12, 14, 21, 59, 43), new STZ(60.dur!"minutes"))),
-                  Node(ST(DT(2001, 12, 14, 21, 59, 43), new STZ(-90.dur!"minutes"))),
-                  Node(ST(DT(2005, 7, 8, 17, 35, 4),    5176000.dur!"hnsecs", UTC()))])];
+    return [
+        Node(
+            [
+                Node(SysTime(DateTime(2001, 12, 15, 3, 29, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
+                Node(SysTime(DateTime(2001, 12, 14, 16, 29, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
+                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), 10100.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
+                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(60.dur!"minutes")), "tag:yaml.org,2002:timestamp"),
+                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(-90.dur!"minutes")), "tag:yaml.org,2002:timestamp"),
+                Node(SysTime(DateTime(2005, 7, 8, 17, 35, 4), 5176000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+            ],
+        "tag:yaml.org,2002:seq")
+    ];
 }
 
 Node[] utf16be() @safe
 {
-    return [Node("UTF-16-BE")];
+    return [
+        Node("UTF-16-BE", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] utf16le() @safe
 {
-    return [Node("UTF-16-LE")];
+    return [
+        Node("UTF-16-LE", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] utf8() @safe
 {
-    return [Node("UTF-8")];
+    return [
+        Node("UTF-8", "tag:yaml.org,2002:str")
+    ];
 }
 
 Node[] utf8implicit() @safe
 {
-    return [Node("implicit UTF-8")];
+    return [
+        Node("implicit UTF-8", "tag:yaml.org,2002:str")
+    ];
 }
 
 ///Testing custom YAML class type.
@@ -330,10 +879,22 @@ class TestClass
 
     Node opCast(T: Node)() @safe
     {
-        auto pairs = [Node.Pair("x", x),
-                      Node.Pair("y", y),
-                      Node.Pair("z", z)];
-        return Node(pairs, "!tag1");
+        return Node(
+            [
+                Node.Pair(
+                    Node("x", "tag:yaml.org,2002:str"),
+                    Node(x, "tag:yaml.org,2002:int")
+                ),
+                Node.Pair(
+                    Node("y", "tag:yaml.org,2002:str"),
+                    Node(y, "tag:yaml.org,2002:int")
+                ),
+                Node.Pair(
+                    Node("z", "tag:yaml.org,2002:str"),
+                    Node(z, "tag:yaml.org,2002:int")
+                )
+            ],
+        "!tag1");
     }
 }
 
@@ -382,7 +943,7 @@ void testConstructor(string dataFilename, string codeDummy) @safe
     size_t i;
     foreach(node; loader)
     {
-        if(!node.equals!(No.useTag)(exp[i]))
+        if(node != exp[i])
         {
             static if(verbose)
             {

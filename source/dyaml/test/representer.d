@@ -65,7 +65,7 @@ void testRepresenterTypes(string codeFilename) @safe
         assert(expectedNodes.length == readNodes.length);
         foreach(n; 0 .. expectedNodes.length)
         {
-            assert(expectedNodes[n].equals!(No.useTag)(readNodes[n]));
+            assert(expectedNodes[n] == readNodes[n]);
         }
     }
 }

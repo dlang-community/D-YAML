@@ -79,22 +79,16 @@ private struct Pair
         /// Equality test with another Pair.
         bool opEquals(const ref Pair rhs) const @safe
         {
-            return cmp!(Yes.useTag)(rhs) == 0;
+            return key == rhs.key && value == rhs.value;
         }
 
-    private:
         // Comparison with another Pair.
-        //
-        // useTag determines whether or not we consider node tags
-        // in the comparison.
-        // Note: @safe isn't properly inferred in single-file builds due to a bug.
-        int cmp(Flag!"useTag" useTag)(ref const(Pair) rhs) const @safe
+        int opCmp(ref const(Pair) rhs) const @safe
         {
-            const keyCmp = key.cmp!useTag(rhs.key);
+            const keyCmp = key.opCmp(rhs.key);
             return keyCmp != 0 ? keyCmp
-                                : value.cmp!useTag(rhs.value);
+                                : value.opCmp(rhs.value);
         }
-        @disable int opCmp(ref Pair);
 }
 
 enum NodeType
@@ -447,9 +441,29 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
+        bool opEquals(const Node rhs) const @safe
+        {
+            return opCmp(rhs) == 0;
+        }
         bool opEquals(T)(const auto ref T rhs) const
         {
-            return equals!(Yes.useTag)(rhs);
+            try
+            {
+                auto stored = get!(T, No.stringConversion);
+                // NaNs aren't normally equal to each other, but we'll pretend they are.
+                static if(isFloatingPoint!T)
+                {
+                    return rhs == stored || (isNaN(rhs) && isNaN(stored));
+                }
+                else
+                {
+                    return rhs == stored;
+                }
+            }
+            catch(NodeException e)
+            {
+                return false;
+            }
         }
         ///
         @safe unittest
@@ -771,6 +785,40 @@ struct Node
             auto loader = Loader.fromString(appender.data);
             Node node = loader.load();
             assert(node.as!MyClass == new MyClass(1,2,3));
+        }
+        // Make sure custom tags and styles are kept.
+        @safe unittest
+        {
+            static struct MyStruct
+            {
+                Node opCast(T: Node)()
+                {
+                    auto node = Node("hi", "!mystruct.tag");
+                    node.setStyle(ScalarStyle.doubleQuoted);
+                    return node;
+                }
+            }
+
+            auto node = Node(MyStruct.init);
+            assert(node.tag == "!mystruct.tag");
+            assert(node.scalarStyle == ScalarStyle.doubleQuoted);
+        }
+        // ditto, but for collection style
+        @safe unittest
+        {
+            static struct MyStruct
+            {
+                Node opCast(T: Node)()
+                {
+                    auto node = Node(["hi"], "!mystruct.tag");
+                    node.setStyle(CollectionStyle.flow);
+                    return node;
+                }
+            }
+
+            auto node = Node(MyStruct.init);
+            assert(node.tag == "!mystruct.tag");
+            assert(node.collectionStyle == CollectionStyle.flow);
         }
         @safe unittest
         {
@@ -1875,69 +1923,12 @@ struct Node
         }
 
         /// Compare with another _node.
-        int opCmp(ref const Node node) const @safe
-        {
-            return cmp!(Yes.useTag)(node);
-        }
-
-        // Compute hash of the node.
-        hash_t toHash() nothrow const @trusted
-        {
-            const valueHash = value_.toHash();
-
-            return tag_ is null ? valueHash : tag_.hashOf(valueHash);
-        }
-        @safe unittest
-        {
-            assert(Node(42).toHash() != Node(41).toHash());
-            assert(Node(42).toHash() != Node(42, "some-tag").toHash());
-        }
-
-    package:
-
-        // Equality test with any value.
-        //
-        // useTag determines whether or not to consider tags in node-node comparisons.
-        bool equals(Flag!"useTag" useTag, T)(ref T rhs) const
-        {
-            static if(is(Unqual!T == Node))
-            {
-                return cmp!useTag(rhs) == 0;
-            }
-            else
-            {
-                try
-                {
-                    auto stored = get!(T, No.stringConversion);
-                    // Need to handle NaNs separately.
-                    static if(isFloatingPoint!T)
-                    {
-                        return rhs == stored || (isNaN(rhs) && isNaN(stored));
-                    }
-                    else
-                    {
-                        return rhs == get!T;
-                    }
-                }
-                catch(NodeException e){return false;}
-            }
-        }
-
-        // Comparison with another node.
-        //
-        // Used for ordering in mappings and for opEquals.
-        //
-        // useTag determines whether or not to consider tags in the comparison.
-        // TODO: Make @safe when TypeInfo.cmp is @safe as well.
-        int cmp(Flag!"useTag" useTag)(const ref Node rhs) const @trusted
+        int opCmp(const ref Node rhs) const @safe
         {
             // Compare tags - if equal or both null, we need to compare further.
-            static if(useTag)
-            {
-                const tagCmp = (tag_ is null) ? (rhs.tag_ is null) ? 0 : -1
-                                           : (rhs.tag_ is null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
-                if(tagCmp != 0){return tagCmp;}
-            }
+            const tagCmp = (tag_ is null) ? (rhs.tag_ is null) ? 0 : -1
+                                       : (rhs.tag_ is null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
+            if(tagCmp != 0){return tagCmp;}
 
             static int cmp(T1, T2)(T1 a, T2 b)
             {
@@ -1952,7 +1943,7 @@ struct Node
             if(!v1){return v2 ? -1 : 0;}
             if(!v2){return 1;}
 
-            const typeCmp = type.opCmp(rhs.type);
+            const typeCmp = cmp(newType, rhs.newType);
             if(typeCmp != 0){return typeCmp;}
 
             static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
@@ -1967,7 +1958,7 @@ struct Node
                 // Equal lengths, compare items.
                 foreach(i; 0 .. c1.length)
                 {
-                    const itemCmp = c1[i].cmp!useTag(c2[i]);
+                    const itemCmp = c1[i].opCmp(c2[i]);
                     if(itemCmp != 0){return itemCmp;}
                 }
                 return 0;
@@ -2030,6 +2021,40 @@ struct Node
             }
             assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
+
+        // Ensure opCmp is symmetric for collections
+        @safe unittest
+        {
+            auto node1 = Node(
+                [
+                    Node("New York Yankees", "tag:yaml.org,2002:str"),
+                    Node("Atlanta Braves", "tag:yaml.org,2002:str")
+                ], "tag:yaml.org,2002:seq"
+            );
+            auto node2 = Node(
+                [
+                    Node("Detroit Tigers", "tag:yaml.org,2002:str"),
+                    Node("Chicago cubs", "tag:yaml.org,2002:str")
+                ], "tag:yaml.org,2002:seq"
+            );
+            assert(node1 > node2);
+            assert(node2 < node1);
+        }
+
+        // Compute hash of the node.
+        hash_t toHash() nothrow const @trusted
+        {
+            const valueHash = value_.toHash();
+
+            return tag_ is null ? valueHash : tag_.hashOf(valueHash);
+        }
+        @safe unittest
+        {
+            assert(Node(42).toHash() != Node(41).toHash());
+            assert(Node(42).toHash() != Node(42, "some-tag").toHash());
+        }
+
+    package:
 
         // Get a string representation of the node tree. Used for debugging.
         //
@@ -2404,7 +2429,11 @@ struct Node
             }
             else
             {
-                value_ = (cast(Node)value).value_;
+                auto tmpNode = cast(Node)value;
+                tag_ = tmpNode.tag;
+                scalarStyle = tmpNode.scalarStyle;
+                collectionStyle = tmpNode.collectionStyle;
+                value_ = tmpNode.value_;
             }
         }
 }
