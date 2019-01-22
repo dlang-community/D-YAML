@@ -39,10 +39,10 @@ void testImplicitResolver(string dataFilename, string detectFilename) @safe
     correctTag = readText(detectFilename).strip();
 
     node = Loader.fromFile(dataFilename).load();
-    assert(node.isSequence);
+    assert(node.nodeID == NodeID.sequence);
     foreach(ref Node scalar; node)
     {
-        assert(scalar.isScalar);
+        assert(scalar.nodeID == NodeID.scalar);
         assert(scalar.tag == correctTag);
     }
 }

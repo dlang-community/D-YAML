@@ -18,25 +18,36 @@ void extract(ref Node document) @safe
 {
     void crawl(ref Node root) @safe
     {
-        if(root.isScalar) switch(root.tag)
+        final switch (root.nodeID)
         {
-            case "tag:yaml.org,2002:null":      auto value = root.as!YAMLNull;  break;
-            case "tag:yaml.org,2002:bool":      auto value = root.as!bool;      break;
-            case "tag:yaml.org,2002:int":       auto value = root.as!long;      break;
-            case "tag:yaml.org,2002:float":     auto value = root.as!real;      break;
-            case "tag:yaml.org,2002:binary":    auto value = root.as!(ubyte[]); break;
-            case "tag:yaml.org,2002:timestamp": auto value = root.as!SysTime;   break;
-            case "tag:yaml.org,2002:str":       auto value = root.as!string;    break;
-            default: writeln("Unrecognozed tag: ", root.tag);
-        }
-        else if(root.isSequence) foreach(ref Node node; root)
-        {
-            crawl(node);
-        }
-        else if(root.isMapping) foreach(ref Node key, ref Node value; root)
-        {
-            crawl(key);
-            crawl(value);
+            case NodeID.scalar:
+                 switch(root.tag)
+                {
+                    case "tag:yaml.org,2002:null":      auto value = root.as!YAMLNull;  break;
+                    case "tag:yaml.org,2002:bool":      auto value = root.as!bool;      break;
+                    case "tag:yaml.org,2002:int":       auto value = root.as!long;      break;
+                    case "tag:yaml.org,2002:float":     auto value = root.as!real;      break;
+                    case "tag:yaml.org,2002:binary":    auto value = root.as!(ubyte[]); break;
+                    case "tag:yaml.org,2002:timestamp": auto value = root.as!SysTime;   break;
+                    case "tag:yaml.org,2002:str":       auto value = root.as!string;    break;
+                    default: writeln("Unrecognozed tag: ", root.tag);
+                }
+                break;
+            case NodeID.sequence:
+                foreach(ref Node node; root)
+                {
+                    crawl(node);
+                }
+                break;
+            case NodeID.mapping:
+                foreach(ref Node key, ref Node value; root)
+                {
+                    crawl(key);
+                    crawl(value);
+                }
+                break;
+            case NodeID.invalid:
+                assert(0);
         }
     }
 
