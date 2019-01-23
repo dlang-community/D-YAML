@@ -122,6 +122,25 @@ struct Serializer(Range, CharType)
             return node.length > 2;
         }
 
+        @safe unittest
+        {
+            import std.string : representation;
+            auto shortString = "not much";
+            auto longString = "A fairly long string that would be a good idea to add an anchor to";
+            auto node1 = Node(shortString);
+            auto node2 = Node(shortString.representation.dup);
+            auto node3 = Node(longString);
+            auto node4 = Node(longString.representation.dup);
+            auto node5 = Node([node1]);
+            auto node6 = Node([node1, node2, node3, node4]);
+            assert(!anchorable(node1));
+            assert(!anchorable(node2));
+            assert(anchorable(node3));
+            assert(anchorable(node4));
+            assert(!anchorable(node5));
+            assert(anchorable(node6));
+        }
+
         ///Add an anchor to the node if it's anchorable and not anchored yet.
         void anchorNode(ref Node node) @safe
         {
