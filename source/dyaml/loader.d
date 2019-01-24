@@ -249,14 +249,14 @@ struct Loader
             return currentNode;
         }
         // Scan and return all tokens. Used for debugging.
-        Token[] scan() @safe
+        const(Token)[] scan() @safe
         {
             try
             {
-                Token[] result;
-                while(scanner_.checkToken())
+                const(Token)[] result;
+                foreach (token; scanner_)
                 {
-                    result ~= scanner_.getToken();
+                    result ~= token;
                 }
                 return result;
             }
@@ -270,9 +270,12 @@ struct Loader
         // Scan all tokens, throwing them away. Used for benchmarking.
         void scanBench() @safe
         {
-            try while(scanner_.checkToken())
+            try
             {
-                scanner_.getToken();
+                while(!scanner_.empty)
+                {
+                    scanner_.popFront();
+                }
             }
             catch(YAMLException e)
             {
