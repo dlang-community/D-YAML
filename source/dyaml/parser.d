@@ -454,7 +454,7 @@ final class Parser
                 auto token = scanner_.front;
                 scanner_.popFront();
                 auto value = token.style == ScalarStyle.doubleQuoted
-                           ? handleDoubleQuotedScalarEscapes(token.value.dup)
+                           ? handleDoubleQuotedScalarEscapes(token.value)
                            : cast(string)token.value;
 
                 implicit = (token.style == ScalarStyle.plain && tag is null) || tag == "!";
@@ -516,12 +516,12 @@ final class Parser
         /// Handle escape sequences in a double quoted scalar.
         ///
         /// Moved here from scanner as it can't always be done in-place with slices.
-        string handleDoubleQuotedScalarEscapes(char[] tokenValue) const @safe
+        string handleDoubleQuotedScalarEscapes(const(char)[] tokenValue) const @safe
         {
             string notInPlace;
             bool inEscape;
             auto appender = appender!(string)();
-            for(char[] oldValue = tokenValue; !oldValue.empty();)
+            for(const(char)[] oldValue = tokenValue; !oldValue.empty();)
             {
                 const dchar c = oldValue.front();
                 oldValue.popFront();
@@ -571,7 +571,7 @@ final class Parser
 
                     const hexLength = dyaml.escapes.escapeHexLength(c);
                     // Any hex digits are 1-byte so this works.
-                    char[] hex = oldValue[0 .. hexLength];
+                    const(char)[] hex = oldValue[0 .. hexLength];
                     oldValue = oldValue[hexLength .. $];
                     import std.ascii : isHexDigit;
                     assert(!hex.canFind!(d => !d.isHexDigit),
