@@ -95,7 +95,7 @@ final class Resolver
             }
         }
         /// Resolve scalars starting with 'A' to !_tag
-        unittest
+        @safe unittest
         {
             import std.file : write;
             import std.regex : regex;
@@ -109,11 +109,8 @@ final class Resolver
             resolver.addImplicitResolver("!tag", regex("A.*"), "A");
             loader.resolver = resolver;
 
-            //Note that we have no constructor from tag "!tag", so we can't
-            //actually load anything that resolves to this tag.
-            //See Constructor API documentation and tutorial for more information.
-
-            //auto node = loader.load();
+            auto node = loader.load();
+            assert(node.tag == "!tag");
         }
 
     package:
