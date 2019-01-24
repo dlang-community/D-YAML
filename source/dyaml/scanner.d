@@ -178,55 +178,28 @@ struct Scanner
             fetchStreamStart();
         }
 
-        /// Check if the next token is one of specified types.
-        ///
-        /// If no types are specified, checks if any tokens are left.
-        ///
-        /// Params:  ids = Token IDs to check for.
-        ///
-        /// Returns: true if the next token is one of specified types, or if there are
-        ///          any tokens left if no types specified, false otherwise.
-        bool checkToken(const TokenID[] ids ...) @safe
+        /// Advance to the next token
+        void popFront() @safe
         {
-            // Check if the next token is one of specified types.
-            while(needMoreTokens()) { fetchToken(); }
-            if(!tokens_.empty)
-            {
-                if(ids.length == 0) { return true; }
-                else
-                {
-                    const nextId = tokens_.peek().id;
-                    foreach(id; ids)
-                    {
-                        if(nextId == id) { return true; }
-                    }
-                }
-            }
-            return false;
+            ++tokensTaken_;
+            tokens_.pop();
         }
 
-        /// Return the next token, but keep it in the queue.
-        ///
-        /// Must not be called if there are no tokens left.
-        ref const(Token) peekToken() @safe
+        /// Return the current token
+        const(Token) front() @safe
         {
-            while(needMoreTokens) { fetchToken(); }
-            if(!tokens_.empty)    { return tokens_.peek(); }
-            assert(false, "No token left to peek");
+            enforce(!empty, "No token left to peek");
+            return tokens_.peek();
         }
 
-        /// Return the next token, removing it from the queue.
-        ///
-        /// Must not be called if there are no tokens left.
-        Token getToken() @safe
+        /// Return whether there are any more tokens left.
+        bool empty() @safe
         {
-            while(needMoreTokens){fetchToken();}
-            if(!tokens_.empty)
+            while (needMoreTokens())
             {
-                ++tokensTaken_;
-                return tokens_.pop();
+                fetchToken();
             }
-            assert(false, "No token left to get");
+            return tokens_.empty;
         }
 
     private:

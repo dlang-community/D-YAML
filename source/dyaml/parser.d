@@ -222,7 +222,8 @@ final class Parser
         ///Parse stream start.
         Event parseStreamStart() @safe
         {
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
             state_ = &parseImplicitDocumentStart;
             return streamStartEvent(token.startMark, token.endMark);
         }
@@ -231,11 +232,11 @@ final class Parser
         Event parseImplicitDocumentStart() @safe
         {
             // Parse an implicit document.
-            if(!scanner_.checkToken(TokenID.directive, TokenID.documentStart,
+            if(!scanner_.front.id.among!(TokenID.directive, TokenID.documentStart,
                                     TokenID.streamEnd))
             {
                 tagDirectives_  = defaultTagDirectives_;
-                const token = scanner_.peekToken();
+                const token = scanner_.front;
 
                 pushState(&parseDocumentEnd);
                 state_ = &parseBlockNode;
@@ -249,20 +250,24 @@ final class Parser
         Event parseDocumentStart() @trusted
         {
             //Parse any extra document end indicators.
-            while(scanner_.checkToken(TokenID.documentEnd)){scanner_.getToken();}
+            while(scanner_.front.id == TokenID.documentEnd)
+            {
+                scanner_.popFront();
+            }
 
             //Parse an explicit document.
-            if(!scanner_.checkToken(TokenID.streamEnd))
+            if(scanner_.front.id != TokenID.streamEnd)
             {
-                const startMark = scanner_.peekToken().startMark;
+                const startMark = scanner_.front.startMark;
 
                 auto tagDirectives = processDirectives();
-                enforce(scanner_.checkToken(TokenID.documentStart),
+                enforce(scanner_.front.id == TokenID.documentStart,
                         new ParserException("Expected document start but found " ~
-                                  scanner_.peekToken().idString,
-                                  scanner_.peekToken().startMark));
+                                  scanner_.front.idString,
+                                  scanner_.front.startMark));
 
-                const endMark = scanner_.getToken().endMark;
+                const endMark = scanner_.front.endMark;
+                scanner_.popFront();
                 pushState(&parseDocumentEnd);
                 state_ = &parseDocumentContent;
                 return documentStartEvent(startMark, endMark, true, YAMLVersion_, tagDirectives);
@@ -270,7 +275,8 @@ final class Parser
             else
             {
                 //Parse the end of the stream.
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
                 assert(states_.data.length == 0);
                 assert(marks_.data.length == 0);
                 state_ = null;
@@ -281,9 +287,14 @@ final class Parser
         ///Parse document end (explicit or implicit).
         Event parseDocumentEnd() @safe
         {
-            Mark startMark = scanner_.peekToken().startMark;
-            const bool explicit = scanner_.checkToken(TokenID.documentEnd);
-            Mark endMark = explicit ? scanner_.getToken().endMark : startMark;
+            Mark startMark = scanner_.front.startMark;
+            const bool explicit = scanner_.front.id == TokenID.documentEnd;
+            Mark endMark = startMark;
+            if (explicit)
+            {
+                endMark = scanner_.front.endMark;
+                scanner_.popFront();
+            }
 
             state_ = &parseDocumentStart;
 
@@ -293,11 +304,11 @@ final class Parser
         ///Parse document content.
         Event parseDocumentContent() @safe
         {
-            if(scanner_.checkToken(TokenID.directive,   TokenID.documentStart,
+            if(scanner_.front.id.among!(TokenID.directive,   TokenID.documentStart,
                                    TokenID.documentEnd, TokenID.streamEnd))
             {
                 state_ = popState();
-                return processEmptyScalar(scanner_.peekToken().startMark);
+                return processEmptyScalar(scanner_.front.startMark);
             }
             return parseBlockNode();
         }
@@ -310,9 +321,10 @@ final class Parser
             tagDirectives_.length = 0;
 
             // Process directives.
-            while(scanner_.checkToken(TokenID.directive))
+            while(scanner_.front.id == TokenID.directive)
             {
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
                 string value = token.value.idup;
                 if(token.directive == DirectiveType.yaml)
                 {
@@ -382,9 +394,10 @@ final class Parser
                         const Flag!"indentlessSequence" indentlessSequence = No.indentlessSequence)
             @trusted
         {
-            if(scanner_.checkToken(TokenID.alias_))
+            if(scanner_.front.id == TokenID.alias_)
             {
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
                 state_ = popState();
                 return aliasEvent(token.startMark, token.endMark,
                                   cast(string)token.value);
@@ -400,9 +413,10 @@ final class Parser
             //Get anchor/tag if detected. Return false otherwise.
             bool get(const TokenID id, const Flag!"first" first, ref string target) @safe
             {
-                if(!scanner_.checkToken(id)){return false;}
+                if(scanner_.front.id != id){return false;}
                 invalidMarks = false;
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
                 if(first){startMark = token.startMark;}
                 if(id == TokenID.tag)
                 {
@@ -422,24 +436,25 @@ final class Parser
 
             if(invalidMarks)
             {
-                startMark = endMark = scanner_.peekToken().startMark;
+                startMark = endMark = scanner_.front.startMark;
             }
 
             bool implicit = (tag is null || tag == "!");
 
-            if(indentlessSequence && scanner_.checkToken(TokenID.blockEntry))
+            if(indentlessSequence && scanner_.front.id == TokenID.blockEntry)
             {
                 state_ = &parseIndentlessSequenceEntry;
                 return sequenceStartEvent
-                    (startMark, scanner_.peekToken().endMark, anchor,
+                    (startMark, scanner_.front.endMark, anchor,
                      tag, implicit, CollectionStyle.block);
             }
 
-            if(scanner_.checkToken(TokenID.scalar))
+            if(scanner_.front.id == TokenID.scalar)
             {
-                auto token = scanner_.getToken();
+                auto token = scanner_.front;
+                scanner_.popFront();
                 auto value = token.style == ScalarStyle.doubleQuoted
-                           ? handleDoubleQuotedScalarEscapes(token.value)
+                           ? handleDoubleQuotedScalarEscapes(token.value.dup)
                            : cast(string)token.value;
 
                 implicit = (token.style == ScalarStyle.plain && tag is null) || tag == "!";
@@ -448,33 +463,33 @@ final class Parser
                                    implicit, value, token.style);
             }
 
-            if(scanner_.checkToken(TokenID.flowSequenceStart))
+            if(scanner_.front.id == TokenID.flowSequenceStart)
             {
-                endMark = scanner_.peekToken().endMark;
+                endMark = scanner_.front.endMark;
                 state_ = &parseFlowSequenceEntry!(Yes.first);
                 return sequenceStartEvent(startMark, endMark, anchor, tag,
                                           implicit, CollectionStyle.flow);
             }
 
-            if(scanner_.checkToken(TokenID.flowMappingStart))
+            if(scanner_.front.id == TokenID.flowMappingStart)
             {
-                endMark = scanner_.peekToken().endMark;
+                endMark = scanner_.front.endMark;
                 state_ = &parseFlowMappingKey!(Yes.first);
                 return mappingStartEvent(startMark, endMark, anchor, tag,
                                          implicit, CollectionStyle.flow);
             }
 
-            if(block && scanner_.checkToken(TokenID.blockSequenceStart))
+            if(block && scanner_.front.id == TokenID.blockSequenceStart)
             {
-                endMark = scanner_.peekToken().endMark;
+                endMark = scanner_.front.endMark;
                 state_ = &parseBlockSequenceEntry!(Yes.first);
                 return sequenceStartEvent(startMark, endMark, anchor, tag,
                                           implicit, CollectionStyle.block);
             }
 
-            if(block && scanner_.checkToken(TokenID.blockMappingStart))
+            if(block && scanner_.front.id == TokenID.blockMappingStart)
             {
-                endMark = scanner_.peekToken().endMark;
+                endMark = scanner_.front.endMark;
                 state_ = &parseBlockMappingKey!(Yes.first);
                 return mappingStartEvent(startMark, endMark, anchor, tag,
                                          implicit, CollectionStyle.block);
@@ -492,7 +507,7 @@ final class Parser
                                    implicit , "");
             }
 
-            const token = scanner_.peekToken();
+            const token = scanner_.front;
             throw new ParserException("While parsing a " ~ (block ? "block" : "flow") ~ " node",
                             startMark, "expected node content, but found: "
                             ~ token.idString, token.startMark);
@@ -620,12 +635,17 @@ final class Parser
         ///Parse an entry of a block sequence. If first is true, this is the first entry.
         Event parseBlockSequenceEntry(Flag!"first" first)() @safe
         {
-            static if(first){pushMark(scanner_.getToken().startMark);}
-
-            if(scanner_.checkToken(TokenID.blockEntry))
+            static if(first)
             {
-                const token = scanner_.getToken();
-                if(!scanner_.checkToken(TokenID.blockEntry, TokenID.blockEnd))
+                pushMark(scanner_.front.startMark);
+                scanner_.popFront();
+            }
+
+            if(scanner_.front.id == TokenID.blockEntry)
+            {
+                const token = scanner_.front;
+                scanner_.popFront();
+                if(!scanner_.front.id.among!(TokenID.blockEntry, TokenID.blockEnd))
                 {
                     pushState(&parseBlockSequenceEntry!(No.first));
                     return parseBlockNode();
@@ -635,9 +655,9 @@ final class Parser
                 return processEmptyScalar(token.endMark);
             }
 
-            if(!scanner_.checkToken(TokenID.blockEnd))
+            if(scanner_.front.id != TokenID.blockEnd)
             {
-                const token = scanner_.peekToken();
+                const token = scanner_.front;
                 throw new ParserException("While parsing a block collection", marks_.data.back,
                                 "expected block end, but found " ~ token.idString,
                                 token.startMark);
@@ -645,7 +665,8 @@ final class Parser
 
             state_ = popState();
             popMark();
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -654,11 +675,12 @@ final class Parser
         ///Parse an entry of an indentless sequence.
         Event parseIndentlessSequenceEntry() @safe
         {
-            if(scanner_.checkToken(TokenID.blockEntry))
+            if(scanner_.front.id == TokenID.blockEntry)
             {
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
 
-                if(!scanner_.checkToken(TokenID.blockEntry, TokenID.key,
+                if(!scanner_.front.id.among!(TokenID.blockEntry, TokenID.key,
                                         TokenID.value, TokenID.blockEnd))
                 {
                     pushState(&parseIndentlessSequenceEntry);
@@ -670,7 +692,7 @@ final class Parser
             }
 
             state_ = popState();
-            const token = scanner_.peekToken();
+            const token = scanner_.front;
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -684,13 +706,18 @@ final class Parser
         ///Parse a key in a block mapping. If first is true, this is the first key.
         Event parseBlockMappingKey(Flag!"first" first)() @safe
         {
-            static if(first){pushMark(scanner_.getToken().startMark);}
-
-            if(scanner_.checkToken(TokenID.key))
+            static if(first)
             {
-                const token = scanner_.getToken();
+                pushMark(scanner_.front.startMark);
+                scanner_.popFront();
+            }
 
-                if(!scanner_.checkToken(TokenID.key, TokenID.value, TokenID.blockEnd))
+            if(scanner_.front.id == TokenID.key)
+            {
+                const token = scanner_.front;
+                scanner_.popFront();
+
+                if(!scanner_.front.id.among!(TokenID.key, TokenID.value, TokenID.blockEnd))
                 {
                     pushState(&parseBlockMappingValue);
                     return parseBlockNodeOrIndentlessSequence();
@@ -700,9 +727,9 @@ final class Parser
                 return processEmptyScalar(token.endMark);
             }
 
-            if(!scanner_.checkToken(TokenID.blockEnd))
+            if(scanner_.front.id != TokenID.blockEnd)
             {
-                const token = scanner_.peekToken();
+                const token = scanner_.front;
                 throw new ParserException("While parsing a block mapping", marks_.data.back,
                                 "expected block end, but found: " ~ token.idString,
                                 token.startMark);
@@ -710,18 +737,20 @@ final class Parser
 
             state_ = popState();
             popMark();
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
             return mappingEndEvent(token.startMark, token.endMark);
         }
 
         ///Parse a value in a block mapping.
         Event parseBlockMappingValue() @safe
         {
-            if(scanner_.checkToken(TokenID.value))
+            if(scanner_.front.id == TokenID.value)
             {
-                const token = scanner_.getToken();
+                const token = scanner_.front;
+                scanner_.popFront();
 
-                if(!scanner_.checkToken(TokenID.key, TokenID.value, TokenID.blockEnd))
+                if(!scanner_.front.id.among!(TokenID.key, TokenID.value, TokenID.blockEnd))
                 {
                     pushState(&parseBlockMappingKey!(No.first));
                     return parseBlockNodeOrIndentlessSequence();
@@ -732,7 +761,7 @@ final class Parser
             }
 
             state_= &parseBlockMappingKey!(No.first);
-            return processEmptyScalar(scanner_.peekToken().startMark);
+            return processEmptyScalar(scanner_.front.startMark);
         }
 
         /**
@@ -751,40 +780,45 @@ final class Parser
         ///Parse an entry in a flow sequence. If first is true, this is the first entry.
         Event parseFlowSequenceEntry(Flag!"first" first)() @safe
         {
-            static if(first){pushMark(scanner_.getToken().startMark);}
+            static if(first)
+            {
+                pushMark(scanner_.front.startMark);
+                scanner_.popFront();
+            }
 
-            if(!scanner_.checkToken(TokenID.flowSequenceEnd))
+            if(scanner_.front.id != TokenID.flowSequenceEnd)
             {
                 static if(!first)
                 {
-                    if(scanner_.checkToken(TokenID.flowEntry))
+                    if(scanner_.front.id == TokenID.flowEntry)
                     {
-                        scanner_.getToken();
+                        scanner_.popFront();
                     }
                     else
                     {
-                        const token = scanner_.peekToken();
+                        const token = scanner_.front;
                         throw new ParserException("While parsing a flow sequence", marks_.data.back,
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
                     }
                 }
 
-                if(scanner_.checkToken(TokenID.key))
+                if(scanner_.front.id == TokenID.key)
                 {
-                    const token = scanner_.peekToken();
+                    const token = scanner_.front;
                     state_ = &parseFlowSequenceEntryMappingKey;
                     return mappingStartEvent(token.startMark, token.endMark,
                                              null, null, true, CollectionStyle.flow);
                 }
-                else if(!scanner_.checkToken(TokenID.flowSequenceEnd))
+                else if(scanner_.front.id != TokenID.flowSequenceEnd)
                 {
                     pushState(&parseFlowSequenceEntry!(No.first));
                     return parseFlowNode();
                 }
             }
 
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
             state_ = popState();
             popMark();
             return sequenceEndEvent(token.startMark, token.endMark);
@@ -793,9 +827,10 @@ final class Parser
         ///Parse a key in flow context.
         Event parseFlowKey(in Event delegate() @safe nextState) @safe
         {
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
 
-            if(!scanner_.checkToken(TokenID.value, TokenID.flowEntry,
+            if(!scanner_.front.id.among!(TokenID.value, TokenID.flowEntry,
                                     TokenID.flowSequenceEnd))
             {
                 pushState(nextState);
@@ -816,10 +851,11 @@ final class Parser
         Event parseFlowValue(TokenID checkId, in Event delegate() @safe nextState)
             @safe
         {
-            if(scanner_.checkToken(TokenID.value))
+            if(scanner_.front.id == TokenID.value)
             {
-                const token = scanner_.getToken();
-                if(!scanner_.checkToken(TokenID.flowEntry, checkId))
+                const token = scanner_.front;
+                scanner_.popFront();
+                if(!scanner_.front.id.among(TokenID.flowEntry, checkId))
                 {
                     pushState(nextState);
                     return parseFlowNode();
@@ -830,7 +866,7 @@ final class Parser
             }
 
             state_ = nextState;
-            return processEmptyScalar(scanner_.peekToken().startMark);
+            return processEmptyScalar(scanner_.front.startMark);
         }
 
         ///Parse a mapping value in an entry in a flow sequence.
@@ -844,7 +880,7 @@ final class Parser
         Event parseFlowSequenceEntryMappingEnd() @safe
         {
             state_ = &parseFlowSequenceEntry!(No.first);
-            const token = scanner_.peekToken();
+            const token = scanner_.front;
             return mappingEndEvent(token.startMark, token.startMark);
         }
 
@@ -859,38 +895,43 @@ final class Parser
         ///Parse a key in a flow mapping.
         Event parseFlowMappingKey(Flag!"first" first)() @safe
         {
-            static if(first){pushMark(scanner_.getToken().startMark);}
+            static if(first)
+            {
+                pushMark(scanner_.front.startMark);
+                scanner_.popFront();
+            }
 
-            if(!scanner_.checkToken(TokenID.flowMappingEnd))
+            if(scanner_.front.id != TokenID.flowMappingEnd)
             {
                 static if(!first)
                 {
-                    if(scanner_.checkToken(TokenID.flowEntry))
+                    if(scanner_.front.id == TokenID.flowEntry)
                     {
-                        scanner_.getToken();
+                        scanner_.popFront();
                     }
                     else
                     {
-                        const token = scanner_.peekToken();
+                        const token = scanner_.front;
                         throw new ParserException("While parsing a flow mapping", marks_.data.back,
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);
                     }
                 }
 
-                if(scanner_.checkToken(TokenID.key))
+                if(scanner_.front.id == TokenID.key)
                 {
                     return parseFlowKey(&parseFlowMappingValue);
                 }
 
-                if(!scanner_.checkToken(TokenID.flowMappingEnd))
+                if(scanner_.front.id != TokenID.flowMappingEnd)
                 {
                     pushState(&parseFlowMappingEmptyValue);
                     return parseFlowNode();
                 }
             }
 
-            const token = scanner_.getToken();
+            const token = scanner_.front;
+            scanner_.popFront();
             state_ = popState();
             popMark();
             return mappingEndEvent(token.startMark, token.endMark);
@@ -906,7 +947,7 @@ final class Parser
         Event parseFlowMappingEmptyValue() @safe
         {
             state_ = &parseFlowMappingKey!(No.first);
-            return processEmptyScalar(scanner_.peekToken().startMark);
+            return processEmptyScalar(scanner_.front.startMark);
         }
 
         ///Return an empty scalar.
