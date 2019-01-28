@@ -113,13 +113,32 @@ struct Serializer(Range, CharType)
          */
         static bool anchorable(ref Node node) @safe
         {
-            if(node.isScalar)
+            if(node.nodeID == NodeID.scalar)
             {
-                return node.isType!string    ? node.as!string.length > 64 :
-                       node.isType!(ubyte[]) ? node.as!(ubyte[]).length > 64:
+                return (node.type == NodeType.string) ? node.as!string.length > 64 :
+                       (node.type == NodeType.binary) ? node.as!(ubyte[]).length > 64 :
                                                false;
             }
             return node.length > 2;
+        }
+
+        @safe unittest
+        {
+            import std.string : representation;
+            auto shortString = "not much";
+            auto longString = "A fairly long string that would be a good idea to add an anchor to";
+            auto node1 = Node(shortString);
+            auto node2 = Node(shortString.representation.dup);
+            auto node3 = Node(longString);
+            auto node4 = Node(longString.representation.dup);
+            auto node5 = Node([node1]);
+            auto node6 = Node([node1, node2, node3, node4]);
+            assert(!anchorable(node1));
+            assert(!anchorable(node2));
+            assert(anchorable(node3));
+            assert(anchorable(node4));
+            assert(!anchorable(node5));
+            assert(anchorable(node6));
         }
 
         ///Add an anchor to the node if it's anchorable and not anchored yet.
@@ -137,14 +156,24 @@ struct Serializer(Range, CharType)
             }
 
             anchors_[node] = null;
-            if(node.isSequence) foreach(ref Node item; node)
+            final switch (node.nodeID)
             {
-                anchorNode(item);
-            }
-            else if(node.isMapping) foreach(ref Node key, ref Node value; node)
-            {
-                anchorNode(key);
-                anchorNode(value);
+                case NodeID.mapping:
+                    foreach(ref Node key, ref Node value; node)
+                    {
+                        anchorNode(key);
+                        anchorNode(value);
+                    }
+                    break;
+                case NodeID.sequence:
+                    foreach(ref Node item; node)
+                    {
+                        anchorNode(item);
+                    }
+                    break;
+                case NodeID.invalid:
+                    assert(0);
+                case NodeID.scalar:
             }
         }
 
@@ -174,45 +203,42 @@ struct Serializer(Range, CharType)
                 }
                 serializedNodes_[node] = true;
             }
+            final switch (node.nodeID)
+            {
+                case NodeID.mapping:
+                    const defaultTag = resolver_.defaultMappingTag;
+                    const implicit = node.tag_ == defaultTag;
+                    emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
+                                                    implicit, node.collectionStyle));
+                    foreach(ref Node key, ref Node value; node)
+                    {
+                        serializeNode(key);
+                        serializeNode(value);
+                    }
+                    emitter_.emit(mappingEndEvent(Mark(), Mark()));
+                    return;
+                case NodeID.sequence:
+                    const defaultTag = resolver_.defaultSequenceTag;
+                    const implicit = node.tag_ == defaultTag;
+                    emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
+                                                     implicit, node.collectionStyle));
+                    foreach(ref Node item; node)
+                    {
+                        serializeNode(item);
+                    }
+                    emitter_.emit(sequenceEndEvent(Mark(), Mark()));
+                    return;
+                case NodeID.scalar:
+                    assert(node.type == NodeType.string, "Scalar node type must be string before serialized");
+                    auto value = node.as!string;
+                    const detectedTag = resolver_.resolve(NodeID.scalar, null, value, true);
+                    const bool isDetected = node.tag_ == detectedTag;
 
-            if(node.isScalar)
-            {
-                assert(node.isType!string, "Scalar node type must be string before serialized");
-                auto value = node.as!string;
-                const detectedTag = resolver_.resolve(NodeID.scalar, null, value, true);
-                const bool isDetected = node.tag_ == detectedTag;
-
-                emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
-                              isDetected, value, node.scalarStyle));
-                return;
+                    emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
+                                  isDetected, value, node.scalarStyle));
+                    return;
+                case NodeID.invalid:
+                    assert(0);
             }
-            if(node.isSequence)
-            {
-                const defaultTag = resolver_.defaultSequenceTag;
-                const implicit = node.tag_ == defaultTag;
-                emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
-                                                 implicit, node.collectionStyle));
-                foreach(ref Node item; node)
-                {
-                    serializeNode(item);
-                }
-                emitter_.emit(sequenceEndEvent(Mark(), Mark()));
-                return;
-            }
-            if(node.isMapping)
-            {
-                const defaultTag = resolver_.defaultMappingTag;
-                const implicit = node.tag_ == defaultTag;
-                emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
-                                                implicit, node.collectionStyle));
-                foreach(ref Node key, ref Node value; node)
-                {
-                    serializeNode(key);
-                    serializeNode(value);
-                }
-                emitter_.emit(mappingEndEvent(Mark(), Mark()));
-                return;
-            }
-            assert(false, "This code should never be reached");
         }
 }

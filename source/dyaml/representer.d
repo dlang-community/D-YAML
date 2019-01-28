@@ -43,7 +43,8 @@ class RepresenterException : YAMLException
 Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionStyle defaultCollectionStyle) @safe
 {
     Node result;
-    final switch(data.newType) {
+    final switch(data.type)
+    {
         case NodeType.null_:
             result = representNull();
             break;
@@ -73,17 +74,26 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
         case NodeType.sequence:
             result = representNodes(data, defaultScalarStyle, defaultCollectionStyle);
             break;
+        case NodeType.invalid:
+            assert(0);
     }
 
-    if (result.isScalar && (result.scalarStyle == ScalarStyle.invalid))
+    final switch (result.nodeID)
     {
-        result.scalarStyle = defaultScalarStyle;
+        case NodeID.scalar:
+            if (result.scalarStyle == ScalarStyle.invalid)
+            {
+                result.scalarStyle = defaultScalarStyle;
+            }
+            break;
+        case NodeID.sequence, NodeID.mapping:
+            if (defaultCollectionStyle != CollectionStyle.invalid)
+            {
+                result.collectionStyle = defaultCollectionStyle;
+            }
+        case NodeID.invalid:
     }
 
-    if ((result.isSequence || result.isMapping) && (defaultCollectionStyle != CollectionStyle.invalid))
-    {
-        result.collectionStyle = defaultCollectionStyle;
-    }
 
     //Override tag if specified.
     if(data.tag_ !is null){result.tag_ = data.tag_;}
@@ -367,7 +377,7 @@ Node representNodes(const Node node, ScalarStyle defaultScalarStyle, CollectionS
         foreach(idx, item; nodes)
         {
             value[idx] = representData(item, defaultScalarStyle, defaultCollectionStyle);
-            const isScalar = value[idx].isScalar;
+            const isScalar = value[idx].nodeID == NodeID.scalar;
             const s = value[idx].scalarStyle;
             if(!isScalar || (s != ScalarStyle.invalid && s != ScalarStyle.plain))
             {
@@ -383,14 +393,14 @@ Node representNodes(const Node node, ScalarStyle defaultScalarStyle, CollectionS
 
 bool shouldUseBlockStyle(const Node value) @safe
 {
-    const isScalar = value.isScalar;
+    const isScalar = value.nodeID == NodeID.scalar;
     const s = value.scalarStyle;
     return (!isScalar || (s != ScalarStyle.invalid && s != ScalarStyle.plain));
 }
 bool shouldUseBlockStyle(const Node.Pair value) @safe
 {
-    const keyScalar = value.key.isScalar;
-    const valScalar = value.value.isScalar;
+    const keyScalar = value.key.nodeID == NodeID.scalar;
+    const valScalar = value.value.nodeID == NodeID.scalar;
     const keyStyle = value.key.scalarStyle;
     const valStyle = value.value.scalarStyle;
     if(!keyScalar ||

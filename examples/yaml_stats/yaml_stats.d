@@ -23,32 +23,30 @@ string statistics(ref Node document)
             tags[root.tag] = 0;
         }
         ++tags[root.tag];
-
-        if(root.isScalar)
+        final switch (root.nodeID)
         {
-            ++scalars;
-            return;
-        }
-        if(root.isSequence)
-        {
-            ++sequences;
-            seqItems += root.length;
-            foreach(ref Node node; root)
-            {
-                crawl(node);
-            }
-            return;
-        }
-        if(root.isMapping)
-        {
-            ++mappings;
-            mapPairs += root.length;
-            foreach(ref Node key, ref Node value; root)
-            {
-                crawl(key);
-                crawl(value);
-            }
-            return;
+            case NodeID.scalar:
+                ++scalars;
+                return;
+            case NodeID.sequence:
+                ++sequences;
+                seqItems += root.length;
+                foreach(ref Node node; root)
+                {
+                    crawl(node);
+                }
+                return;
+            case NodeID.mapping:
+                ++mappings;
+                mapPairs += root.length;
+                foreach(ref Node key, ref Node value; root)
+                {
+                    crawl(key);
+                    crawl(value);
+                }
+                return;
+            case NodeID.invalid:
+                assert(0);
         }
     }
 

@@ -464,7 +464,7 @@ Node.Pair[] getPairs(string type, const Node[] nodes) @safe
     pairs.reserve(nodes.length);
     foreach(node; nodes)
     {
-        enforce(node.isMapping && node.length == 1,
+        enforce(node.nodeID == NodeID.mapping && node.length == 1,
                 new Exception("While constructing " ~ type ~
                               ", expected a mapping with single element"));
 

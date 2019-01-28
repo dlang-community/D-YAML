@@ -41,11 +41,12 @@ class NodeException : YAMLException
 }
 
 // Node kinds.
-package enum NodeID : ubyte
+enum NodeID : ubyte
 {
     scalar,
     sequence,
-    mapping
+    mapping,
+    invalid
 }
 
 /// Null YAML type. Used in nodes with _null values.
@@ -102,7 +103,8 @@ enum NodeType
     timestamp,
     string,
     mapping,
-    sequence
+    sequence,
+    invalid
 }
 
 /** YAML node.
@@ -289,7 +291,7 @@ struct Node
         {
             {
                 auto node = Node(42);
-                assert(node.isScalar && !node.isSequence && !node.isMapping);
+                assert(node.nodeID == NodeID.scalar);
                 assert(node.as!int == 42 && node.as!float == 42.0f && node.as!string == "42");
             }
 
@@ -302,7 +304,7 @@ struct Node
         {
             with(Node([1, 2, 3]))
             {
-                assert(!isScalar() && isSequence && !isMapping);
+                assert(nodeID == NodeID.sequence);
                 assert(length == 3);
                 assert(opIndex(2).as!int == 3);
             }
@@ -315,7 +317,7 @@ struct Node
             aa["2"] = 2;
             with(Node(aa))
             {
-                assert(!isScalar() && !isSequence && isMapping);
+                assert(nodeID == NodeID.mapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -384,7 +386,7 @@ struct Node
         {
             with(Node(["1", "2"], [1, 2]))
             {
-                assert(!isScalar() && !isSequence && isMapping);
+                assert(nodeID == NodeID.mapping);
                 assert(length == 2);
                 assert(opIndex("2").as!int == 2);
             }
@@ -395,30 +397,6 @@ struct Node
         @property bool isValid()    const @safe pure nothrow
         {
             return value_.hasValue;
-        }
-
-        /// Is this node a scalar value?
-        @property bool isScalar()   const @safe nothrow
-        {
-            return !(isMapping || isSequence);
-        }
-
-        /// Is this node a sequence?
-        @property bool isSequence() const @safe nothrow
-        {
-            return isType!(Node[]);
-        }
-
-        /// Is this node a mapping?
-        @property bool isMapping()  const @safe nothrow
-        {
-            return isType!(Pair[]);
-        }
-
-        /// Is this node null?
-        @property bool isNull()     const @safe nothrow
-        {
-            return isType!YAMLNull;
         }
 
         /// Return tag of the node.
@@ -552,15 +530,16 @@ struct Node
 
                 // If we're getting from a mapping and we're not getting Node.Pair[],
                 // we're getting the default value.
-                if(isMapping){return this["="].get!( T, stringConversion);}
+                if(nodeID == NodeID.mapping){return this["="].get!( T, stringConversion);}
 
                 static if(isSomeString!T)
                 {
                     static if(!stringConversion)
                     {
-                        if(isString){return to!T(getValue!string);}
-                        throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                            ". Expected: " ~ typeid(T).toString(), startMark_);
+                        enforce(type == NodeType.string, new NodeException(
+                            "Node stores unexpected type: " ~ text(type) ~
+                            ". Expected: " ~ typeid(T).toString(), startMark_));
+                        return to!T(getValue!string);
                     }
                     else
                     {
@@ -577,15 +556,28 @@ struct Node
                 }
                 else static if(isFloatingPoint!T)
                 {
-                    /// Can convert int to float.
-                    if(isInt())       {return to!T(getValue!long);}
-                    else if(isFloat()){return to!T(getValue!real);}
-                    else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
-                        ". Expected: " ~ typeid(T).toString, startMark_);
+                    final switch (type)
+                    {
+                        case NodeType.integer:
+                            return to!T(getValue!long);
+                        case NodeType.decimal:
+                            return to!T(getValue!real);
+                        case NodeType.binary:
+                        case NodeType.string:
+                        case NodeType.boolean:
+                        case NodeType.null_:
+                        case NodeType.merge:
+                        case NodeType.invalid:
+                        case NodeType.timestamp:
+                        case NodeType.mapping:
+                        case NodeType.sequence:
+                            throw new NodeException("Node stores unexpected type: " ~ text(type) ~
+                                ". Expected: " ~ typeid(T).toString, startMark_);
+                    }
                 }
                 else static if(isIntegral!T)
                 {
-                    enforce(isInt(), new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                    enforce(type == NodeType.integer, new NodeException("Node stores unexpected type: " ~ text(type) ~
                                     ". Expected: " ~ typeid(T).toString, startMark_));
                     immutable temp = getValue!long;
                     enforce(temp >= T.min && temp <= T.max,
@@ -593,7 +585,7 @@ struct Node
                             " out of range. Value: " ~ to!string(temp), startMark_));
                     return temp.to!T;
                 }
-                else throw new NodeException("Node stores unexpected type: " ~ type.toString() ~
+                else throw new NodeException("Node stores unexpected type: " ~ text(type) ~
                     ". Expected: " ~ typeid(T).toString, startMark_);
             }
         }
@@ -856,10 +848,17 @@ struct Node
          */
         @property size_t length() const @safe
         {
-            if(isSequence)    { return getValue!(Node[]).length; }
-            else if(isMapping) { return getValue!(Pair[]).length; }
-            throw new NodeException("Trying to get length of a " ~ nodeTypeString ~ " node",
-                            startMark_);
+            final switch(nodeID)
+            {
+                case NodeID.sequence:
+                    return getValue!(Node[]).length;
+                case NodeID.mapping:
+                    return getValue!(Pair[]).length;
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    throw new NodeException("Trying to get length of a " ~ nodeTypeString ~ " node",
+                                    startMark_);
+            }
         }
         @safe unittest
         {
@@ -892,27 +891,31 @@ struct Node
          */
         ref inout(Node) opIndex(T)(T index) inout @safe
         {
-            if(isSequence)
+            final switch (nodeID)
             {
-                checkSequenceIndex(index);
-                static if(isIntegral!T)
-                {
-                    return getValue!(Node[])[index];
-                }
-                assert(false);
-            }
-            else if(isMapping)
-            {
-                auto idx = findPair(index);
-                if(idx >= 0)
-                {
-                    return getValue!(Pair[])[idx].value;
-                }
+                case NodeID.sequence:
+                    checkSequenceIndex(index);
+                    static if(isIntegral!T)
+                    {
+                        return getValue!(Node[])[index];
+                    }
+                    else
+                    {
+                        assert(false, "Only integers may index sequence nodes");
+                    }
+                case NodeID.mapping:
+                    auto idx = findPair(index);
+                    if(idx >= 0)
+                    {
+                        return getValue!(Pair[])[idx].value;
+                    }
 
-                string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
-                throw new NodeException(msg, startMark_);
+                    string msg = "Mapping index not found" ~ (isSomeString!T ? ": " ~ to!string(index) : "");
+                    throw new NodeException(msg, startMark_);
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
             }
-            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         ///
         @safe unittest
@@ -1079,35 +1082,34 @@ struct Node
          */
         void opIndexAssign(K, V)(V value, K index)
         {
-            if(isSequence())
+            final switch (nodeID)
             {
-                // This ensures K is integral.
-                checkSequenceIndex(index);
-                static if(isIntegral!K || is(Unqual!K == bool))
-                {
-                    auto nodes = getValue!(Node[]);
-                    static if(is(Unqual!V == Node)){nodes[index] = value;}
-                    else                           {nodes[index] = Node(value);}
-                    setValue(nodes);
+                case NodeID.sequence:
+                    checkSequenceIndex(index);
+                    static if(isIntegral!K || is(Unqual!K == bool))
+                    {
+                        auto nodes = getValue!(Node[]);
+                        static if(is(Unqual!V == Node)){nodes[index] = value;}
+                        else                           {nodes[index] = Node(value);}
+                        setValue(nodes);
+                        return;
+                    }
+                    assert(false, "Only integers may index sequence nodes");
+                case NodeID.mapping:
+                    const idx = findPair(index);
+                    if(idx < 0){add(index, value);}
+                    else
+                    {
+                        auto pairs = as!(Node.Pair[])();
+                        static if(is(Unqual!V == Node)){pairs[idx].value = value;}
+                        else                           {pairs[idx].value = Node(value);}
+                        setValue(pairs);
+                    }
                     return;
-                }
-                assert(false);
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
             }
-            else if(isMapping())
-            {
-                const idx = findPair(index);
-                if(idx < 0){add(index, value);}
-                else
-                {
-                    auto pairs = as!(Node.Pair[])();
-                    static if(is(Unqual!V == Node)){pairs[idx].value = value;}
-                    else                           {pairs[idx].value = Node(value);}
-                    setValue(pairs);
-                }
-                return;
-            }
-
-            throw new NodeException("Trying to index a " ~ nodeTypeString ~ " node", startMark_);
         }
         @safe unittest
         {
@@ -1215,14 +1217,14 @@ struct Node
             }
             auto sequence()
             {
-                enforce(isSequence,
+                enforce(nodeID == NodeID.sequence,
                         new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
                             startMark_));
                 return Range!(Node[])(get!(Node[]));
             }
             auto sequence() const
             {
-                enforce(isSequence,
+                enforce(nodeID == NodeID.sequence,
                         new NodeException("Trying to 'sequence'-iterate over a " ~ nodeTypeString ~ " node",
                             startMark_));
                 return Range!(const(Node)[])(get!(Node[]));
@@ -1305,14 +1307,14 @@ struct Node
 
             auto mapping()
             {
-                enforce(isMapping,
+                enforce(nodeID == NodeID.mapping,
                         new NodeException("Trying to 'mapping'-iterate over a "
                             ~ nodeTypeString ~ " node", startMark_));
                 return Range!(Node.Pair[])(get!(Node.Pair[]));
             }
             auto mapping() const
             {
-                enforce(isMapping,
+                enforce(nodeID == NodeID.mapping,
                         new NodeException("Trying to 'mapping'-iterate over a "
                             ~ nodeTypeString ~ " node", startMark_));
                 return Range!(const(Node.Pair)[])(get!(Node.Pair[]));
@@ -1350,7 +1352,7 @@ struct Node
           */
         auto mappingKeys(K = Node)() const
         {
-            enforce(isMapping,
+            enforce(nodeID == NodeID.mapping,
                     new NodeException("Trying to 'mappingKeys'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!K == Node))
@@ -1382,7 +1384,7 @@ struct Node
           */
         auto mappingValues(V = Node)() const
         {
-            enforce(isMapping,
+            enforce(nodeID == NodeID.mapping,
                     new NodeException("Trying to 'mappingValues'-iterate over a "
                         ~ nodeTypeString ~ " node", startMark_));
             static if (is(Unqual!V == Node))
@@ -1415,7 +1417,7 @@ struct Node
          */
         int opApply(D)(D dg) if (isDelegate!D && (Parameters!D.length == 1))
         {
-            enforce(isSequence,
+            enforce(nodeID == NodeID.sequence,
                     new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
@@ -1438,7 +1440,7 @@ struct Node
         /// ditto
         int opApply(D)(D dg) const if (isDelegate!D && (Parameters!D.length == 1))
         {
-            enforce(isSequence,
+            enforce(nodeID == NodeID.sequence,
                     new NodeException("Trying to sequence-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
@@ -1529,7 +1531,7 @@ struct Node
         {
             alias K = Parameters!DG[0];
             alias V = Parameters!DG[1];
-            enforce(isMapping,
+            enforce(nodeID == NodeID.mapping,
                     new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
@@ -1566,7 +1568,7 @@ struct Node
         {
             alias K = Parameters!DG[0];
             alias V = Parameters!DG[1];
-            enforce(isMapping,
+            enforce(nodeID == NodeID.mapping,
                     new NodeException("Trying to mapping-foreach over a " ~ nodeTypeString ~ " node",
                               startMark_));
 
@@ -1703,7 +1705,7 @@ struct Node
             {
                 setValue(Node[].init);
             }
-            enforce(isSequence(),
+            enforce(nodeID == NodeID.sequence,
                     new NodeException("Trying to add an element to a " ~ nodeTypeString ~ " node", startMark_));
 
             auto nodes = get!(Node[])();
@@ -1754,7 +1756,7 @@ struct Node
             {
                 setValue(Node.Pair[].init);
             }
-            enforce(isMapping(),
+            enforce(nodeID == NodeID.mapping,
                     new NodeException("Trying to add a key-value pair to a " ~
                               nodeTypeString ~ " node",
                               startMark_));
@@ -1802,7 +1804,7 @@ struct Node
         inout(Node*) opBinaryRight(string op, K)(K key) inout
             if (op == "in")
         {
-            enforce(isMapping, new NodeException("Trying to use 'in' on a " ~
+            enforce(nodeID == NodeID.mapping, new NodeException("Trying to use 'in' on a " ~
                                          nodeTypeString ~ " node", startMark_));
 
             auto idx = findPair(key);
@@ -1943,7 +1945,7 @@ struct Node
             if(!v1){return v2 ? -1 : 0;}
             if(!v2){return 1;}
 
-            const typeCmp = cmp(newType, rhs.newType);
+            const typeCmp = cmp(type, rhs.type);
             if(typeCmp != 0){return typeCmp;}
 
             static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
@@ -1964,62 +1966,54 @@ struct Node
                 return 0;
             }
 
-            if(isSequence){return compareCollections!(Node[])(this, rhs);}
-            if(isMapping) {return compareCollections!(Pair[])(this, rhs);}
-            if(isString)
+            final switch(type)
             {
-                return std.algorithm.cmp(getValue!string,
-                                         rhs.getValue!string);
-            }
-            if(isInt)
-            {
-                return cmp(getValue!long, rhs.getValue!long);
-            }
-            if(isBool)
-            {
-                const b1 = getValue!bool;
-                const b2 = rhs.getValue!bool;
-                return b1 ? b2 ? 0 : 1
-                          : b2 ? -1 : 0;
-            }
-            if(isBinary)
-            {
-                const b1 = getValue!(ubyte[]);
-                const b2 = rhs.getValue!(ubyte[]);
-                return std.algorithm.cmp(b1, b2);
-            }
-            if(isNull)
-            {
-                return 0;
-            }
-            // Floats need special handling for NaNs .
-            // We consider NaN to be lower than any float.
-            if(isFloat)
-            {
-                const r1 = getValue!real;
-                const r2 = rhs.getValue!real;
-                if(isNaN(r1))
-                {
-                    return isNaN(r2) ? 0 : -1;
-                }
-                if(isNaN(r2))
-                {
-                    return 1;
-                }
-                // Fuzzy equality.
-                if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
-                {
+                case NodeType.string:
+                    return std.algorithm.cmp(getValue!string,
+                                             rhs.getValue!string);
+                case NodeType.integer:
+                    return cmp(getValue!long, rhs.getValue!long);
+                case NodeType.boolean:
+                    const b1 = getValue!bool;
+                    const b2 = rhs.getValue!bool;
+                    return b1 ? b2 ? 0 : 1
+                              : b2 ? -1 : 0;
+                case NodeType.binary:
+                    const b1 = getValue!(ubyte[]);
+                    const b2 = rhs.getValue!(ubyte[]);
+                    return std.algorithm.cmp(b1, b2);
+                case NodeType.null_:
                     return 0;
-                }
-                return cmp(r1, r2);
+                case NodeType.decimal:
+                    const r1 = getValue!real;
+                    const r2 = rhs.getValue!real;
+                    if(isNaN(r1))
+                    {
+                        return isNaN(r2) ? 0 : -1;
+                    }
+                    if(isNaN(r2))
+                    {
+                        return 1;
+                    }
+                    // Fuzzy equality.
+                    if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
+                    {
+                        return 0;
+                    }
+                    return cmp(r1, r2);
+                case NodeType.timestamp:
+                    const t1 = getValue!SysTime;
+                    const t2 = rhs.getValue!SysTime;
+                    return cmp(t1, t2);
+                case NodeType.mapping:
+                    return compareCollections!(Pair[])(this, rhs);
+                case NodeType.sequence:
+                    return compareCollections!(Node[])(this, rhs);
+                case NodeType.merge:
+                    assert(false, "Cannot compare merge nodes");
+                case NodeType.invalid:
+                    assert(false, "Cannot compare invalid nodes");
             }
-            else if(isTime)
-            {
-                const t1 = getValue!SysTime;
-                const t2 = rhs.getValue!SysTime;
-                return cmp(t1, t2);
-            }
-            assert(false, "Unknown type of node for comparison : " ~ type.toString());
         }
 
         // Ensure opCmp is symmetric for collections
@@ -2054,56 +2048,8 @@ struct Node
             assert(Node(42).toHash() != Node(42, "some-tag").toHash());
         }
 
-    package:
-
-        // Get a string representation of the node tree. Used for debugging.
-        //
-        // Params:  level = Level of the node in the tree.
-        //
-        // Returns: String representing the node tree.
-        @property string debugString(uint level = 0) const @safe
-        {
-            string indent;
-            foreach(i; 0 .. level){indent ~= " ";}
-
-            if(!isValid){return indent ~ "invalid";}
-
-            if(isSequence)
-            {
-                string result = indent ~ "sequence:\n";
-                foreach(ref node; get!(Node[]))
-                {
-                    result ~= node.debugString(level + 1);
-                }
-                return result;
-            }
-            if(isMapping)
-            {
-                string result = indent ~ "mapping:\n";
-                foreach(ref pair; get!(Node.Pair[]))
-                {
-                    result ~= indent ~ " pair\n";
-                    result ~= pair.key.debugString(level + 2);
-                    result ~= pair.value.debugString(level + 2);
-                }
-                return result;
-            }
-            if(isScalar)
-            {
-                return indent ~ "scalar(" ~
-                       (convertsTo!string ? get!string : type.toString()) ~ ")\n";
-            }
-            assert(false);
-        }
-
-        // Get type of the node value.
-        @property TypeInfo type() const @safe nothrow
-        {
-            return value_.type;
-        }
-
-        // Get type of the node value.
-        @property NodeType newType() const @safe nothrow
+        /// Get type of the node value.
+        @property NodeType type() const @safe nothrow
         {
             if (value_.type is typeid(bool))
             {
@@ -2145,49 +2091,88 @@ struct Node
             {
                 return NodeType.decimal;
             }
+            else if (!value_.hasValue)
+            {
+                return NodeType.invalid;
+            }
             else assert(0, text(value_.type));
         }
 
-    public:
-        // Determine if the value stored by the node is of specified type.
+        /// Get the kind of node this is.
+        @property NodeID nodeID() const @safe nothrow
+        {
+            final switch (type)
+            {
+                case NodeType.sequence:
+                    return NodeID.sequence;
+                case NodeType.mapping:
+                    return NodeID.mapping;
+                case NodeType.boolean:
+                case NodeType.integer:
+                case NodeType.binary:
+                case NodeType.string:
+                case NodeType.timestamp:
+                case NodeType.null_:
+                case NodeType.merge:
+                case NodeType.decimal:
+                    return NodeID.scalar;
+                case NodeType.invalid:
+                    return NodeID.invalid;
+            }
+        }
+    package:
+
+        // Get a string representation of the node tree. Used for debugging.
         //
-        // This only works for default YAML types, not for user defined types.
-        @property bool isType(T)() const
+        // Params:  level = Level of the node in the tree.
+        //
+        // Returns: String representing the node tree.
+        @property string debugString(uint level = 0) const @safe
         {
-            return this.type is typeid(Unqual!T);
+            string indent;
+            foreach(i; 0 .. level){indent ~= " ";}
+
+            final switch (nodeID)
+            {
+                case NodeID.invalid:
+                    return indent ~ "invalid";
+                case NodeID.sequence:
+                    string result = indent ~ "sequence:\n";
+                    foreach(ref node; get!(Node[]))
+                    {
+                        result ~= node.debugString(level + 1);
+                    }
+                    return result;
+                case NodeID.mapping:
+                    string result = indent ~ "mapping:\n";
+                    foreach(ref pair; get!(Node.Pair[]))
+                    {
+                        result ~= indent ~ " pair\n";
+                        result ~= pair.key.debugString(level + 2);
+                        result ~= pair.value.debugString(level + 2);
+                    }
+                    return result;
+                case NodeID.scalar:
+                    return indent ~ "scalar(" ~
+                           (convertsTo!string ? get!string : text(type)) ~ ")\n";
+            }
         }
 
-        // Is the value a bool?
-        alias isBool = isType!bool;
 
-        // Is the value a raw binary buffer?
-        alias isBinary = isType!(ubyte[]);
-
-        // Is the value an integer?
-        alias isInt = isType!long;
-
-        // Is the value a floating point number?
-        alias isFloat = isType!real;
-
-        // Is the value a string?
-        alias isString = isType!string;
-
-        // Is the value a timestamp?
-        alias isTime = isType!SysTime;
-
-        // Does given node have the same type as this node?
-        bool hasEqualType(const ref Node node) const @safe
-        {
-            return this.type is node.type;
-        }
-
-        // Return a string describing node type (sequence, mapping or scalar)
+    public:
         @property string nodeTypeString() const @safe nothrow
         {
-            assert(isScalar || isSequence || isMapping, "Unknown node type");
-            return isScalar   ? "scalar"   :
-                   isSequence ? "sequence" :
-                   isMapping  ? "mapping" : "";
+            final switch (nodeID)
+            {
+                case NodeID.mapping:
+                    return "mapping";
+                case NodeID.sequence:
+                    return "sequence";
+                case NodeID.scalar:
+                    return "scalar";
+                case NodeID.invalid:
+                    return "invalid";
+            }
         }
 
         // Determine if the value can be converted to specified type.
@@ -2197,9 +2182,9 @@ struct Node
 
             // Every type allowed in Value should be convertible to string.
             static if(isSomeString!T)        {return true;}
-            else static if(isFloatingPoint!T){return isInt() || isFloat();}
-            else static if(isIntegral!T)     {return isInt();}
-            else static if(is(Unqual!T==bool)){return isBool();}
+            else static if(isFloatingPoint!T){return type.among!(NodeType.integer, NodeType.decimal);}
+            else static if(isIntegral!T)     {return type == NodeType.integer;}
+            else static if(is(Unqual!T==bool)){return type == NodeType.boolean;}
             else                             {return false;}
         }
         /**
@@ -2209,14 +2194,14 @@ struct Node
         */
         void setStyle(CollectionStyle style) @safe
         {
-            enforce(!isValid || isSequence || isMapping, new NodeException(
+            enforce(!isValid || (nodeID.among(NodeID.mapping, NodeID.sequence)), new NodeException(
                 "Cannot set collection style for non-collection nodes", startMark_));
             collectionStyle = style;
         }
         /// Ditto
         void setStyle(ScalarStyle style) @safe
         {
-            enforce(!isValid || (!isSequence && !isMapping), new NodeException(
+            enforce(!isValid || (nodeID == NodeID.scalar), new NodeException(
                 "Cannot set scalar style for non-scalar nodes", startMark_));
             scalarStyle = style;
         }
@@ -2303,34 +2288,46 @@ struct Node
         }
 
     private:
+        // Determine if the value stored by the node is of specified type.
+        //
+        // This only works for default YAML types, not for user defined types.
+        @property bool isType(T)() const
+        {
+            return value_.type is typeid(Unqual!T);
+        }
+
         // Implementation of contains() and containsKey().
         bool contains_(T, Flag!"key" key, string func)(T rhs) const
         {
-            static if(!key) if(isSequence)
+            final switch (nodeID)
             {
-                foreach(ref node; getValue!(Node[]))
-                {
-                    if(node == rhs){return true;}
-                }
-                return false;
+                case NodeID.mapping:
+                    return findPair!(T, key)(rhs) >= 0;
+                case NodeID.sequence:
+                    static if(!key)
+                    {
+                        foreach(ref node; getValue!(Node[]))
+                        {
+                            if(node == rhs){return true;}
+                        }
+                        return false;
+                    }
+                    else
+                    {
+                        throw new NodeException("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
+                                        startMark_);
+                    }
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    throw new NodeException("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
+                                    startMark_);
             }
 
-            if(isMapping)
-            {
-                return findPair!(T, key)(rhs) >= 0;
-            }
-
-            throw new NodeException("Trying to use " ~ func ~ "() on a " ~ nodeTypeString ~ " node",
-                            startMark_);
         }
 
         // Implementation of remove() and removeAt()
         void remove_(T, Flag!"key" key, string func)(T rhs)
         {
-            enforce(isSequence || isMapping,
-                    new NodeException("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
-                              startMark_));
-
             static void removeElem(E, I)(ref Node node, I index)
             {
                 auto elems = node.getValue!(E[]);
@@ -2339,32 +2336,36 @@ struct Node
                 node.setValue(elems);
             }
 
-            if(isSequence())
+            final switch (nodeID)
             {
-                static long getIndex(ref Node node, ref T rhs)
-                {
-                    foreach(idx, ref elem; node.get!(Node[]))
+                case NodeID.mapping:
+                    const index = findPair!(T, key)(rhs);
+                    if(index >= 0){removeElem!Pair(this, index);}
+                    break;
+                case NodeID.sequence:
+                    static long getIndex(ref Node node, ref T rhs)
                     {
-                        if(elem.convertsTo!T && elem.as!(T, No.stringConversion) == rhs)
+                        foreach(idx, ref elem; node.get!(Node[]))
                         {
-                            return idx;
+                            if(elem.convertsTo!T && elem.as!(T, No.stringConversion) == rhs)
+                            {
+                                return idx;
+                            }
                         }
+                        return -1;
                     }
-                    return -1;
-                }
 
-                const index = select!key(rhs, getIndex(this, rhs));
+                    const index = select!key(rhs, getIndex(this, rhs));
 
-                // This throws if the index is not integral.
-                checkSequenceIndex(index);
+                    // This throws if the index is not integral.
+                    checkSequenceIndex(index);
 
-                static if(isIntegral!(typeof(index))){removeElem!Node(this, index);}
-                else                                 {assert(false, "Non-integral sequence index");}
-            }
-            else if(isMapping())
-            {
-                const index = findPair!(T, key)(rhs);
-                if(index >= 0){removeElem!Pair(this, index);}
+                    static if(isIntegral!(typeof(index))){removeElem!Node(this, index); break; }
+                    else                                 {assert(false, "Non-integral sequence index");}
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    throw new NodeException("Trying to " ~ func ~ "() from a " ~ nodeTypeString ~ " node",
+                              startMark_);
             }
         }
 
@@ -2380,10 +2381,10 @@ struct Node
                 else          {node = &pair.value;}
 
 
-                const bool typeMatch = (isFloatingPoint!T && (node.isInt || node.isFloat)) ||
-                                 (isIntegral!T && node.isInt) ||
-                                 (is(Unqual!T==bool) && node.isBool) ||
-                                 (isSomeString!T && node.isString) ||
+                const bool typeMatch = (isFloatingPoint!T && (node.type.among!(NodeType.integer, NodeType.decimal))) ||
+                                 (isIntegral!T && node.type == NodeType.integer) ||
+                                 (is(Unqual!T==bool) && node.type == NodeType.boolean) ||
+                                 (isSomeString!T && node.type == NodeType.string) ||
                                  (node.isType!T);
                 if(typeMatch && *node == index)
                 {
@@ -2396,7 +2397,7 @@ struct Node
         // Check if index is integral and in range.
         void checkSequenceIndex(T)(T index) const
         {
-            assert(isSequence,
+            assert(nodeID == NodeID.sequence,
                    "checkSequenceIndex() called on a " ~ nodeTypeString ~ " node");
 
             static if(!isIntegral!T)

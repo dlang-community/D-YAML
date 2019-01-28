@@ -275,7 +275,7 @@ struct Composer
                 throw new ConstructorException("While constructing a mapping, " ~
                                                "expected a mapping or a list of " ~
                                                "mappings for merging, but found: " ~
-                                               node.type.toString() ~
+                                               text(node.type) ~
                                                " NOTE: line/column shows topmost parent " ~
                                                "to which the content is being merged",
                                                startMark, endMark);
@@ -284,38 +284,44 @@ struct Composer
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             auto pairAppender = &(pairAppenders_[pairAppenderLevel]);
 
-            if(root.isMapping)
+            final switch (root.nodeID)
             {
-                Node[] toMerge;
-                toMerge.reserve(root.length);
-                foreach(ref Node key, ref Node value; root)
-                {
-                    if(key.isType!YAMLMerge)
+                case NodeID.mapping:
+                    Node[] toMerge;
+                    toMerge.reserve(root.length);
+                    foreach (ref Node key, ref Node value; root)
                     {
-                        toMerge ~= value;
+                        if(key.type == NodeType.merge)
+                        {
+                            toMerge ~= value;
+                        }
+                        else
+                        {
+                            auto temp = Node.Pair(key, value);
+                            pairAppender.put(temp);
+                        }
                     }
-                    else
+                    foreach (node; toMerge)
                     {
-                        auto temp = Node.Pair(key, value);
-                        pairAppender.put(temp);
+                        pairAppender.put(flatten(node, startMark, endMark,
+                                                     pairAppenderLevel + 1, nodeAppenderLevel));
                     }
-                }
-                foreach(node; toMerge)
-                {
-                    pairAppender.put(flatten(node, startMark, endMark,
-                                                 pairAppenderLevel + 1, nodeAppenderLevel));
-                }
-            }
-            //Must be a sequence of mappings.
-            else if(root.isSequence) foreach(ref Node node; root)
-            {
-                if(!node.isType!(Node.Pair[])){error(node);}
-                pairAppender.put(flatten(node, startMark, endMark,
-                                             pairAppenderLevel + 1, nodeAppenderLevel));
-            }
-            else
-            {
-                error(root);
+                    break;
+                case NodeID.sequence:
+                    foreach (ref Node node; root)
+                    {
+                        if (node.nodeID != NodeID.mapping)
+                        {
+                            error(node);
+                        }
+                        pairAppender.put(flatten(node, startMark, endMark,
+                                                     pairAppenderLevel + 1, nodeAppenderLevel));
+                    }
+                    break;
+                case NodeID.scalar:
+                case NodeID.invalid:
+                    error(root);
+                    break;
             }
 
             auto flattened = pairAppender.data.dup;
@@ -345,7 +351,7 @@ struct Composer
                                       composeNode(pairAppenderLevel + 1, nodeAppenderLevel));
 
                 //Need to flatten and merge the node referred by YAMLMerge.
-                if(pair.key.isType!YAMLMerge)
+                if(pair.key.type == NodeType.merge)
                 {
                     toMerge ~= tuple(pair.value, cast(Mark)parser_.front.endMark);
                 }

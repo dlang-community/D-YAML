@@ -14,41 +14,41 @@ void main()
 JSONValue toJSON(Node node)
 {
     JSONValue output;
-    if (node.isSequence)
+    final switch (node.type)
     {
-        output = JSONValue(string[].init);
-        foreach (Node seqNode; node)
-        {
-            output.array ~= seqNode.toJSON();
-        }
-    }
-    else if (node.isMapping)
-    {
-        output = JSONValue(string[string].init);
-        foreach (Node keyNode, Node valueNode; node)
-        {
-            output[keyNode.as!string] = valueNode.toJSON();
-        }
-    }
-    else if (node.isString)
-    {
-        output = node.as!string;
-    }
-    else if (node.isInt)
-    {
-        output = node.as!long;
-    }
-    else if (node.isFloat)
-    {
-        output = node.as!real;
-    }
-    else if (node.isBool)
-    {
-        output = node.as!bool;
-    }
-    else if (node.isTime)
-    {
-        output = node.as!SysTime.toISOExtString();
+        case NodeType.sequence:
+            output = JSONValue(string[].init);
+            foreach (Node seqNode; node)
+            {
+                output.array ~= seqNode.toJSON();
+            }
+            break;
+        case NodeType.mapping:
+            output = JSONValue(string[string].init);
+            foreach (Node keyNode, Node valueNode; node)
+            {
+                output[keyNode.as!string] = valueNode.toJSON();
+            }
+            break;
+        case NodeType.string:
+            output = node.as!string;
+            break;
+        case NodeType.integer:
+            output = node.as!long;
+            break;
+        case NodeType.decimal:
+            output = node.as!real;
+            break;
+        case NodeType.boolean:
+            output = node.as!bool;
+            break;
+        case NodeType.timestamp:
+            output = node.as!SysTime.toISOExtString();
+            break;
+        case NodeType.merge:
+        case NodeType.null_:
+        case NodeType.binary:
+        case NodeType.invalid:
     }
     return output;
 }
