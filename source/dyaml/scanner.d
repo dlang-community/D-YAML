@@ -2002,14 +2002,3 @@ struct Scanner
             return '\0';
         }
 }
-
-private:
-
-/// A nothrow function that converts a dchar[] to a string.
-string utf32To8(C)(C[] str)
-    if(is(Unqual!C == dchar))
-{
-    try                    { return str.to!string; }
-    catch(ConvException e) { assert(false, "Unexpected invalid UTF-32 string"); }
-    catch(Exception e)     { assert(false, "Unexpected exception during UTF-8 encoding"); }
-}
