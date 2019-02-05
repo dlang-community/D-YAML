@@ -24,12 +24,53 @@ import dyaml.node;
 import dyaml.exception;
 
 
+static Tuple!(string, "tag", Regex!char, "regexp", string, "chars")[] regexes;
+
+static this() @safe {
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:bool",
+                        regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
+                               "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
+                        "yYnNtTfFoO");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:float",
+                        regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
+                              "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
+                              "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
+                              "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
+                              "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
+                              "(?:nan|NaN|NAN))$"),
+                        "-+0123456789.");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:int",
+                        regex(r"^(?:[-+]?0b[0-1_]+" ~
+                               "|[-+]?0[0-7_]+" ~
+                               "|[-+]?(?:0|[1-9][0-9_]*)" ~
+                               "|[-+]?0x[0-9a-fA-F_]+" ~
+                               "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
+                        "-+0123456789");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:null",
+                        regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:timestamp",
+                        regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
+                               "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
+                               "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
+                               "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
+                               "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
+                               "[0-9]?(?::[0-9][0-9])?)?$"),
+                        "0123456789");
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:value", regex(r"^=$"), "=");
+
+
+    //The following resolver is only for documentation purposes. It cannot work
+    //because plain scalars cannot start with '!', '&', or '*'.
+    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*");
+}
+
 /**
  * Resolves YAML tags (data types).
  *
  * Can be used to implicitly resolve custom data types of scalar values.
  */
-final class Resolver
+struct Resolver
 {
     private:
         // Default tag to use for scalars.
@@ -47,23 +88,20 @@ final class Resolver
          */
         Tuple!(string, Regex!char)[][dchar] yamlImplicitResolvers_;
 
+    package:
+        static auto withDefaultResolvers() @safe
+        {
+            Resolver resolver;
+            foreach(pair; regexes)
+            {
+                resolver.addImplicitResolver(pair.tag, pair.regexp, pair.chars);
+            }
+            return resolver;
+        }
+
     public:
         @disable bool opEquals(ref Resolver);
         @disable int opCmp(ref Resolver);
-
-        /**
-         * Construct a Resolver.
-         *
-         * If you don't want to implicitly resolve default YAML tags/data types,
-         * you can use defaultImplicitResolvers to disable default resolvers.
-         *
-         * Params:  defaultImplicitResolvers = Use default YAML implicit resolvers?
-         */
-        this(Flag!"useDefaultImplicitResolvers" defaultImplicitResolvers = Yes.useDefaultImplicitResolvers)
-            @safe
-        {
-            if(defaultImplicitResolvers){addImplicitResolvers();}
-        }
 
         /**
          * Add an implicit scalar resolver.
@@ -105,9 +143,7 @@ final class Resolver
             write("example.yaml", "A");
 
             auto loader = Loader.fromFile("example.yaml");
-            auto resolver = new Resolver();
-            resolver.addImplicitResolver("!tag", regex("A.*"), "A");
-            loader.resolver = resolver;
+            loader.resolver.addImplicitResolver("!tag", regex("A.*"), "A");
 
             auto node = loader.load();
             assert(node.tag == "!tag");
@@ -169,7 +205,7 @@ final class Resolver
         }
         @safe unittest
         {
-            auto resolver = new Resolver();
+            auto resolver = Resolver.withDefaultResolvers;
 
             bool tagMatch(string tag, string[] values) @safe
             {
@@ -215,46 +251,4 @@ final class Resolver
 
         ///Returns: Default mapping tag.
         @property string defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
-
-    private:
-        // Add default implicit resolvers.
-        void addImplicitResolvers() @safe
-        {
-            addImplicitResolver("tag:yaml.org,2002:bool",
-                                regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
-                                       "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
-                                "yYnNtTfFoO");
-            addImplicitResolver("tag:yaml.org,2002:float",
-                                regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
-                                      "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
-                                      "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
-                                      "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
-                                      "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
-                                      "(?:nan|NaN|NAN))$"),
-                                "-+0123456789.");
-            addImplicitResolver("tag:yaml.org,2002:int",
-                                regex(r"^(?:[-+]?0b[0-1_]+" ~
-                                       "|[-+]?0[0-7_]+" ~
-                                       "|[-+]?(?:0|[1-9][0-9_]*)" ~
-                                       "|[-+]?0x[0-9a-fA-F_]+" ~
-                                       "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
-                                "-+0123456789");
-            addImplicitResolver("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
-            addImplicitResolver("tag:yaml.org,2002:null",
-                                regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
-            addImplicitResolver("tag:yaml.org,2002:timestamp",
-                                regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
-                                       "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
-                                       "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
-                                       "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
-                                       "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
-                                       "[0-9]?(?::[0-9][0-9])?)?$"),
-                                "0123456789");
-            addImplicitResolver("tag:yaml.org,2002:value", regex(r"^=$"), "=");
-
-
-            //The following resolver is only for documentation purposes. It cannot work
-            //because plain scalars cannot start with '!', '&', or '*'.
-            addImplicitResolver("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*");
-        }
 }

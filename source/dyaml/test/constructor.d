@@ -935,7 +935,6 @@ void testConstructor(string dataFilename, string codeDummy) @safe
             new Exception("Unimplemented constructor test: " ~ base));
 
     auto loader        = Loader.fromFile(dataFilename);
-    loader.resolver    = new Resolver;
 
     Node[] exp = expected[base];
 

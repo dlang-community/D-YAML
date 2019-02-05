@@ -79,7 +79,6 @@ struct Composer
         pure @safe nothrow ~this()
         {
             parser_ = null;
-            resolver_ = null;
             anchors_.destroy();
             anchors_ = null;
         }
