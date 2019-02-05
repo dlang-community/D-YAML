@@ -130,29 +130,42 @@ final class Resolver
         string resolve(const NodeID kind, const string tag, const string value,
                     const bool implicit) @safe
         {
-            if((tag !is null) && tag != "!"){return tag;}
-
-            if(kind == NodeID.scalar)
+            import std.array : empty, front;
+            if((tag !is null) && (tag != "!"))
             {
-                if(!implicit){return defaultScalarTag_;}
-
-                //Get the first char of the value.
-                size_t dummy;
-                const dchar first = value.length == 0 ? '\0' : decode(value, dummy);
-
-                auto resolvers = (first in yamlImplicitResolvers_) is null ?
-                                 [] : yamlImplicitResolvers_[first];
-
-                //If regexp matches, return tag.
-                foreach(resolver; resolvers) if(!(match(value, resolver[1]).empty))
-                {
-                    return resolver[0];
-                }
-                return defaultScalarTag_;
+                return tag;
             }
-            else if(kind == NodeID.sequence){return defaultSequenceTag_;}
-            else if(kind == NodeID.mapping) {return defaultMappingTag_;}
-            assert(false, "This line of code should never be reached");
+
+            final switch (kind)
+            {
+                case NodeID.scalar:
+                    if(!implicit)
+                    {
+                        return defaultScalarTag_;
+                    }
+
+                    //Get the first char of the value.
+                    const dchar first = value.empty ? '\0' : value.front;
+
+                    auto resolvers = (first in yamlImplicitResolvers_) is null ?
+                                     [] : yamlImplicitResolvers_[first];
+
+                    //If regexp matches, return tag.
+                    foreach(resolver; resolvers)
+                    {
+                        if(!(match(value, resolver[1]).empty))
+                        {
+                            return resolver[0];
+                        }
+                    }
+                    return defaultScalarTag_;
+            case NodeID.sequence:
+                return defaultSequenceTag_;
+            case NodeID.mapping:
+                return defaultMappingTag_;
+            case NodeID.invalid:
+                assert(false, "Cannot resolve an invalid node");
+            }
         }
         @safe unittest
         {
