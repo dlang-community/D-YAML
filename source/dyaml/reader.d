@@ -232,9 +232,8 @@ final class Reader
         ///
         /// Returns: Bytes starting at current position.
         char[] prefixBytes(const size_t length) @safe pure nothrow @nogc
+        in(length == 0 || bufferOffset_ + length < buffer_.length, "prefixBytes out of bounds")
         {
-            assert(length == 0 || bufferOffset_ + length < buffer_.length,
-                   "prefixBytes out of bounds");
             return buffer_[bufferOffset_ .. bufferOffset_ + length];
         }
 
@@ -475,9 +474,8 @@ private:
 
     // Is a slice currently being built?
     bool inProgress() @safe const pure nothrow @nogc
+    in(start_ == size_t.max ? end_ == size_t.max : end_ != size_t.max, "start_/end_ are not consistent")
     {
-        assert(start_ == size_t.max ? end_ == size_t.max : end_ != size_t.max,
-               "start_/end_ are not consistent");
         return start_ != size_t.max;
     }
 
@@ -493,9 +491,9 @@ public:
     /// a string just returned by get() - but not one returned by prefix() unless the
     /// position has changed since the prefix() call.
     void begin() @safe pure nothrow @nogc
+    in(!inProgress, "Beginning a slice while another slice is being built")
+    in(endStackUsed_ == 0, "Slice stack not empty at slice begin")
     {
-        assert(!inProgress, "Beginning a slice while another slice is being built");
-        assert(endStackUsed_ == 0, "Slice stack not empty at slice begin");
 
         start_ = reader_.bufferOffset_;
         end_   = reader_.bufferOffset_;
@@ -509,9 +507,9 @@ public:
     /// Returns a string; once a slice is finished it is definitive that its contents
     /// will not be changed.
     char[] finish() @safe pure nothrow @nogc
+    in(inProgress, "finish called without begin")
+    in(endStackUsed_ == 0, "Finishing a slice with running transactions.")
     {
-        assert(inProgress, "finish called without begin");
-        assert(endStackUsed_ == 0, "Finishing a slice with running transactions.");
 
         auto result = reader_.buffer_[start_ .. end_];
         start_ = end_ = size_t.max;
@@ -555,8 +553,8 @@ public:
     ///
     /// See_Also: begin
     void write(dchar c) @safe pure
+    in(inProgress, "write called without begin")
     {
-        assert(inProgress, "write called without begin");
         if(c < 0x80)
         {
             reader_.buffer_[end_++] = cast(char)c;
@@ -582,9 +580,9 @@ public:
     ///            Must be less than slice length(); a previously returned length()
     ///            can be used.
     void insert(const dchar c, const size_t position) @safe pure
+    in(inProgress, "insert called without begin")
+    in(start_ + position <= end_, "Trying to insert after the end of the slice")
     {
-        assert(inProgress, "insert called without begin");
-        assert(start_ + position <= end_, "Trying to insert after the end of the slice");
 
         const point       = start_ + position;
         const movedLength = end_ - point;
@@ -645,8 +643,8 @@ public:
         /// Does nothing for a default-initialized transaction (the transaction has not
         /// been started yet).
         void commit() @safe pure nothrow @nogc
+        in(!committed_, "Can't commit a transaction more than once")
         {
-            assert(!committed_, "Can't commit a transaction more than once");
 
             if(builder_ is null) { return; }
             assert(builder_.endStackUsed_ == stackLevel_ + 1,
@@ -657,9 +655,8 @@ public:
 
         /// Destroy the transaction and revert it if it hasn't been committed yet.
         void end() @safe pure nothrow @nogc
+        in(builder_ && builder_.endStackUsed_ == stackLevel_ + 1, "Parent transactions don't fully contain child transactions")
         {
-            assert(builder_ && builder_.endStackUsed_ == stackLevel_ + 1,
-                   "Parent transactions don't fully contain child transactions");
             builder_.pop();
             builder_ = null;
         }
@@ -671,9 +668,9 @@ private:
     //
     // Used by Transaction.
     void push() @safe pure nothrow @nogc
+    in(inProgress, "push called without begin")
+    in(endStackUsed_ < endStack_.length, "Slice stack overflow")
     {
-        assert(inProgress, "push called without begin");
-        assert(endStackUsed_ < endStack_.length, "Slice stack overflow");
         endStack_[endStackUsed_++] = end_;
     }
 
@@ -682,9 +679,9 @@ private:
     //
     // Used by Transaction.
     void pop() @safe pure nothrow @nogc
+    in(inProgress, "pop called without begin")
+    in(endStackUsed_ > 0, "Trying to pop an empty slice stack")
     {
-        assert(inProgress, "pop called without begin");
-        assert(endStackUsed_ > 0, "Trying to pop an empty slice stack");
         end_ = endStack_[--endStackUsed_];
     }
 
@@ -693,9 +690,9 @@ private:
     //
     // Used by Transaction.
     void apply() @safe pure nothrow @nogc
+    in(inProgress, "apply called without begin")
+    in(endStackUsed_ > 0, "Trying to apply an empty slice stack")
     {
-        assert(inProgress, "apply called without begin");
-        assert(endStackUsed_ > 0, "Trying to apply an empty slice stack");
         --endStackUsed_;
     }
 }

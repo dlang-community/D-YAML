@@ -357,14 +357,10 @@ struct Node
          *
          */
         this(K, V)(K[] keys, V[] values, const string tag = null)
-            if(!(isSomeString!(K[]) || isSomeString!(V[])))
-        in
-        {
-            assert(keys.length == values.length,
-                   "Lengths of keys and values arrays to construct " ~
-                   "a YAML node from don't match");
-        }
-        do
+        if(!(isSomeString!(K[]) || isSomeString!(V[])))
+        in(keys.length == values.length,
+           "Lengths of keys and values arrays to construct " ~
+           "a YAML node from don't match")
         {
             tag_ = tag;
 
