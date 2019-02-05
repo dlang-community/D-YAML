@@ -35,20 +35,18 @@ import dyaml.tagdirective;
  *
  * Setters are provided to affect output details (style, etc.).
  */
-auto dumper(Range)(auto ref Range output)
-    if (isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
+auto dumper()
 {
-    return Dumper!Range(output);
+    auto dumper = Dumper();
+    dumper.resolver_ = Resolver.withDefaultResolvers;
+    return dumper;
 }
 
-struct Dumper(Range)
+struct Dumper
 {
     private:
         //Resolver to resolve tags.
         Resolver resolver_;
-
-        //Stream to write to.
-        Range stream_;
 
         //Write scalars in canonical form?
         bool canonical_;
@@ -88,20 +86,8 @@ struct Dumper(Range)
         {
             defaultCollectionStyle_ = style;
         }
-        @disable this();
-        @disable bool opEquals(ref Dumper!Range);
-        @disable int opCmp(ref Dumper!Range);
-
-        /**
-         * Construct a Dumper writing to a file.
-         *
-         * Params: filename = File name to write to.
-         */
-        this(Range stream) @safe
-        {
-            resolver_    = Resolver.withDefaultResolvers;
-            stream_ = stream;
-        }
+        @disable bool opEquals(ref Dumper);
+        @disable int opCmp(ref Dumper);
 
         ///Set stream _name. Used in debugging messages.
         @property void name(string name) pure @safe nothrow
@@ -197,13 +183,13 @@ struct Dumper(Range)
         ///
         @safe unittest
         {
-            auto dumper = dumper(new Appender!string());
+            auto dumper = dumper();
             string[string] directives;
             directives["!short!"] = "tag:long.org,2011:";
             //This will emit tags starting with "tag:long.org,2011"
             //with a "!short!" prefix instead.
             dumper.tagDirectives(directives);
-            dumper.dump(Node("foo"));
+            dumper.dump(new Appender!string(), Node("foo"));
         }
 
         /**
@@ -218,12 +204,13 @@ struct Dumper(Range)
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(CharacterType = char)(Node[] documents ...) @trusted
-            if (isOutputRange!(Range, CharacterType))
+        void dump(CharacterType = char, Range)(Range range, Node[] documents ...) @trusted
+            if (isOutputRange!(Range, CharacterType) &&
+                isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
         {
             try
             {
-                auto emitter = new Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = new Emitter!(Range, CharacterType)(range, canonical_, indent_, textWidth_, lineBreak_);
                 auto serializer = Serializer!(Range, CharacterType)(emitter, resolver_, explicitStart_,
                                              explicitEnd_, YAMLVersion_, tags_);
                 foreach(ref document; documents)
@@ -247,12 +234,13 @@ struct Dumper(Range)
          *
          * Throws:  YAMLException if unable to emit.
          */
-        void emit(CharacterType = char, T)(T events) @safe
-            if (isInputRange!T && is(ElementType!T == Event))
+        void emit(CharacterType = char, Range, T)(Range range, T events) @safe
+            if (isInputRange!T && is(ElementType!T == Event) &&
+                isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
         {
             try
             {
-                auto emitter = Emitter!(Range, CharacterType)(stream_, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter!(Range, CharacterType)(range, canonical_, indent_, textWidth_, lineBreak_);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);
@@ -269,63 +257,63 @@ struct Dumper(Range)
 @safe unittest
 {
     auto node = Node([1, 2, 3, 4, 5]);
-    dumper(new Appender!string()).dump(node);
+    dumper().dump(new Appender!string(), node);
 }
 ///Write multiple YAML documents to a file
 @safe unittest
 {
     auto node1 = Node([1, 2, 3, 4, 5]);
     auto node2 = Node("This document contains only one string");
-    dumper(new Appender!string()).dump(node1, node2);
+    dumper().dump(new Appender!string(), node1, node2);
     //Or with an array:
-    dumper(new Appender!string()).dump([node1, node2]);
+    dumper().dump(new Appender!string(), [node1, node2]);
 }
 ///Write to memory
 @safe unittest
 {
     auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    dumper(stream).dump(node);
+    dumper().dump(stream, node);
 }
 ///Use a custom resolver to support custom data types and/or implicit tags
 @safe unittest
 {
     import std.regex : regex;
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = dumper(new Appender!string());
+    auto dumper = dumper();
     dumper.resolver.addImplicitResolver("!tag", regex("A.*"), "A");
-    dumper.dump(node);
+    dumper.dump(new Appender!string(), node);
 }
 /// Set default scalar style
 @safe unittest
 {
     auto stream = new Appender!string();
     auto node = Node("Hello world!");
-    auto dumper = dumper(stream);
+    auto dumper = dumper();
     dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
-    dumper.dump(node);
+    dumper.dump(stream, node);
 }
 /// Set default collection style
 @safe unittest
 {
     auto stream = new Appender!string();
     auto node = Node(["Hello", "world!"]);
-    auto dumper = dumper(stream);
+    auto dumper = dumper();
     dumper.defaultCollectionStyle = CollectionStyle.flow;
-    dumper.dump(node);
+    dumper.dump(stream, node);
 }
 // Make sure the styles are actually used
 @safe unittest
 {
     auto stream = new Appender!string();
     auto node = Node([Node("Hello world!"), Node(["Hello", "world!"])]);
-    auto dumper = dumper(stream);
+    auto dumper = dumper();
     dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
     dumper.defaultCollectionStyle = CollectionStyle.flow;
     dumper.explicitEnd = false;
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;
-    dumper.dump(node);
+    dumper.dump(stream, node);
     assert(stream.data == "[!!str 'Hello world!', [!!str 'Hello', !!str 'world!']]\n");
 }
 // Explicit document start/end markers
@@ -333,11 +321,11 @@ struct Dumper(Range)
 {
     auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = dumper(stream);
+    auto dumper = dumper();
     dumper.explicitEnd = true;
     dumper.explicitStart = true;
     dumper.YAMLVersion = null;
-    dumper.dump(node);
+    dumper.dump(stream, node);
     //Skip version string
     assert(stream.data[0..3] == "---");
     //account for newline at end
@@ -348,11 +336,11 @@ struct Dumper(Range)
 {
     auto stream = new Appender!string();
     auto node = Node([1, 2, 3, 4, 5]);
-    auto dumper = dumper(stream);
+    auto dumper = dumper();
     dumper.explicitEnd = false;
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;
-    dumper.dump(node);
+    dumper.dump(stream, node);
     //Skip version string
     assert(stream.data[0..3] != "---");
     //account for newline at end
@@ -364,22 +352,22 @@ struct Dumper(Range)
     auto node = Node(0);
     {
         auto stream = new Appender!string();
-        auto dumper = dumper(stream);
+        auto dumper = dumper();
         dumper.explicitEnd = true;
         dumper.explicitStart = true;
         dumper.YAMLVersion = null;
         dumper.lineBreak = LineBreak.windows;
-        dumper.dump(node);
+        dumper.dump(stream, node);
         assert(stream.data == "--- 0\r\n...\r\n");
     }
     {
         auto stream = new Appender!string();
-        auto dumper = dumper(stream);
+        auto dumper = dumper();
         dumper.explicitEnd = true;
         dumper.explicitStart = true;
         dumper.YAMLVersion = null;
         dumper.lineBreak = LineBreak.macintosh;
-        dumper.dump(node);
+        dumper.dump(stream, node);
         assert(stream.data == "--- 0\r...\r");
     }
 }

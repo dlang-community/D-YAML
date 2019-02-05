@@ -263,7 +263,7 @@ TestResult runTests(string tml) @safe
     if (!loadFailed && !compareYAMLString.isNull && !shouldFail)
     {
         Appender!string buf;
-        dumper(buf).dump();
+        dumper().dump(buf);
         compareLineByLine(buf.data, compareYAMLString, "Dumped YAML mismatch");
         testsRun++;
     }

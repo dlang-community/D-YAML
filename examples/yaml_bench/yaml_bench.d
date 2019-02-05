@@ -129,7 +129,7 @@ void main(string[] args) //@safe
         {
             if(dump)
             {
-                dumper(File(file ~ ".dump", "w").lockingTextWriter).dump(nodes);
+                dumper().dump(File(file ~ ".dump", "w").lockingTextWriter, nodes);
             }
         }
         void runGetBenchmark() @safe

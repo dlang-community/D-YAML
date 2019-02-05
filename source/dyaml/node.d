@@ -630,7 +630,7 @@ struct Node
             auto appender = new Appender!string;
 
             // Dump struct to yaml document
-            dumper(appender).dump(Node(MyStruct(1,2,3)));
+            dumper().dump(appender, Node(MyStruct(1,2,3)));
 
             // Read yaml document back as a MyStruct
             auto loader = Loader.fromString(appender.data);
@@ -669,7 +669,7 @@ struct Node
             auto appender = new Appender!string;
 
             // Dump struct to yaml document
-            dumper(appender).dump(Node(MyStruct(1,2,3)));
+            dumper().dump(appender, Node(MyStruct(1,2,3)));
 
             // Read yaml document back as a MyStruct
             auto loader = Loader.fromString(appender.data);
@@ -711,7 +711,7 @@ struct Node
             auto appender = new Appender!string;
 
             // Dump struct to yaml document
-            dumper(appender).dump(Node(MyStruct(1,2,3)));
+            dumper().dump(appender, Node(MyStruct(1,2,3)));
 
             // Read yaml document back as a MyStruct
             auto loader = Loader.fromString(appender.data);
@@ -767,7 +767,7 @@ struct Node
             auto appender = new Appender!string;
 
             // Dump class to yaml document
-            dumper(appender).dump(Node(new MyClass(1,2,3)));
+            dumper().dump(appender, Node(new MyClass(1,2,3)));
 
             // Read yaml document back as a MyClass
             auto loader = Loader.fromString(appender.data);
@@ -2209,8 +2209,8 @@ struct Node
             auto node = Node([1, 2, 3, 4, 5]);
             node.setStyle(CollectionStyle.block);
 
-            auto dumper = dumper(stream);
-            dumper.dump(node);
+            auto dumper = dumper();
+            dumper.dump(stream, node);
         }
         ///
         @safe unittest
@@ -2220,8 +2220,8 @@ struct Node
             auto node = Node(4);
             node.setStyle(ScalarStyle.literal);
 
-            auto dumper = dumper(stream);
-            dumper.dump(node);
+            auto dumper = dumper();
+            dumper.dump(stream, node);
         }
         @safe unittest
         {
@@ -2235,11 +2235,11 @@ struct Node
                 auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.block);
-                auto dumper = dumper(stream);
+                auto dumper = dumper();
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
-                dumper.dump(node);
+                dumper.dump(stream, node);
 
                 //Block style should start with a hyphen.
                 assert(stream.data[0] == '-');
@@ -2248,11 +2248,11 @@ struct Node
                 auto stream = new Appender!string();
                 auto node = Node([1, 2, 3, 4, 5]);
                 node.setStyle(CollectionStyle.flow);
-                auto dumper = dumper(stream);
+                auto dumper = dumper();
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
-                dumper.dump(node);
+                dumper.dump(stream, node);
 
                 //Flow style should start with a bracket.
                 assert(stream.data[0] == '[');
@@ -2261,11 +2261,11 @@ struct Node
                 auto stream = new Appender!string();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.singleQuoted);
-                auto dumper = dumper(stream);
+                auto dumper = dumper();
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
-                dumper.dump(node);
+                dumper.dump(stream, node);
 
                 assert(stream.data == "!!int '1'\n");
             }
@@ -2273,11 +2273,11 @@ struct Node
                 auto stream = new Appender!string();
                 auto node = Node(1);
                 node.setStyle(ScalarStyle.doubleQuoted);
-                auto dumper = dumper(stream);
+                auto dumper = dumper();
                 dumper.explicitEnd = false;
                 dumper.explicitStart = false;
                 dumper.YAMLVersion = null;
-                dumper.dump(node);
+                dumper.dump(stream, node);
 
                 assert(stream.data == "!!int \"1\"\n");
             }
