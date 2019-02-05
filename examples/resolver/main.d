@@ -12,12 +12,10 @@ int main(string[] args)
 
     try
     {
-        auto resolver = new Resolver;
-        resolver.addImplicitResolver("!color", regex("[0-9a-fA-F]{6}"),
-            "0123456789abcdefABCDEF");
 
         auto loader = Loader.fromFile("input.yaml");
-        loader.resolver = resolver;
+        loader.resolver.addImplicitResolver("!color", regex("[0-9a-fA-F]{6}"),
+            "0123456789abcdefABCDEF");
 
         auto root = loader.load();
 

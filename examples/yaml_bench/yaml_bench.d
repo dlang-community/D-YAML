@@ -90,7 +90,7 @@ void main(string[] args) //@safe
     {
         // Instead of constructing a resolver/constructor with each Loader,
         // construct them once to remove noise when profiling.
-        auto resolver    = new Resolver();
+        auto resolver    = Resolver.withDefaultResolvers;
 
         auto constructTime = stopWatch.peek();
 
@@ -111,7 +111,7 @@ void main(string[] args) //@safe
                 return;
             }
 
-            loader.resolver    = resolver;
+            loader.resolver = resolver;
             nodes = loader.array;
         }
         void runDumpBenchmark() @safe

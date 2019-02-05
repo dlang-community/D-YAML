@@ -99,7 +99,7 @@ struct Dumper(Range)
          */
         this(Range stream) @safe
         {
-            resolver_    = new Resolver();
+            resolver_    = Resolver.withDefaultResolvers;
             stream_ = stream;
         }
 
@@ -110,9 +110,9 @@ struct Dumper(Range)
         }
 
         ///Specify custom Resolver to use.
-        @property void resolver(Resolver resolver) @safe
+        auto ref resolver() @safe
         {
-            resolver_ = resolver;
+            return resolver_;
         }
 
         ///Write scalars in _canonical form?
@@ -290,10 +290,10 @@ struct Dumper(Range)
 ///Use a custom resolver to support custom data types and/or implicit tags
 @safe unittest
 {
+    import std.regex : regex;
     auto node = Node([1, 2, 3, 4, 5]);
-    auto resolver = new Resolver();
     auto dumper = dumper(new Appender!string());
-    dumper.resolver = resolver;
+    dumper.resolver.addImplicitResolver("!tag", regex("A.*"), "A");
     dumper.dump(node);
 }
 /// Set default scalar style

@@ -149,6 +149,7 @@ struct Loader
         /// Ditto
         private this(ubyte[] yamlData) @safe
         {
+            resolver_ = Resolver.withDefaultResolvers;
             try
             {
                 reader_      = new Reader(yamlData);
@@ -170,9 +171,9 @@ struct Loader
         }
 
         /// Specify custom Resolver to use.
-        void resolver(Resolver resolver) pure @safe nothrow @nogc
+        auto ref resolver() pure @safe nothrow @nogc
         {
-            resolver_ = resolver;
+            return resolver_;
         }
 
         /** Load single YAML document.
@@ -221,7 +222,6 @@ struct Loader
             static Composer composer;
             if (!rangeInitialized)
             {
-                lazyInitConstructorResolver();
                 composer = Composer(parser_, resolver_);
                 rangeInitialized = true;
             }
@@ -289,13 +289,6 @@ struct Loader
         auto parse() @safe
         {
             return parser_;
-        }
-
-        // Construct default constructor/resolver if the user has not yet specified
-        // their own.
-        void lazyInitConstructorResolver() @safe
-        {
-            if(resolver_ is null)    { resolver_    = new Resolver(); }
         }
 }
 /// Load single YAML document from a file:
@@ -394,7 +387,7 @@ struct Loader
         writeln("Failed to read file 'example.yaml'");
     }
 }
-/// Use a custom constructor/resolver to support custom data types and/or implicit tags:
+/// Use a custom resolver to support custom data types and/or implicit tags:
 @safe unittest
 {
     import std.file : write;
@@ -404,11 +397,11 @@ struct Loader
         "Hello world!\n"~
         "...\n"
     );
-    auto resolver = new Resolver();
-
-    // Add constructor functions / resolver expressions here...
 
     auto loader = Loader.fromFile("example.yaml");
-    loader.resolver = resolver;
+
+    // Add resolver expressions here...
+    // loader.resolver.addImplicitResolver(...);
+
     auto rootNode = loader.load();
 }
