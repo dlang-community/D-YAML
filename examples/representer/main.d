@@ -28,13 +28,13 @@ void main()
 {
    try
    {
-       auto dumper = dumper(File("output.yaml", "w").lockingTextWriter);
+       auto dumper = dumper();
 
        auto document = Node([Color(255, 0, 0),
                              Color(0, 255, 0),
                              Color(0, 0, 255)]);
 
-       dumper.dump(document);
+       dumper.dump(File("output.yaml", "w").lockingTextWriter, document);
    }
    catch(YAMLException e)
    {

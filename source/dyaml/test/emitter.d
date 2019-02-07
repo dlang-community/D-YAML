@@ -79,7 +79,7 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     auto loader = Loader.fromFile(dataFilename);
     auto events = loader.parse();
     auto emitStream = new Appender!string;
-    dumper(emitStream).emit(events);
+    dumper().emit(emitStream, events);
 
     static if(verbose)
     {
@@ -107,9 +107,9 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
     foreach(canonical; [false, true])
     {
         auto emitStream = new Appender!string;
-        auto dumper = dumper(emitStream);
+        auto dumper = dumper();
         dumper.canonical = canonical;
-        dumper.emit(events);
+        dumper.emit(emitStream, events);
         static if(verbose)
         {
             writeln("OUTPUT (canonical=", canonical, "):\n",
@@ -164,7 +164,7 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                     styledEvents ~= event;
                 }
                 auto emitStream = new Appender!string;
-                dumper(emitStream).emit(styledEvents);
+                dumper().emit(emitStream, styledEvents);
                 static if(verbose)
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",

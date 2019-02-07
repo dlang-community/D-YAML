@@ -53,8 +53,8 @@ void testRepresenterTypes(string codeFilename) @safe
         }
 
         auto emitStream  = new Appender!(immutable(encoding)[]);
-        auto dumper = dumper(emitStream);
-        dumper.dump!encoding(expectedNodes);
+        auto dumper = dumper();
+        dumper.dump!encoding(emitStream, expectedNodes);
 
         output = emitStream.data;
 
