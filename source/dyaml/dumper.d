@@ -38,74 +38,43 @@ import dyaml.tagdirective;
 auto dumper()
 {
     auto dumper = Dumper();
-    dumper.resolver_ = Resolver.withDefaultResolvers;
+    dumper.resolver = Resolver.withDefaultResolvers;
     return dumper;
 }
 
 struct Dumper
 {
     private:
-        //Resolver to resolve tags.
-        Resolver resolver_;
-
-        //Write scalars in canonical form?
-        bool canonical_;
         //Indentation width.
         int indent_ = 2;
-        //Preferred text width.
-        uint textWidth_ = 80;
-        //Line break to use.
-        LineBreak lineBreak_ = LineBreak.unix;
-        //YAML version string.
-        string YAMLVersion_ = "1.1";
         //Tag directives to use.
         TagDirective[] tags_;
-        //Always write document start?
-        Flag!"explicitStart" explicitStart_ = No.explicitStart;
-        //Always write document end?
-        Flag!"explicitEnd" explicitEnd_ = No.explicitEnd;
+    public:
+        //Resolver to resolve tags.
+        Resolver resolver;
+        //Write scalars in canonical form?
+        bool canonical;
+        //Preferred text width.
+        uint textWidth = 80;
+        //Line break to use. Unix by default.
+        LineBreak lineBreak = LineBreak.unix;
+        //YAML version string. Default is 1.1.
+        string YAMLVersion = "1.1";
+        //Always explicitly write document start? Default is no explicit start.
+        bool explicitStart = false;
+        //Always explicitly write document end? Default is no explicit end.
+        bool explicitEnd = false;
 
         //Name of the output file or stream, used in error messages.
-        string name_ = "<unknown>";
+        string name = "<unknown>";
 
-        // Default style for scalar nodes.
-        ScalarStyle defaultScalarStyle_ = ScalarStyle.invalid;
-        // Default style for collection nodes.
-        CollectionStyle defaultCollectionStyle_ = CollectionStyle.invalid;
+        // Default style for scalar nodes. If style is $(D ScalarStyle.invalid), the _style is chosen automatically.
+        ScalarStyle defaultScalarStyle = ScalarStyle.invalid;
+        // Default style for collection nodes. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
+        CollectionStyle defaultCollectionStyle = CollectionStyle.invalid;
 
-
-    public:
-        ///Set default _style for scalars. If style is $(D ScalarStyle.invalid), the _style is chosen automatically.
-        @property void defaultScalarStyle(ScalarStyle style) pure @safe nothrow
-        {
-            defaultScalarStyle_ = style;
-        }
-
-        ///Set default _style for collections. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
-        @property void defaultCollectionStyle(CollectionStyle style) pure @safe nothrow
-        {
-            defaultCollectionStyle_ = style;
-        }
         @disable bool opEquals(ref Dumper);
         @disable int opCmp(ref Dumper);
-
-        ///Set stream _name. Used in debugging messages.
-        @property void name(string name) pure @safe nothrow
-        {
-            name_ = name;
-        }
-
-        ///Specify custom Resolver to use.
-        auto ref resolver() @safe
-        {
-            return resolver_;
-        }
-
-        ///Write scalars in _canonical form?
-        @property void canonical(bool canonical) pure @safe nothrow
-        {
-            canonical_ = canonical;
-        }
 
         ///Set indentation width. 2 by default. Must not be zero.
         @property void indent(uint indent) pure @safe nothrow
@@ -116,36 +85,6 @@ struct Dumper
         do
         {
             indent_ = indent;
-        }
-
-        ///Set preferred text _width.
-        @property void textWidth(uint width) pure @safe nothrow
-        {
-            textWidth_ = width;
-        }
-
-        ///Set line break to use. Unix by default.
-        @property void lineBreak(LineBreak lineBreak) pure @safe nothrow
-        {
-            lineBreak_ = lineBreak;
-        }
-
-        ///Always explicitly write document start?
-        @property void explicitStart(bool explicit) pure @safe nothrow
-        {
-            explicitStart_ = explicit ? Yes.explicitStart : No.explicitStart;
-        }
-
-        ///Always explicitly write document end?
-        @property void explicitEnd(bool explicit) pure @safe nothrow
-        {
-            explicitEnd_ = explicit ? Yes.explicitEnd : No.explicitEnd;
-        }
-
-        ///Specify YAML version string. "1.1" by default.
-        @property void YAMLVersion(string YAMLVersion) pure @safe nothrow
-        {
-            YAMLVersion_ = YAMLVersion;
         }
 
         /**
@@ -210,19 +149,19 @@ struct Dumper
         {
             try
             {
-                auto emitter = new Emitter!(Range, CharacterType)(range, canonical_, indent_, textWidth_, lineBreak_);
-                auto serializer = Serializer!(Range, CharacterType)(emitter, resolver_, explicitStart_,
-                                             explicitEnd_, YAMLVersion_, tags_);
+                auto emitter = new Emitter!(Range, CharacterType)(range, canonical, indent_, textWidth, lineBreak);
+                auto serializer = Serializer!(Range, CharacterType)(emitter, resolver, explicitStart ? Yes.explicitStart : No.explicitStart,
+                                             explicitEnd ? Yes.explicitEnd : No.explicitEnd, YAMLVersion, tags_);
                 foreach(ref document; documents)
                 {
-                    auto data = representData(document, defaultScalarStyle_, defaultCollectionStyle_);
+                    auto data = representData(document, defaultScalarStyle, defaultCollectionStyle);
                     serializer.serialize(data);
                 }
             }
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to dump YAML to stream "
-                                        ~ name_ ~ " : " ~ e.msg, e.file, e.line);
+                                        ~ name ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 
@@ -240,7 +179,7 @@ struct Dumper
         {
             try
             {
-                auto emitter = Emitter!(Range, CharacterType)(range, canonical_, indent_, textWidth_, lineBreak_);
+                auto emitter = Emitter!(Range, CharacterType)(range, canonical, indent_, textWidth, lineBreak);
                 foreach(ref event; events)
                 {
                     emitter.emit(event);
@@ -249,7 +188,7 @@ struct Dumper
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to emit YAML to stream "
-                                        ~ name_ ~ " : " ~ e.msg, e.file, e.line);
+                                        ~ name ~ " : " ~ e.msg, e.file, e.line);
             }
         }
 }
