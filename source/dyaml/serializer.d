@@ -27,11 +27,9 @@ import dyaml.token;
 package:
 
 ///Serializes represented YAML nodes, generating events which are then emitted by Emitter.
-struct Serializer(Range, CharType)
+struct Serializer
 {
     private:
-        ///Emitter to emit events produced.
-        Emitter!(Range, CharType)* emitter_;
         ///Resolver used to determine which tags are automaticaly resolvable.
         Resolver resolver_;
 
@@ -64,35 +62,38 @@ struct Serializer(Range, CharType)
          *          YAMLVersion   = YAML version string.
          *          tagDirectives = Tag directives to emit.
          */
-        this(Emitter!(Range, CharType)* emitter, Resolver resolver,
+        this(Resolver resolver,
              const Flag!"explicitStart" explicitStart,
              const Flag!"explicitEnd" explicitEnd, string YAMLVersion,
              TagDirective[] tagDirectives) @safe
         {
-            emitter_       = emitter;
             resolver_      = resolver;
             explicitStart_ = explicitStart;
             explicitEnd_   = explicitEnd;
             YAMLVersion_   = YAMLVersion;
             tagDirectives_ = tagDirectives;
-
-            emitter_.emit(streamStartEvent(Mark(), Mark()));
         }
 
-        ///Destroy the Serializer.
-        ~this() @safe
+        ///Begin the stream.
+        void startStream(EmitterT)(ref EmitterT emitter) @safe
         {
-            emitter_.emit(streamEndEvent(Mark(), Mark()));
+            emitter.emit(streamStartEvent(Mark(), Mark()));
+        }
+
+        ///End the stream.
+        void endStream(EmitterT)(ref EmitterT emitter) @safe
+        {
+            emitter.emit(streamEndEvent(Mark(), Mark()));
         }
 
         ///Serialize a node, emitting it in the process.
-        void serialize(ref Node node) @safe
+        void serialize(EmitterT)(ref EmitterT emitter, ref Node node) @safe
         {
-            emitter_.emit(documentStartEvent(Mark(), Mark(), explicitStart_,
+            emitter.emit(documentStartEvent(Mark(), Mark(), explicitStart_,
                                              YAMLVersion_, tagDirectives_));
             anchorNode(node);
-            serializeNode(node);
-            emitter_.emit(documentEndEvent(Mark(), Mark(), explicitEnd_));
+            serializeNode(emitter, node);
+            emitter.emit(documentEndEvent(Mark(), Mark(), explicitEnd_));
             serializedNodes_.destroy();
             anchors_.destroy();
             string[Node] emptyAnchors;
@@ -187,7 +188,7 @@ struct Serializer(Range, CharType)
         }
 
         ///Serialize a node and all its subnodes.
-        void serializeNode(ref Node node) @safe
+        void serializeNode(EmitterT)(ref EmitterT emitter, ref Node node) @safe
         {
             //If the node has an anchor, emit an anchor (as aliasEvent) on the
             //first occurrence, save it in serializedNodes_, and emit an alias
@@ -198,7 +199,7 @@ struct Serializer(Range, CharType)
                 aliased = anchors_[node];
                 if((node in serializedNodes_) !is null)
                 {
-                    emitter_.emit(aliasEvent(Mark(), Mark(), aliased));
+                    emitter.emit(aliasEvent(Mark(), Mark(), aliased));
                     return;
                 }
                 serializedNodes_[node] = true;
@@ -208,25 +209,25 @@ struct Serializer(Range, CharType)
                 case NodeID.mapping:
                     const defaultTag = resolver_.defaultMappingTag;
                     const implicit = node.tag_ == defaultTag;
-                    emitter_.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
+                    emitter.emit(mappingStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                     implicit, node.collectionStyle));
                     foreach(ref Node key, ref Node value; node)
                     {
-                        serializeNode(key);
-                        serializeNode(value);
+                        serializeNode(emitter, key);
+                        serializeNode(emitter, value);
                     }
-                    emitter_.emit(mappingEndEvent(Mark(), Mark()));
+                    emitter.emit(mappingEndEvent(Mark(), Mark()));
                     return;
                 case NodeID.sequence:
                     const defaultTag = resolver_.defaultSequenceTag;
                     const implicit = node.tag_ == defaultTag;
-                    emitter_.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
+                    emitter.emit(sequenceStartEvent(Mark(), Mark(), aliased, node.tag_,
                                                      implicit, node.collectionStyle));
                     foreach(ref Node item; node)
                     {
-                        serializeNode(item);
+                        serializeNode(emitter, item);
                     }
-                    emitter_.emit(sequenceEndEvent(Mark(), Mark()));
+                    emitter.emit(sequenceEndEvent(Mark(), Mark()));
                     return;
                 case NodeID.scalar:
                     assert(node.type == NodeType.string, "Scalar node type must be string before serialized");
@@ -234,7 +235,7 @@ struct Serializer(Range, CharType)
                     const detectedTag = resolver_.resolve(NodeID.scalar, null, value, true);
                     const bool isDetected = node.tag_ == detectedTag;
 
-                    emitter_.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
+                    emitter.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
                                   isDetected, value, node.scalarStyle));
                     return;
                 case NodeID.invalid:

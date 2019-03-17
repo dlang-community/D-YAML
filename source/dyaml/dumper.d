@@ -150,13 +150,15 @@ struct Dumper
             try
             {
                 auto emitter = new Emitter!(Range, CharacterType)(range, canonical, indent_, textWidth, lineBreak);
-                auto serializer = Serializer!(Range, CharacterType)(emitter, resolver, explicitStart ? Yes.explicitStart : No.explicitStart,
+                auto serializer = Serializer(resolver, explicitStart ? Yes.explicitStart : No.explicitStart,
                                              explicitEnd ? Yes.explicitEnd : No.explicitEnd, YAMLVersion, tags_);
+                serializer.startStream(emitter);
                 foreach(ref document; documents)
                 {
                     auto data = representData(document, defaultScalarStyle, defaultCollectionStyle);
-                    serializer.serialize(data);
+                    serializer.serialize(emitter, data);
                 }
+                serializer.endStream(emitter);
             }
             catch(YAMLException e)
             {
