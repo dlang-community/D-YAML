@@ -150,25 +150,6 @@ struct Scanner
         /// Possible simple keys indexed by flow levels.
         SimpleKey[] possibleSimpleKeys_;
 
-
-        /// Set on error by nothrow/@nogc inner functions along with errorData_.
-        ///
-        /// Non-nothrow/GC-using caller functions can then throw an exception using
-        /// data stored in errorData_.
-        bool error_;
-
-        /// Data for the exception to throw if error_ is true.
-        MarkedYAMLExceptionData errorData_;
-
-        /// Error messages can be built in this buffer without using the GC.
-        ///
-        /// ScannerException (MarkedYAMLException) copies string data passed to its
-        /// constructor so it's safe to use slices of this buffer as parameters for
-        /// exceptions that may outlive the Scanner. The GC allocation when creating the
-        /// error message is removed, but the allocation when creating an exception is
-        /// not.
-        char[256] msgBuffer_;
-
     public:
         /// Construct a Scanner using specified Reader.
         this(Reader reader) @safe nothrow
@@ -203,45 +184,11 @@ struct Scanner
         }
 
     private:
-        /// Build an error message in msgBuffer_ and return it as a string.
-        string buildMsg(S ...)(S args)
-        {
-            try {
-                return text(args);
-            }
-            catch (Exception)
-            {
-                return "";
-            }
-        }
-
         /// Most scanning error messages have the same format; so build them with this
         /// function.
         string expected(T)(string expected, T found)
         {
-            return buildMsg("expected ", expected, ", but found ", found);
-        }
-
-        /// If error_ is true, throws a ScannerException constructed from errorData_ and
-        /// sets error_ to false.
-        void throwIfError() @safe pure
-        {
-            if(!error_) { return; }
-            error_ = false;
-            throw new ScannerException(errorData_);
-        }
-
-        /// Called by internal nothrow/@nogc methods to set an error to be thrown by
-        /// their callers.
-        ///
-        /// See_Also: dyaml.exception.MarkedYamlException
-        void error(string context, const Mark contextMark, string problem,
-                   const Mark problemMark) @safe pure nothrow @nogc
-        {
-            assert(error_ == false,
-                   "Setting an error when there already is a not yet thrown error");
-            error_     = true;
-            errorData_ = MarkedYAMLExceptionData(context, contextMark, problem, problemMark);
+            return text("expected ", expected, ", but found ", found);
         }
 
         /// Determine whether or not we need to fetch more tokens before peeking/getting a token.
@@ -462,7 +409,6 @@ struct Scanner
             allowSimpleKey_ = false;
 
             auto directive = scanDirective();
-            throwIfError();
             tokens_.push(directive);
         }
 
@@ -646,7 +592,6 @@ struct Scanner
             allowSimpleKey_ = false;
 
             auto anchor = scanAnchor(id);
-            throwIfError();
             tokens_.push(anchor);
         }
 
@@ -663,7 +608,6 @@ struct Scanner
             allowSimpleKey_ = false;
 
             tokens_.push(scanTag());
-            throwIfError();
         }
 
         /// Add block SCALAR token.
@@ -676,7 +620,6 @@ struct Scanner
             allowSimpleKey_ = true;
 
             auto blockScalar = scanBlockScalar(style);
-            throwIfError();
             tokens_.push(blockScalar);
         }
 
@@ -694,7 +637,6 @@ struct Scanner
 
             // Scan and add SCALAR.
             auto scalar = scanFlowScalar(quotes);
-            throwIfError();
             tokens_.push(scalar);
         }
 
@@ -711,7 +653,6 @@ struct Scanner
             // change this flag if the scan is finished at the beginning of the line.
             allowSimpleKey_ = false;
             auto plain = scanPlain();
-            throwIfError();
 
             // Scan and add SCALAR. May change allowSimpleKey_
             tokens_.push(plain);
@@ -802,8 +743,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanAlphaNumericToSlice(string name)(const Mark startMark)
         {
             size_t length;
@@ -813,9 +752,8 @@ struct Scanner
             if(length == 0)
             {
                 enum contextMsg = "While scanning " ~ name;
-                error(contextMsg, startMark, expected("alphanumeric, '-' or '_'", c),
+                throw new ScannerException(contextMsg, startMark, expected("alphanumeric, '-' or '_'", c),
                       reader_.mark);
-                return;
             }
 
             reader_.sliceBuilder.write(reader_.get(length));
@@ -890,7 +828,6 @@ struct Scanner
             // Scan directive name
             reader_.sliceBuilder.begin();
             scanDirectiveNameToSlice(startMark);
-            if(error_) { return Token.init; }
             const name = reader_.sliceBuilder.finish();
 
             reader_.sliceBuilder.begin();
@@ -899,7 +836,6 @@ struct Scanner
             uint tagHandleEnd = uint.max;
             if(name == "YAML")     { scanYAMLDirectiveValueToSlice(startMark); }
             else if(name == "TAG") { tagHandleEnd = scanTagDirectiveValueToSlice(startMark); }
-            if(error_) { return Token.init; }
             char[] value = reader_.sliceBuilder.finish();
 
             Mark endMark = reader_.mark;
@@ -914,7 +850,6 @@ struct Scanner
             }
 
             scanDirectiveIgnoredLine(startMark);
-            if(error_) { return Token.init; }
 
             return directiveToken(startMark, endMark, value, directive, tagHandleEnd);
         }
@@ -923,16 +858,13 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanDirectiveNameToSlice(const Mark startMark) @safe
         {
             // Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
-            if(error_) { return; }
 
             if(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029')) { return; }
-            error("While scanning a directive", startMark,
+            throw new ScannerException("While scanning a directive", startMark,
                   expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
         }
 
@@ -940,31 +872,26 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanYAMLDirectiveValueToSlice(const Mark startMark) @safe
         {
             findNextNonSpace();
 
             scanYAMLDirectiveNumberToSlice(startMark);
-            if(error_) { return; }
 
             if(reader_.peekByte() != '.')
             {
-                error("While scanning a directive", startMark,
+                throw new ScannerException("While scanning a directive", startMark,
                       expected("digit or '.'", reader_.peek()), reader_.mark);
-                return;
             }
             // Skip the '.'.
             reader_.forward();
 
             reader_.sliceBuilder.write('.');
             scanYAMLDirectiveNumberToSlice(startMark);
-            if(error_) { return; }
 
             if(!reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'))
             {
-                error("While scanning a directive", startMark,
+                throw new ScannerException("While scanning a directive", startMark,
                       expected("digit or '.'", reader_.peek()), reader_.mark);
             }
         }
@@ -973,15 +900,12 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
         {
             if(!isDigit(reader_.peek()))
             {
-                error("While scanning a directive", startMark,
+                throw new ScannerException("While scanning a directive", startMark,
                       expected("digit", reader_.peek()), reader_.mark);
-                return;
             }
 
             // Already found the first digit in the enforce(), so set length to 1.
@@ -997,14 +921,11 @@ struct Scanner
         /// characters into that slice.
         ///
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         uint scanTagDirectiveValueToSlice(const Mark startMark) @safe
         {
             findNextNonSpace();
             const startLength = reader_.sliceBuilder.length;
             scanTagDirectiveHandleToSlice(startMark);
-            if(error_) { return uint.max; }
             const handleLength = cast(uint)(reader_.sliceBuilder.length  - startLength);
             findNextNonSpace();
             scanTagDirectivePrefixToSlice(startMark);
@@ -1016,14 +937,11 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagDirectiveHandleToSlice(const Mark startMark) @safe
         {
             scanTagHandleToSlice!"directive"(startMark);
-            if(error_) { return; }
             if(reader_.peekByte() == ' ') { return; }
-            error("While scanning a directive handle", startMark,
+            throw new ScannerException("While scanning a directive handle", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
         }
 
@@ -1031,19 +949,15 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             scanTagURIToSlice!"directive"(startMark);
             if(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029')) { return; }
-            error("While scanning a directive prefix", startMark,
+            throw new ScannerException("While scanning a directive prefix", startMark,
                   expected("' '", reader_.peek()), reader_.mark);
         }
 
         /// Scan (and ignore) ignored line after a directive.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanDirectiveIgnoredLine(const Mark startMark) @safe
         {
             findNextNonSpace();
@@ -1053,7 +967,7 @@ struct Scanner
                 scanLineBreak();
                 return;
             }
-            error("While scanning a directive", startMark,
+            throw new ScannerException("While scanning a directive", startMark,
                   expected("comment or a line break", reader_.peek()), reader_.mark);
         }
 
@@ -1068,8 +982,6 @@ struct Scanner
         /// and
         ///   [ *alias , "value" ]
         /// Therefore we restrict aliases to ASCII alphanumeric characters.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanAnchor(const TokenID id) @safe
         {
             const startMark = reader_.mark;
@@ -1080,16 +992,14 @@ struct Scanner
             else         { scanAlphaNumericToSlice!"an anchor"(startMark); }
             // On error, value is discarded as we return immediately
             char[] value = reader_.sliceBuilder.finish();
-            if(error_)   { return Token.init; }
 
             if(!reader_.peek().isWhiteSpace &&
                !reader_.peekByte().among!('?', ':', ',', ']', '}', '%', '@'))
             {
                 enum anchorCtx = "While scanning an anchor";
                 enum aliasCtx  = "While scanning an alias";
-                error(i == '*' ? aliasCtx : anchorCtx, startMark,
+                throw new ScannerException(i == '*' ? aliasCtx : anchorCtx, startMark,
                       expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark);
-                return Token.init;
             }
 
             if(id == TokenID.alias_)
@@ -1104,8 +1014,6 @@ struct Scanner
         }
 
         /// Scan a tag token.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanTag() @safe
         {
             const startMark = reader_.mark;
@@ -1123,12 +1031,10 @@ struct Scanner
 
                 handleEnd = 0;
                 scanTagURIToSlice!"tag"(startMark);
-                if(error_) { return Token.init; }
                 if(reader_.peekByte() != '>')
                 {
-                    error("While scanning a tag", startMark,
+                    throw new ScannerException("While scanning a tag", startMark,
                           expected("'>'", reader_.peek()), reader_.mark);
-                    return Token.init;
                 }
                 reader_.forward();
             }
@@ -1158,7 +1064,6 @@ struct Scanner
                 {
                     scanTagHandleToSlice!"tag"(startMark);
                     handleEnd = cast(uint)reader_.sliceBuilder.length;
-                    if(error_) { return Token.init; }
                 }
                 else
                 {
@@ -1168,7 +1073,6 @@ struct Scanner
                 }
 
                 scanTagURIToSlice!"tag"(startMark);
-                if(error_) { return Token.init; }
             }
 
             if(reader_.peek().isBreakOrSpace)
@@ -1177,14 +1081,11 @@ struct Scanner
                 return tagToken(startMark, reader_.mark, slice, handleEnd);
             }
 
-            error("While scanning a tag", startMark, expected("' '", reader_.peek()),
+            throw new ScannerException("While scanning a tag", startMark, expected("' '", reader_.peek()),
                   reader_.mark);
-            return Token.init;
         }
 
         /// Scan a block scalar token with specified style.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanBlockScalar(const ScalarStyle style) @safe
         {
             const startMark = reader_.mark;
@@ -1193,12 +1094,10 @@ struct Scanner
             reader_.forward();
 
             const indicators = scanBlockScalarIndicators(startMark);
-            if(error_) { return Token.init; }
 
             const chomping   = indicators[0];
             const increment  = indicators[1];
             scanBlockScalarIgnoredLine(startMark);
-            if(error_) { return Token.init; }
 
             // Determine the indentation level and go to the first non-empty line.
             Mark endMark;
@@ -1325,8 +1224,6 @@ struct Scanner
         }
 
         /// Scan chomping and indentation indicators of a scalar token.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Tuple!(Chomping, int) scanBlockScalarIndicators(const Mark startMark) @safe
         {
             auto chomping = Chomping.clip;
@@ -1337,12 +1234,10 @@ struct Scanner
             if(getChomping(c, chomping))
             {
                 getIncrement(c, increment, startMark);
-                if(error_) { return tuple(Chomping.init, int.max); }
             }
             else
             {
                 const gotIncrement = getIncrement(c, increment, startMark);
-                if(error_)       { return tuple(Chomping.init, int.max); }
                 if(gotIncrement) { getChomping(c, chomping); }
             }
 
@@ -1350,9 +1245,8 @@ struct Scanner
             {
                 return tuple(chomping, increment);
             }
-            error("While scanning a block scalar", startMark,
+            throw new ScannerException("While scanning a block scalar", startMark,
                   expected("chomping or indentation indicator", c), reader_.mark);
-            return tuple(Chomping.init, int.max);
         }
 
         /// Get chomping indicator, if detected. Return false otherwise.
@@ -1383,8 +1277,6 @@ struct Scanner
         ///             the next character in the Reader.
         /// increment = Write the increment value here, if detected.
         /// startMark = Mark for error messages.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         bool getIncrement(ref dchar c, ref int increment, const Mark startMark) @safe
         {
             if(!c.isDigit) { return false; }
@@ -1397,14 +1289,11 @@ struct Scanner
                 c = reader_.peek();
                 return true;
             }
-            error("While scanning a block scalar", startMark,
+            throw new ScannerException("While scanning a block scalar", startMark,
                   expected("indentation indicator in range 1-9", "0"), reader_.mark);
-            return false;
         }
 
         /// Scan (and ignore) ignored line in a block scalar.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanBlockScalarIgnoredLine(const Mark startMark) @safe
         {
             findNextNonSpace();
@@ -1415,7 +1304,7 @@ struct Scanner
                 scanLineBreak();
                 return;
             }
-            error("While scanning a block scalar", startMark,
+            throw new ScannerException("While scanning a block scalar", startMark,
                   expected("comment or line break", reader_.peek()), reader_.mark);
         }
 
@@ -1463,25 +1352,19 @@ struct Scanner
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanFlowScalar(const ScalarStyle quotes) @safe
         {
             const startMark = reader_.mark;
             const quote     = reader_.get();
 
             reader_.sliceBuilder.begin();
-            scope(exit) if(error_) { reader_.sliceBuilder.finish(); }
 
             scanFlowScalarNonSpacesToSlice(quotes, startMark);
-            if(error_) { return Token.init; }
 
             while(reader_.peek() != quote)
             {
                 scanFlowScalarSpacesToSlice(startMark);
-                if(error_) { return Token.init; }
                 scanFlowScalarNonSpacesToSlice(quotes, startMark);
-                if(error_) { return Token.init; }
             }
             reader_.forward();
 
@@ -1493,8 +1376,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @safe
         {
@@ -1512,9 +1393,8 @@ struct Scanner
                     const char[] slice = reader_.slice(numCodePoints + 32);
                     if(slice.length == oldSliceLength)
                     {
-                        error("While reading a flow scalar", startMark,
+                        throw new ScannerException("While reading a flow scalar", startMark,
                               "reached end of file", reader_.mark);
-                        return;
                     }
                     for(size_t i = oldSliceLength; i < slice.length;)
                     {
@@ -1558,12 +1438,13 @@ struct Scanner
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.forward();
 
-                        foreach(i; 0 .. hexLength) if(!reader_.peek(i).isHexDigit)
-                        {
-                            error("While scanning a double quoted scalar", startMark,
-                                  expected("escape sequence of hexadecimal numbers",
-                                           reader_.peek(i)), reader_.mark);
-                            return;
+                        foreach(i; 0 .. hexLength) {
+                            if(!reader_.peek(i).isHexDigit)
+                            {
+                                throw new ScannerException("While scanning a double quoted scalar", startMark,
+                                      expected("escape sequence of hexadecimal numbers",
+                                               reader_.peek(i)), reader_.mark);
+                            }
                         }
                         char[] hex = reader_.get(hexLength);
                         char[2] escapeStart = ['\\', cast(char) c];
@@ -1579,24 +1460,21 @@ struct Scanner
                         }
                         catch (Exception)
                         {
-                            error("While scanning a double quoted scalar", startMark,
+                            throw new ScannerException("While scanning a double quoted scalar", startMark,
                                   "overflow when parsing an escape sequence of " ~
                                   "hexadecimal numbers.", reader_.mark);
-                            return;
                         }
                     }
                     else if(c.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
                     {
                         scanLineBreak();
                         scanFlowScalarBreaksToSlice(startMark);
-                        if(error_) { return; }
                     }
                     else
                     {
-                        error("While scanning a double quoted scalar", startMark,
-                              buildMsg("found unsupported escape character", c),
+                        throw new ScannerException("While scanning a double quoted scalar", startMark,
+                              text("found unsupported escape character", c),
                               reader_.mark);
-                        return;
                     }
                 }
                 else { return; }
@@ -1607,8 +1485,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanFlowScalarSpacesToSlice(const Mark startMark) @safe
         {
             // Increase length as long as we see whitespace.
@@ -1620,9 +1496,8 @@ struct Scanner
             const c = reader_.peek(length);
             if(c == '\0')
             {
-                error("While scanning a quoted scalar", startMark,
+                throw new ScannerException("While scanning a quoted scalar", startMark,
                       "found unexpected end of buffer", reader_.mark);
-                return;
             }
 
             // Spaces not followed by a line break.
@@ -1642,7 +1517,6 @@ struct Scanner
             // If we have extra line breaks after the first, scan them into the
             // slice.
             const bool extraBreaks = scanFlowScalarBreaksToSlice(startMark);
-            if(error_) { return; }
 
             // No extra breaks, one normal line break. Replace it with a space.
             if(lineBreak == '\n' && !extraBreaks) { reader_.sliceBuilder.write(' '); }
@@ -1652,8 +1526,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// line breaks into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         bool scanFlowScalarBreaksToSlice(const Mark startMark) @safe
         {
             // True if at least one line break was found.
@@ -1665,9 +1537,8 @@ struct Scanner
                 if((prefix == "---" || prefix == "...") &&
                    reader_.peek(3).isWhiteSpace)
                 {
-                    error("While scanning a quoted scalar", startMark,
+                    throw new ScannerException("While scanning a quoted scalar", startMark,
                           "found unexpected document separator", reader_.mark);
-                    return false;
                 }
 
                 // Skip any whitespaces.
@@ -1684,8 +1555,6 @@ struct Scanner
         }
 
         /// Scan plain scalar token (no block, no quotes).
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         Token scanPlain() @safe
         {
             // We keep track of the allowSimpleKey_ flag here.
@@ -1746,11 +1615,10 @@ struct Scanner
                     spacesTransaction.commit();
                     reader_.sliceBuilder.finish();
                     reader_.forward(length);
-                    error("While scanning a plain scalar", startMark,
+                    throw new ScannerException("While scanning a plain scalar", startMark,
                           "found unexpected ':' . Please check " ~
                           "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
                           reader_.mark);
-                    return Token.init;
                 }
 
                 if(length == 0) { break; }
@@ -1842,16 +1710,13 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagHandleToSlice(string name)(const Mark startMark)
         {
             dchar c = reader_.peek();
             enum contextMsg = "While scanning a " ~ name;
             if(c != '!')
             {
-                error(contextMsg, startMark, expected("'!'", c), reader_.mark);
-                return;
+                throw new ScannerException(contextMsg, startMark, expected("'!'", c), reader_.mark);
             }
 
             uint length = 1;
@@ -1866,8 +1731,7 @@ struct Scanner
                 if(c != '!')
                 {
                     reader_.forward(length);
-                    error(contextMsg, startMark, expected("'!'", c), reader_.mark);
-                    return;
+                    throw new ScannerException(contextMsg, startMark, expected("'!'", c), reader_.mark);
                 }
                 ++length;
             }
@@ -1879,8 +1743,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanTagURIToSlice(string name)(const Mark startMark)
         {
             // Note: we do not check if URI is well-formed.
@@ -1896,7 +1758,6 @@ struct Scanner
                         reader_.sliceBuilder.write(chars);
                         length = 0;
                         scanURIEscapesToSlice!name(startMark);
-                        if(error_) { return; }
                     }
                     else { ++length; }
                     c = reader_.peek(length);
@@ -1912,7 +1773,7 @@ struct Scanner
             if(reader_.sliceBuilder.length > startLen) { return; }
 
             enum contextMsg = "While parsing a " ~ name;
-            error(contextMsg, startMark, expected("URI", c), reader_.mark);
+            throw new ScannerException(contextMsg, startMark, expected("URI", c), reader_.mark);
         }
 
         // Not @nogc yet because std.utf.decode is not @nogc
@@ -1920,8 +1781,6 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        ///
-        /// In case of an error, error_ is set. Use throwIfError() to handle this.
         void scanURIEscapesToSlice(string name)(const Mark startMark)
         {
             import core.exception : UnicodeException;
@@ -1939,8 +1798,7 @@ struct Scanner
                 {
                     auto msg = expected("URI escape sequence of 2 hexadecimal " ~
                                         "numbers", nextByte);
-                    error(contextMsg, startMark, msg, reader_.mark);
-                    return;
+                    throw new ScannerException(contextMsg, startMark, msg, reader_.mark);
                 }
                 buffer ~= nextByte[].to!ubyte(16);
 
@@ -1955,10 +1813,9 @@ struct Scanner
             }
             catch (UnicodeException)
             {
-                error(contextMsg, startMark,
+                throw new ScannerException(contextMsg, startMark,
                         "Invalid UTF-8 data encoded in URI escape sequence",
                         reader_.mark);
-                return;
             }
         }
 
