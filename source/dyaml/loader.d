@@ -33,8 +33,6 @@ import dyaml.token;
 struct Loader
 {
     private:
-        // Reads character data from a stream.
-        Reader reader_;
         // Processes character data to YAML tokens.
         Scanner scanner_;
         // Processes tokens to YAML events.
@@ -152,9 +150,9 @@ struct Loader
             resolver_ = Resolver.withDefaultResolvers;
             try
             {
-                reader_      = new Reader(yamlData);
-                scanner_     = Scanner(reader_);
-                parser_      = new Parser(scanner_);
+                auto reader_ = new Reader(yamlData);
+                scanner_ = Scanner(reader_);
+                parser_ = new Parser(scanner_);
             }
             catch(YAMLException e)
             {
