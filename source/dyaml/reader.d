@@ -138,7 +138,7 @@ final class Reader
             if(characterCount_ <= charIndex_ + index)
             {
                 // XXX This is risky; revert this if bugs are introduced. We rely on
-                // the assumption that Reader only uses peek() to detect end of buffer.
+                // the assumption that Reader only uses front to detect end of buffer.
                 // The test suite passes.
                 // Revert this case here and in other peek() versions if this causes
                 // errors.
@@ -174,11 +174,16 @@ final class Reader
             return d;
         }
 
+        bool empty() @safe pure
+        {
+            return characterCount_ <= charIndex_;
+        }
+
         /// Optimized version of peek() for the case where peek index is 0.
-        dchar peek() @safe pure
+        dchar front() @safe pure
         {
             if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
-            if(characterCount_ <= charIndex_) { return '\0'; }
+            enforce!ReaderException(!empty, "Trying to read past the end of the buffer");
 
             lastDecodedCharOffset_   = 0;
             lastDecodedBufferOffset_ = bufferOffset_;
@@ -269,25 +274,12 @@ final class Reader
             return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
         }
 
-        /// Get the next character, moving buffer position beyond it.
-        ///
-        /// Returns: Next character.
-        ///
-        /// Throws:  ReaderException if trying to read past the end of the buffer
-        ///          or if invalid data is read.
-        dchar get() @safe pure
-        {
-            const result = peek();
-            forward();
-            return result;
-        }
-
         /// Get specified number of characters, moving buffer position beyond them.
         ///
         /// Params:  length = Number or characters (code points, not bytes) to get.
         ///
         /// Returns: Characters starting at current position.
-        char[] get(const size_t length) @safe pure
+        deprecated char[] get(const size_t length) @safe pure
         {
             auto result = slice(length);
             forward(length);
@@ -350,7 +342,7 @@ final class Reader
         }
 
         /// Move current position forward by one character.
-        void forward() @safe pure
+        void popFront() @safe pure
         {
             ++charIndex_;
             lastDecodedBufferOffset_ = bufferOffset_;
@@ -836,38 +828,43 @@ void testEndian(R)()
 
 void testPeekPrefixForward(R)()
 {
-    import std.encoding;
-    ubyte[] data = bomTable[BOM.utf8].sequence ~ cast(ubyte[])"data";
+    import std.encoding : BOM, bomTable;
+    ubyte[] data = bomTable[BOM.utf8].sequence ~ "data".representation.dup;
     auto reader = new R(data);
-    assert(reader.peek() == 'd');
-    assert(reader.peek(1) == 'a');
-    assert(reader.peek(2) == 't');
-    assert(reader.peek(3) == 'a');
-    assert(reader.peek(4) == '\0');
-    assert(reader.prefix(4) == "data");
-    // assert(reader.prefix(6) == "data\0");
-    reader.forward(2);
-    assert(reader.peek(1) == 'a');
-    // assert(collectException(reader.peek(3)));
+    assert(reader.front == 'd');
+    reader.popFront();
+    assert(reader.front == 'a');
+    reader.popFront();
+    assert(reader.front == 't');
+    reader.popFront();
+    assert(!reader.empty);
+    assert(reader.front == 'a');
+    reader.popFront();
+    assert(reader.empty);
 }
 
 void testUTF(R)()
 {
     import std.encoding;
-    dchar[] data = cast(dchar[])"data";
+    auto data = "data";
     void utf_test(T)(T[] data, BOM bom)
     {
         ubyte[] bytes = bomTable[bom].sequence ~
                         (cast(ubyte[])data)[0 .. data.length * T.sizeof];
         auto reader = new R(bytes);
-        assert(reader.peek() == 'd');
-        assert(reader.peek(1) == 'a');
-        assert(reader.peek(2) == 't');
-        assert(reader.peek(3) == 'a');
+        assert(reader.front == 'd');
+        reader.popFront();
+        assert(reader.front == 'a');
+        reader.popFront();
+        assert(reader.front == 't');
+        reader.popFront();
+        assert(reader.front == 'a');
+        reader.popFront();
+        assert(reader.empty);
     }
     utf_test!char(to!(char[])(data), BOM.utf8);
     utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.utf16be : BOM.utf16le);
-    utf_test(data, endian == Endian.bigEndian ? BOM.utf32be : BOM.utf32le);
+    utf_test!dchar(to!(dchar[])(data), endian == Endian.bigEndian ? BOM.utf32be : BOM.utf32le);
 }
 
 void test1Byte(R)()
@@ -875,12 +872,13 @@ void test1Byte(R)()
     ubyte[] data = [97];
 
     auto reader = new R(data);
-    assert(reader.peek() == 'a');
-    assert(reader.peek(1) == '\0');
-    // assert(collectException(reader.peek(2)));
+    assert(reader.front == 'a');
+    assert(!reader.empty);
+    reader.popFront();
+    assert(reader.empty);
 }
 
-@system unittest
+@safe unittest
 {
     testEndian!Reader();
     testPeekPrefixForward!Reader();
