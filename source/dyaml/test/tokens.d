@@ -14,8 +14,23 @@ import std.array;
 import std.file;
 
 import dyaml.test.common;
+import dyaml.reader;
+import dyaml.scanner;
 import dyaml.token;
 
+// Read and scan a YAML doc, returning the tokens.
+const(Token)[] scanTestCommon(string filename) @safe
+{
+    ubyte[] yamlData;
+    () @trusted { yamlData = cast(ubyte[])std.file.read(filename); }();
+    auto scanner = Scanner(new Reader(yamlData));
+    const(Token)[] result;
+    foreach (token; scanner)
+    {
+        result ~= token;
+    }
+    return result;
+}
 
 /**
  * Test tokens output by scanner.
@@ -54,8 +69,7 @@ void testTokens(string dataFilename, string tokensFilename) @safe
         static if(verbose){writeln("tokens1: ", tokens1, "\ntokens2: ", tokens2);}
     }
 
-    auto loader = Loader.fromFile(dataFilename);
-    foreach(token; loader.scan())
+    foreach(token; scanTestCommon(dataFilename))
     {
         if(token.id != TokenID.streamStart && token.id != TokenID.streamEnd)
         {
@@ -81,8 +95,10 @@ void testScanner(string dataFilename, string canonicalFilename) @safe
         {
             static if(verbose){writeln(tokens);}
         }
-        auto loader = Loader.fromFile(filename);
-        foreach(ref token; loader.scan()){tokens ~= to!string(token.id);}
+        foreach(ref token; scanTestCommon(filename))
+        {
+            tokens ~= to!string(token.id);
+        }
     }
 }
 

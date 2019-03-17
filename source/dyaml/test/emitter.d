@@ -15,11 +15,21 @@ import std.file;
 import std.range;
 import std.typecons;
 
-import dyaml.dumper;
+import dyaml.emitter;
 import dyaml.event;
 import dyaml.test.common;
 import dyaml.token;
 
+// Try to emit an event range.
+void emitTestCommon(T)(ref Appender!string emitStream, T events, bool canonical = false) @safe
+    if (isInputRange!T && is(ElementType!T == Event))
+{
+    auto emitter = Emitter!(typeof(emitStream), char)(emitStream, canonical, 2, 80, LineBreak.unix);
+    foreach(ref event; events)
+    {
+        emitter.emit(event);
+    }
+}
 
 /// Determine if events in events1 are equivalent to events in events2.
 ///
@@ -78,8 +88,8 @@ void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     //Must exist due to Anchor, Tags reference counts.
     auto loader = Loader.fromFile(dataFilename);
     auto events = loader.parse();
-    auto emitStream = new Appender!string;
-    dumper().emit(emitStream, events);
+    auto emitStream = Appender!string();
+    emitTestCommon(emitStream, events);
 
     static if(verbose)
     {
@@ -106,10 +116,8 @@ void testEmitterOnCanonical(string canonicalFilename) @safe
     auto events = loader.parse();
     foreach(canonical; [false, true])
     {
-        auto emitStream = new Appender!string;
-        auto dumper = dumper();
-        dumper.canonical = canonical;
-        dumper.emit(emitStream, events);
+        auto emitStream = Appender!string();
+        emitTestCommon(emitStream, events, canonical);
         static if(verbose)
         {
             writeln("OUTPUT (canonical=", canonical, "):\n",
@@ -163,8 +171,8 @@ void testEmitterStyles(string dataFilename, string canonicalFilename) @safe
                     }
                     styledEvents ~= event;
                 }
-                auto emitStream = new Appender!string;
-                dumper().emit(emitStream, styledEvents);
+                auto emitStream = Appender!string();
+                emitTestCommon(emitStream, styledEvents);
                 static if(verbose)
                 {
                     writeln("OUTPUT (", filename, ", ", to!string(flowStyle), ", ",

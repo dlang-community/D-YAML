@@ -166,33 +166,6 @@ struct Dumper
                                         ~ name ~ " : " ~ e.msg, e.file, e.line);
             }
         }
-
-    package:
-        /*
-         * Emit specified events. Used for debugging/testing.
-         *
-         * Params:  events = Events to emit.
-         *
-         * Throws:  YAMLException if unable to emit.
-         */
-        void emit(CharacterType = char, Range, T)(Range range, T events) @safe
-            if (isInputRange!T && is(ElementType!T == Event) &&
-                isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
-        {
-            try
-            {
-                auto emitter = Emitter!(Range, CharacterType)(range, canonical, indent_, textWidth, lineBreak);
-                foreach(ref event; events)
-                {
-                    emitter.emit(event);
-                }
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to emit YAML to stream "
-                                        ~ name ~ " : " ~ e.msg, e.file, e.line);
-            }
-        }
 }
 ///Write to a file
 @safe unittest
