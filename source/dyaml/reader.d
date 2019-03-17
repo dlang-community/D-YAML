@@ -34,7 +34,7 @@ package:
 ///Exception thrown at Reader errors.
 class ReaderException : YAMLException
 {
-    this(string msg, string file = __FILE__, int line = __LINE__)
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super("Reader error: " ~ msg, file, line);
