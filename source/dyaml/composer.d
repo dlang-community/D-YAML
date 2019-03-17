@@ -75,14 +75,6 @@ struct Composer
             resolver_ = resolver;
         }
 
-        ///Destroy the composer.
-        pure @safe nothrow ~this()
-        {
-            parser_ = null;
-            anchors_.destroy();
-            anchors_ = null;
-        }
-
         /**
          * Determine if there are any nodes left.
          *
