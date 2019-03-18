@@ -246,24 +246,6 @@ struct Loader
             }
             return currentNode;
         }
-        // Scan and return all tokens. Used for debugging.
-        const(Token)[] scan() @safe
-        {
-            try
-            {
-                const(Token)[] result;
-                foreach (token; scanner_)
-                {
-                    result ~= token;
-                }
-                return result;
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to scan YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg, e.file, e.line);
-            }
-        }
 
         // Scan all tokens, throwing them away. Used for benchmarking.
         void scanBench() @safe
