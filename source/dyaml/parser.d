@@ -247,7 +247,7 @@ final class Parser
         }
 
         ///Parse explicit document start.
-        Event parseDocumentStart() @trusted
+        Event parseDocumentStart() @safe
         {
             //Parse any extra document end indicators.
             while(scanner_.front.id == TokenID.documentEnd)

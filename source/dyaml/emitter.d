@@ -750,7 +750,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             //{
             //    writeIndent();
             //}
-            auto writer = ScalarWriter!(Range, CharType)(this, analysis_.scalar,
+            auto writer = ScalarWriter!(Range, CharType)(&this, analysis_.scalar,
                                        context_ != Context.mappingSimpleKey);
             with(writer) final switch(style_)
             {
@@ -1344,9 +1344,9 @@ struct ScalarWriter(Range, CharType)
 
     public:
         ///Construct a ScalarWriter using emitter to output text.
-        this(ref Emitter!(Range, CharType) emitter, string text, const bool split = true) @trusted nothrow
+        this(Emitter!(Range, CharType)* emitter, string text, const bool split = true) @safe nothrow
         {
-            emitter_ = &emitter;
+            emitter_ = emitter;
             text_ = text;
             split_ = split;
         }

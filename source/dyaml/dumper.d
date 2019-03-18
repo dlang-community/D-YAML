@@ -143,7 +143,7 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(CharacterType = char, Range)(Range range, Node[] documents ...) @trusted
+        void dump(CharacterType = char, Range)(Range range, Node[] documents ...)
             if (isOutputRange!(Range, CharacterType) &&
                 isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
         {
