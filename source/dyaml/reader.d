@@ -183,7 +183,7 @@ final class Reader
         dchar front() @safe pure
         {
             if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
-            enforce!ReaderException(!empty, "Trying to read past the end of the buffer");
+            assert(!empty, "Trying to read past the end of the buffer");
 
             lastDecodedCharOffset_   = 0;
             lastDecodedBufferOffset_ = bufferOffset_;
