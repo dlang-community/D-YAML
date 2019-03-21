@@ -179,7 +179,7 @@ final class Reader
             return characterCount_ <= charIndex_;
         }
 
-        /// Optimized version of peek() for the case where peek index is 0.
+        /// Get the next character in the buffer.
         dchar front() @safe pure
         {
             if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
@@ -190,57 +190,6 @@ final class Reader
             return decodeNext();
         }
 
-        /// Get byte at specified index relative to current position.
-        ///
-        /// Params:  index = Index of the byte to get relative to current position
-        ///                  in the buffer. Can point outside of the buffer; In that
-        ///                  case, '\0' will be returned.
-        ///
-        /// Returns: Byte at specified position or '\0' if outside of the buffer.
-        char peekByte(const size_t index) @safe pure nothrow @nogc
-        {
-            return characterCount_ > (charIndex_ + index) ? buffer_[bufferOffset_ + index] : '\0';
-        }
-
-        /// Optimized version of peekByte() for the case where peek byte index is 0.
-        char peekByte() @safe pure nothrow @nogc
-        {
-            return characterCount_ > charIndex_ ? buffer_[bufferOffset_] : '\0';
-        }
-
-
-        /// Get specified number of characters starting at current position.
-        ///
-        /// Note: This gets only a "view" into the internal buffer, which will be
-        ///       invalidated after other Reader calls. Use SliceBuilder to build slices
-        ///       for permanent use.
-        ///
-        /// Params: length = Number of characters (code points, not bytes) to get. May
-        ///                  reach past the end of the buffer; in that case the returned
-        ///                  slice will be shorter.
-        ///
-        /// Returns: Characters starting at current position or an empty slice if out of bounds.
-        char[] prefix(const size_t length) @safe pure
-        {
-            return slice(length);
-        }
-
-        /// Get specified number of bytes, not code points, starting at current position.
-        ///
-        /// Note: This gets only a "view" into the internal buffer, which will be
-        ///       invalidated after other Reader calls. Use SliceBuilder to build slices
-        ///       for permanent use.
-        ///
-        /// Params: length = Number bytes (not code points) to get. May NOT reach past
-        ///                  the end of the buffer; should be used with peek() to avoid
-        ///                  this.
-        ///
-        /// Returns: Bytes starting at current position.
-        char[] prefixBytes(const size_t length) @safe pure nothrow @nogc
-        in(length == 0 || bufferOffset_ + length <= buffer_.length, "prefixBytes out of bounds")
-        {
-            return buffer_[bufferOffset_ .. bufferOffset_ + length];
-        }
 
         /// Get a slice view of the internal buffer, starting at the current position.
         ///
@@ -272,73 +221,6 @@ final class Reader
             }
 
             return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
-        }
-
-        /// Get specified number of characters, moving buffer position beyond them.
-        ///
-        /// Params:  length = Number or characters (code points, not bytes) to get.
-        ///
-        /// Returns: Characters starting at current position.
-        deprecated char[] get(const size_t length) @safe pure
-        {
-            auto result = slice(length);
-            forward(length);
-            return result;
-        }
-
-        /// Move current position forward.
-        ///
-        /// Params:  length = Number of characters to move position forward.
-        void forward(size_t length) @safe pure
-        {
-            while(length > 0)
-            {
-                auto asciiToTake = min(upcomingASCII_, length);
-                charIndex_     += asciiToTake;
-                length         -= asciiToTake;
-                upcomingASCII_ -= asciiToTake;
-
-                for(; asciiToTake > 0; --asciiToTake)
-                {
-                    const c = buffer_[bufferOffset_++];
-                    // c is ASCII, do we only need to check for ASCII line breaks.
-                    if(c == '\n' || (c == '\r' && buffer_[bufferOffset_] != '\n'))
-                    {
-                        ++line_;
-                        column_ = 0;
-                        continue;
-                    }
-                    ++column_;
-                }
-
-                // If we have used up all upcoming ASCII chars, the next char is
-                // non-ASCII even after this returns, so upcomingASCII_ doesn't need to
-                // be updated - it's zero.
-                if(length == 0) { break; }
-
-                assert(upcomingASCII_ == 0,
-                       "Running unicode handling code but we haven't run out of ASCII chars");
-                assert(bufferOffset_ < buffer_.length,
-                       "Attempted to decode past the end of YAML buffer");
-                assert(buffer_[bufferOffset_] >= 0x80,
-                       "ASCII must be handled by preceding code");
-
-                ++charIndex_;
-                const c = decode(buffer_, bufferOffset_);
-
-                // New line. (can compare with '\n' without decoding since it's ASCII)
-                if(c.isBreak || (c == '\r' && buffer_[bufferOffset_] != '\n'))
-                {
-                    ++line_;
-                    column_ = 0;
-                }
-                else if(c != '\uFEFF') { ++column_; }
-                --length;
-                checkASCII();
-            }
-
-            lastDecodedBufferOffset_ = bufferOffset_;
-            lastDecodedCharOffset_ = 0;
         }
 
         /// Move current position forward by one character.
