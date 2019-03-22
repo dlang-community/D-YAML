@@ -1410,6 +1410,9 @@ struct Scanner
                     buf ~= reader_.front;
                     reader_.popFront();
                 }
+                enforce(!reader_.empty,
+                    new ScannerException("While reading a flow scalar", startMark,
+                        "reached end of file", reader_.mark));
 
                 if (buf.length > 0) { reader_.sliceBuilder.write(buf); }
 
