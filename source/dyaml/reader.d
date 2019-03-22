@@ -129,7 +129,7 @@ final class Reader
             return reader;
         }
 
-        bool empty() @safe pure
+        bool empty() @safe pure nothrow
         {
             return characterCount_ <= charIndex_;
         }
