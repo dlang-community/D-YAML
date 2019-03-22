@@ -1547,10 +1547,16 @@ struct Scanner
                         "found unexpected document separator", reader_.mark));
 
                 // Skip any whitespaces.
-                while(reader_.front.among!(' ', '\t')) { reader_.popFront(); }
+                while(!reader_.empty && reader_.front.among!(' ', '\t'))
+                {
+                    reader_.popFront();
+                }
 
                 // Encountered a non-whitespace non-linebreak character, so we're done.
-                if(!reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029')) { break; }
+                if(reader_.empty || !reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'))
+                {
+                    break;
+                }
 
                 const lineBreak = scanLineBreak();
                 anyBreaks = true;
