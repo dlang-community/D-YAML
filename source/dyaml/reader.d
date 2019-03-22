@@ -137,7 +137,7 @@ final class Reader
             reader.line_ = this.line_;
             reader.column_ = this.column_;
             reader.encoding_ = this.encoding_;
-            reader.endian_ = this.endian_;
+            version(unittest) { endian_ = endianResult.endian; }
             reader.upcomingASCII_ = this.upcomingASCII_;
             reader.lastDecodedBufferOffset_ = this.lastDecodedBufferOffset_;
             reader.lastDecodedCharOffset_ = this.lastDecodedCharOffset_;
