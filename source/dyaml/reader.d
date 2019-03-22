@@ -82,6 +82,10 @@ final class Reader
         // in code points, not chars.
         size_t lastDecodedCharOffset_;
 
+        this() @safe pure
+        {
+            this.sliceBuilder = SliceBuilder(this);
+        }
     public:
         /// Construct a Reader.
         ///
@@ -120,6 +124,24 @@ final class Reader
 
             this.sliceBuilder = SliceBuilder(this);
             checkASCII();
+        }
+
+
+        auto save() @safe pure
+        {
+            auto reader = new Reader;
+            reader.buffer_ = this.buffer_;
+            reader.bufferOffset_ = this.bufferOffset_;
+            reader.charIndex_ = this.charIndex_;
+            reader.characterCount_ = this.characterCount_;
+            reader.line_ = this.line_;
+            reader.column_ = this.column_;
+            reader.encoding_ = this.encoding_;
+            reader.endian_ = this.endian_;
+            reader.upcomingASCII_ = this.upcomingASCII_;
+            reader.lastDecodedBufferOffset_ = this.lastDecodedBufferOffset_;
+            reader.lastDecodedCharOffset_ = this.lastDecodedCharOffset_;
+            return reader;
         }
 
         /// Get character at specified index relative to current position.
