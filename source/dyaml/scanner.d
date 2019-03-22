@@ -676,27 +676,47 @@ struct Scanner
         /// Check if the next token is DOCUMENT-START:   ^ '---' (' '|'\n')
         bool checkDocumentStart() @safe
         {
-            // Check one char first, then all 3, to prevent reading outside the buffer.
-            return reader_.column     == 0     &&
-                   reader_.front == '-'   &&
-                   reader_.slice(3)  == "---" &&
-                   reader_.peek(3).isWhiteSpace;
+                if (reader_.empty || (reader_.column != 0))
+                {
+                    return false;
+                }
+                auto copy = reader_.save();
+                foreach (i; 0..3)
+                {
+                    if (copy.empty || copy.front != '-')
+                    {
+                        return false;
+                    }
+                    copy.popFront();
+                }
+                return !!copy.front.isWhiteSpace;
         }
 
         /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
         bool checkDocumentEnd() @safe
         {
-            // Check one char first, then all 3, to prevent reading outside the buffer.
-            return reader_.column     == 0     &&
-                   reader_.front == '.'   &&
-                   reader_.slice(3)  == "..." &&
-                   reader_.peek(3).isWhiteSpace;
+                if (reader_.empty || (reader_.column != 0))
+                {
+                    return false;
+                }
+                auto copy = reader_.save();
+                foreach (i; 0..3)
+                {
+                    if (copy.empty || copy.front != '.')
+                    {
+                        return false;
+                    }
+                    copy.popFront();
+                }
+                return copy.empty || copy.front.isWhiteSpace;
         }
 
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe
         {
-            return !!reader_.peek(1).isWhiteSpace;
+            auto copy = reader_.save();
+            copy.popFront();
+            return !!copy.front.isWhiteSpace;
         }
 
         /// Check if the next token is KEY(flow context):    '?'
@@ -704,7 +724,9 @@ struct Scanner
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe
         {
-            return (flowLevel_ > 0 || reader_.peek(1).isWhiteSpace);
+            auto copy = reader_.save();
+            copy.popFront();
+            return (flowLevel_ > 0 || copy.front.isWhiteSpace);
         }
 
         /// Check if the next token is VALUE(flow context):  ':'
@@ -712,7 +734,9 @@ struct Scanner
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe
         {
-            return flowLevel_ > 0 || reader_.peek(1).isWhiteSpace;
+            auto copy = reader_.save();
+            copy.popFront();
+            return (flowLevel_ > 0 || copy.front.isWhiteSpace);
         }
 
         /// Check if the next token is a plain scalar.
@@ -736,7 +760,9 @@ struct Scanner
             {
                 return true;
             }
-            return !reader_.peek(1).isWhiteSpace &&
+            auto copy = reader_.save();
+            copy.popFront();
+            return !copy.front.isWhiteSpace &&
                    (c == '-' || (flowLevel_ == 0 && (c == '?' || c == ':')));
         }
 
@@ -823,7 +849,7 @@ struct Scanner
                 // not allowed in other contexts
                 if (flowLevel_ > 0)
                 {
-                    while(reader_.front.isNonLinebreakWhitespace) { reader_.popFront; }
+                    while(!reader_.empty && reader_.front.isNonLinebreakWhitespace) { reader_.popFront; }
                 }
                 else
                 {
@@ -1041,7 +1067,9 @@ struct Scanner
         Token scanTag() @safe
         {
             const startMark = reader_.mark;
-            dchar c = reader_.peek(1);
+            auto copy = reader_.save();
+            copy.popFront();
+            dchar c = copy.front;
 
             reader_.sliceBuilder.begin();
             scope(failure) { reader_.sliceBuilder.finish(); }
@@ -1072,15 +1100,14 @@ struct Scanner
                 uint length = 1;
                 bool useHandle;
 
-                while(!c.isBreakOrSpace)
+                while(!copy.front.isBreakOrSpace)
                 {
-                    if(c == '!')
+                    if(copy.front == '!')
                     {
                         useHandle = true;
                         break;
                     }
-                    ++length;
-                    c = reader_.peek(length);
+                    copy.popFront();
                 }
 
                 if(useHandle)
@@ -1417,7 +1444,9 @@ struct Scanner
                 if (buf.length > 0) { reader_.sliceBuilder.write(buf); }
 
                 dchar c = reader_.front;
-                if(quotes == ScalarStyle.singleQuoted && c == '\'' && reader_.peek(1) == '\'')
+                auto copy = reader_.save();
+                copy.popFront();
+                if(quotes == ScalarStyle.singleQuoted && c == '\'' && !copy.empty && copy.front == '\'')
                 {
                     reader_.popFront();
                     reader_.popFront();
@@ -1447,19 +1476,15 @@ struct Scanner
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.popFront();
 
-                        foreach(i; 0 .. hexLength) {
-                            enforce(reader_.peek(i).isHexDigit,
-                                new ScannerException("While scanning a double quoted scalar", startMark,
-                                    expected("escape sequence of hexadecimal numbers",
-                                        reader_.peek(i)), reader_.mark));
-                        }
-
-
                         char[] hex;
                         hex.reserve(hexLength);
                         foreach (_; 0..hexLength)
                         {
                             hex ~= reader_.front;
+                            enforce(reader_.front.isHexDigit,
+                                new ScannerException("While scanning a double quoted scalar", startMark,
+                                    expected("escape sequence of hexadecimal numbers",
+                                        reader_.front), reader_.mark));
                             reader_.popFront();
                         }
                         enforce((hex.length > 0) && (hex.length <= 8),
@@ -1504,7 +1529,6 @@ struct Scanner
                 reader_.popFront();
             }
 
-            // Can check the last byte without striding because '\0' is ASCII
             enforce(!reader_.empty,
                 new ScannerException("While scanning a quoted scalar", startMark,
                     "found unexpected end of buffer", reader_.mark));
@@ -1535,14 +1559,35 @@ struct Scanner
         /// line breaks into that slice.
         bool scanFlowScalarBreaksToSlice(const Mark startMark) @safe
         {
+            bool end() @safe pure
+            {
+                if (reader_.empty)
+                {
+                    return false;
+                }
+                auto copy = reader_.save();
+                dchar[3] prefix;
+                foreach (ref c; prefix)
+                {
+                    if (copy.empty)
+                    {
+                        return false;
+                    }
+                    c = copy.front;
+                    copy.popFront();
+                }
+                if ((prefix != "...") && (prefix != "---"))
+                {
+                    return false;
+                }
+                return copy.empty || copy.front.isWhiteSpace;
+            }
             // True if at least one line break was found.
             bool anyBreaks;
             for(;;)
             {
                 // Instead of checking indentation, we check for document separators.
-                const prefix = reader_.slice(3);
-                enforce(!(prefix == "---" || prefix == "...") ||
-                    !reader_.peek(3).isWhiteSpace,
+                enforce(!end,
                     new ScannerException("While scanning a quoted scalar", startMark,
                         "found unexpected document separator", reader_.mark));
 
@@ -1592,8 +1637,13 @@ struct Scanner
                 // Scan the entire plain scalar.
                 for(;;)
                 {
+                    auto copy = reader_.save();
+                    if (!copy.empty)
+                    {
+                        copy.popFront();
+                    }
                     if(reader_.empty || reader_.front.isWhiteSpace ||
-                       (flowLevel_ == 0 && reader_.front == ':' && reader_.peek(1).isWhiteSpace) ||
+                       (flowLevel_ == 0 && reader_.front == ':' && copy.front.isWhiteSpace) ||
                        (flowLevel_ > 0 && reader_.front.among!(',', ':', '?', '[', ']', '{', '}')))
                     {
                         break;
@@ -1602,10 +1652,16 @@ struct Scanner
                     reader_.popFront();
                 }
 
+                auto copy = reader_.save();
+                if (!copy.empty)
+                {
+                    copy.popFront();
+                }
                 // It's not clear what we should do with ':' in the flow context.
                 enforce(flowLevel_ == 0 || reader_.front != ':' ||
-                   reader_.peek(1).isWhiteSpace ||
-                   reader_.peek(1).among!(',', '[', ']', '{', '}'),
+                   copy.empty ||
+                   copy.front.isWhiteSpace ||
+                   copy.front.among!(',', '[', ']', '{', '}'),
                     new ScannerException("While scanning a plain scalar", startMark,
                         "found unexpected ':' . Please check " ~
                         "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
@@ -1675,9 +1731,26 @@ struct Scanner
 
             static bool end(Reader reader_) @safe pure
             {
-                const prefix = reader_.slice(3);
-                return ("---" == prefix || "..." == prefix)
-                        && reader_.peek(3).among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+                if (reader_.empty)
+                {
+                    return false;
+                }
+                auto copy = reader_.save();
+                dchar[3] prefix;
+                foreach (ref c; prefix)
+                {
+                    if (copy.empty)
+                    {
+                        return false;
+                    }
+                    c = copy.front;
+                    copy.popFront();
+                }
+                if ((prefix != "...") && (prefix != "---"))
+                {
+                    return false;
+                }
+                return copy.empty || copy.front.isWhiteSpace;
             }
 
             if(end(reader_)) { return; }

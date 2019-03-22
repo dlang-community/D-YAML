@@ -71,17 +71,6 @@ final class Reader
             Endian endian_;
         }
 
-        // The number of consecutive ASCII characters starting at bufferOffset_.
-        //
-        // Used to minimize UTF-8 decoding.
-        size_t upcomingASCII_;
-
-        // Index to buffer_ where the last decoded character starts.
-        size_t lastDecodedBufferOffset_;
-        // Offset, relative to charIndex_, of the last decoded character,
-        // in code points, not chars.
-        size_t lastDecodedCharOffset_;
-
         this() @safe pure
         {
             this.sliceBuilder = SliceBuilder(this);
@@ -123,7 +112,6 @@ final class Reader
                     new ReaderException("Special unicode characters are not allowed"));
 
             this.sliceBuilder = SliceBuilder(this);
-            checkASCII();
         }
 
 
@@ -137,63 +125,8 @@ final class Reader
             reader.line_ = this.line_;
             reader.column_ = this.column_;
             reader.encoding_ = this.encoding_;
-            version(unittest) { endian_ = endianResult.endian; }
-            reader.upcomingASCII_ = this.upcomingASCII_;
-            reader.lastDecodedBufferOffset_ = this.lastDecodedBufferOffset_;
-            reader.lastDecodedCharOffset_ = this.lastDecodedCharOffset_;
+            version(unittest) { endian_ = this.endian_; }
             return reader;
-        }
-
-        /// Get character at specified index relative to current position.
-        ///
-        /// Params:  index = Index of the character to get relative to current position
-        ///                  in the buffer. Can point outside of the buffer; In that
-        ///                  case, '\0' will be returned.
-        ///
-        /// Returns: Character at specified position or '\0' if outside of the buffer.
-        ///
-        // XXX removed; search for 'risky' to find why.
-        // Throws:  ReaderException if trying to read past the end of the buffer.
-        dchar peek(const size_t index) @safe pure
-        {
-            if(index < upcomingASCII_) { return buffer_[bufferOffset_ + index]; }
-            if(characterCount_ <= charIndex_ + index)
-            {
-                // XXX This is risky; revert this if bugs are introduced. We rely on
-                // the assumption that Reader only uses front to detect end of buffer.
-                // The test suite passes.
-                // Revert this case here and in other peek() versions if this causes
-                // errors.
-                // throw new ReaderException("Trying to read past the end of the buffer");
-                return '\0';
-            }
-
-            // Optimized path for Scanner code that peeks chars in linear order to
-            // determine the length of some sequence.
-            if(index == lastDecodedCharOffset_)
-            {
-                ++lastDecodedCharOffset_;
-                const char b = buffer_[lastDecodedBufferOffset_];
-                // ASCII
-                if(b < 0x80)
-                {
-                    ++lastDecodedBufferOffset_;
-                    return b;
-                }
-                return decode(buffer_, lastDecodedBufferOffset_);
-            }
-
-            // 'Slow' path where we decode everything up to the requested character.
-            const asciiToTake = min(upcomingASCII_, index);
-            lastDecodedCharOffset_   = asciiToTake;
-            lastDecodedBufferOffset_ = bufferOffset_ + asciiToTake;
-            dchar d;
-            while(lastDecodedCharOffset_ <= index)
-            {
-                d = decodeNext();
-            }
-
-            return d;
         }
 
         bool empty() @safe pure
@@ -204,75 +137,19 @@ final class Reader
         /// Get the next character in the buffer.
         dchar front() @safe pure
         {
-            if(upcomingASCII_ > 0)            { return buffer_[bufferOffset_]; }
             assert(!empty, "Trying to read past the end of the buffer");
 
-            lastDecodedCharOffset_   = 0;
-            lastDecodedBufferOffset_ = bufferOffset_;
-            return decodeNext();
-        }
-
-
-        /// Get a slice view of the internal buffer, starting at the current position.
-        ///
-        /// Note: This gets only a "view" into the internal buffer,
-        ///       which get invalidated after other Reader calls.
-        ///
-        /// Params:  end = End of the slice relative to current position. May reach past
-        ///                the end of the buffer; in that case the returned slice will
-        ///                be shorter.
-        ///
-        /// Returns: Slice into the internal buffer or an empty slice if out of bounds.
-        char[] slice(const size_t end) @safe pure
-        {
-            // Fast path in case the caller has already peek()ed all the way to end.
-            if(end == lastDecodedCharOffset_)
-            {
-                return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
-            }
-
-            const asciiToTake = min(upcomingASCII_, end, buffer_.length);
-            lastDecodedCharOffset_   = asciiToTake;
-            lastDecodedBufferOffset_ = bufferOffset_ + asciiToTake;
-
-            // 'Slow' path - decode everything up to end.
-            while(lastDecodedCharOffset_ < end &&
-                  lastDecodedBufferOffset_ < buffer_.length)
-            {
-                decodeNext();
-            }
-
-            return buffer_[bufferOffset_ .. lastDecodedBufferOffset_];
+            return buffer_[bufferOffset_..$].front;
         }
 
         /// Move current position forward by one character.
         void popFront() @safe pure
         {
             ++charIndex_;
-            lastDecodedBufferOffset_ = bufferOffset_;
-            lastDecodedCharOffset_ = 0;
-
-            // ASCII
-            if(upcomingASCII_ > 0)
-            {
-                --upcomingASCII_;
-                const c = buffer_[bufferOffset_++];
-
-                if(c == '\n' || (c == '\r' && buffer_[bufferOffset_] != '\n'))
-                {
-                    ++line_;
-                    column_ = 0;
-                    return;
-                }
-                ++column_;
-                return;
-            }
 
             // UTF-8
             assert(bufferOffset_ < buffer_.length,
                    "Attempted to decode past the end of YAML buffer");
-            assert(buffer_[bufferOffset_] >= 0x80,
-                   "ASCII must be handled by preceding code");
 
             const c = decode(buffer_, bufferOffset_);
 
@@ -283,8 +160,6 @@ final class Reader
                 column_ = 0;
             }
             else if(c != '\uFEFF') { ++column_; }
-
-            checkASCII();
         }
 
         /// Used to build slices of read data in Reader; to avoid allocations.
@@ -304,33 +179,6 @@ final class Reader
 
         /// Get encoding of the input buffer.
         Encoding encoding() const @safe pure nothrow @nogc { return encoding_; }
-
-private:
-        // Update upcomingASCII_ (should be called forward()ing over a UTF-8 sequence)
-        void checkASCII() @safe pure nothrow @nogc
-        {
-            upcomingASCII_ = countASCII(buffer_[bufferOffset_ .. $]);
-        }
-
-        // Decode the next character relative to
-        // lastDecodedCharOffset_/lastDecodedBufferOffset_ and update them.
-        //
-        // Does not advance the buffer position. Used in peek() and slice().
-        dchar decodeNext() @safe pure
-        {
-            assert(lastDecodedBufferOffset_ < buffer_.length,
-                   "Attempted to decode past the end of YAML buffer");
-            const char b = buffer_[lastDecodedBufferOffset_];
-            ++lastDecodedCharOffset_;
-            // ASCII
-            if(b < 0x80)
-            {
-                ++lastDecodedBufferOffset_;
-                return b;
-            }
-
-            return decode(buffer_, lastDecodedBufferOffset_);
-        }
 }
 
 /// Used to build slices of already read data in Reader buffer, avoiding allocations.
