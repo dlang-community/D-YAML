@@ -51,16 +51,16 @@ package:
 /// TAG(value)
 /// SCALAR(value, plain, style)
 
-alias isBreak = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias isBreak = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
 
-alias isBreakOrSpace = among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias isBreakOrSpace = among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
-alias isWhiteSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias isWhiteSpace = among!(' ', '\t', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
 alias isNonLinebreakWhitespace = among!(' ', '\t');
 
 alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}',
-    '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\0', '\n',
+    '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\n',
     '\r', '\u0085', '\u2028', '\u2029');
 
 alias isURIChar = among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',',
@@ -70,7 +70,7 @@ alias isNSChar = among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
 alias isBChar = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
 
-alias isFlowScalarBreakSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029', '\'', '"', '\\');
+alias isFlowScalarBreakSpace = among!(' ', '\t', '\n', '\r', '\u0085', '\u2028', '\u2029', '\'', '"', '\\');
 
 /// Marked exception thrown at scanner errors.
 ///
@@ -916,7 +916,7 @@ struct Scanner
             // Scan directive name.
             scanAlphaNumericToSlice!"a directive"(startMark);
 
-            enforce(reader_.front.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
                 new ScannerException("While scanning a directive", startMark,
                     expected("alphanumeric, '-' or '_'", reader_.front), reader_.mark));
         }
@@ -940,7 +940,7 @@ struct Scanner
             reader_.sliceBuilder.write('.');
             scanYAMLDirectiveNumberToSlice(startMark);
 
-            enforce(reader_.front.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
                 new ScannerException("While scanning a directive", startMark,
                     expected("digit or '.'", reader_.front), reader_.mark));
         }
@@ -1006,7 +1006,7 @@ struct Scanner
         void scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             scanTagURIToSlice!"directive"(startMark);
-            enforce(reader_.front.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
                 new ScannerException("While scanning a directive prefix", startMark,
                     expected("' '", reader_.front), reader_.mark));
         }
@@ -1174,7 +1174,7 @@ struct Scanner
             dchar lineBreak = cast(dchar)int.max;
 
             // Scan the inner part of the block scalar.
-            while(reader_.column == indent && reader_.front != '\0')
+            while(reader_.column == indent && !reader_.empty)
             {
                 breaksTransaction.commit();
                 const bool leadingNonSpace = !reader_.front.among!(' ', '\t');
@@ -1194,7 +1194,7 @@ struct Scanner
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
                 // loop) will never roll back data written in this if() block.
-                if(reader_.column == indent && reader_.front != '\0')
+                if(reader_.column == indent && !reader_.empty)
                 {
                     // Unfortunately, folding rules are ambiguous.
 
@@ -1289,7 +1289,7 @@ struct Scanner
                 if(gotIncrement) { getChomping(c, chomping); }
             }
 
-            enforce(c.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(c.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
                 new ScannerException("While scanning a block scalar", startMark,
                 expected("chomping or indentation indicator", c), reader_.mark));
 
