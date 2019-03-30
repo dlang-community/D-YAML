@@ -129,13 +129,13 @@ final class Reader
             return reader;
         }
 
-        bool empty() @safe pure nothrow
+        bool empty() @safe pure nothrow const @nogc
         {
             return characterCount_ <= charIndex_;
         }
 
         /// Get the next character in the buffer.
-        dchar front() @safe pure
+        dchar front() @safe pure const
         {
             assert(!empty, "Trying to read past the end of the buffer");
 
