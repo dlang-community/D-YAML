@@ -38,7 +38,7 @@ class ConstructorException : YAMLException
     /// Params:  msg   = Error message.
     ///          start = Start position of the error context.
     ///          end   = End position of the error context.
-    this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
+    this(string msg, Mark start, Mark end, string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
