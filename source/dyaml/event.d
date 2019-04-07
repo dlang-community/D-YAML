@@ -113,6 +113,7 @@ struct Event
  */
 Event event(EventID id)(const Mark start, const Mark end, const string anchor = null)
     @safe
+    in(!(id == EventID.alias_ && anchor == ""), "Missing anchor for alias event")
 {
     Event result;
     result.startMark = start;
