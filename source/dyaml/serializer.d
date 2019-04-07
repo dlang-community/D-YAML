@@ -156,7 +156,7 @@ struct Serializer
                 return;
             }
 
-            anchors_[node] = null;
+            anchors_.remove(node);
             final switch (node.nodeID)
             {
                 case NodeID.mapping:
@@ -242,4 +242,81 @@ struct Serializer
                     assert(0);
             }
         }
+}
+
+// Issue #244
+@safe unittest
+{
+    import dyaml.dumper : dumper;
+    auto node = Node([
+        Node.Pair(
+            Node(""),
+            Node([
+                Node([
+                    Node.Pair(
+                        Node("d"),
+                        Node([
+                            Node([
+                                Node.Pair(
+                                    Node("c"),
+                                    Node("")
+                                ),
+                                Node.Pair(
+                                    Node("b"),
+                                    Node("")
+                                ),
+                                Node.Pair(
+                                    Node(""),
+                                    Node("")
+                                )
+                            ])
+                        ])
+                    ),
+                ]),
+                Node([
+                    Node.Pair(
+                        Node("d"),
+                        Node([
+                            Node(""),
+                            Node(""),
+                            Node([
+                                Node.Pair(
+                                    Node("c"),
+                                    Node("")
+                                ),
+                                Node.Pair(
+                                    Node("b"),
+                                    Node("")
+                                ),
+                                Node.Pair(
+                                    Node(""),
+                                    Node("")
+                                )
+                            ])
+                        ])
+                    ),
+                    Node.Pair(
+                        Node("z"),
+                        Node("")
+                    ),
+                    Node.Pair(
+                        Node(""),
+                        Node("")
+                    )
+                ]),
+                Node("")
+            ])
+        ),
+        Node.Pair(
+            Node("g"),
+            Node("")
+        ),
+        Node.Pair(
+            Node("h"),
+            Node("")
+        ),
+    ]);
+
+    auto stream = appender!string();
+    dumper().dump(stream, node);
 }
