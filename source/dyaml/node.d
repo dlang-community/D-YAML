@@ -254,7 +254,7 @@ struct Node
             }
             // Time
             {
-                auto node = Node(SysTime(DateTime(2005, 06, 15, 20, 00, 00), UTC()));
+                auto node = Node(SysTime(DateTime(2005, 6, 15, 20, 0, 0), UTC()));
             }
             // Integer, dumped as a string
             {

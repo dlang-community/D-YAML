@@ -152,7 +152,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
 
 @safe unittest
 {
-    assert(representData(Node(SysTime(DateTime(2000, 03, 14, 12, 34, 56), UTC())), ScalarStyle.invalid, CollectionStyle.invalid) == Node("2000-03-14T12:34:56Z", "tag:yaml.org,2002:timestamp"));
+    assert(representData(Node(SysTime(DateTime(2000, 3, 14, 12, 34, 56), UTC())), ScalarStyle.invalid, CollectionStyle.invalid) == Node("2000-03-14T12:34:56Z", "tag:yaml.org,2002:timestamp"));
 }
 
 @safe unittest
