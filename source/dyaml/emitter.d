@@ -35,17 +35,6 @@ import dyaml.tagdirective;
 
 package:
 
-/**
- * Exception thrown at Emitter errors.
- *
- * See_Also:
- *     YAMLException
- */
-class EmitterException : YAMLException
-{
-    mixin ExceptionCtors;
-}
-
 //Stores results of analysis of a scalar, determining e.g. what scalar style to use.
 struct ScalarAnalysis
 {
@@ -190,7 +179,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             analysis_.flags.isNull = true;
         }
 
-        ///Emit an event. Throws EmitterException on error.
+        ///Emit an event.
         void emit(Event event) @safe
         {
             events_.push(event);
@@ -205,9 +194,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
     private:
         ///Pop and return the newest state in states_.
         EmitterFunction popState() @safe
+            in(states_.data.length > 0,
+                "Emitter: Need to pop a state but there are no states left")
         {
-            enforce(states_.data.length > 0,
-                    new YAMLException("Emitter: Need to pop a state but there are no states left"));
             const result = states_.data[$-1];
             states_.shrinkTo(states_.data.length - 1);
             return result;
@@ -220,10 +209,10 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Pop and return the newest indent in indents_.
         int popIndent() @safe
+            in(indents_.data.length > 0,
+                "Emitter: Need to pop an indent level but there" ~
+                " are no indent levels left")
         {
-            enforce(indents_.data.length > 0,
-                    new YAMLException("Emitter: Need to pop an indent level but there" ~
-                                      " are no indent levels left"));
             const result = indents_.data[$-1];
             indents_.shrinkTo(indents_.data.length - 1);
             return result;
@@ -232,26 +221,19 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Write a string to the file/stream.
         void writeString(const scope char[] str) @safe
         {
-            try
+            static if(is(CharType == char))
             {
-                static if(is(CharType == char))
-                {
-                    copy(str, stream_);
-                }
-                static if(is(CharType == wchar))
-                {
-                    const buffer = to!wstring(str);
-                    copy(buffer, stream_);
-                }
-                static if(is(CharType == dchar))
-                {
-                    const buffer = to!dstring(str);
-                    copy(buffer, stream_);
-                }
+                copy(str, stream_);
             }
-            catch(Exception e)
+            static if(is(CharType == wchar))
             {
-                throw new EmitterException("Unable to write to stream: " ~ e.msg);
+                const buffer = to!wstring(str);
+                copy(buffer, stream_);
+            }
+            static if(is(CharType == dchar))
+            {
+                const buffer = to!dstring(str);
+                copy(buffer, stream_);
             }
         }
 
@@ -304,9 +286,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Determines if the type of current event is as specified. Throws if no event.
         bool eventTypeIs(in EventID id) const pure @safe
+            in(!event_.isNull, "Expected an event, but no event is available.")
         {
-            enforce(!event_.isNull,
-                    new EmitterException("Expected an event, but no event is available."));
             return event_.id == id;
         }
 
@@ -318,9 +299,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Handle start of a file/stream.
         void expectStreamStart() @safe
+            in(eventTypeIs(EventID.streamStart),
+                "Expected streamStart, but got " ~ event_.idString)
         {
-            enforce(eventTypeIs(EventID.streamStart),
-                    new EmitterException("Expected streamStart, but got " ~ event_.idString));
 
             writeStreamStart();
             nextExpected!"expectDocumentStart!(Yes.first)"();
@@ -329,17 +310,16 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Expect nothing, throwing if we still have something.
         void expectNothing() @safe
         {
-            throw new EmitterException("Expected nothing, but got " ~ event_.idString);
+            assert(0, "Expected nothing, but got " ~ event_.idString);
         }
 
         //Document handlers.
 
         ///Handle start of a document.
         void expectDocumentStart(Flag!"first" first)() @safe
+            in(eventTypeIs(EventID.documentStart) || eventTypeIs(EventID.streamEnd),
+                "Expected documentStart or streamEnd, but got " ~ event_.idString)
         {
-            enforce(eventTypeIs(EventID.documentStart) || eventTypeIs(EventID.streamEnd),
-                    new EmitterException("Expected documentStart or streamEnd, but got "
-                              ~ event_.idString));
 
             if(event_.id == EventID.documentStart)
             {
@@ -403,9 +383,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Handle end of a document.
         void expectDocumentEnd() @safe
+            in(eventTypeIs(EventID.documentEnd),
+                "Expected DocumentEnd, but got " ~ event_.idString)
         {
-            enforce(eventTypeIs(EventID.documentEnd),
-                    new EmitterException("Expected DocumentEnd, but got " ~ event_.idString));
 
             writeIndent();
             if(event_.explicitDocument)
@@ -477,14 +457,14 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                      }
                      break;
                 default:
-                     throw new EmitterException("Expected alias_, scalar, sequenceStart or " ~
+                     assert(0, "Expected alias_, scalar, sequenceStart or " ~
                                      "mappingStart, but got: " ~ event_.idString);
             }
         }
         ///Handle an alias.
         void expectAlias() @safe
+            in(event_.anchor != "", "Anchor is not specified for alias")
         {
-            enforce(event_.anchor !is null, new EmitterException("Anchor is not specified for alias"));
             processAnchor("*");
             nextExpected(popState());
         }
@@ -811,7 +791,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
                 return;
             }
 
-            enforce(tag !is null, new EmitterException("Tag is not specified"));
+            assert(tag != "", "Tag is not specified");
             if(preparedTag_ is null){preparedTag_ = prepareTag(tag);}
             if(preparedTag_ !is null && preparedTag_ != "")
             {
@@ -865,9 +845,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Prepare YAML version string for output.
         static string prepareVersion(const string YAMLVersion) @safe
+            in(YAMLVersion.split(".")[0] == "1",
+                "Unsupported YAML version: " ~ YAMLVersion)
         {
-            enforce(YAMLVersion.split(".")[0] == "1",
-                    new EmitterException("Unsupported YAML version: " ~ YAMLVersion));
             return YAMLVersion;
         }
 
@@ -885,25 +865,17 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Prepare tag directive handle for output.
         static string prepareTagHandle(const string handle) @safe
+            in(handle != "", "Tag handle must not be empty")
+            in(handle.drop(1).dropBack(1).all!(c => isAlphaNum(c) || c.among!('-', '_')),
+                "Tag handle contains invalid characters")
         {
-            enforce(handle !is null && handle != "",
-                    new EmitterException("Tag handle must not be empty"));
-
-            if(handle.length > 1) foreach(const dchar c; handle[1 .. $ - 1])
-            {
-                enforce(isAlphaNum(c) || c.among!('-', '_'),
-                        new EmitterException("Invalid character: " ~ to!string(c)  ~
-                                  " in tag handle " ~ handle));
-            }
             return handle;
         }
 
         ///Prepare tag directive prefix for output.
         static string prepareTagPrefix(const string prefix) @safe
+            in(prefix != "", "Tag prefix must not be empty")
         {
-            enforce(prefix !is null && prefix != "",
-                    new EmitterException("Tag prefix must not be empty"));
-
             auto appender = appender!string();
             const int offset = prefix[0] == '!';
             size_t start, end;
@@ -930,8 +902,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Prepare tag for output.
         string prepareTag(in string tag) @safe
+            in(tag != "", "Tag must not be empty")
         {
-            enforce(tag !is null, new EmitterException("Tag must not be empty"));
 
             string tagString = tag;
             if(tagString == "!"){return tagString;}
@@ -976,16 +948,10 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         ///Prepare anchor for output.
         static string prepareAnchor(const string anchor) @safe
+            in(anchor != "",  "Anchor must not be empty")
+            in(anchor.all!(c => isAlphaNum(c) || c.among!('-', '_')), "Anchor contains invalid characters")
         {
-            enforce(anchor != "",
-                    new EmitterException("Anchor must not be empty"));
-            const str = anchor;
-            foreach(const dchar c; str)
-            {
-                enforce(isAlphaNum(c) || c.among!('-', '_'),
-                        new EmitterException("Invalid character: " ~ to!string(c) ~ " in anchor: " ~ str));
-            }
-            return str;
+            return anchor;
         }
 
         ///Analyze specifed scalar and return the analysis result.
