@@ -24,45 +24,52 @@ import dyaml.node;
 import dyaml.exception;
 
 
-static Tuple!(string, "tag", Regex!char, "regexp", string, "chars")[] regexes;
+/// Type of `regexes`
+private alias RegexType = Tuple!(string, "tag", const Regex!char, "regexp", string, "chars");
 
-static this() @safe {
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:bool",
-                        regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
-                               "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
-                        "yYnNtTfFoO");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:float",
-                        regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
-                              "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
-                              "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
-                              "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
-                              "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
-                              "(?:nan|NaN|NAN))$"),
-                        "-+0123456789.");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:int",
-                        regex(r"^(?:[-+]?0b[0-1_]+" ~
-                               "|[-+]?0[0-7_]+" ~
-                               "|[-+]?(?:0|[1-9][0-9_]*)" ~
-                               "|[-+]?0x[0-9a-fA-F_]+" ~
-                               "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
-                        "-+0123456789");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:null",
-                        regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:timestamp",
-                        regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
-                               "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
-                               "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
-                               "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
-                               "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
-                               "[0-9]?(?::[0-9][0-9])?)?$"),
-                        "0123456789");
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:value", regex(r"^=$"), "=");
+private immutable RegexType[] regexes;
+
+shared static this() @safe
+{
+    RegexType[] tmp;
+    tmp ~= RegexType("tag:yaml.org,2002:bool",
+                     regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
+                           "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
+                     "yYnNtTfFoO");
+    tmp ~= RegexType("tag:yaml.org,2002:float",
+                     regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
+                           "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
+                           "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
+                           "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
+                           "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
+                           "(?:nan|NaN|NAN))$"),
+                     "-+0123456789.");
+    tmp ~= RegexType("tag:yaml.org,2002:int",
+                     regex(r"^(?:[-+]?0b[0-1_]+" ~
+                           "|[-+]?0[0-7_]+" ~
+                           "|[-+]?(?:0|[1-9][0-9_]*)" ~
+                           "|[-+]?0x[0-9a-fA-F_]+" ~
+                           "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
+                     "-+0123456789");
+    tmp ~= RegexType("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
+    tmp ~= RegexType("tag:yaml.org,2002:null",
+                     regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
+    tmp ~= RegexType("tag:yaml.org,2002:timestamp",
+                     regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
+                           "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
+                           "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
+                           "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
+                           "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
+                           "[0-9]?(?::[0-9][0-9])?)?$"),
+                     "0123456789");
+    tmp ~= RegexType("tag:yaml.org,2002:value", regex(r"^=$"), "=");
 
 
     //The following resolver is only for documentation purposes. It cannot work
     //because plain scalars cannot start with '!', '&', or '*'.
-    regexes ~= tuple!("tag", "regexp", "chars")("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*");
+    tmp ~= RegexType("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*");
+
+    regexes = () @trusted { return cast(immutable)tmp; }();
 }
 
 /**
@@ -86,7 +93,7 @@ struct Resolver
          * Each tuple stores regular expression the scalar must match,
          * and tag to assign to it if it matches.
          */
-        Tuple!(string, Regex!char)[][dchar] yamlImplicitResolvers_;
+        Tuple!(string, const Regex!char)[][dchar] yamlImplicitResolvers_;
 
     package:
         static auto withDefaultResolvers() @safe
@@ -120,7 +127,7 @@ struct Resolver
          *          first  = String of possible starting characters of the scalar.
          *
          */
-        void addImplicitResolver(string tag, Regex!char regexp, string first)
+        void addImplicitResolver(string tag, const Regex!char regexp, string first)
             pure @safe
         {
             foreach(const dchar c; first)
