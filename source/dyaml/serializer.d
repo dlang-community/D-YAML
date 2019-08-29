@@ -55,7 +55,7 @@ struct Serializer
         /**
          * Construct a Serializer.
          *
-         * Params:  emitter       = Emitter to emit events produced.
+         * Params:
          *          resolver      = Resolver used to determine which tags are automaticaly resolvable.
          *          explicitStart = Do all document starts have to be specified explicitly?
          *          explicitEnd   = Do all document ends have to be specified explicitly?
