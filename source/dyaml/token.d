@@ -69,7 +69,7 @@ struct Token
     ///
     /// Values are char[] instead of string, as Parser may still change them in a few
     /// cases. Parser casts values to strings when producing Events.
-    char[] value;
+    string value;
     // 4B
     /// Start position of the token in file/stream.
     Mark startMark;
@@ -103,7 +103,7 @@ struct Token
 ///          value     = Value of the token.
 ///          directive = Directive type (YAML or TAG in YAML 1.1).
 ///          nameEnd = Position of the end of the name
-Token directiveToken(const Mark start, const Mark end, char[] value,
+Token directiveToken(const Mark start, const Mark end, string value,
                      DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {
     return Token(value, start, end, TokenID.directive, ScalarStyle.init, Encoding.init,
@@ -148,7 +148,7 @@ alias flowEntryToken = simpleToken!(TokenID.flowEntry);
 ///          value        = Value of the token.
 ///          valueDivider = A hack for TagToken to store 2 values in value; the first
 ///                         value goes up to valueDivider, the second after it.
-Token simpleValueToken(TokenID id)(const Mark start, const Mark end, char[] value,
+Token simpleValueToken(TokenID id)(const Mark start, const Mark end, string value,
                                    const uint valueDivider = uint.max)
 {
     return Token(value, start, end, id, ScalarStyle.invalid, Encoding.init,
@@ -166,7 +166,7 @@ alias anchorToken = simpleValueToken!(TokenID.anchor);
 ///          end   = End position of the token.
 ///          value = Value of the token.
 ///          style = Style of the token.
-Token scalarToken(const Mark start, const Mark end, char[] value, const ScalarStyle style) @safe pure nothrow @nogc
+Token scalarToken(const Mark start, const Mark end, string value, const ScalarStyle style) @safe pure nothrow @nogc
 {
     return Token(value, start, end, TokenID.scalar, style);
 }

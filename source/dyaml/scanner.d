@@ -779,9 +779,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanAlphaNumericToSlice(string name)(const Mark startMark)
+        string scanAlphaNumericToSlice(string name)(const Mark startMark)
         {
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
             while(reader_.front.isAlphaNum || reader_.front.among!('-', '_'))
@@ -806,9 +806,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanToNextBreakToSlice() @safe
+        string scanToNextBreakToSlice() @safe
         {
-            char[] buf;
+            string buf;
 
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
@@ -882,7 +882,7 @@ struct Scanner
             // Scan directive name
             const name = scanDirectiveNameToSlice(startMark);
 
-            char[] value;
+            string value;
 
             // Index where tag handle ends and suffix starts in a tag directive value.
             uint tagHandleEnd = uint.max;
@@ -909,7 +909,7 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanDirectiveNameToSlice(const Mark startMark) @safe
+        string scanDirectiveNameToSlice(const Mark startMark) @safe
         {
             // Scan directive name.
             auto result = scanAlphaNumericToSlice!"a directive"(startMark);
@@ -924,9 +924,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanYAMLDirectiveValueToSlice(const Mark startMark) @safe
+        string scanYAMLDirectiveValueToSlice(const Mark startMark) @safe
         {
-            char[] buf;
+            string buf;
             findNextNonSpace();
 
             buf ~= scanYAMLDirectiveNumberToSlice(startMark);
@@ -950,12 +950,12 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
+        string scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
         {
             enforce(isDigit(reader_.front),
                 new ScannerException("While scanning a directive", startMark,
                     expected("digit", reader_.front), reader_.mark));
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
 
@@ -975,9 +975,9 @@ struct Scanner
         /// characters into that slice.
         ///
         /// Returns: Length of tag handle (which is before tag prefix) in scanned data
-        char[] scanTagDirectiveValueToSlice(const Mark startMark, out uint handleLength) @safe
+        string scanTagDirectiveValueToSlice(const Mark startMark, out uint handleLength) @safe
         {
-            char[] result;
+            string result;
             findNextNonSpace();
             result ~= scanTagDirectiveHandleToSlice(startMark);
             handleLength = cast(uint)result.length;
@@ -990,7 +990,7 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanTagDirectiveHandleToSlice(const Mark startMark) @safe
+        string scanTagDirectiveHandleToSlice(const Mark startMark) @safe
         {
             auto buf = scanTagHandleToSlice!"directive"(startMark);
             enforce(reader_.front == ' ',
@@ -1003,7 +1003,7 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanTagDirectivePrefixToSlice(const Mark startMark) @safe
+        string scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             auto buf = scanTagURIToSlice!"directive"(startMark);
             enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
@@ -1040,7 +1040,7 @@ struct Scanner
             const dchar i = reader_.front;
             reader_.popFront();
 
-            char[] value;
+            string value;
             if(i == '*') { value = scanAlphaNumericToSlice!"an alias"(startMark); }
             else         { value = scanAlphaNumericToSlice!"an anchor"(startMark); }
 
@@ -1065,7 +1065,7 @@ struct Scanner
         /// Scan a tag token.
         Token scanTag() @safe
         {
-            char[] slice;
+            string slice;
             const startMark = reader_.mark;
             auto copy = reader_.save();
             copy.popFront();
@@ -1148,8 +1148,8 @@ struct Scanner
             Mark endMark;
             uint indent = max(1, indent_ + 1);
 
-            char[] slice;
-            char[] buf;
+            string slice;
+            string buf;
             if(increment == int.min)
             {
                 uint indentation;
@@ -1205,7 +1205,7 @@ struct Scanner
                         // We need to insert in the middle of the slice in case any line
                         // breaks were scanned.
                         //TODO: make this less terrible
-                        char[] x;
+                        string x;
                         x ~= lineBreak;
                         buf = x ~ buf;
                     }
@@ -1349,9 +1349,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanBlockScalarIndentationToSlice(out uint maxIndent, out Mark endMark) @safe
+        string scanBlockScalarIndentationToSlice(out uint maxIndent, out Mark endMark) @safe
         {
-            char[] buf;
+            string buf;
             endMark = reader_.mark;
 
             while(!reader_.empty && reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'))
@@ -1373,9 +1373,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanBlockScalarBreaksToSlice(const uint indent, out Mark endMark) @safe
+        string scanBlockScalarBreaksToSlice(const uint indent, out Mark endMark) @safe
         {
-            char[] buf;
+            string buf;
             endMark = reader_.mark;
 
             for(;;)
@@ -1412,10 +1412,10 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
+        string scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
             @safe
         {
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
             for(;;)
@@ -1462,7 +1462,7 @@ struct Scanner
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.popFront();
 
-                        char[] hex;
+                        string hex;
                         hex.reserve(hexLength);
                         foreach (_; 0..hexLength)
                         {
@@ -1505,9 +1505,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
-        char[] scanFlowScalarSpacesToSlice(const Mark startMark) @safe
+        string scanFlowScalarSpacesToSlice(const Mark startMark) @safe
         {
-            char[] whitespaces;
+            string whitespaces;
             // Reserve a reasonable number of characters.
             whitespaces.reserve(expectedLineLength);
             while(!reader_.empty && reader_.front.among!(' ', '\t'))
@@ -1529,7 +1529,7 @@ struct Scanner
             // There's a line break after the spaces.
             const lineBreak = scanLineBreak();
 
-            char[] buf;
+            string buf;
             if(lineBreak != '\n') { buf ~= lineBreak; }
 
             // If we have extra line breaks after the first, scan them into the
@@ -1543,9 +1543,9 @@ struct Scanner
         }
 
         /// Scan line breaks in a flow scalar.
-        char[] scanFlowScalarBreaksToSlice(const Mark startMark, out bool anyBreaks) @safe
+        string scanFlowScalarBreaksToSlice(const Mark startMark, out bool anyBreaks) @safe
         {
-            char[] buf;
+            string buf;
             bool end() @safe pure
             {
                 if (reader_.empty)
@@ -1604,12 +1604,12 @@ struct Scanner
             Mark endMark = startMark;
             const indent = indent_ + 1;
 
-            char[] slice;
+            string slice;
             // We allow zero indentation for scalars, but then we need to check for
             // document separators at the beginning of the line.
             // if(indent == 0) { indent = 1; }
 
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
             // Stop at a comment.
@@ -1676,9 +1676,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the spaces
         /// into that slice.
-        char[] scanPlainSpacesToSlice() @safe
+        string scanPlainSpacesToSlice() @safe
         {
-            char[] buf;
+            string buf;
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
 
@@ -1737,7 +1737,7 @@ struct Scanner
 
             bool extraBreaks;
 
-            char[] buf2;
+            string buf2;
             if(lineBreak != '\n') { buf2 ~= lineBreak; }
             while(!reader_.empty && reader_.front.isNSChar)
             {
@@ -1762,9 +1762,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanTagHandleToSlice(string name)(const Mark startMark)
+        string scanTagHandleToSlice(string name)(const Mark startMark)
         {
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
 
@@ -1795,10 +1795,10 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanTagURIToSlice(string name)(const Mark startMark)
+        string scanTagURIToSlice(string name)(const Mark startMark)
         {
             // Note: we do not check if URI is well-formed.
-            char[] buf;
+            string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
             {
@@ -1828,11 +1828,11 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        char[] scanURIEscapesToSlice(string name)(const Mark startMark)
+        string scanURIEscapesToSlice(string name)(const Mark startMark)
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
-            Appender!(char[]) buffer;
+            Appender!(string) buffer;
 
 
             enum contextMsg = "While scanning a " ~ name;
