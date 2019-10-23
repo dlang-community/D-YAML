@@ -72,6 +72,9 @@ alias isBChar = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
 
 alias isFlowScalarBreakSpace = among!(' ', '\t', '\n', '\r', '\u0085', '\u2028', '\u2029', '\'', '"', '\\');
 
+/// 80 is a common upper limit for line width.
+enum expectedLineLength = 80;
+
 /// Marked exception thrown at scanner errors.
 ///
 /// See_Also: MarkedYAMLException
@@ -780,8 +783,7 @@ struct Scanner
         {
             char[] buf;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
             while(reader_.front.isAlphaNum || reader_.front.among!('-', '_'))
             {
                 buf ~= reader_.front;
@@ -809,8 +811,7 @@ struct Scanner
             char[] buf;
 
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
 
             while(!reader_.front.isBreak)
             {
@@ -956,8 +957,7 @@ struct Scanner
                     expected("digit", reader_.front), reader_.mark));
             char[] buf;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
 
             // Already found the first digit in the enforce(), so set length to 1.
             while(!reader_.empty && reader_.front.isDigit)
@@ -1416,12 +1416,10 @@ struct Scanner
             @safe
         {
             char[] buf;
-            buf.reserve(80);
+            // Reserve a reasonable number of characters.
+            buf.reserve(expectedLineLength);
             for(;;)
             {
-                // Reserve a reasonable number of characters.
-                // Lines longer than 80 characters are less common.
-
                 while(!reader_.empty && !reader_.front.isFlowScalarBreakSpace)
                 {
                     buf ~= reader_.front;
@@ -1511,8 +1509,7 @@ struct Scanner
         {
             char[] whitespaces;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            whitespaces.reserve(80);
+            whitespaces.reserve(expectedLineLength);
             while(!reader_.empty && reader_.front.among!(' ', '\t'))
             {
                 whitespaces ~= reader_.front;
@@ -1614,8 +1611,7 @@ struct Scanner
 
             char[] buf;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
             // Stop at a comment.
             while(!reader_.empty && reader_.front != '#')
             {
@@ -1662,7 +1658,7 @@ struct Scanner
 
                 slice ~= buf;
                 buf = [];
-                buf.reserve(80);
+                buf.reserve(expectedLineLength);
 
                 auto plainSpaces = scanPlainSpacesToSlice();
                 buf ~= plainSpaces;
@@ -1770,8 +1766,7 @@ struct Scanner
         {
             char[] buf;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
 
             enum contextMsg = "While scanning a " ~ name;
             enforce(reader_.front == '!',
@@ -1805,8 +1800,7 @@ struct Scanner
             // Note: we do not check if URI is well-formed.
             char[] buf;
             // Reserve a reasonable number of characters.
-            // Lines longer than 80 characters are less common.
-            buf.reserve(80);
+            buf.reserve(expectedLineLength);
             {
 
                 while(reader_.front.isAlphaNum || reader_.front.isURIChar)
