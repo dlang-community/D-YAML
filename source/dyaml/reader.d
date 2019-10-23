@@ -43,7 +43,7 @@ class ReaderException : YAMLException
 
 /// Provides an API to read characters from a UTF-8 buffer while keeping track
 /// of the position.
-final class Reader
+struct Reader
 {
     private:
         // Buffer of currently loaded characters.
@@ -71,9 +71,6 @@ final class Reader
             Endian endian_;
         }
 
-        this() @safe pure
-        {
-        }
     public:
         /// Construct a Reader.
         ///
@@ -115,7 +112,7 @@ final class Reader
 
         auto save() @safe pure
         {
-            auto reader = new Reader;
+            auto reader = Reader();
             reader.buffer_ = this.buffer_;
             reader.bufferOffset_ = this.bufferOffset_;
             reader.charIndex_ = this.charIndex_;
