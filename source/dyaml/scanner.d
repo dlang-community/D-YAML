@@ -72,6 +72,8 @@ alias isBChar = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
 
 alias isFlowScalarBreakSpace = among!(' ', '\t', '\n', '\r', '\u0085', '\u2028', '\u2029', '\'', '"', '\\');
 
+alias isFlowIndicator = among!(',', '[', ']', '{', '}');
+
 /// 80 is a common upper limit for line width.
 enum expectedLineLength = 80;
 
@@ -914,7 +916,7 @@ struct Scanner
             // Scan directive name.
             auto result = scanAlphaNumericToSlice!"a directive"(startMark);
 
-            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.isBreakOrSpace,
                 new ScannerException("While scanning a directive", startMark,
                     expected("alphanumeric, '-' or '_'", reader_.front), reader_.mark));
             return result;
@@ -940,7 +942,7 @@ struct Scanner
             buf ~= '.';
             buf ~= scanYAMLDirectiveNumberToSlice(startMark);
 
-            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.isBreakOrSpace,
                 new ScannerException("While scanning a directive", startMark,
                     expected("digit or '.'", reader_.front), reader_.mark));
             return buf;
@@ -1006,7 +1008,7 @@ struct Scanner
         string scanTagDirectivePrefixToSlice(const Mark startMark) @safe
         {
             auto buf = scanTagURIToSlice!"directive"(startMark);
-            enforce(reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(reader_.front.isBreakOrSpace,
                 new ScannerException("While scanning a directive prefix", startMark,
                     expected("' '", reader_.front), reader_.mark));
             return buf;
@@ -1281,7 +1283,7 @@ struct Scanner
                 if(gotIncrement) { getChomping(c, chomping); }
             }
 
-            enforce(c.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'),
+            enforce(c.isBreakOrSpace,
                 new ScannerException("While scanning a block scalar", startMark,
                 expected("chomping or indentation indicator", c), reader_.mark));
 
@@ -1354,7 +1356,7 @@ struct Scanner
             string buf;
             endMark = reader_.mark;
 
-            while(!reader_.empty && reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'))
+            while(!reader_.empty && reader_.front.isBreakOrSpace)
             {
                 if(reader_.front != ' ')
                 {
@@ -1381,7 +1383,7 @@ struct Scanner
             for(;;)
             {
                 while(!reader_.empty && reader_.column < indent && reader_.front == ' ') { reader_.popFront(); }
-                if(reader_.empty || !reader_.front.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))  { break; }
+                if(reader_.empty || !reader_.front.isBreak)  { break; }
                 buf ~= scanLineBreak();
                 endMark = reader_.mark;
             }
@@ -1483,7 +1485,7 @@ struct Scanner
                         buf ~= hex;
 
                     }
-                    else if(c.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
+                    else if(c.isBreak)
                     {
                         scanLineBreak();
                         bool unused;
@@ -1521,7 +1523,7 @@ struct Scanner
                     "found unexpected end of buffer", reader_.mark));
 
             // Spaces not followed by a line break.
-            if(!reader_.front.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
+            if(!reader_.front.isBreak)
             {
                 return whitespaces;
             }
@@ -1583,7 +1585,7 @@ struct Scanner
                 }
 
                 // Encountered a non-whitespace non-linebreak character, so we're done.
-                if(reader_.empty || !reader_.front.among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029'))
+                if(reader_.empty || !reader_.front.isBreakOrSpace)
                 {
                     break;
                 }
@@ -1644,7 +1646,7 @@ struct Scanner
                 enforce(flowLevel_ == 0 || reader_.front != ':' ||
                    copy.empty ||
                    copy.front.isWhiteSpace ||
-                   copy.front.among!(',', '[', ']', '{', '}'),
+                   copy.front.isFlowIndicator,
                     new ScannerException("While scanning a plain scalar", startMark,
                         "found unexpected ':' . Please check " ~
                         "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
