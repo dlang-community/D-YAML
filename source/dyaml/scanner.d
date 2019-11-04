@@ -63,10 +63,12 @@ alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}',
     '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\n',
     '\r', '\u0085', '\u2028', '\u2029');
 
-alias isURIChar = among!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',',
+alias uriChar = AliasSeq!('-', ';', '/', '?', ':', '@', '&', '=', '+', '$', ',',
     '_', '.', '!', '~', '*', '\'', '(', ')', '[', ']', '%');
+alias isURIChar = among!(uriChar);
 
-alias isNSChar = among!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias nsChar = AliasSeq!(' ', '\n', '\r', '\u0085', '\u2028', '\u2029');
+alias isNSChar = among!(nsChar);
 
 alias isBChar = among!('\n', '\r', '\u0085', '\u2028', '\u2029');
 
@@ -774,18 +776,15 @@ struct Scanner
         /// Move to the next non-space character.
         void findNextNonSpace() @safe
         {
-            while(!reader_.empty && (reader_.front == ' ')) { reader_.popFront(); }
+            while(reader_.startsWith(' ')) { reader_.popFront(); }
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        string scanAlphaNumericToSlice(string name)(const Mark startMark)
+        void scanAlphaNumericToSlice(string name)(const Mark startMark, ref string buf)
         {
-            string buf;
-            // Reserve a reasonable number of characters.
-            buf.reserve(expectedLineLength);
             while(reader_.front.isAlphaNum || reader_.front.among!('-', '_'))
             {
                 buf ~= reader_.front;
@@ -794,8 +793,6 @@ struct Scanner
 
             enforce(buf.length > 0, new ScannerException("While scanning " ~ name,
                 startMark, expected("alphanumeric, '-' or '_'", reader_.front), reader_.mark));
-
-            return buf;
         }
 
         /// Scan and throw away all characters until next line break.
@@ -914,7 +911,10 @@ struct Scanner
         string scanDirectiveNameToSlice(const Mark startMark) @safe
         {
             // Scan directive name.
-            auto result = scanAlphaNumericToSlice!"a directive"(startMark);
+            string result;
+            // Reserve a reasonable number of characters.
+            result.reserve(expectedLineLength);
+            scanAlphaNumericToSlice!"a directive"(startMark, result);
 
             enforce(reader_.front.isBreakOrSpace,
                 new ScannerException("While scanning a directive", startMark,
@@ -1043,8 +1043,8 @@ struct Scanner
             reader_.popFront();
 
             string value;
-            if(i == '*') { value = scanAlphaNumericToSlice!"an alias"(startMark); }
-            else         { value = scanAlphaNumericToSlice!"an anchor"(startMark); }
+            if(i == '*') { scanAlphaNumericToSlice!"an alias"(startMark, value); }
+            else         { scanAlphaNumericToSlice!"an anchor"(startMark, value); }
 
             enum anchorCtx = "While scanning an anchor";
             enum aliasCtx  = "While scanning an alias";
@@ -1161,7 +1161,7 @@ struct Scanner
             else
             {
                 indent += increment - 1;
-                buf ~= scanBlockScalarBreaksToSlice(indent, endMark);
+                scanBlockScalarBreaksToSlice(indent, buf, endMark);
             }
 
             // int.max means there's no line break (int.max is outside UTF-32).
@@ -1182,7 +1182,7 @@ struct Scanner
                 buf = [];
                 // The line breaks should actually be written _after_ the if() block
                 // below. We work around that by inserting
-                buf ~= scanBlockScalarBreaksToSlice(indent, endMark);
+                scanBlockScalarBreaksToSlice(indent, buf, endMark);
 
                 // This will not run during the last iteration (see the if() vs the
                 // while()), hence breaksTransaction rollback (which happens after this
@@ -1375,9 +1375,8 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        string scanBlockScalarBreaksToSlice(const uint indent, out Mark endMark) @safe
+        void scanBlockScalarBreaksToSlice(const uint indent, ref string buf, out Mark endMark) @safe
         {
-            string buf;
             endMark = reader_.mark;
 
             for(;;)
@@ -1387,8 +1386,6 @@ struct Scanner
                 buf ~= scanLineBreak();
                 endMark = reader_.mark;
             }
-
-            return buf;
         }
 
         /// Scan a qouted flow scalar token with specified quotes.
@@ -1398,12 +1395,16 @@ struct Scanner
             const quote     = reader_.front;
             reader_.popFront();
 
-            auto slice = scanFlowScalarNonSpacesToSlice(quotes, startMark);
+            string slice;
+            // Reserve a reasonable number of characters.
+            slice.reserve(expectedLineLength);
+
+            scanFlowScalarNonSpacesToSlice(quotes, startMark, slice);
 
             while(reader_.front != quote)
             {
-                slice ~= scanFlowScalarSpacesToSlice(startMark);
-                slice ~= scanFlowScalarNonSpacesToSlice(quotes, startMark);
+                scanFlowScalarSpacesToSlice(startMark, slice);
+                scanFlowScalarNonSpacesToSlice(quotes, startMark, slice);
             }
             reader_.popFront();
 
@@ -1414,12 +1415,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        string scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark)
+        void scanFlowScalarNonSpacesToSlice(const ScalarStyle quotes, const Mark startMark, ref string buf)
             @safe
         {
-            string buf;
-            // Reserve a reasonable number of characters.
-            buf.reserve(expectedLineLength);
             for(;;)
             {
                 while(!reader_.empty && !reader_.front.isFlowScalarBreakSpace)
@@ -1489,7 +1487,7 @@ struct Scanner
                     {
                         scanLineBreak();
                         bool unused;
-                        buf ~= scanFlowScalarBreaksToSlice(startMark, unused);
+                        scanFlowScalarBreaksToSlice(startMark, buf, unused);
                     }
                     else
                     {
@@ -1500,14 +1498,13 @@ struct Scanner
                 }
                 else { break; }
             }
-            return buf;
         }
 
         /// Scan space characters in a flow scalar.
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// spaces into that slice.
-        string scanFlowScalarSpacesToSlice(const Mark startMark) @safe
+        void scanFlowScalarSpacesToSlice(const Mark startMark, ref string buf) @safe
         {
             string whitespaces;
             // Reserve a reasonable number of characters.
@@ -1525,29 +1522,27 @@ struct Scanner
             // Spaces not followed by a line break.
             if(!reader_.front.isBreak)
             {
-                return whitespaces;
+                buf ~= whitespaces;
+                return;
             }
 
             // There's a line break after the spaces.
             const lineBreak = scanLineBreak();
 
-            string buf;
             if(lineBreak != '\n') { buf ~= lineBreak; }
 
             // If we have extra line breaks after the first, scan them into the
             // slice.
             bool extraBreaks;
-            buf ~= scanFlowScalarBreaksToSlice(startMark, extraBreaks);
+            scanFlowScalarBreaksToSlice(startMark, buf, extraBreaks);
 
             // No extra breaks, one normal line break. Replace it with a space.
             if(lineBreak == '\n' && !extraBreaks) { buf ~= ' '; }
-            return buf;
         }
 
         /// Scan line breaks in a flow scalar.
-        string scanFlowScalarBreaksToSlice(const Mark startMark, out bool anyBreaks) @safe
+        void scanFlowScalarBreaksToSlice(const Mark startMark, ref string buf, out bool anyBreaks) @safe
         {
-            string buf;
             bool end() @safe pure
             {
                 if (reader_.empty)
@@ -1594,7 +1589,6 @@ struct Scanner
                 anyBreaks = true;
                 buf ~= lineBreak;
             }
-            return buf;
         }
 
         /// Scan plain scalar token (no block, no quotes).
@@ -1676,8 +1670,6 @@ struct Scanner
 
         /// Scan spaces in a plain scalar.
         ///
-        /// Assumes that the caller is building a slice in Reader, and puts the spaces
-        /// into that slice.
         string scanPlainSpacesToSlice() @safe
         {
             string buf;
@@ -1699,8 +1691,7 @@ struct Scanner
                 return buf;
             }
 
-            const dchar c = reader_.front;
-            if(!c.isNSChar)
+            if(!reader_.front.isNSChar)
             {
                 // We have spaces, but no newline.
                 if(whitespaces.length > 0) { buf ~= whitespaces; }
@@ -1741,9 +1732,9 @@ struct Scanner
 
             string buf2;
             if(lineBreak != '\n') { buf2 ~= lineBreak; }
-            while(!reader_.empty && reader_.front.isNSChar)
+            while(reader_.startsWith(nsChar))
             {
-                if(reader_.front == ' ') { reader_.popFront(); }
+                if(reader_.startsWith(' ')) { reader_.popFront(); }
                 else
                 {
                     const lBreak = scanLineBreak();

@@ -47,15 +47,10 @@ struct Reader
 {
     private:
         // Buffer of currently loaded characters.
-        char[] buffer_;
-
-        // Current position within buffer. Only data after this position can be read.
-        size_t bufferOffset_;
+        string buffer_;
 
         // Index of the current character in the buffer.
         size_t charIndex_;
-        // Number of characters (code points) in buffer_.
-        size_t characterCount_;
 
         // Current line in file.
         uint line_;
@@ -100,9 +95,8 @@ struct Reader
                 throw new ReaderException("Error when converting to UTF-8: " ~ msg);
             }
 
-            buffer_ = utf8Result.utf8;
+            buffer_ = utf8Result.utf8.idup;
 
-            characterCount_ = utf8Result.characterCount;
             // Check that all characters in buffer are printable.
             enforce(isPrintableValidUTF8(buffer_),
                     new ReaderException("Special unicode characters are not allowed"));
@@ -114,9 +108,7 @@ struct Reader
         {
             auto reader = Reader();
             reader.buffer_ = this.buffer_;
-            reader.bufferOffset_ = this.bufferOffset_;
             reader.charIndex_ = this.charIndex_;
-            reader.characterCount_ = this.characterCount_;
             reader.line_ = this.line_;
             reader.column_ = this.column_;
             reader.encoding_ = this.encoding_;
@@ -126,7 +118,7 @@ struct Reader
 
         bool empty() @safe pure nothrow const @nogc
         {
-            return characterCount_ <= charIndex_;
+            return buffer_.length == 0;
         }
 
         /// Get the next character in the buffer.
@@ -134,7 +126,7 @@ struct Reader
         {
             assert(!empty, "Trying to read past the end of the buffer");
 
-            return buffer_[bufferOffset_..$].front;
+            return buffer_.front;
         }
 
         /// Move current position forward by one character.
@@ -143,18 +135,28 @@ struct Reader
             ++charIndex_;
 
             // UTF-8
-            assert(bufferOffset_ < buffer_.length,
+            assert(!buffer_.empty,
                    "Attempted to decode past the end of YAML buffer");
 
-            const c = decode(buffer_, bufferOffset_);
+            const c = buffer_.front;
 
-            // New line. (can compare with '\n' without decoding since it's ASCII)
-            if(c.isBreak || (c == '\r' && buffer_[bufferOffset_] != '\n'))
+            buffer_.popFront();
+
+            if(c.isBreak || (c == '\r' && buffer_.front != '\n'))
             {
                 ++line_;
                 column_ = 0;
             }
             else if(c != '\uFEFF') { ++column_; }
+        }
+
+        auto opSlice(size_t a, size_t b) @safe pure
+        {
+            return buffer_[a..b];
+        }
+        auto opIndex(size_t idx) @safe pure
+        {
+            return buffer_[idx];
         }
 
         /// Get a string describing current buffer position, used for error messages.
