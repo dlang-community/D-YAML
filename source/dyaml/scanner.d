@@ -394,7 +394,7 @@ struct Scanner
         /// Add STREAM-START token.
         void fetchStreamStart() @safe nothrow
         {
-            tokens_.push(streamStartToken(reader_.mark, reader_.mark, reader_.encoding));
+            tokens_.push(streamStartToken(reader_.mark, reader_.mark));
         }
 
         ///Add STREAM-END token.

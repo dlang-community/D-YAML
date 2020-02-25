@@ -57,15 +57,6 @@ struct Reader
         // Current column in file.
         uint column_;
 
-        // Original Unicode encoding of the data.
-        Encoding encoding_;
-
-        version(unittest)
-        {
-            // Endianness of the input before it was converted (for testing)
-            Endian endian_;
-        }
-
     public:
         /// Construct a Reader.
         ///
@@ -84,9 +75,6 @@ struct Reader
                 throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned " ~
                                           "to 2 or 4 bytes, respectively");
             }
-
-            version(unittest) { endian_ = endianResult.endian; }
-            encoding_ = endianResult.encoding;
 
             auto utf8Result = toUTF8(endianResult.array, endianResult.encoding);
             const msg = utf8Result.errorMessage;
@@ -111,8 +99,6 @@ struct Reader
             reader.charIndex_ = this.charIndex_;
             reader.line_ = this.line_;
             reader.column_ = this.column_;
-            reader.encoding_ = this.encoding_;
-            version(unittest) { endian_ = this.endian_; }
             return reader;
         }
 
@@ -170,9 +156,6 @@ struct Reader
 
         /// Get index of the current character in the buffer.
         size_t charIndex() const @safe pure nothrow @nogc { return charIndex_; }
-
-        /// Get encoding of the input buffer.
-        Encoding encoding() const @safe pure nothrow @nogc { return encoding_; }
 }
 
 private:
@@ -275,7 +258,7 @@ auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 }
 
 /// Determine if all characters (code points, not bytes) in a string are printable.
-bool isPrintableValidUTF8(const char[] chars) @safe pure
+bool isPrintableValidUTF8(T)(const T[] chars) @safe pure
 {
     import std.uni : isControl, isWhite;
     foreach (dchar chr; chars)
@@ -296,20 +279,6 @@ size_t countASCII(const(char)[] buffer) @safe pure nothrow @nogc
     return buffer.byCodeUnit.until!(x => x > 0x7F).walkLength;
 }
 // Unittests.
-
-void testEndian(R)()
-{
-    void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
-    {
-        auto reader = new R(data);
-        assert(reader.encoding == encoding_expected);
-        assert(reader.endian_ == endian_expected);
-    }
-    ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
-    ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
-    endian_test(little_endian_utf_16, Encoding.UTF_16, Endian.littleEndian);
-    endian_test(big_endian_utf_16, Encoding.UTF_16, Endian.bigEndian);
-}
 
 void testPeekPrefixForward(R)()
 {
@@ -365,7 +334,6 @@ void test1Byte(R)()
 
 @safe unittest
 {
-    testEndian!Reader();
     testPeekPrefixForward!Reader();
     testUTF!Reader();
     test1Byte!Reader();

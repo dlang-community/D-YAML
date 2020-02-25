@@ -83,9 +83,6 @@ struct Token
     /// Style of scalar token, if this is a scalar token.
     ScalarStyle style;
     // 1B
-    /// Encoding, if this is a stream start token.
-    Encoding encoding;
-    // 1B
     /// Type of directive for directiveToken.
     DirectiveType directive;
     // 4B
@@ -106,7 +103,7 @@ struct Token
 Token directiveToken(const Mark start, const Mark end, string value,
                      DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {
-    return Token(value, start, end, TokenID.directive, ScalarStyle.init, Encoding.init,
+    return Token(value, start, end, TokenID.directive, ScalarStyle.init,
                  directive, nameEnd);
 }
 
@@ -125,9 +122,9 @@ Token simpleToken(TokenID id)(const Mark start, const Mark end)
 /// Params:  start    = Start position of the token.
 ///          end      = End position of the token.
 ///          encoding = Encoding of the stream.
-Token streamStartToken(const Mark start, const Mark end, const Encoding encoding) @safe pure nothrow @nogc
+Token streamStartToken(const Mark start, const Mark end) @safe pure nothrow @nogc
 {
-    return Token(null, start, end, TokenID.streamStart, ScalarStyle.invalid, encoding);
+    return Token(null, start, end, TokenID.streamStart, ScalarStyle.invalid);
 }
 
 /// Aliases for construction of simple token types.
@@ -151,7 +148,7 @@ alias flowEntryToken = simpleToken!(TokenID.flowEntry);
 Token simpleValueToken(TokenID id)(const Mark start, const Mark end, string value,
                                    const uint valueDivider = uint.max)
 {
-    return Token(value, start, end, id, ScalarStyle.invalid, Encoding.init,
+    return Token(value, start, end, id, ScalarStyle.invalid,
                  DirectiveType.init, valueDivider);
 }
 
