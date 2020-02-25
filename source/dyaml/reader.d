@@ -47,7 +47,7 @@ struct Reader
 {
     private:
         // Buffer of currently loaded characters.
-        string buffer_;
+        const(char)[] buffer_;
 
         // Index of the current character in the buffer.
         size_t charIndex_;
@@ -83,12 +83,13 @@ struct Reader
                 throw new ReaderException("Error when converting to UTF-8: " ~ msg);
             }
 
-            buffer_ = utf8Result.utf8.idup;
-
-            // Check that all characters in buffer are printable.
+            this(utf8Result.utf8);
+        }
+        this(const(char)[] buffer) @safe pure
+        {
+            buffer_ = buffer;
             enforce(isPrintableValidUTF8(buffer_),
                     new ReaderException("Special unicode characters are not allowed"));
-
         }
 
 
