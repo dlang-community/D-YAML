@@ -141,6 +141,10 @@ struct Reader
         {
             return buffer_[a..b];
         }
+        size_t opDollar() @safe pure
+        {
+            return buffer_.length;
+        }
         auto opIndex(size_t idx) @safe pure
         {
             return buffer_[idx];
@@ -157,6 +161,16 @@ struct Reader
 
         /// Get index of the current character in the buffer.
         size_t charIndex() const @safe pure nothrow @nogc { return charIndex_; }
+}
+
+package auto getSliceUntil(alias pred, R)(ref R reader) {
+    const chars = reader.countUntil!pred;
+    if (chars <= 0) {
+        return "";
+    }
+    auto buf = reader[0 .. chars];
+    reader.popFrontN(chars);
+    return buf;
 }
 
 private:

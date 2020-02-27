@@ -16,6 +16,7 @@ import std.array;
 import std.conv;
 import std.ascii : isAlphaNum, isDigit, isHexDigit;
 import std.exception;
+import std.range;
 import std.string;
 import std.typecons;
 import std.traits : Unqual;
@@ -434,10 +435,7 @@ struct Scanner
             allowSimpleKey_ = false;
 
             Mark startMark = reader_.mark;
-            foreach (i; 0..3)
-            {
-                reader_.popFront();
-            }
+            reader_.popFrontN(3);
             tokens_.push(simpleToken!id(startMark, reader_.mark));
         }
 
@@ -780,16 +778,9 @@ struct Scanner
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
-        ///
-        /// Assumes that the caller is building a slice in Reader, and puts the scanned
-        /// characters into that slice.
         void scanAlphaNumericToSlice(string name)(const Mark startMark, ref string buf)
         {
-            while(reader_.front.isAlphaNum || reader_.front.among!('-', '_'))
-            {
-                buf ~= reader_.front;
-                reader_.popFront();
-            }
+            buf ~= reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among!('-', '_'));
 
             enforce(buf.length > 0, new ScannerException("While scanning " ~ name,
                 startMark, expected("alphanumeric, '-' or '_'", reader_.front), reader_.mark));
@@ -805,19 +796,9 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        string scanToNextBreakToSlice() @safe
+        auto scanToNextBreakToSlice() @safe
         {
-            string buf;
-
-            // Reserve a reasonable number of characters.
-            buf.reserve(expectedLineLength);
-
-            while(!reader_.front.isBreak)
-            {
-                buf ~= reader_.front;
-                reader_.popFront();
-            }
-            return buf;
+            return reader_.getSliceUntil!(x => cast(bool)x.isBreak);
         }
 
 
@@ -952,23 +933,12 @@ struct Scanner
         ///
         /// Assumes that the caller is building a slice in Reader, and puts the scanned
         /// characters into that slice.
-        string scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
+        auto scanYAMLDirectiveNumberToSlice(const Mark startMark) @safe
         {
             enforce(isDigit(reader_.front),
                 new ScannerException("While scanning a directive", startMark,
                     expected("digit", reader_.front), reader_.mark));
-            string buf;
-            // Reserve a reasonable number of characters.
-            buf.reserve(expectedLineLength);
-
-            // Already found the first digit in the enforce(), so set length to 1.
-            while(!reader_.empty && reader_.front.isDigit)
-            {
-                buf ~= reader_.front;
-                reader_.popFront();
-            }
-
-            return buf;
+            return reader_.getSliceUntil!(x => !x.isDigit);
         }
 
         /// Scan value of a tag directive.
@@ -1506,14 +1476,7 @@ struct Scanner
         /// spaces into that slice.
         void scanFlowScalarSpacesToSlice(const Mark startMark, ref string buf) @safe
         {
-            string whitespaces;
-            // Reserve a reasonable number of characters.
-            whitespaces.reserve(expectedLineLength);
-            while(!reader_.empty && reader_.front.among!(' ', '\t'))
-            {
-                whitespaces ~= reader_.front;
-                reader_.popFront();
-            }
+            const whitespaces = reader_.getSliceUntil!(x => !x.among(' ', '\t'));
 
             enforce(!reader_.empty,
                 new ScannerException("While scanning a quoted scalar", startMark,
@@ -1704,26 +1667,12 @@ struct Scanner
 
             static bool end(Reader reader_) @safe pure
             {
-                if (reader_.empty)
+                if (!reader_.startsWith("...", "---"))
                 {
                     return false;
                 }
-                auto copy = reader_.save();
-                dchar[3] prefix;
-                foreach (ref c; prefix)
-                {
-                    if (copy.empty)
-                    {
-                        return false;
-                    }
-                    c = copy.front;
-                    copy.popFront();
-                }
-                if ((prefix != "...") && (prefix != "---"))
-                {
-                    return false;
-                }
-                return copy.empty || copy.front.isWhiteSpace;
+                auto next = reader_[3 .. $];
+                return next.empty || next.front.isWhiteSpace;
             }
 
             if(end(reader_)) { return buf; }
@@ -1757,27 +1706,19 @@ struct Scanner
         /// characters into that slice.
         string scanTagHandleToSlice(string name)(const Mark startMark)
         {
-            string buf;
-            // Reserve a reasonable number of characters.
-            buf.reserve(expectedLineLength);
-
             enum contextMsg = "While scanning a " ~ name;
             enforce(reader_.front == '!',
                 new ScannerException(contextMsg, startMark, expected("'!'", reader_.front), reader_.mark));
 
-            buf ~= reader_.front;
+            string buf = "!";
             reader_.popFront();
 
             if(reader_.front != ' ')
             {
-                while(reader_.front.isAlphaNum || reader_.front.among!('-', '_'))
-                {
-                    buf ~= reader_.front;
-                    reader_.popFront();
-                }
+                buf ~= reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among('-', '_'));
                 enforce(reader_.front == '!',
                     new ScannerException(contextMsg, startMark, expected("'!'", reader_.front), reader_.mark));
-                buf ~= reader_.front;
+                buf ~= "!";
                 reader_.popFront();
             }
 
