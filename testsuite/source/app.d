@@ -264,13 +264,13 @@ TestResult runTests(string tml) @safe
     {
         Appender!string buf;
         dumper().dump(buf);
-        compareLineByLine(buf.data, compareYAMLString, "Dumped YAML mismatch");
+        compareLineByLine(buf.data, compareYAMLString.get, "Dumped YAML mismatch");
         testsRun++;
     }
     if (!loadFailed && !events.isNull && !shouldFail)
     {
         const compare = dumpEventString(yamlString);
-        compareLineByLine(compare, events, "Event mismatch");
+        compareLineByLine(compare, events.get, "Event mismatch");
         testsRun++;
     }
     if (loadFailed && !shouldFail)
