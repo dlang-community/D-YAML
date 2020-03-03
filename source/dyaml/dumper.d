@@ -22,6 +22,7 @@ import dyaml.linebreak;
 import dyaml.node;
 import dyaml.representer;
 import dyaml.resolver;
+import dyaml.schema;
 import dyaml.serializer;
 import dyaml.style;
 import dyaml.tagdirective;
@@ -37,9 +38,11 @@ import dyaml.tagdirective;
  */
 auto dumper()
 {
-    auto dumper = Dumper();
-    dumper.resolver = Resolver.withDefaultResolvers;
-    return dumper;
+    return dumper(DefaultSchema);
+}
+auto dumper(Schema schema)
+{
+    return Dumper(Resolver(schema));
 }
 
 struct Dumper
@@ -73,8 +76,10 @@ struct Dumper
         // Default style for collection nodes. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
         CollectionStyle defaultCollectionStyle = CollectionStyle.invalid;
 
-        @disable bool opEquals(ref Dumper);
-        @disable int opCmp(ref Dumper);
+        @disable this();
+        this(Resolver resolver) pure @safe{
+            this.resolver = resolver;
+        }
 
         ///Set indentation width. 2 by default. Must not be zero.
         @property void indent(uint indent) pure @safe nothrow
@@ -195,7 +200,7 @@ struct Dumper
     import std.regex : regex;
     auto node = Node([1, 2, 3, 4, 5]);
     auto dumper = dumper();
-    dumper.resolver.addImplicitResolver("!tag", regex("A.*"), "A");
+    dumper.resolver.addRule(SchemaRule("!tag", regex("A.*"), "A"));
     dumper.dump(new Appender!string(), node);
 }
 /// Set default scalar style

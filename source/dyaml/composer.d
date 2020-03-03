@@ -42,13 +42,8 @@ class ComposerException : MarkedYAMLException
 struct Composer
 {
     private:
-        ///Parser providing YAML events.
-        Parser parser_;
-        ///Resolver resolving tags (data types).
-        Resolver resolver_;
         ///Nodes associated with anchors. Used by YAML aliases.
         Node[string] anchors_;
-
         ///Used to reduce allocations when creating pair arrays.
         ///
         ///We need one appender for each nesting level that involves
@@ -62,7 +57,13 @@ struct Composer
         ///part of the outer levels. Used as a stack.
         Appender!(Node[])[] nodeAppenders_;
 
+    package:
+        ///Parser providing YAML events.
+        Parser parser;
+        ///Resolver resolving tags (data types).
+        Resolver resolver;
     public:
+        @disable this();
         /**
          * Construct a composer.
          *
@@ -71,8 +72,8 @@ struct Composer
          */
         this(Parser parser, Resolver resolver) @safe
         {
-            parser_ = parser;
-            resolver_ = resolver;
+            this.parser = parser;
+            this.resolver = resolver;
         }
 
         /**
@@ -83,17 +84,17 @@ struct Composer
         bool checkNode() @safe
         {
             // If next event is stream start, skip it
-            parser_.skipOver!"a.id == b"(EventID.streamStart);
+            parser.skipOver!"a.id == b"(EventID.streamStart);
 
             //True if there are more documents available.
-            return parser_.front.id != EventID.streamEnd;
+            return parser.front.id != EventID.streamEnd;
         }
 
         ///Get a YAML document as a node (the root of the document).
         Node getNode() @safe
         {
             //Get the root node of the next document.
-            assert(parser_.front.id != EventID.streamEnd,
+            assert(parser.front.id != EventID.streamEnd,
                    "Trying to get a node from Composer when there is no node to " ~
                    "get. use checkNode() to determine if there is a node.");
 
@@ -104,7 +105,7 @@ struct Composer
 
         void skipExpected(const EventID id) @safe
         {
-            const foundExpected = parser_.skipOver!"a.id == b"(id);
+            const foundExpected = parser.skipOver!"a.id == b"(id);
             assert(foundExpected, text("Expected ", id, " not found."));
         }
         ///Ensure that appenders for specified nesting levels exist.
@@ -144,10 +145,10 @@ struct Composer
         ///         nodeAppenderLevel = Current level of the node appender stack.
         Node composeNode(const uint pairAppenderLevel, const uint nodeAppenderLevel) @safe
         {
-            if(parser_.front.id == EventID.alias_)
+            if(parser.front.id == EventID.alias_)
             {
-                const event = parser_.front;
-                parser_.popFront();
+                const event = parser.front;
+                parser.popFront();
                 const anchor = event.anchor;
                 enforce((anchor in anchors_) !is null,
                         new ComposerException("Found undefined alias: " ~ anchor,
@@ -163,7 +164,7 @@ struct Composer
                 return anchors_[anchor];
             }
 
-            const event = parser_.front;
+            const event = parser.front;
             const anchor = event.anchor;
             if((anchor !is null) && (anchor in anchors_) !is null)
             {
@@ -179,7 +180,7 @@ struct Composer
                 anchors_[anchor] = Node();
             }
 
-            switch (parser_.front.id)
+            switch (parser.front.id)
             {
                 case EventID.scalar:
                     result = composeScalarNode();
@@ -203,9 +204,9 @@ struct Composer
         ///Compose a scalar node.
         Node composeScalarNode() @safe
         {
-            const event = parser_.front;
-            parser_.popFront();
-            const tag = resolver_.resolve(NodeID.scalar, event.tag, event.value,
+            const event = parser.front;
+            parser.popFront();
+            const tag = resolver.resolve(NodeID.scalar, event.tag, event.value,
                                           event.implicit);
 
             Node node = constructNode(event.startMark, event.endMark, tag,
@@ -225,20 +226,20 @@ struct Composer
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
             auto nodeAppender = &(nodeAppenders_[nodeAppenderLevel]);
 
-            const startEvent = parser_.front;
-            parser_.popFront();
-            const tag = resolver_.resolve(NodeID.sequence, startEvent.tag, null,
+            const startEvent = parser.front;
+            parser.popFront();
+            const tag = resolver.resolve(NodeID.sequence, startEvent.tag, null,
                                           startEvent.implicit);
 
-            while(parser_.front.id != EventID.sequenceEnd)
+            while(parser.front.id != EventID.sequenceEnd)
             {
                 nodeAppender.put(composeNode(pairAppenderLevel, nodeAppenderLevel + 1));
             }
 
-            Node node = constructNode(startEvent.startMark, parser_.front.endMark,
+            Node node = constructNode(startEvent.startMark, parser.front.endMark,
                                           tag, nodeAppender.data.dup);
             node.collectionStyle = startEvent.collectionStyle;
-            parser_.popFront();
+            parser.popFront();
             nodeAppender.clear();
 
             return node;
@@ -329,14 +330,14 @@ struct Composer
             @safe
         {
             ensureAppendersExist(pairAppenderLevel, nodeAppenderLevel);
-            const startEvent = parser_.front;
-            parser_.popFront();
-            const tag = resolver_.resolve(NodeID.mapping, startEvent.tag, null,
+            const startEvent = parser.front;
+            parser.popFront();
+            const tag = resolver.resolve(NodeID.mapping, startEvent.tag, null,
                                           startEvent.implicit);
             auto pairAppender = &(pairAppenders_[pairAppenderLevel]);
 
             Tuple!(Node, Mark)[] toMerge;
-            while(parser_.front.id != EventID.mappingEnd)
+            while(parser.front.id != EventID.mappingEnd)
             {
                 auto pair = Node.Pair(composeNode(pairAppenderLevel + 1, nodeAppenderLevel),
                                       composeNode(pairAppenderLevel + 1, nodeAppenderLevel));
@@ -344,7 +345,7 @@ struct Composer
                 //Need to flatten and merge the node referred by YAMLMerge.
                 if(pair.key.type == NodeType.merge)
                 {
-                    toMerge ~= tuple(pair.value, cast(Mark)parser_.front.endMark);
+                    toMerge ~= tuple(pair.value, cast(Mark)parser.front.endMark);
                 }
                 //Not YAMLMerge, just add the pair.
                 else
@@ -362,12 +363,12 @@ struct Composer
                                 .uniq!((x,y) => x.key == y.key)
                                 .walkLength;
             enforce(numUnique == pairAppender.data.length,
-                    new ComposerException("Duplicate key found in mapping", parser_.front.startMark));
+                    new ComposerException("Duplicate key found in mapping", parser.front.startMark));
 
-            Node node = constructNode(startEvent.startMark, parser_.front.endMark,
+            Node node = constructNode(startEvent.startMark, parser.front.endMark,
                                           tag, pairAppender.data.dup);
             node.collectionStyle = startEvent.collectionStyle;
-            parser_.popFront();
+            parser.popFront();
 
             pairAppender.clear();
             return node;

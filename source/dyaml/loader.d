@@ -22,6 +22,7 @@ import dyaml.parser;
 import dyaml.reader;
 import dyaml.resolver;
 import dyaml.scanner;
+import dyaml.schema;
 import dyaml.token;
 
 
@@ -36,9 +37,9 @@ struct Loader
         // Processes character data to YAML tokens.
         Scanner scanner_;
         // Processes tokens to YAML events.
-        Parser parser_;
-        // Resolves tags (data types).
-        Resolver resolver_;
+        //Parser parser_;
+        //
+        Composer composer_;
         // Name of the input file or stream, used in error messages.
         string name_ = "<unknown>";
         // Are we done loading?
@@ -147,12 +148,12 @@ struct Loader
         /// Ditto
         private this(ubyte[] yamlData) @safe
         {
-            resolver_ = Resolver.withDefaultResolvers;
+            auto resolver = Resolver(DefaultSchema);
             try
             {
                 auto reader_ = new Reader(yamlData);
                 scanner_ = Scanner(reader_);
-                parser_ = new Parser(scanner_);
+                composer_ = Composer(new Parser(scanner_), resolver);
             }
             catch(YAMLException e)
             {
@@ -171,7 +172,7 @@ struct Loader
         /// Specify custom Resolver to use.
         auto ref resolver() pure @safe nothrow @nogc
         {
-            return resolver_;
+            return composer_.resolver;
         }
 
         /** Load single YAML document.
@@ -213,20 +214,16 @@ struct Loader
         *
         * Reads the next document from the stream, if possible.
         */
-        void popFront() @safe
+        void popFront() @trusted
         {
-            // Composer initialization is done here in case the constructor is
-            // modified, which is a pretty common case.
-            static Composer composer;
             if (!rangeInitialized)
             {
-                composer = Composer(parser_, resolver_);
                 rangeInitialized = true;
             }
             assert(!done_, "Loader.popFront called on empty range");
-            if (composer.checkNode())
+            if (composer_.checkNode())
             {
-                currentNode = composer.getNode();
+                currentNode = composer_.getNode();
             }
             else
             {
@@ -268,7 +265,7 @@ struct Loader
         // Parse and return all events. Used for debugging.
         auto parse() @safe
         {
-            return parser_;
+            return composer_.parser;
         }
 }
 /// Load single YAML document from a file:

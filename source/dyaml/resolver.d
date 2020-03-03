@@ -1,5 +1,6 @@
 
 //          Copyright Ferdinand Majerech 2011.
+//          Copyright Cameron Ross 2020.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -15,128 +16,47 @@
 module dyaml.resolver;
 
 
-import std.conv;
 import std.regex;
-import std.typecons;
-import std.utf;
 
 import dyaml.node;
-import dyaml.exception;
+import dyaml.schema;
 
-
-/// Type of `regexes`
-private alias RegexType = Tuple!(string, "tag", const Regex!char, "regexp", string, "chars");
-
-private immutable RegexType[] regexes;
-
-shared static this() @safe
-{
-    RegexType[] tmp;
-    tmp ~= RegexType("tag:yaml.org,2002:bool",
-                     regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
-                           "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
-                     "yYnNtTfFoO");
-    tmp ~= RegexType("tag:yaml.org,2002:float",
-                     regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
-                           "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
-                           "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
-                           "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
-                           "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
-                           "(?:nan|NaN|NAN))$"),
-                     "-+0123456789.");
-    tmp ~= RegexType("tag:yaml.org,2002:int",
-                     regex(r"^(?:[-+]?0b[0-1_]+" ~
-                           "|[-+]?0[0-7_]+" ~
-                           "|[-+]?(?:0|[1-9][0-9_]*)" ~
-                           "|[-+]?0x[0-9a-fA-F_]+" ~
-                           "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
-                     "-+0123456789");
-    tmp ~= RegexType("tag:yaml.org,2002:merge", regex(r"^<<$"), "<");
-    tmp ~= RegexType("tag:yaml.org,2002:null",
-                     regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0");
-    tmp ~= RegexType("tag:yaml.org,2002:timestamp",
-                     regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
-                           "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
-                           "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
-                           "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
-                           "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
-                           "[0-9]?(?::[0-9][0-9])?)?$"),
-                     "0123456789");
-    tmp ~= RegexType("tag:yaml.org,2002:value", regex(r"^=$"), "=");
-
-
-    //The following resolver is only for documentation purposes. It cannot work
-    //because plain scalars cannot start with '!', '&', or '*'.
-    tmp ~= RegexType("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*");
-
-    regexes = () @trusted { return cast(immutable)tmp; }();
-}
 
 /**
- * Resolves YAML tags (data types).
- *
- * Can be used to implicitly resolve custom data types of scalar values.
+ * Used to implicitly resolve tags of scalar values, according to sets of rules
+ * known as schemas.
  */
 struct Resolver
 {
     private:
-        // Default tag to use for scalars.
-        string defaultScalarTag_ = "tag:yaml.org,2002:str";
-        // Default tag to use for sequences.
-        string defaultSequenceTag_ = "tag:yaml.org,2002:seq";
-        // Default tag to use for mappings.
-        string defaultMappingTag_ = "tag:yaml.org,2002:map";
+        Schema schema;
+        /// Arrays of schema rules indexed by their starting characters.
+        const(SchemaRule)[][dchar] yamlImplicitResolvers_;
 
-        /*
-         * Arrays of scalar resolver tuples indexed by starting character of a scalar.
-         *
-         * Each tuple stores regular expression the scalar must match,
-         * and tag to assign to it if it matches.
-         */
-        Tuple!(string, const Regex!char)[][dchar] yamlImplicitResolvers_;
-
-    package:
-        static auto withDefaultResolvers() @safe
-        {
-            Resolver resolver;
-            foreach(pair; regexes)
-            {
-                resolver.addImplicitResolver(pair.tag, pair.regexp, pair.chars);
-            }
-            return resolver;
-        }
-
+        @disable this();
     public:
-        @disable bool opEquals(ref Resolver);
-        @disable int opCmp(ref Resolver);
-
+        this(Schema schema) @safe pure {
+            this.schema = schema;
+            foreach(tagResolver; schema.rules)
+            {
+                addRule(tagResolver);
+            }
+        }
         /**
-         * Add an implicit scalar resolver.
+         * Add a rule.
          *
          * If a scalar matches regexp and starts with any character in first,
-         * its _tag is set to tag. If it matches more than one resolver _regexp
-         * resolvers added _first override ones added later. Default resolvers
-         * override any user specified resolvers, but they can be disabled in
-         * Resolver constructor.
+         * its tag is set to the _rule's tag. In case of multiple rules
+         * matching, the first specified _rule has higher priority.
          *
-         * If a scalar is not resolved to anything, it is assigned the default
-         * YAML _tag for strings.
-         *
-         * Params:  tag    = Tag to resolve to.
-         *          regexp = Regular expression the scalar must match to have this _tag.
-         *          first  = String of possible starting characters of the scalar.
-         *
+         * Params:  rule    = The rule to add.
          */
-        void addImplicitResolver(string tag, const Regex!char regexp, string first)
+        void addRule(const SchemaRule rule)
             pure @safe
         {
-            foreach(const dchar c; first)
+            foreach(const dchar c; rule.chars)
             {
-                if((c in yamlImplicitResolvers_) is null)
-                {
-                    yamlImplicitResolvers_[c] = [];
-                }
-                yamlImplicitResolvers_[c] ~= tuple(tag, regexp);
+                yamlImplicitResolvers_.require(c, []) ~= rule;
             }
         }
         /// Resolve scalars starting with 'A' to !_tag
@@ -150,10 +70,17 @@ struct Resolver
             write("example.yaml", "A");
 
             auto loader = Loader.fromFile("example.yaml");
-            loader.resolver.addImplicitResolver("!tag", regex("A.*"), "A");
+            loader.resolver.addRule(SchemaRule("!tag", regex("A.*"), "A"));
 
             auto node = loader.load();
             assert(node.tag == "!tag");
+        }
+
+        deprecated("Use addRule(SchemaRule) instead")
+        void addImplicitResolver(string tag, Regex!char regexp, string first)
+            pure @safe
+        {
+            addRule(SchemaRule(tag, regexp, first));
         }
 
     package:
@@ -165,8 +92,7 @@ struct Resolver
          *          value    = Value of the node, if any.
          *          implicit = Should the node be implicitly resolved?
          *
-         * If the tag is already specified and not non-specific, that tag will
-         * be returned.
+         * If the node has an explicit specific tag, that tag will be returned.
          *
          * Returns: Resolved tag.
          */
@@ -184,35 +110,32 @@ struct Resolver
                 case NodeID.scalar:
                     if(!implicit)
                     {
-                        return defaultScalarTag_;
+                        return schema.defaultScalarTag;
                     }
 
                     //Get the first char of the value.
                     const dchar first = value.empty ? '\0' : value.front;
 
-                    auto resolvers = (first in yamlImplicitResolvers_) is null ?
-                                     [] : yamlImplicitResolvers_[first];
-
                     //If regexp matches, return tag.
-                    foreach(resolver; resolvers)
+                    foreach(rule; yamlImplicitResolvers_.get(first, []))
                     {
-                        if(!(match(value, resolver[1]).empty))
+                        if(!(match(value, rule.regexp).empty))
                         {
-                            return resolver[0];
+                            return rule.tag;
                         }
                     }
-                    return defaultScalarTag_;
+                    return schema.defaultScalarTag;
             case NodeID.sequence:
-                return defaultSequenceTag_;
+                return schema.defaultSequenceTag;
             case NodeID.mapping:
-                return defaultMappingTag_;
+                return schema.defaultMappingTag;
             case NodeID.invalid:
                 assert(false, "Cannot resolve an invalid node");
             }
         }
         @safe unittest
         {
-            auto resolver = Resolver.withDefaultResolvers;
+            auto resolver = Resolver(YAML11Schema);
 
             bool tagMatch(string tag, string[] values) @safe
             {
@@ -251,11 +174,20 @@ struct Resolver
         }
 
         ///Returns: Default scalar tag.
-        @property string defaultScalarTag()   const pure @safe nothrow {return defaultScalarTag_;}
+        @property string defaultScalarTag() const pure @safe nothrow
+        {
+            return schema.defaultScalarTag;
+        }
 
         ///Returns: Default sequence tag.
-        @property string defaultSequenceTag() const pure @safe nothrow {return defaultSequenceTag_;}
+        @property string defaultSequenceTag() const pure @safe nothrow
+        {
+            return schema.defaultSequenceTag;
+        }
 
         ///Returns: Default mapping tag.
-        @property string defaultMappingTag()  const pure @safe nothrow {return defaultMappingTag_;}
+        @property string defaultMappingTag() const pure @safe nothrow
+        {
+            return schema.defaultMappingTag;
+        }
 }
