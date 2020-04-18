@@ -685,43 +685,39 @@ struct Scanner
                 {
                     return false;
                 }
-                auto copy = reader_.save();
-                foreach (i; 0..3)
+                if (reader_.length >= 4)
                 {
-                    if (copy.empty || copy.front != '-')
-                    {
-                        return false;
-                    }
-                    copy.popFront();
+                    const slice = reader_[0 .. 4];
+                    return (slice.startsWith("---") && slice[$ - 1].isWhiteSpace);
                 }
-                return !!copy.front.isWhiteSpace;
+                return false;
         }
 
-        /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n')
+        /// Check if the next token is DOCUMENT-END:     ^ '...' (' '|'\n'|EOF)
         bool checkDocumentEnd() @safe
         {
                 if (reader_.empty || (reader_.column != 0))
                 {
                     return false;
                 }
-                auto copy = reader_.save();
-                foreach (i; 0..3)
+                if (reader_.length >= 4)
                 {
-                    if (copy.empty || copy.front != '.')
-                    {
-                        return false;
-                    }
-                    copy.popFront();
+                    const slice = reader_[0 .. 4];
+                    return (slice.startsWith("...") && slice[$ - 1].isWhiteSpace);
                 }
-                return copy.empty || copy.front.isWhiteSpace;
+                // ...<EOF>
+                return reader_.length == 3 && (reader_[0 .. 3] == "...");
         }
 
         /// Check if the next token is BLOCK-ENTRY:      '-' (' '|'\n')
         bool checkBlockEntry() @safe
         {
-            auto copy = reader_.save();
-            copy.popFront();
-            return !!copy.front.isWhiteSpace;
+            if (reader_.length >= 2)
+            {
+                const slice = reader_[0 .. 2];
+                return (slice[0] == '-' && slice[$ - 1].isWhiteSpace);
+            }
+            return false;
         }
 
         /// Check if the next token is KEY(flow context):    '?'
@@ -729,9 +725,12 @@ struct Scanner
         /// or KEY(block context):   '?' (' '|'\n')
         bool checkKey() @safe
         {
-            auto copy = reader_.save();
-            copy.popFront();
-            return (flowLevel_ > 0 || copy.front.isWhiteSpace);
+            if (reader_.length >= 2)
+            {
+                const slice = reader_[0 .. 2];
+                return (slice[0] == '?' && slice[$ - 1].isWhiteSpace);
+            }
+            return flowLevel_ > 0;
         }
 
         /// Check if the next token is VALUE(flow context):  ':'
@@ -739,9 +738,8 @@ struct Scanner
         /// or VALUE(block context): ':' (' '|'\n')
         bool checkValue() @safe
         {
-            auto copy = reader_.save();
-            copy.popFront();
-            return (flowLevel_ > 0 || copy.front.isWhiteSpace);
+            return (flowLevel_ > 0) ||
+                ((reader_.length >= 2) && (reader_[1].isWhiteSpace));
         }
 
         /// Check if the next token is a plain scalar.
@@ -758,38 +756,36 @@ struct Scanner
         /// Note that we limit the last rule to the block context (except the
         /// '-' character) because we want the flow context to be space
         /// independent.
-        bool checkPlain() @safe
+        bool checkPlain() @safe pure
         {
             const c = reader_.front;
             if(!c.isNonScalarStartCharacter)
             {
                 return true;
             }
-            auto copy = reader_.save();
-            copy.popFront();
-            return !copy.front.isWhiteSpace &&
+            return ((reader_.length >= 2) && !reader_[1].isWhiteSpace) &&
                    (c == '-' || (flowLevel_ == 0 && (c == '?' || c == ':')));
         }
 
         /// Move to the next non-space character.
         void findNextNonSpace() @safe
         {
-            while(reader_.startsWith(' ')) { reader_.popFront(); }
+            reader_.popUntil!(x => x != ' ');
         }
 
         /// Scan a string of alphanumeric or "-_" characters.
         void scanAlphaNumericToSlice(string name)(const Mark startMark, ref string buf)
         {
-            buf ~= reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among!('-', '_'));
-
-            enforce(buf.length > 0, new ScannerException("While scanning " ~ name,
+            auto slice = reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among!('-', '_'));
+            enforce(slice.length > 0, new ScannerException("While scanning " ~ name,
                 startMark, expected("alphanumeric, '-' or '_'", reader_.front), reader_.mark));
+            buf ~= slice;
         }
 
         /// Scan and throw away all characters until next line break.
         void scanToNextBreak() @safe
         {
-            while(!reader_.front.isBreak) { reader_.popFront(); }
+            reader_.popUntil!(x => x.isBreak);
         }
 
         /// Scan all characters until next line break.
@@ -1039,8 +1035,7 @@ struct Scanner
         {
             string slice;
             const startMark = reader_.mark;
-            auto copy = reader_.save();
-            copy.popFront();
+            auto copy = reader_[1 .. $];
             dchar c = copy.front;
 
             // Index where tag handle ends and tag suffix starts in the tag value
@@ -1400,9 +1395,7 @@ struct Scanner
                         "reached end of file", reader_.mark));
 
                 dchar c = reader_.front;
-                auto copy = reader_.save();
-                copy.popFront();
-                if(quotes == ScalarStyle.singleQuoted && c == '\'' && !copy.empty && copy.front == '\'')
+                if(quotes == ScalarStyle.singleQuoted && c == '\'' && (reader_.length >= 2) && (reader_[1] == '\''))
                 {
                     reader_.popFront();
                     reader_.popFront();
@@ -1421,35 +1414,26 @@ struct Scanner
                     if(c.among!(escapes))
                     {
                         reader_.popFront();
-                        // Escaping has been moved to Parser as it can't be done in
-                        // place (in a slice) in case of '\P' and '\L' (very uncommon,
-                        // but we don't want to break the spec)
-                        char[2] escapeSequence = ['\\', cast(char)c];
-                        buf ~= escapeSequence;
+                        buf ~= '\\';
+                        buf ~= c;
                     }
                     else if(c.among!(escapeHexCodeList))
                     {
                         const hexLength = dyaml.escapes.escapeHexLength(c);
                         reader_.popFront();
-
-                        string hex;
-                        hex.reserve(hexLength);
-                        foreach (_; 0..hexLength)
-                        {
-                            hex ~= reader_.front;
-                            enforce(reader_.front.isHexDigit,
-                                new ScannerException("While scanning a double quoted scalar", startMark,
-                                    expected("escape sequence of hexadecimal numbers",
-                                        reader_.front), reader_.mark));
-                            reader_.popFront();
-                        }
-                        enforce((hex.length > 0) && (hex.length <= 8),
+                        enforce(reader_.length >= hexLength,
                             new ScannerException("While scanning a double quoted scalar", startMark,
-                                  "overflow when parsing an escape sequence of " ~
-                                  "hexadecimal numbers.", reader_.mark));
+                                  "unexpected end of input within escape sequence", reader_.mark));
 
-                        char[2] escapeStart = ['\\', cast(char) c];
-                        buf ~= escapeStart;
+                        auto hex = reader_[0 .. hexLength];
+                        enforce(hex.byCodeUnit.all!isHexDigit,
+                            new ScannerException("While scanning a double quoted scalar", startMark,
+                                expected("escape sequence of hexadecimal numbers",
+                                    hex), reader_.mark));
+                        reader_.popFrontN(hexLength);
+
+                        buf ~= '\\';
+                        buf ~= c;
                         buf ~= hex;
 
                     }
@@ -1476,7 +1460,7 @@ struct Scanner
         /// spaces into that slice.
         void scanFlowScalarSpacesToSlice(const Mark startMark, ref string buf) @safe
         {
-            const whitespaces = reader_.getSliceUntil!(x => !x.among(' ', '\t'));
+            const whitespaces = reader_.getSliceUntil!(x => !x.among!(' ', '\t'));
 
             enforce(!reader_.empty,
                 new ScannerException("While scanning a quoted scalar", startMark,
@@ -1508,26 +1492,11 @@ struct Scanner
         {
             bool end() @safe pure
             {
-                if (reader_.empty)
+                if ((reader_.length < 3) || !reader_.startsWith("...", "---"))
                 {
                     return false;
                 }
-                auto copy = reader_.save();
-                dchar[3] prefix;
-                foreach (ref c; prefix)
-                {
-                    if (copy.empty)
-                    {
-                        return false;
-                    }
-                    c = copy.front;
-                    copy.popFront();
-                }
-                if ((prefix != "...") && (prefix != "---"))
-                {
-                    return false;
-                }
-                return copy.empty || copy.front.isWhiteSpace;
+                return reader_.length == 3 || reader_[3].isWhiteSpace;
             }
             for(;;)
             {
@@ -1537,10 +1506,7 @@ struct Scanner
                         "found unexpected document separator", reader_.mark));
 
                 // Skip any whitespaces.
-                while(!reader_.empty && reader_.front.among!(' ', '\t'))
-                {
-                    reader_.popFront();
-                }
+                reader_.popUntil!(x => !x.among!(' ', '\t'));
 
                 // Encountered a non-whitespace non-linebreak character, so we're done.
                 if(reader_.empty || !reader_.front.isBreakOrSpace)
@@ -1548,9 +1514,8 @@ struct Scanner
                     break;
                 }
 
-                const lineBreak = scanLineBreak();
                 anyBreaks = true;
-                buf ~= lineBreak;
+                buf ~= scanLineBreak();
             }
         }
 
@@ -1594,16 +1559,11 @@ struct Scanner
                     reader_.popFront();
                 }
 
-                auto copy = reader_.save();
-                if (!copy.empty)
-                {
-                    copy.popFront();
-                }
                 // It's not clear what we should do with ':' in the flow context.
                 enforce(flowLevel_ == 0 || reader_.front != ':' ||
-                   copy.empty ||
-                   copy.front.isWhiteSpace ||
-                   copy.front.isFlowIndicator,
+                   reader_.length <= 2 ||
+                   reader_.length >= 2 && (reader_[1].isWhiteSpace ||
+                        reader_[1].isFlowIndicator),
                     new ScannerException("While scanning a plain scalar", startMark,
                         "found unexpected ':' . Please check " ~
                         "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
@@ -1616,12 +1576,10 @@ struct Scanner
                 endMark = reader_.mark;
 
                 slice ~= buf;
-                buf = [];
-                buf.reserve(expectedLineLength);
 
-                auto plainSpaces = scanPlainSpacesToSlice();
-                buf ~= plainSpaces;
-                if(plainSpaces.length == 0 ||
+                buf = scanPlainSpacesToSlice();
+                buf.reserve(expectedLineLength);
+                if(buf.length == 0 ||
                    (flowLevel_ == 0 && reader_.column < indent))
                 {
                     break;
@@ -1635,30 +1593,22 @@ struct Scanner
         ///
         string scanPlainSpacesToSlice() @safe
         {
-            string buf;
             // The specification is really confusing about tabs in plain scalars.
             // We just forbid them completely. Do not use tabs in YAML!
 
             // Get as many plain spaces as there are.
-            size_t length;
-            while(!reader_.empty && (reader_.front == ' '))
-            {
-                ++length;
-                reader_.popFront();
-            }
-            char[] whitespaces = new char[](length);
-            whitespaces[] = ' ';
+            string whitespaces = reader_.getSliceUntil!(x => x != ' ').idup;
 
             if (reader_.empty)
             {
-                return buf;
+                return "";
             }
 
             if(!reader_.front.isNSChar)
             {
                 // We have spaces, but no newline.
-                if(whitespaces.length > 0) { buf ~= whitespaces; }
-                return buf;
+                if(whitespaces.length > 0) { return whitespaces; }
+                return "";
             }
 
             // Newline after the spaces (if any)
@@ -1675,25 +1625,23 @@ struct Scanner
                 return next.empty || next.front.isWhiteSpace;
             }
 
-            if(end(reader_)) { return buf; }
+            if(end(reader_)) { return ""; }
 
             bool extraBreaks;
 
-            string buf2;
-            if(lineBreak != '\n') { buf2 ~= lineBreak; }
+            string buf;
+            if(lineBreak != '\n') { buf ~= lineBreak; }
             while(reader_.startsWith(nsChar))
             {
                 if(reader_.startsWith(' ')) { reader_.popFront(); }
                 else
                 {
-                    const lBreak = scanLineBreak();
+                    buf ~= scanLineBreak();
                     extraBreaks  = true;
-                    buf2 ~= lBreak;
 
-                    if(end(reader_)) { return buf; }
+                    if(end(reader_)) { return ""; }
                 }
             }
-            buf ~= buf2;
 
             // No line breaks, only a space.
             if(lineBreak == '\n' && !extraBreaks) { buf ~= ' '; }
@@ -1715,7 +1663,7 @@ struct Scanner
 
             if(reader_.front != ' ')
             {
-                buf ~= reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among('-', '_'));
+                buf ~= reader_.getSliceUntil!(x => !x.isAlphaNum && !x.among!('-', '_'));
                 enforce(reader_.front == '!',
                     new ScannerException(contextMsg, startMark, expected("'!'", reader_.front), reader_.mark));
                 buf ~= "!";
@@ -1735,19 +1683,17 @@ struct Scanner
             string buf;
             // Reserve a reasonable number of characters.
             buf.reserve(expectedLineLength);
-            {
 
-                while(reader_.front.isAlphaNum || reader_.front.isURIChar)
+            while(reader_.front.isAlphaNum || reader_.front.isURIChar)
+            {
+                if(reader_.front == '%')
                 {
-                    if(reader_.front == '%')
-                    {
-                        buf ~= scanURIEscapesToSlice!name(startMark);
-                    }
-                    else
-                    {
-                        buf ~= reader_.front;
-                        reader_.popFront();
-                    }
+                    buf ~= scanURIEscapesToSlice!name(startMark);
+                }
+                else
+                {
+                    buf ~= reader_.front;
+                    reader_.popFront();
                 }
             }
             // OK if we scanned something, error otherwise.
@@ -1766,17 +1712,15 @@ struct Scanner
         {
             // URI escapes encode a UTF-8 string. We store UTF-8 code units here for
             // decoding into UTF-32.
-            Appender!(string) buffer;
+            string buffer;
 
 
             enum contextMsg = "While scanning a " ~ name;
             while(reader_.front == '%')
             {
                 reader_.popFront();
-                char[2] nextByte;
-                nextByte[0] = cast(char)reader_.front;
+                char[2] nextByte = reader_[0 .. 2];
                 reader_.popFront();
-                nextByte[1] = cast(char)reader_.front;
                 reader_.popFront();
 
                 enforce(nextByte[0].isHexDigit && nextByte[1].isHexDigit,
@@ -1788,8 +1732,8 @@ struct Scanner
             }
             try
             {
-                buffer.data.validate();
-                return buffer.data;
+                buffer.validate();
+                return buffer;
             }
             catch (UTFException)
             {

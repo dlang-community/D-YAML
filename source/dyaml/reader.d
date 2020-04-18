@@ -95,12 +95,7 @@ struct Reader
 
         auto save() @safe pure
         {
-            auto reader = Reader();
-            reader.buffer_ = this.buffer_;
-            reader.charIndex_ = this.charIndex_;
-            reader.line_ = this.line_;
-            reader.column_ = this.column_;
-            return reader;
+            return this;
         }
 
         bool empty() @safe pure nothrow const @nogc
@@ -141,13 +136,14 @@ struct Reader
         {
             return buffer_[a..b];
         }
-        size_t opDollar() @safe pure
-        {
-            return buffer_.length;
-        }
+        alias opDollar = length;
         auto opIndex(size_t idx) @safe pure
         {
             return buffer_[idx];
+        }
+        auto length() @safe pure
+        {
+            return buffer_.length;
         }
 
         /// Get a string describing current buffer position, used for error messages.
@@ -163,14 +159,48 @@ struct Reader
         size_t charIndex() const @safe pure nothrow @nogc { return charIndex_; }
 }
 
-package auto getSliceUntil(alias pred, R)(ref R reader) {
-    const chars = reader.countUntil!pred;
-    if (chars <= 0) {
-        return "";
+package auto popUntil(alias pred, R)(ref R reader)
+{
+    while(!reader.empty && !pred(reader.front))
+    {
+        reader.popFront();
     }
-    auto buf = reader[0 .. chars];
-    reader.popFrontN(chars);
-    return buf;
+}
+
+package auto getSliceUntil(alias pred, R)(ref R reader)
+{
+    const chars = reader.countUntil!pred;
+    const sliceLen = chars >= 0 ? chars : reader.length;
+    assert(sliceLen <= reader.length);
+    auto slice = reader[0 .. sliceLen];
+    reader.popFrontN(sliceLen);
+    return slice;
+}
+
+//Todo: proper constraints
+
+template matches(rules...) {
+    bool matches(T)(T range) {
+        static foreach (e; rules) {
+            if (range.empty) {
+                return false;
+            }
+            static if (__traits(compiles, (range.front == e))) {
+                if (range.front == e) {
+                    range.popFront();
+                } else {
+                    return false;
+                }
+            } else {
+                if (e(range.front)) {
+                    range.popFront();
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
 
 private:
@@ -361,4 +391,20 @@ void test1Byte(R)()
     auto root = Loader.fromString(yaml).load();
 
     assert(root.isValid);
+}
+
+@safe unittest
+{
+    {
+        auto data = "       ";
+        auto reader = Reader(data);
+        assert(reader.getSliceUntil!(x => x != ' ') == data);
+        assert(reader.empty);
+    }
+    {
+        auto data = "    z   ";
+        auto reader = Reader(data);
+        assert(reader.getSliceUntil!(x => x != ' ') == "    ");
+        assert(reader.front == 'z');
+    }
 }
