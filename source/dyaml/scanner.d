@@ -1362,28 +1362,9 @@ struct Scanner
                 dchar c = reader_.peek();
 
                 size_t numCodePoints;
-                // This is an optimized way of writing:
-                // while(!search.canFind(reader_.peek(numCodePoints))) { ++numCodePoints; }
-                outer: for(size_t oldSliceLength;;)
-                {
-                    // This will not necessarily make slice 32 chars longer, as not all
-                    // code points are 1 char.
-                    const char[] slice = reader_.slice(numCodePoints + 32);
-                    enforce(slice.length != oldSliceLength,
-                        new ScannerException("While reading a flow scalar", startMark,
-                            "reached end of file", reader_.mark));
+                while(!reader_.peek(numCodePoints).isFlowScalarBreakSpace) { ++numCodePoints; }
 
-                    for(size_t i = oldSliceLength; i < slice.length;)
-                    {
-                        // slice is UTF-8 - need to decode
-                        const ch = slice[i] < 0x80 ? slice[i++] : decode(slice, i);
-                        if(ch.isFlowScalarBreakSpace) { break outer; }
-                        ++numCodePoints;
-                    }
-                    oldSliceLength = slice.length;
-                }
-
-                reader_.sliceBuilder.write(reader_.get(numCodePoints));
+                if (numCodePoints > 0) { reader_.sliceBuilder.write(reader_.get(numCodePoints)); }
 
                 c = reader_.peek();
                 if(quotes == ScalarStyle.singleQuoted && c == '\'' && reader_.peek(1) == '\'')
@@ -1540,34 +1521,18 @@ struct Scanner
             {
                 // Scan the entire plain scalar.
                 size_t length;
-                dchar c = void;
-                // Moved the if() out of the loop for optimization.
-                if(flowLevel_ == 0)
+                dchar c = reader_.peek(length);
+                for(;;)
                 {
-                    c = reader_.peek(length);
-                    for(;;)
+                    const cNext = reader_.peek(length + 1);
+                    if(c.isWhiteSpace ||
+                       (flowLevel_ == 0 && c == ':' && cNext.isWhiteSpace) ||
+                       (flowLevel_ > 0 && c.among!(',', ':', '?', '[', ']', '{', '}')))
                     {
-                        const cNext = reader_.peek(length + 1);
-                        if(c.isWhiteSpace ||
-                           (c == ':' && cNext.isWhiteSpace))
-                        {
-                            break;
-                        }
-                        ++length;
-                        c = cNext;
+                        break;
                     }
-                }
-                else
-                {
-                    for(;;)
-                    {
-                        c = reader_.peek(length);
-                        if(c.isWhiteSpace || c.among!(',', ':', '?', '[', ']', '{', '}'))
-                        {
-                            break;
-                        }
-                        ++length;
-                    }
+                    ++length;
+                    c = cNext;
                 }
 
                 // It's not clear what we should do with ':' in the flow context.
