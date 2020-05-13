@@ -15,6 +15,7 @@ import std.conv;
 import std.datetime;
 import std.exception;
 import std.math;
+import std.meta : AliasSeq;
 import std.range;
 import std.string;
 import std.traits;
