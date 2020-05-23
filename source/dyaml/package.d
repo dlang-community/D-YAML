@@ -11,5 +11,6 @@ public import dyaml.exception;
 public import dyaml.linebreak;
 public import dyaml.loader;
 public import dyaml.resolver;
+public import dyaml.schema;
 public import dyaml.style;
 public import dyaml.node;
