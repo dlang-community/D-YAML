@@ -825,7 +825,7 @@ final class Parser
         }
 
         ///Parse a key in flow context.
-        Event parseFlowKey(in Event delegate() @safe nextState) @safe
+        Event parseFlowKey(Event delegate() @safe nextState) @safe
         {
             const token = scanner_.front;
             scanner_.popFront();
@@ -848,7 +848,7 @@ final class Parser
         }
 
         ///Parse a mapping value in a flow context.
-        Event parseFlowValue(TokenID checkId, in Event delegate() @safe nextState)
+        Event parseFlowValue(TokenID checkId, Event delegate() @safe nextState)
             @safe
         {
             if(scanner_.front.id == TokenID.value)
