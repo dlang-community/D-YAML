@@ -9,122 +9,173 @@ module dyaml.test.common;
 version(unittest)
 {
 
-public import std.conv;
-public import std.stdio;
-public import dyaml;
+import dyaml.node;
+import dyaml.event;
 
 import core.exception;
 import std.algorithm;
 import std.array;
 import std.conv;
 import std.file;
+import std.range;
 import std.path;
 import std.traits;
 import std.typecons;
 
 package:
 
-debug(verbose)
-{
-    enum verbose = true;
-    enum quiet = false;
-}
-else
-{
-    enum verbose = false;
-    debug(noisy) enum quiet = false;
-    else enum quiet = true;
-}
-
 /**
- * Run an unittest.
- *
- * Params:  testName     = Name of the unittest.
- *          testFunction = Unittest function.
- *          unittestExt  = Extensions of data files needed for the unittest.
- *          skipExt      = Extensions that must not be used for the unittest.
+Run a test.
+
+Params:
+    testFunction = Unittest function.
+    unittestExt = Extensions of data files needed for the unittest.
+    skipExt = Extensions that must not be used for the unittest.
  */
-void run(D)(string testName, D testFunction,
-                string[] unittestExt, string[] skipExt = [])
+void run(D)(D testFunction, string[] unittestExt, string[] skipExt = [])
 {
     immutable string dataDir = __FILE_FULL_PATH__.dirName ~  "/../../../test/data";
     auto testFilenames = findTestFilenames(dataDir);
 
-    Result[] results;
-    if(unittestExt.length > 0)
+    if (unittestExt.length > 0)
     {
-        outer: foreach(base, extensions; testFilenames)
+        outer: foreach (base, extensions; testFilenames)
         {
             string[] filenames;
-            foreach(ext; unittestExt)
+            foreach (ext; unittestExt)
             {
-                if(!extensions.canFind(ext)){continue outer;}
+                if (!extensions.canFind(ext))
+                {
+                    continue outer;
+                }
                 filenames ~= base ~ '.' ~ ext;
             }
-            foreach(ext; skipExt)
+            foreach (ext; skipExt)
             {
-                if(extensions.canFind(ext)){continue outer;}
+                if (extensions.canFind(ext))
+                {
+                    continue outer;
+                }
             }
 
-            results ~= execute(testName, testFunction, filenames);
+            execute(testFunction, filenames);
         }
     }
     else
     {
-        results ~= execute(testName, testFunction, string[].init);
+        execute(testFunction, string[].init);
     }
-    display(results);
+}
+
+// TODO: remove when a @safe ubyte[] file read can be done.
+/**
+Reads a file as an array of bytes.
+
+Params:
+    filename = Full path to file to read.
+
+Returns: The file's data.
+*/
+ubyte[] readData(string filename) @trusted
+{
+    import std.file : read;
+    return cast(ubyte[])read(filename);
+}
+void assertNodesEqual(const scope Node gotNode, const scope Node expectedNode) @safe
+{
+    import std.format : format;
+    assert(gotNode == expectedNode, format!"got %s, expected %s"(gotNode.debugString, expectedNode.debugString));
 }
 
 /**
- * Prints an exception if verbosity is turned on.
- * Params:  e     = Exception to print.
- */
-void printException(YAMLException e) @trusted
-{
-        static if(verbose) { writeln(typeid(e).toString(), "\n", e); }
-}
+Determine if events in events1 are equivalent to events in events2.
 
-void printProgress(T...)(T params) @safe
+Params:
+    events1 = A range of events to compare with.
+    events2 = A second range of events to compare.
+
+Returns: true if the events are equivalent, false otherwise.
+*/
+bool compareEvents(T, U)(T events1, U events2)
+if (isInputRange!T && isInputRange!U && is(ElementType!T == Event) && is(ElementType!U == Event))
 {
-    static if(!quiet)
+    foreach (e1, e2; zip(events1, events2))
     {
-        writeln(params);
+        //Different event types.
+        if (e1.id != e2.id)
+        {
+            return false;
+        }
+        //Different anchor (if applicable).
+        if (e1.id.among!(EventID.sequenceStart, EventID.mappingStart, EventID.alias_, EventID.scalar)
+            && e1.anchor != e2.anchor)
+        {
+            return false;
+        }
+        //Different collection tag (if applicable).
+        if (e1.id.among!(EventID.sequenceStart, EventID.mappingStart) && e1.tag != e2.tag)
+        {
+            return false;
+        }
+        if (e1.id == EventID.scalar)
+        {
+            //Different scalar tag (if applicable).
+            if (!(e1.implicit || e2.implicit) && e1.tag != e2.tag)
+            {
+                return false;
+            }
+            //Different scalar value.
+            if (e1.value != e2.value)
+            {
+                return false;
+            }
+        }
     }
+    return true;
+}
+/**
+Throw an Error if events in events1 aren't equivalent to events in events2.
+
+Params:
+    events1 = First event array to compare.
+    events2 = Second event array to compare.
+*/
+void assertEventsEqual(T, U)(T events1, U events2)
+if (isInputRange!T && isInputRange!U && is(ElementType!T == Event) && is(ElementType!U == Event))
+{
+    auto events1Copy = events1.array;
+    auto events2Copy = events2.array;
+    assert(compareEvents(events1Copy, events2Copy), text("Got '", events1Copy, "', expected '", events2Copy, "'"));
 }
 
 private:
 
-///Unittest status.
-enum TestStatus
-{
-    success, //Unittest passed.
-    failure, //Unittest failed.
-    error    //There's an error in the unittest.
-}
-
-///Unittest result.
-alias Result = Tuple!(string, "name", string[], "filenames", TestStatus, "kind", string, "info");
-
 /**
- * Find unittest input filenames.
- *
- * Params:  dir = Directory to look in.
- *
- * Returns: Test input base filenames and their extensions.
- */
+Find unittest input filenames.
+
+Params:  dir = Directory to look in.
+
+Returns: Test input base filenames and their extensions.
+*/
+ //@trusted due to dirEntries
 string[][string] findTestFilenames(const string dir) @trusted
 {
     //Groups of extensions indexed by base names.
     string[][string] names;
-    foreach(string name; dirEntries(dir, SpanMode.shallow))
+    foreach (string name; dirEntries(dir, SpanMode.shallow))
     {
-        if(isFile(name))
+        if (isFile(name))
         {
             string base = name.stripExtension();
-            string ext  = name.extension();
-            if(ext is null){ext = "";}
-            if(ext[0] == '.'){ext = ext[1 .. $];}
+            string ext = name.extension();
+            if (ext is null)
+            {
+                ext = "";
+            }
+            if (ext[0] == '.')
+            {
+                ext = ext[1 .. $];
+            }
 
             //If the base name doesn't exist yet, add it; otherwise add new extension.
             names[base] = ((base in names) is null) ? [ext] : names[base] ~ ext;
@@ -134,98 +185,39 @@ string[][string] findTestFilenames(const string dir) @trusted
 }
 
 /**
- * Recursively copy an array of strings to a tuple to use for unittest function input.
- *
- * Params:  index   = Current index in the array/tuple.
- *          tuple   = Tuple to copy to.
- *          strings = Strings to copy.
- */
+Recursively copy an array of strings to a tuple to use for unittest function input.
+
+Params:
+    index = Current index in the array/tuple.
+    tuple = Tuple to copy to.
+    strings = Strings to copy.
+*/
 void stringsToTuple(uint index, F ...)(ref F tuple, const string[] strings)
-in{assert(F.length == strings.length);}
+in(F.length == strings.length)
 do
 {
     tuple[index] = strings[index];
-    static if(index > 0){stringsToTuple!(index - 1, F)(tuple, strings);}
+    static if (index > 0)
+    {
+        stringsToTuple!(index - 1, F)(tuple, strings);
+    }
 }
 
 /**
- * Execute an unittest on specified files.
- *
- * Params:  testName     = Name of the unittest.
- *          testFunction = Unittest function.
- *          filenames    = Names of input files to test with.
- *
- * Returns: Information about the results of the unittest.
+Execute an unittest on specified files.
+
+Params:
+    testName = Name of the unittest.
+    testFunction = Unittest function.
+    filenames = Names of input files to test with.
  */
-Result execute(D)(const string testName, D testFunction,
-                      string[] filenames) @trusted
+void execute(D)(D testFunction, string[] filenames)
 {
-    static if(verbose)
-    {
-        writeln("===========================================================================");
-        writeln(testName ~ "(" ~ filenames.join(", ") ~ ")...");
-    }
-
-    auto kind = TestStatus.success;
-    string info = "";
-    try
-    {
-        //Convert filenames to parameters tuple and call the test function.
-        alias F = Parameters!D[0..$];
-        F parameters;
-        stringsToTuple!(F.length - 1, F)(parameters, filenames);
-        testFunction(parameters);
-        static if (!quiet){write(".");}
-    }
-    catch(Throwable e)
-    {
-        info = to!string(typeid(e)) ~ "\n" ~ to!string(e);
-        kind = (typeid(e) is typeid(AssertError)) ? TestStatus.failure : TestStatus.error;
-        write((verbose ? to!string(e) : to!string(kind)) ~ " ");
-    }
-
-    stdout.flush();
-
-    return Result(testName, filenames, kind, info);
-}
-
-/**
- * Display unittest results.
- *
- * Params:  results = Unittest results.
- */
-void display(Result[] results) @safe
-{
-    if(results.length > 0 && !verbose && !quiet){write("\n");}
-
-    size_t failures, errors;
-
-    static if(verbose)
-    {
-        writeln("===========================================================================");
-    }
-    //Results of each test.
-    foreach(result; results)
-    {
-        static if(verbose)
-        {
-            writeln(result.name, "(" ~ result.filenames.join(", ") ~ "): ",
-                    to!string(result.kind));
-        }
-
-        if(result.kind == TestStatus.success){continue;}
-
-        if(result.kind == TestStatus.failure){++failures;}
-        else if(result.kind == TestStatus.error){++errors;}
-        writeln(result.info);
-        writeln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    }
-
-    //Totals.
-    printProgress("===========================================================================");
-    printProgress("TESTS: ", results.length);
-    if(failures > 0){writeln("FAILURES: ", failures);}
-    if(errors > 0)  {writeln("ERRORS: ", errors);}
+    //Convert filenames to parameters tuple and call the test function.
+    alias F = Parameters!D[0..$];
+    F parameters;
+    stringsToTuple!(F.length - 1, F)(parameters, filenames);
+    testFunction(parameters);
 }
 
 } // version(unittest)

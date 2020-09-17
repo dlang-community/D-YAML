@@ -10,14 +10,14 @@ module dyaml.test.constructor;
 version(unittest)
 {
 
+import std.conv;
 import std.datetime;
 import std.exception;
 import std.path;
 import std.string;
 import std.typecons;
 
-import dyaml.test.common;
-
+import dyaml : Loader, Node, YAMLNull;
 
 ///Expected results of loading test inputs.
 Node[][string] expected;
@@ -25,35 +25,35 @@ Node[][string] expected;
 ///Initialize expected.
 static this() @safe
 {
-    expected["aliases-cdumper-bug"]         = constructAliasesCDumperBug();
-    expected["construct-binary"]            = constructBinary();
-    expected["construct-bool"]              = constructBool();
-    expected["construct-custom"]            = constructCustom();
-    expected["construct-float"]             = constructFloat();
-    expected["construct-int"]               = constructInt();
-    expected["construct-map"]               = constructMap();
-    expected["construct-merge"]             = constructMerge();
-    expected["construct-null"]              = constructNull();
-    expected["construct-omap"]              = constructOMap();
-    expected["construct-pairs"]             = constructPairs();
-    expected["construct-seq"]               = constructSeq();
-    expected["construct-set"]               = constructSet();
-    expected["construct-str-ascii"]         = constructStrASCII();
-    expected["construct-str"]               = constructStr();
-    expected["construct-str-utf8"]          = constructStrUTF8();
-    expected["construct-timestamp"]         = constructTimestamp();
-    expected["construct-value"]             = constructValue();
-    expected["duplicate-merge-key"]         = duplicateMergeKey();
-    expected["float-representer-2.3-bug"]   = floatRepresenterBug();
-    expected["invalid-single-quote-bug"]    = invalidSingleQuoteBug();
-    expected["more-floats"]                 = moreFloats();
-    expected["negative-float-bug"]          = negativeFloatBug();
+    expected["aliases-cdumper-bug"] = constructAliasesCDumperBug();
+    expected["construct-binary"] = constructBinary();
+    expected["construct-bool"] = constructBool();
+    expected["construct-custom"] = constructCustom();
+    expected["construct-float"] = constructFloat();
+    expected["construct-int"] = constructInt();
+    expected["construct-map"] = constructMap();
+    expected["construct-merge"] = constructMerge();
+    expected["construct-null"] = constructNull();
+    expected["construct-omap"] = constructOMap();
+    expected["construct-pairs"] = constructPairs();
+    expected["construct-seq"] = constructSeq();
+    expected["construct-set"] = constructSet();
+    expected["construct-str-ascii"] = constructStrASCII();
+    expected["construct-str"] = constructStr();
+    expected["construct-str-utf8"] = constructStrUTF8();
+    expected["construct-timestamp"] = constructTimestamp();
+    expected["construct-value"] = constructValue();
+    expected["duplicate-merge-key"] = duplicateMergeKey();
+    expected["float-representer-2.3-bug"] = floatRepresenterBug();
+    expected["invalid-single-quote-bug"] = invalidSingleQuoteBug();
+    expected["more-floats"] = moreFloats();
+    expected["negative-float-bug"] = negativeFloatBug();
     expected["single-dot-is-not-float-bug"] = singleDotFloatBug();
-    expected["timestamp-bugs"]              = timestampBugs();
-    expected["utf16be"]                     = utf16be();
-    expected["utf16le"]                     = utf16le();
-    expected["utf8"]                        = utf8();
-    expected["utf8-implicit"]               = utf8implicit();
+    expected["timestamp-bugs"] = timestampBugs();
+    expected["utf16be"] = utf16be();
+    expected["utf16le"] = utf16le();
+    expected["utf8"] = utf8();
+    expected["utf8-implicit"] = utf8implicit();
 }
 
 ///Construct a pair of nodes with specified values.
@@ -78,8 +78,8 @@ Node[] constructAliasesCDumperBug() @safe
 
 Node[] constructBinary() @safe
 {
-    auto canonical   = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation.dup;
-    auto generic     = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation.dup;
+    auto canonical = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation.dup;
+    auto generic = "GIF89a\x0c\x00\x0c\x00\x84\x00\x00\xff\xff\xf7\xf5\xf5\xee\xe9\xe9\xe5fff\x00\x00\x00\xe7\xe7\xe7^^^\xf3\xf3\xed\x8e\x8e\x8e\xe0\xe0\xe0\x9f\x9f\x9f\x93\x93\x93\xa7\xa7\xa7\x9e\x9e\x9eiiiccc\xa3\xa3\xa3\x84\x84\x84\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9\xff\xfe\xf9!\xfe\x0eMade with GIMP\x00,\x00\x00\x00\x00\x0c\x00\x0c\x00\x00\x05,  \x8e\x810\x9e\xe3@\x14\xe8i\x10\xc4\xd1\x8a\x08\x1c\xcf\x80M$z\xef\xff0\x85p\xb8\xb01f\r\x1b\xce\x01\xc3\x01\x1e\x10' \x82\n\x01\x00;".representation.dup;
     auto description = "The binary value above is a tiny arrow encoded as a gif image.";
 
     return [
@@ -921,49 +921,37 @@ struct TestStruct
     }
 }
 
-/**
- * Constructor unittest.
- *
- * Params:  dataFilename = File name to read from.
- *          codeDummy    = Dummy .code filename, used to determine that
- *                         .data file with the same name should be used in this test.
- */
-void testConstructor(string dataFilename, string codeDummy) @safe
-{
-    string base = dataFilename.baseName.stripExtension;
-    enforce((base in expected) !is null,
-            new Exception("Unimplemented constructor test: " ~ base));
-
-    auto loader        = Loader.fromFile(dataFilename);
-
-    Node[] exp = expected[base];
-
-    //Compare with expected results document by document.
-    size_t i;
-    foreach(node; loader)
-    {
-        if(node != exp[i])
-        {
-            static if(verbose)
-            {
-                writeln("Expected value:");
-                writeln(exp[i].debugString);
-                writeln("\n");
-                writeln("Actual value:");
-                writeln(node.debugString);
-            }
-            assert(false);
-        }
-        ++i;
-    }
-    assert(i == exp.length);
-}
+} // version(unittest)
 
 
 @safe unittest
 {
-    printProgress("D:YAML Constructor unittest");
-    run("testConstructor", &testConstructor, ["data", "code"]);
-}
+    import dyaml.test.common : assertNodesEqual, run;
+    /**
+    Constructor unittest.
 
-} // version(unittest)
+    Params:
+        dataFilename = File name to read from.
+        codeDummy = Dummy .code filename, used to determine that
+            .data file with the same name should be used in this test.
+    */
+    static void testConstructor(string dataFilename, string codeDummy) @safe
+    {
+        string base = dataFilename.baseName.stripExtension;
+        assert((base in expected) !is null, "Unimplemented constructor test: " ~ base);
+
+        auto loader = Loader.fromFile(dataFilename);
+
+        Node[] exp = expected[base];
+
+        //Compare with expected results document by document.
+        size_t i;
+        foreach (node; loader)
+        {
+            assertNodesEqual(node, exp[i]);
+            ++i;
+        }
+        assert(i == exp.length);
+    }
+    run(&testConstructor, ["data", "code"]);
+}
