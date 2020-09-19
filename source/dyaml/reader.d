@@ -232,7 +232,7 @@ final class Reader
         ///
         /// Returns: Bytes starting at current position.
         char[] prefixBytes(const size_t length) @safe pure nothrow @nogc
-        in(length == 0 || bufferOffset_ + length < buffer_.length, "prefixBytes out of bounds")
+        in(length == 0 || bufferOffset_ + length <= buffer_.length, "prefixBytes out of bounds")
         {
             return buffer_[bufferOffset_ .. bufferOffset_ + length];
         }
@@ -886,4 +886,13 @@ void test1Byte(R)()
     testPeekPrefixForward!Reader();
     testUTF!Reader();
     test1Byte!Reader();
+}
+//Issue 257 - https://github.com/dlang-community/D-YAML/issues/257
+@safe unittest
+{
+    import dyaml.loader : Loader;
+    auto yaml = "hello ";
+    auto root = Loader.fromString(yaml).load();
+
+    assert(root.isValid);
 }
