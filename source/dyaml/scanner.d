@@ -57,6 +57,8 @@ alias isBreakOrSpace = among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029
 
 alias isWhiteSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029');
 
+alias isNonLinebreakWhitespace = among!(' ', '\t');
+
 alias isNonScalarStartCharacter = among!('-', '?', ':', ',', '[', ']', '{', '}',
     '#', '&', '*', '!', '|', '>', '\'', '"', '%', '@', '`', ' ', '\t', '\0', '\n',
     '\r', '\u0085', '\u2028', '\u2029');
@@ -800,8 +802,16 @@ struct Scanner
 
             for(;;)
             {
-                findNextNonSpace();
-
+                //All whitespace in flow context is ignored, even whitespace
+                // not allowed in other contexts
+                if (flowLevel_ > 0)
+                {
+                    while(reader_.peekByte().isNonLinebreakWhitespace) { reader_.forward(); }
+                }
+                else
+                {
+                    findNextNonSpace();
+                }
                 if(reader_.peekByte() == '#') { scanToNextBreak(); }
                 if(scanLineBreak() != '\0')
                 {

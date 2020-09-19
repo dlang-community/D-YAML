@@ -385,3 +385,11 @@ struct Loader
 
     auto rootNode = loader.load();
 }
+
+//Issue #258 - https://github.com/dlang-community/D-YAML/issues/258
+@safe unittest
+{
+    auto yaml = "{\n\"root\": {\n\t\"key\": \"value\"\n    }\n}";
+    auto doc = Loader.fromString(yaml).load();
+    assert(doc.isValid);
+}
