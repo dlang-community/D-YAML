@@ -402,6 +402,12 @@ struct Node
             return tag_;
         }
 
+        /// Return the start position of the node.
+        @property Mark startMark()  const @safe pure nothrow
+        {
+            return startMark_;
+        }
+
         /** Equality test.
          *
          * If T is Node, recursively compares all subnodes.
