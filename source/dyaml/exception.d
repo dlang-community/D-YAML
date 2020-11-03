@@ -25,8 +25,7 @@ class YAMLException : Exception
     }
 }
 
-package:
-// Position in a YAML stream, used for error messages.
+/// Position in a YAML stream, used for error messages.
 struct Mark
 {
     package:
@@ -45,6 +44,18 @@ struct Mark
             column_ = cast(ushort)column;
         }
 
+        /// Get a line number.
+        @property ushort line() @safe pure nothrow @nogc const
+        {
+            return line_;
+        }
+
+        /// Get a column number.
+        @property ushort column() @safe pure nothrow @nogc const
+        {
+            return column_;
+        }
+
         /// Get a string representation of the mark.
         string toString() @safe pure nothrow const
         {
@@ -57,6 +68,7 @@ struct Mark
         }
 }
 
+package:
 // A struct storing parameters to the MarkedYAMLException constructor.
 struct MarkedYAMLExceptionData
 {
