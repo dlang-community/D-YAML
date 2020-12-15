@@ -94,15 +94,13 @@ struct Scanner
         /// key, we try to locate the corresponding ':' indicator. Simple keys should be
         /// limited to a single line and 1024 characters.
         ///
-        /// 32 bytes on 64-bit.
+        /// 16 bytes on 64-bit.
         static struct SimpleKey
         {
             /// Character index in reader where the key starts.
             uint charIndex = uint.max;
             /// Index of the key token from start (first token scanned being 0).
             uint tokenIndex;
-            /// File name
-            string name;
             /// Line the key starts at.
             uint line;
             /// Column the key starts at.
@@ -282,7 +280,7 @@ struct Scanner
                 {
                     enforce(!key.required,
                             new ScannerException("While scanning a simple key",
-                                                 Mark(key.name, key.line, key.column),
+                                                 Mark(reader_.name, key.line, key.column),
                                                  "could not find expected ':'", reader_.mark));
                     key.isNull = true;
                 }
@@ -305,10 +303,9 @@ struct Scanner
             removePossibleSimpleKey();
             const tokenCount = tokensTaken_ + cast(uint)tokens_.length;
 
-            const name   = reader_.name;
             const line   = reader_.line;
             const column = reader_.column;
-            const key    = SimpleKey(cast(uint)reader_.charIndex, tokenCount, name, line,
+            const key    = SimpleKey(cast(uint)reader_.charIndex, tokenCount, line,
                                      cast(ushort)min(column, ushort.max), required);
 
             if(possibleSimpleKeys_.length <= flowLevel_)
@@ -331,7 +328,7 @@ struct Scanner
                 const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required,
                         new ScannerException("While scanning a simple key",
-                                             Mark(key.name, key.line, key.column),
+                                             Mark(reader_.name, key.line, key.column),
                                              "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
@@ -543,7 +540,7 @@ struct Scanner
             {
                 const key = possibleSimpleKeys_[flowLevel_];
                 possibleSimpleKeys_[flowLevel_].isNull = true;
-                Mark keyMark = Mark(key.name, key.line, key.column);
+                Mark keyMark = Mark(reader_.name, key.line, key.column);
                 const idx = key.tokenIndex - tokensTaken_;
 
                 assert(idx >= 0);
