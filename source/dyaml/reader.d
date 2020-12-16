@@ -92,11 +92,11 @@ final class Reader
         ///                   the Reader and other parts of D:YAML (D:YAML tries to
         ///                   reuse the buffer to minimize memory allocations)
         ///          name   = File name if the buffer is the contents of a file or
-        ///                   an empty string if the buffer is the contents of a string.
+        ///                   `"<unknown>"` if the buffer is the contents of a string.
         ///
         /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
-        this(ubyte[] buffer, string name = "") @safe pure
+        this(ubyte[] buffer, string name = "<unknown>") @safe pure
         {
             name_ = name;
             auto endianResult = fixUTFByteOrder(buffer);
