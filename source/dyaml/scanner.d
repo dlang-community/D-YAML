@@ -280,7 +280,7 @@ struct Scanner
                 {
                     enforce(!key.required,
                             new ScannerException("While scanning a simple key",
-                                                 Mark(key.line, key.column),
+                                                 Mark(reader_.name, key.line, key.column),
                                                  "could not find expected ':'", reader_.mark));
                     key.isNull = true;
                 }
@@ -328,7 +328,7 @@ struct Scanner
                 const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required,
                         new ScannerException("While scanning a simple key",
-                                             Mark(key.line, key.column),
+                                             Mark(reader_.name, key.line, key.column),
                                              "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
@@ -540,7 +540,7 @@ struct Scanner
             {
                 const key = possibleSimpleKeys_[flowLevel_];
                 possibleSimpleKeys_[flowLevel_].isNull = true;
-                Mark keyMark = Mark(key.line, key.column);
+                Mark keyMark = Mark(reader_.name, key.line, key.column);
                 const idx = key.tokenIndex - tokensTaken_;
 
                 assert(idx >= 0);

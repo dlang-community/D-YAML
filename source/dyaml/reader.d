@@ -57,6 +57,8 @@ final class Reader
         // Number of characters (code points) in buffer_.
         size_t characterCount_;
 
+        // File name
+        string name_;
         // Current line in file.
         uint line_;
         // Current column in file.
@@ -89,11 +91,14 @@ final class Reader
         ///                   contents of a file or a string. $(B will) be modified by
         ///                   the Reader and other parts of D:YAML (D:YAML tries to
         ///                   reuse the buffer to minimize memory allocations)
+        ///          name   = File name if the buffer is the contents of a file or
+        ///                   `"<unknown>"` if the buffer is the contents of a string.
         ///
         /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
-        this(ubyte[] buffer) @safe pure
+        this(ubyte[] buffer, string name = "<unknown>") @safe pure
         {
+            name_ = name;
             auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
             {
@@ -395,7 +400,10 @@ final class Reader
         SliceBuilder sliceBuilder;
 
         /// Get a string describing current buffer position, used for error messages.
-        Mark mark() const pure nothrow @nogc @safe { return Mark(line_, column_); }
+        Mark mark() const pure nothrow @nogc @safe { return Mark(name_, line_, column_); }
+
+        /// Get file name.
+        string name() const @safe pure nothrow @nogc { return name_; }
 
         /// Get current line number.
         uint line() const @safe pure nothrow @nogc { return line_; }

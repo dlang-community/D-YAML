@@ -29,6 +29,8 @@ class YAMLException : Exception
 struct Mark
 {
     package:
+        /// File name.
+        string name_;
         /// Line number.
         ushort line_;
         /// Column number.
@@ -36,12 +38,19 @@ struct Mark
 
     public:
         /// Construct a Mark with specified line and column in the file.
-        this(const uint line, const uint column) @safe pure nothrow @nogc
+        this(string name, const uint line, const uint column) @safe pure nothrow @nogc
         {
+            name_   = name;
             line_   = cast(ushort)min(ushort.max, line);
             // This *will* overflow on extremely wide files but saves CPU time
             // (mark ctor takes ~5% of time)
             column_ = cast(ushort)column;
+        }
+
+        /// Get a file name.
+        @property string name() @safe pure nothrow @nogc const
+        {
+            return name_;
         }
 
         /// Get a line number.
@@ -64,7 +73,7 @@ struct Mark
             {
                 return text(v + 1, v == ushort.max ? " or higher" : "");
             }
-            return "line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
+            return "file " ~ name_ ~ ",line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
         }
 }
 

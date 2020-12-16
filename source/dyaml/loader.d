@@ -64,8 +64,7 @@ struct Loader
          {
             try
             {
-                auto loader = Loader(std.file.read(filename));
-                loader.name_ = filename;
+                auto loader = Loader(std.file.read(filename), filename);
                 return loader;
             }
             catch(FileException e)
@@ -77,8 +76,7 @@ struct Loader
          /// ditto
          static Loader fromFile(File file) @system
          {
-            auto loader = Loader(file.byChunk(4096).join);
-            loader.name_ = file.name;
+            auto loader = Loader(file.byChunk(4096).join, file.name);
             return loader;
          }
 
@@ -140,17 +138,18 @@ struct Loader
             return Loader(yamlData);
         }
         /// Ditto
-        private this(void[] yamlData) @system
+        private this(void[] yamlData, string name = "<unknown>") @system
         {
-            this(cast(ubyte[])yamlData);
+            this(cast(ubyte[])yamlData, name);
         }
         /// Ditto
-        private this(ubyte[] yamlData) @safe
+        private this(ubyte[] yamlData, string name = "<unknown>") @safe
         {
             resolver_ = Resolver.withDefaultResolvers;
+            name_ = name;
             try
             {
-                auto reader_ = new Reader(yamlData);
+                auto reader_ = new Reader(yamlData, name);
                 scanner_ = Scanner(reader_);
                 parser_ = new Parser(scanner_);
             }
