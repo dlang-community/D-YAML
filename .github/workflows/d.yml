@@ -52,13 +52,10 @@ jobs:
         compiler: dmd-latest
     - name: 'Install dependencies'
       run: |
-        sudo apt-get install python3-pip python3-setuptools python3-wheel
-        pip3 install 'meson==0.48.2'
-        mkdir .ntmp && curl -L https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip -o .ntmp/ninja-linux.zip
-        unzip .ntmp/ninja-linux.zip -d .ntmp
+        sudo apt-get install python3-pip python3-setuptools python3-wheel ninja-build
     - name: 'Build'
       run: |
-        export PATH=$PATH:/usr/local/bin:$PWD/.ntmp
+        export PATH=$PATH:$PWD/.ntmp
         meson build && ninja -j8 -C build
         ninja -j8 -C build test -v
   yaml-test-suite:
