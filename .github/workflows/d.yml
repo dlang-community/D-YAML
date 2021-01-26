@@ -53,6 +53,7 @@ jobs:
     - name: 'Install dependencies'
       run: |
           sudo apt-get install python3-pip python3-setuptools
+          pip3 install wheel
           pip3 install 'meson==0.48.2'
     - name: 'Build'
       run: |
