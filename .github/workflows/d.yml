@@ -53,6 +53,7 @@ jobs:
     - name: 'Install dependencies'
       run: |
         sudo apt-get install python3-pip python3-setuptools python3-wheel ninja-build
+        sudo pip3 install meson
     - name: 'Build'
       run: |
         export PATH=$PATH:$PWD/.ntmp
