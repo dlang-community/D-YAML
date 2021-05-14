@@ -498,17 +498,17 @@ struct Node
          *          the value is out of range of requested type.
          */
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
-            if (allowed!(Unqual!T) || hasNodeConstructor!(Unqual!T))
+            if (allowed!(Unqual!T) || hasNodeConstructor!(inout(Unqual!T)) || (!hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T)))
         {
             if(isType!(Unqual!T)){return getValue!T;}
 
             static if(!allowed!(Unqual!T))
             {
-                static if (hasSimpleNodeConstructor!T)
+                static if (hasSimpleNodeConstructor!(Unqual!T) || hasSimpleNodeConstructor!(inout(Unqual!T)))
                 {
                     alias params = AliasSeq!(this);
                 }
-                else static if (hasExpandedNodeConstructor!T)
+                else static if (hasExpandedNodeConstructor!(Unqual!T) || hasExpandedNodeConstructor!(inout(Unqual!T)))
                 {
                     alias params = AliasSeq!(this, tag_);
                 }
@@ -590,6 +590,35 @@ struct Node
                 }
                 else throw new NodeException("Node stores unexpected type: " ~ text(type) ~
                     ". Expected: " ~ typeid(T).toString, startMark_);
+            }
+        }
+        /// ditto
+        T get(T)()
+            if (hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T) && (!hasNodeConstructor!(inout(Unqual!T))))
+        {
+            static if (hasSimpleNodeConstructor!T)
+            {
+                alias params = AliasSeq!(this);
+            }
+            else static if (hasExpandedNodeConstructor!T)
+            {
+                alias params = AliasSeq!(this, tag_);
+            }
+            else
+            {
+                static assert(0, "Unknown Node constructor?");
+            }
+            static if (is(T == class))
+            {
+                return new T(params);
+            }
+            else static if (is(T == struct))
+            {
+                return T(params);
+            }
+            else
+            {
+                static assert(0, "Unhandled user type");
             }
         }
         /// Automatic type conversion
@@ -2469,7 +2498,7 @@ template hasSimpleNodeConstructor(T)
     }
     else static if (is(T == class))
     {
-        enum hasSimpleNodeConstructor = is(typeof(new inout T(Node.init)));
+        enum hasSimpleNodeConstructor = is(typeof(new T(Node.init)));
     }
     else enum hasSimpleNodeConstructor = false;
 }
@@ -2481,8 +2510,52 @@ template hasExpandedNodeConstructor(T)
     }
     else static if (is(T == class))
     {
-        enum hasExpandedNodeConstructor = is(typeof(new inout T(Node.init, "")));
+        enum hasExpandedNodeConstructor = is(typeof(new T(Node.init, "")));
     }
     else enum hasExpandedNodeConstructor = false;
 }
 enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCast!Node()) : Node);
+
+@safe unittest
+{
+    import dyaml : Loader, Node;
+
+    static struct Foo
+    {
+        string[] bars;
+
+        this(const Node node)
+        {
+            foreach(value; node["bars"].sequence)
+            {
+                bars ~= value.as!string;
+            }
+        }
+    }
+
+    Loader.fromString(`{ bars: ["a", "b"] }`)
+          .load
+          .as!(Foo);
+}
+@safe unittest
+{
+    import dyaml : Loader, Node;
+    import std : split, to;
+
+    static class MyClass
+    {
+        int x, y, z;
+
+        this(Node node)
+        {
+            auto parts = node.as!string().split(":");
+            x = parts[0].to!int;
+            y = parts[1].to!int;
+            z = parts[2].to!int;
+        }
+    }
+
+    auto loader = Loader.fromString(`"1:2:3"`);
+    Node node = loader.load();
+    auto mc = node.get!MyClass;
+}
