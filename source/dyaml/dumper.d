@@ -228,7 +228,7 @@ struct Dumper
     dumper.explicitStart = false;
     dumper.YAMLVersion = null;
     dumper.dump(stream, node);
-    assert(stream.data == "[!!str 'Hello world!', [!!str 'Hello', !!str 'world!']]\n");
+    assert(stream.data == "['Hello world!', ['Hello', 'world!']]\n");
 }
 // Explicit document start/end markers
 @safe unittest
@@ -244,6 +244,17 @@ struct Dumper
     assert(stream.data[0..3] == "---");
     //account for newline at end
     assert(stream.data[$-4..$-1] == "...");
+}
+@safe unittest
+{
+    auto stream = new Appender!string();
+    auto node = Node([Node("Te, st2")]);
+    auto dumper = dumper();
+    dumper.explicitStart = true;
+    dumper.explicitEnd = false;
+    dumper.YAMLVersion = null;
+    dumper.dump(stream, node);
+    assert(stream.data == "--- ['Te, st2']\n");
 }
 // No explicit document start/end markers
 @safe unittest
