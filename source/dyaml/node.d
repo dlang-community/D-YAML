@@ -593,7 +593,7 @@ struct Node
             }
         }
         /// ditto
-        T get(T)()
+        T get(T)() const
             if (hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T) && (!hasNodeConstructor!(inout(Unqual!T))))
         {
             static if (hasSimpleNodeConstructor!T)
@@ -2557,5 +2557,27 @@ enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCa
 
     auto loader = Loader.fromString(`"1:2:3"`);
     Node node = loader.load();
+    auto mc = node.get!MyClass;
+}
+@safe unittest
+{
+    import dyaml : Loader, Node;
+    import std : split, to;
+
+    static class MyClass
+    {
+        int x, y, z;
+
+        this(Node node)
+        {
+            auto parts = node.as!string().split(":");
+            x = parts[0].to!int;
+            y = parts[1].to!int;
+            z = parts[2].to!int;
+        }
+    }
+
+    auto loader = Loader.fromString(`"1:2:3"`);
+    const node = loader.load();
     auto mc = node.get!MyClass;
 }
