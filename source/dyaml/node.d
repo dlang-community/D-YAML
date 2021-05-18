@@ -593,7 +593,7 @@ struct Node
             }
         }
         /// ditto
-        T get(T)() inout
+        T get(T)() const
             if (hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T) && (!hasNodeConstructor!(inout(Unqual!T))))
         {
             static if (hasSimpleNodeConstructor!T)
