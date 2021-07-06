@@ -1,0 +1,73 @@
+name: D
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        dc:
+          - dmd-latest
+          - ldc-latest
+          - dmd-beta
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+      with:
+        compiler: ${{ matrix.dc }}
+    - name: 'Test'
+      run: |
+        dub test --build=unittest-cov
+        bash <(curl -s https://codecov.io/bash)
+  examples:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+      with:
+        compiler: dmd-latest
+    - name: 'Build Examples'
+      run: |
+        dub build dyaml:benchmark
+        dub build dyaml:constructor
+        dub build dyaml:getting-started
+        dub build dyaml:representer
+        dub build dyaml:resolver
+        dub build dyaml:testsuite
+        dub build dyaml:tojson
+        dub build dyaml:yaml_gen
+        dub build dyaml:yaml_stats
+  ninja:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+      with:
+        compiler: dmd-latest
+    - name: 'Install dependencies'
+      run: |
+        sudo apt-get install python3-pip python3-setuptools python3-wheel ninja-build
+        sudo pip3 install meson
+    - name: 'Build'
+      run: |
+        export PATH=$PATH:$PWD/.ntmp
+        meson build && ninja -j8 -C build
+        ninja -j8 -C build test -v
+  yaml-test-suite:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+      with:
+        compiler: dmd-latest
+    - name: 'Run YAML test suite'
+      run: |
+        git clone https://github.com/yaml/yaml-test-suite
+        dub run dyaml:testsuite
