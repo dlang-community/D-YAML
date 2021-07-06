@@ -97,6 +97,9 @@ struct Node
 {
     import std.meta: staticIndexOf;
     import mir.algebraic: TaggedVariant, visit, tryVisit, optionalVisit;
+    import mir.serde: serdeIgnore;
+
+    @serdeIgnore:
     public:
         alias Pair = .Pair;
 
