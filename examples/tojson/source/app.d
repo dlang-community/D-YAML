@@ -1,5 +1,6 @@
 module dyaml.tojson;
-import std.datetime;
+
+import mir.timestamp;
 import std.json;
 import std.stdio;
 import dyaml;
@@ -37,18 +38,17 @@ JSONValue toJSON(Node node)
             output = node.as!long;
             break;
         case NodeType.decimal:
-            output = node.as!real;
+            output = node.as!double;
             break;
         case NodeType.boolean:
             output = node.as!bool;
             break;
         case NodeType.timestamp:
-            output = node.as!SysTime.toISOExtString();
+            output = node.as!Timestamp.toISOExtString;
             break;
         case NodeType.merge:
         case NodeType.null_:
         case NodeType.binary:
-        case NodeType.invalid:
     }
     return output;
 }

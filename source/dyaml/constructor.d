@@ -11,17 +11,15 @@
  */
 module dyaml.constructor;
 
-
-import std.array;
+import mir.timestamp;
 import std.algorithm;
+import std.array;
 import std.base64;
 import std.container;
 import std.conv;
-import std.datetime;
 import std.exception;
 import std.regex;
 import std.string;
-import std.typecons;
 import std.utf;
 
 import dyaml.node;
@@ -81,7 +79,7 @@ Node constructNode(T)(const Mark start, const Mark end, const string tag,
         switch(tag)
         {
             case "tag:yaml.org,2002:null":
-                newNode = Node(YAMLNull(), tag);
+                newNode = Node(null, tag);
                 break;
             case "tag:yaml.org,2002:bool":
                 static if(is(T == string))
@@ -259,43 +257,44 @@ long constructLong(const string str) @safe
     assert(685230 == constructLong(sexagesimal));
 }
 
-// Construct a floating point (real) _node.
-real constructReal(const string str) @safe
+// Construct a floating point (double) _node.
+double constructReal(const string str) @safe
 {
+    import mir.conv: to;
     string value = str.replace("_", "").toLower();
     const char c = value[0];
-    const real sign = c != '-' ? 1.0 : -1.0;
+    const double sign = c != '-' ? 1.0 : -1.0;
     if(c == '-' || c == '+')
     {
         value = value[1 .. $];
     }
 
-    enforce(value != "" && value != "nan" && value != "inf" && value != "-inf",
-            new Exception("Unable to parse float value: " ~ value));
+    if (value == "" && value == "nan" && value == "inf" && value == "-inf")
+        throw new Exception("Unable to parse float value: " ~ value);
 
-    real result;
+    double result;
     try
     {
         //Infinity.
-        if     (value == ".inf"){result = sign * real.infinity;}
+        if     (value == ".inf"){result = sign * double.infinity;}
         //Not a Number.
-        else if(value == ".nan"){result = real.nan;}
+        else if(value == ".nan"){result = double.nan;}
         //Sexagesimal.
         else if(value.canFind(":"))
         {
-            real val = 0.0;
-            real base = 1.0;
+            double val = 0.0;
+            double base = 1.0;
             foreach_reverse(digit; value.split(":"))
             {
-                val += to!real(digit) * base;
+                val += to!double(digit) * base;
                 base *= 60.0;
             }
             result = sign * val;
         }
         //Plain floating point.
-        else{result = sign * to!real(value);}
+        else{result = sign * to!double(value);}
     }
-    catch(ConvException e)
+    catch(Exception e)
     {
         throw new Exception("Unable to parse float value: \"" ~ value ~ "\"");
     }
@@ -304,7 +303,7 @@ real constructReal(const string str) @safe
 }
 @safe unittest
 {
-    bool eq(real a, real b, real epsilon = 0.2) @safe
+    bool eq(double a, double b, double epsilon = 0.2) @safe
     {
         return a >= (b - epsilon) && a <= (b + epsilon);
     }
@@ -320,7 +319,7 @@ real constructReal(const string str) @safe
     assert(eq(685230.15, constructReal(exponential)));
     assert(eq(685230.15, constructReal(fixed)));
     assert(eq(685230.15, constructReal(sexagesimal)));
-    assert(eq(-real.infinity, constructReal(negativeInf)));
+    assert(eq(-double.infinity, constructReal(negativeInf)));
     assert(to!string(constructReal(NaN)) == "nan");
 }
 
@@ -352,9 +351,10 @@ ubyte[] constructBinary(const string value) @safe
     assert(value == [84, 104, 101, 32, 65, 110, 115, 119, 101, 114, 58, 32, 52, 50]);
 }
 
-// Construct a timestamp (SysTime) _node.
-SysTime constructTimestamp(const string str) @safe
+// Construct a timestamp _node.
+Timestamp constructTimestamp(const string str) @safe
 {
+    import mir.conv: to;
     string value = str;
 
     auto YMDRegexp = regex("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)");
@@ -370,33 +370,38 @@ SysTime constructTimestamp(const string str) @safe
                 new Exception("Unable to parse timestamp value: " ~ value));
 
         auto captures = matches.front.captures;
-        const year  = to!int(captures[1]);
-        const month = to!int(captures[2]);
-        const day   = to!int(captures[3]);
+        const year  = to!short(captures[1]);
+        const month = to!ubyte(captures[2]);
+        const day   = to!ubyte(captures[3]);
 
         // If available, get hour, minute, second and fraction, if present.
         value = matches.front.post;
         matches  = match(value, HMSRegexp);
         if(matches.empty)
-        {
-            return SysTime(DateTime(year, month, day), UTC());
-        }
+            return Timestamp(year, month, day);
 
         captures = matches.front.captures;
-        const hour            = to!int(captures[1]);
-        const minute          = to!int(captures[2]);
-        const second          = to!int(captures[3]);
-        const hectonanosecond = cast(int)(to!real("0" ~ captures[4]) * 10_000_000);
+        const hour            = to!byte(captures[1]);
+        const minute          = to!byte(captures[2]);
+        const second          = to!byte(captures[3]);
+        Timestamp ret;
+        if (captures[4].length <= 1)
+        {
+            ret = Timestamp(year, month, day, hour, minute, second);
+        }
+        else
+        {
+            long fraction = 1 - captures[4].length;
+            auto fractionCoefficient = captures[4][1 .. $].to!ulong;
+            // If available, get timezone.
+            ret = Timestamp(year, month, day, hour, minute, second, cast(byte) fraction, fractionCoefficient);
+        }
 
-        // If available, get timezone.
         value = matches.front.post;
         matches = match(value, TZRegexp);
         if(matches.empty || matches.front.captures[0] == "Z")
-        {
             // No timezone.
-            return SysTime(DateTime(year, month, day, hour, minute, second),
-                           hectonanosecond.dur!"hnsecs", UTC());
-        }
+            return ret;
 
         // We have a timezone, so parse it.
         captures = matches.front.captures;
@@ -405,25 +410,18 @@ SysTime constructTimestamp(const string str) @safe
         if(!captures[1].empty)
         {
             if(captures[1][0] == '-') {sign = -1;}
-            tzHours   = to!int(captures[1][1 .. $]);
+            tzHours = to!ubyte(captures[1][1 .. $]);
         }
-        const tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
-        const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
-
-        return SysTime(DateTime(year, month, day, hour, minute, second),
-                       hectonanosecond.dur!"hnsecs",
-                       new immutable SimpleTimeZone(tzOffset));
+        const tzMinutes = (!captures[2].empty) ? to!ubyte(captures[2][1 .. $]) : 0;
+        const tzOffset  = sign * (60 * tzHours + tzMinutes);
+        ret.offset = cast(short)tzOffset;
+        ret.addMinutes(cast(short)-tzOffset);
+        return ret;
     }
-    catch(ConvException e)
+    catch(Exception e)
     {
         throw new Exception("Unable to parse timestamp value " ~ value ~ " : " ~ e.msg);
     }
-    catch(DateTimeException e)
-    {
-        throw new Exception("Invalid timestamp value " ~ value ~ " : " ~ e.msg);
-    }
-
-    assert(false, "This code should never be reached");
 }
 @safe unittest
 {
@@ -439,16 +437,13 @@ SysTime constructTimestamp(const string str) @safe
     string noFraction     = "2001-12-15 2:59:43";
     string ymd            = "2002-12-14";
 
-    assert(timestamp(canonical)      == "20011215T025943.1Z");
+    assert(timestamp(canonical)      == "20011215T025943.1Z", timestamp(canonical));
     //avoiding float conversion errors
-    assert(timestamp(iso8601)        == "20011214T215943.0999999-05:00" ||
-           timestamp(iso8601)        == "20011214T215943.1-05:00");
-    assert(timestamp(spaceSeparated) == "20011214T215943.0999999-05:00" ||
-           timestamp(spaceSeparated) == "20011214T215943.1-05:00");
-    assert(timestamp(noTZ)           == "20011215T025943.0999999Z" ||
-           timestamp(noTZ)           == "20011215T025943.1Z");
-    assert(timestamp(noFraction)     == "20011215T025943Z");
-    assert(timestamp(ymd)            == "20021214T000000Z");
+    assert(timestamp(iso8601)        == "20011214T215943.10-05", timestamp(iso8601));
+    assert(timestamp(spaceSeparated) == "20011214T215943.10-05", timestamp(spaceSeparated));
+    assert(timestamp(noTZ)           == "20011215T025943.10Z", timestamp(noTZ));
+    assert(timestamp(noFraction)     == "20011215T025943Z", timestamp(noFraction));
+    assert(timestamp(ymd)            == "20021214", timestamp(ymd));
 }
 
 // Construct a string _node.
@@ -554,7 +549,7 @@ Node[] constructSet(const Node.Pair[] pairs) @safe
         Node.Pair[] pairs;
         foreach(long i; 0 .. length)
         {
-            pairs ~= Node.Pair(i.to!string, YAMLNull());
+            pairs ~= Node.Pair(i.to!string, null);
         }
 
         return pairs;

@@ -45,12 +45,20 @@ dyaml_src = [
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
-tinyendian_dep = dependency('tinyendian', version: '>=0.2.0', fallback: ['tinyendian', 'tinyendian_dep'])
+subprojects = ['mir-core', 'mir-algorithm']
+
+required_deps = []
+
+foreach p : subprojects 
+    required_deps += dependency(p, fallback : [p, 'this_dep'])
+endforeach
+
+required_deps += dependency('tinyendian', version: '>=0.2.0', fallback: ['tinyendian', 'tinyendian_dep'])
 
 dyaml_lib = library('dyaml',
         [dyaml_src],
         include_directories: [src_dir],
-        dependencies: [tinyendian_dep],
+        dependencies: required_deps,
         install: true,
         version: meson.project_version(),
         soversion: project_soversion
@@ -66,5 +74,7 @@ pkgc.generate(name: 'dyaml',
 dyaml_dep = declare_dependency(
     link_with: dyaml_lib,
     include_directories: [src_dir],
-    dependencies: [tinyendian_dep]
+    dependencies: required_deps
 )
+
+this_dep = dyaml_dep

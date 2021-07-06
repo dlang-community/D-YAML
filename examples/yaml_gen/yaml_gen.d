@@ -34,7 +34,7 @@ static this()
     generators["set"]       = &genSet;
 }
 
-real randomNormalized(const string distribution = "linear")
+double randomNormalized(const string distribution = "linear")
 {
     auto generator = Random(unpredictableSeed());
     const r = uniform!"[]"(0.0L, 1.0L, generator);
@@ -58,7 +58,7 @@ long randomLong(const long min, const long max, const string distribution = "lin
     return min + cast(long)round((max - min) * randomNormalized(distribution));
 }
 
-real randomReal(const real min, const real max, const string distribution = "linear")
+double randomReal(const double min, const double max, const string distribution = "linear")
 {
     return min + (max - min) * randomNormalized(distribution);
 }
@@ -111,7 +111,7 @@ Node genFloat(bool root = false)
 {
     auto range = config["float"]["range"];
 
-    const result = randomReal(range["min"].as!real, range["max"].as!real,
+    const result = randomReal(range["min"].as!double, range["max"].as!double,
                               range["dist"].as!string);
 
     return Node(result);
@@ -129,7 +129,7 @@ Node genTimestamp(bool root = false)
     auto hnsecs = randomLong(range["min"].as!ulong, range["max"].as!ulong,
                              range["dist"].as!string);
 
-    if(randomNormalized() <= config["timestamp"]["round-chance"].as!real)
+    if(randomNormalized() <= config["timestamp"]["round-chance"].as!double)
     {
         hnsecs -= hnsecs % 10000000;
     }

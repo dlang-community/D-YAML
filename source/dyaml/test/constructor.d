@@ -10,12 +10,11 @@ module dyaml.test.constructor;
 version(unittest)
 {
 
+import mir.timestamp;
 import std.conv;
-import std.datetime;
 import std.exception;
 import std.path;
 import std.string;
-import std.typecons;
 
 import dyaml : Loader, Node, YAMLNull;
 
@@ -198,11 +197,11 @@ Node[] constructFloat() @safe
                 ),
                 pair(
                     Node("negative infinity", "tag:yaml.org,2002:str"),
-                    Node(-real.infinity, "tag:yaml.org,2002:float")
+                    Node(-double.infinity, "tag:yaml.org,2002:float")
                 ),
                 pair(
                     Node("not a number", "tag:yaml.org,2002:str"),
-                    Node(real.nan, "tag:yaml.org,2002:float")
+                    Node(double.nan, "tag:yaml.org,2002:float")
                 )
             ],
         "tag:yaml.org,2002:map")
@@ -424,23 +423,23 @@ Node[] constructMerge() @safe
 Node[] constructNull() @safe
 {
     return [
-        Node(YAMLNull(), "tag:yaml.org,2002:null"),
+        Node(null, "tag:yaml.org,2002:null"),
         Node(
             [
                 pair(
                     Node("empty", "tag:yaml.org,2002:str"),
-                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                    Node(null, "tag:yaml.org,2002:null")
                 ),
                 pair(
                     Node("canonical", "tag:yaml.org,2002:str"),
-                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                    Node(null, "tag:yaml.org,2002:null")
                 ),
                 pair(
                     Node("english", "tag:yaml.org,2002:str"),
-                    Node(YAMLNull(), "tag:yaml.org,2002:null")
+                    Node(null, "tag:yaml.org,2002:null")
                 ),
                 pair(
-                    Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                    Node(null, "tag:yaml.org,2002:null"),
                     Node("null key", "tag:yaml.org,2002:str")
                 )
             ],
@@ -451,11 +450,11 @@ Node[] constructNull() @safe
                     Node("sparse", "tag:yaml.org,2002:str"),
                     Node(
                         [
-                            Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                            Node(null, "tag:yaml.org,2002:null"),
                             Node("2nd entry", "tag:yaml.org,2002:str"),
-                            Node(YAMLNull(), "tag:yaml.org,2002:null"),
+                            Node(null, "tag:yaml.org,2002:null"),
                             Node("4th entry", "tag:yaml.org,2002:str"),
-                            Node(YAMLNull(), "tag:yaml.org,2002:null")
+                            Node(null, "tag:yaml.org,2002:null")
                         ],
                     "tag:yaml.org,2002:seq")
                 )
@@ -638,6 +637,12 @@ Node[] constructStrUTF8() @safe
     ];
 }
 
+// canonical:        2001-12-15T02:59:43.1Z
+// valid iso8601:    2001-12-14t21:59:43.1-05:00
+// space separated:  2001-12-14 21:59:43.1 -5
+// no time zone (Z): 2001-12-15 2:59:43.1
+// date (00:00:00Z): 2002-12-14
+
 Node[] constructTimestamp() @safe
 {
     return [
@@ -645,23 +650,23 @@ Node[] constructTimestamp() @safe
             [
                 pair(
                     Node("canonical", "tag:yaml.org,2002:str"),
-                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                    Node(Timestamp(2001, 12, 15, 2, 59, 43, -1, 1), "tag:yaml.org,2002:timestamp")
                 ),
                 pair(
                     Node("valid iso8601", "tag:yaml.org,2002:str"),
-                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                    Node(Timestamp(2001, 12, 15, 2, 59, 43, -1, 1).withOffset(-300), "tag:yaml.org,2002:timestamp")
                 ),
                 pair(
                     Node("space separated", "tag:yaml.org,2002:str"),
-                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                    Node(Timestamp(2001, 12, 15, 2, 59, 43, -1, 1).withOffset(-300), "tag:yaml.org,2002:timestamp")
                 ),
                 pair(
                     Node("no time zone (Z)", "tag:yaml.org,2002:str"),
-                    Node(SysTime(DateTime(2001, 12, 15, 2, 59, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                    Node(Timestamp(2001, 12, 15, 2, 59, 43, -1, 1), "tag:yaml.org,2002:timestamp")
                 ),
                 pair(
                     Node("date (00:00:00Z)", "tag:yaml.org,2002:str"),
-                    Node(SysTime(DateTime(2002, 12, 14), UTC()), "tag:yaml.org,2002:timestamp")
+                    Node(Timestamp(2002, 12, 14), "tag:yaml.org,2002:timestamp")
                 )
             ],
         "tag:yaml.org,2002:map")
@@ -762,15 +767,15 @@ Node[] floatRepresenterBug() @safe
                     Node(1L, "tag:yaml.org,2002:int")
                 ),
                 pair(
-                    Node(real.infinity, "tag:yaml.org,2002:float"),
+                    Node(double.infinity, "tag:yaml.org,2002:float"),
                     Node(10L, "tag:yaml.org,2002:int")
                 ),
                 pair(
-                    Node(-real.infinity, "tag:yaml.org,2002:float"),
+                    Node(-double.infinity, "tag:yaml.org,2002:float"),
                     Node(-10L, "tag:yaml.org,2002:int")
                 ),
                 pair(
-                    Node(real.nan, "tag:yaml.org,2002:float"),
+                    Node(double.nan, "tag:yaml.org,2002:float"),
                     Node(100L, "tag:yaml.org,2002:int")
                 )
             ],
@@ -798,10 +803,10 @@ Node[] moreFloats() @safe
                 Node(0.0L, "tag:yaml.org,2002:float"),
                 Node(1.0L, "tag:yaml.org,2002:float"),
                 Node(-1.0L, "tag:yaml.org,2002:float"),
-                Node(real.infinity, "tag:yaml.org,2002:float"),
-                Node(-real.infinity, "tag:yaml.org,2002:float"),
-                Node(real.nan, "tag:yaml.org,2002:float"),
-                Node(real.nan, "tag:yaml.org,2002:float")
+                Node(double.infinity, "tag:yaml.org,2002:float"),
+                Node(-double.infinity, "tag:yaml.org,2002:float"),
+                Node(double.nan, "tag:yaml.org,2002:float"),
+                Node(double.nan, "tag:yaml.org,2002:float")
             ],
         "tag:yaml.org,2002:seq")
     ];
@@ -821,17 +826,24 @@ Node[] singleDotFloatBug() @safe
     ];
 }
 
+
+
+
+
+
+
+
 Node[] timestampBugs() @safe
 {
     return [
         Node(
             [
-                Node(SysTime(DateTime(2001, 12, 15, 3, 29, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
-                Node(SysTime(DateTime(2001, 12, 14, 16, 29, 43), 1000000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
-                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), 10100.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp"),
-                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(60.dur!"minutes")), "tag:yaml.org,2002:timestamp"),
-                Node(SysTime(DateTime(2001, 12, 14, 21, 59, 43), new immutable SimpleTimeZone(-90.dur!"minutes")), "tag:yaml.org,2002:timestamp"),
-                Node(SysTime(DateTime(2005, 7, 8, 17, 35, 4), 5176000.dur!"hnsecs", UTC()), "tag:yaml.org,2002:timestamp")
+                "2001-12-14T21:59:43.1-05:30".Timestamp.Node("tag:yaml.org,2002:timestamp"),
+                "2001-12-14T21:59:43.1+05:30".Timestamp.Node("tag:yaml.org,2002:timestamp"),
+                "2001-12-14T21:59:43.00101Z".Timestamp.Node("tag:yaml.org,2002:timestamp"),
+                "2001-12-14T21:59:43+01".Timestamp.Node("tag:yaml.org,2002:timestamp"),
+                "2001-12-14T21:59:43-01:30".Timestamp.Node("tag:yaml.org,2002:timestamp"),
+                "2005-07-08T17:35:04.517600Z".Timestamp.Node("tag:yaml.org,2002:timestamp")
             ],
         "tag:yaml.org,2002:seq")
     ];

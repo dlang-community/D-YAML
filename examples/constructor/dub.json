@@ -5,6 +5,6 @@
     "mainSourceFile": "main.d",
     "dependencies":
     {
-        "dyaml": { "version" : "*"}
+        "dyaml": { "path" : "../../"}
     }
 }

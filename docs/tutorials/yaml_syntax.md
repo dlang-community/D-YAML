@@ -230,12 +230,12 @@ Some of these might change in the future (especially !!map and !!set).
 
 |YAML tag               |D type                 |
 |-----------------------|-----------------------|
-|!!null                 |dyaml.node.YAMLNull    |
+|!!null                 |typeof(null)           |
 |!!bool                 |bool                   |
 |!!int                  |long                   |
-|!!float                |real                   |
+|!!float                |double                 |
 |!!binary               |ubyte[]                |
-|!!timestamp            |std.datetime.SysTime   |
+|!!timestamp            |mir.timestamp.Timestamp|
 |!!map, !!omap, !!pairs |dyaml.node.Node.Pair[] |
 |!!seq, !!set           |dyaml.node.Node[]      |
 |!!str                  |string                 |

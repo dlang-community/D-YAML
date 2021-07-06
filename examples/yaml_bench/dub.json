@@ -5,6 +5,6 @@
     "mainSourceFile": "yaml_bench.d",
     "dependencies":
     {
-        "dyaml": { "version" : "*" }
+        "dyaml": { "path" : "../../"}
     }
 }

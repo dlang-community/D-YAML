@@ -13,16 +13,15 @@
 module dyaml.representer;
 
 
+import mir.conv;
+import mir.math;
+import mir.timestamp;
 import std.algorithm;
 import std.array;
 import std.base64;
 import std.container;
-import std.conv;
-import std.datetime;
 import std.exception;
 import std.format;
-import std.math;
-import std.typecons;
 import std.string;
 
 import dyaml.exception;
@@ -63,7 +62,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
             result = representBytes(data);
             break;
         case NodeType.timestamp:
-            result = representSysTime(data);
+            result = representTimestamp(data);
             break;
         case NodeType.string:
             result = representString(data);
@@ -74,8 +73,6 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
         case NodeType.sequence:
             result = representNodes(data, defaultScalarStyle, defaultCollectionStyle);
             break;
-        case NodeType.invalid:
-            assert(0);
     }
 
     final switch (result.nodeID)
@@ -118,7 +115,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
 
 @safe unittest
 {
-    assert(representData(Node(YAMLNull()), ScalarStyle.invalid, CollectionStyle.invalid) == Node("null", "tag:yaml.org,2002:null"));
+    assert(representData(Node(null), ScalarStyle.invalid, CollectionStyle.invalid) == Node("null", "tag:yaml.org,2002:null"));
 }
 
 @safe unittest
@@ -142,17 +139,18 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
 {
     // Float comparison is pretty unreliable...
     auto result = representData(Node(1.0), ScalarStyle.invalid, CollectionStyle.invalid);
-    assert(approxEqual(result.as!string.to!real, 1.0));
+    assert(approxEqual(result.as!string.to!double, 1.0));
     assert(result.tag == "tag:yaml.org,2002:float");
 
-    assert(representData(Node(real.nan), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".nan", "tag:yaml.org,2002:float"));
-    assert(representData(Node(real.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".inf", "tag:yaml.org,2002:float"));
-    assert(representData(Node(-real.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node("-.inf", "tag:yaml.org,2002:float"));
+    assert(representData(Node(double.nan), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".nan", "tag:yaml.org,2002:float"));
+    assert(representData(Node(double.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".inf", "tag:yaml.org,2002:float"));
+    assert(representData(Node(-double.infinity), ScalarStyle.invalid, CollectionStyle.invalid) == Node("-.inf", "tag:yaml.org,2002:float"));
 }
 
-@safe unittest
+unittest
 {
-    assert(representData(Node(SysTime(DateTime(2000, 3, 14, 12, 34, 56), UTC())), ScalarStyle.invalid, CollectionStyle.invalid) == Node("2000-03-14T12:34:56Z", "tag:yaml.org,2002:timestamp"));
+    import mir.conv;
+    assert(representData(Node(Timestamp(2000, 3, 14, 12, 34, 56)), ScalarStyle.invalid, CollectionStyle.invalid) == Node("2000-03-14T12:34:56Z", "tag:yaml.org,2002:timestamp"));
 }
 
 @safe unittest
@@ -317,24 +315,22 @@ Node representLong(const Node node) @safe
     return Node(node.as!long.to!string, "tag:yaml.org,2002:int");
 }
 
-//Represent a real _node as a floating point scalar.
+//Represent a double _node as a floating point scalar.
 Node representReal(const Node node) @safe
 {
-    real f = node.as!real;
-    string value = isNaN(f)                  ? ".nan":
-                   f == real.infinity        ? ".inf":
-                   f == -1.0 * real.infinity ? "-.inf":
-                   {auto a = appender!string();
-                    formattedWrite(a, "%12f", f);
-                    return a.data.strip();}();
-
+    import mir.conv: to;
+    double f = node.as!double;
+    string value = f != f                    ? ".nan":
+                   f == double.infinity        ? ".inf":
+                   f == -1.0 * double.infinity ? "-.inf":
+                   f.to!string;
     return Node(value, "tag:yaml.org,2002:float");
 }
 
-//Represent a SysTime _node as a timestamp.
-Node representSysTime(const Node node) @safe
+//Represent a _node as a timestamp.
+Node representTimestamp(const Node node) @safe
 {
-    return Node(node.as!SysTime.toISOExtString(), "tag:yaml.org,2002:timestamp");
+    return Node(node.as!Timestamp.toISOExtString(), "tag:yaml.org,2002:timestamp");
 }
 
 //Represent a sequence _node as sequence/set.

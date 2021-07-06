@@ -66,8 +66,8 @@ string statistics(ref Node document)
                     "\nAverage mapping length:  %s" ~
                   "\n\n%s",
                   nodes, scalars, sequences, mappings,
-                  sequences == 0.0 ? 0.0 : cast(real)seqItems / sequences,
-                  mappings  == 0.0 ? 0.0 : cast(real)mapPairs / mappings,
+                  sequences == 0.0 ? 0.0 : cast(double)seqItems / sequences,
+                  mappings  == 0.0 ? 0.0 : cast(double)mapPairs / mappings,
                   tagStats);
 }
 

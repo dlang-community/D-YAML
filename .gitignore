@@ -64,3 +64,14 @@ example.yaml
 
 # Unittest Coverage output #
 *.lst
+dyaml-test-library
+examples/mir-serde/mir_serde
+examples/representer/representer-test-application
+examples/resolver/resolver-test-application
+examples/tojson/tojson
+examples/tojson/tojson-test-application
+examples/yaml_bench/benchmark
+examples/yaml_bench/benchmark-test-application
+examples/yaml_gen/yaml_gen-test-application
+examples/yaml_stats/yaml_stats-test-application
+examples/constructor/constructor-test-application

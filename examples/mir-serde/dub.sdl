@@ -1,0 +1,3 @@
+name "mir_serde"
+dependency "mir-ion" version="*"
+dependency "dyaml" path="../../"

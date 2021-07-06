@@ -27,15 +27,16 @@ script:
   - meson build && ninja -j8 -C build
   - ninja -j8 -C build test -v
   - dub build
-  - "dub build dyaml:benchmark"
-  - "dub build dyaml:constructor"
-  - "dub build dyaml:getting-started"
-  - "dub build dyaml:representer"
-  - "dub build dyaml:resolver"
-  - "dub build dyaml:testsuite"
-  - "dub build dyaml:tojson"
-  - "dub build dyaml:yaml_gen"
-  - "dub build dyaml:yaml_stats"
+  - dub build dyaml:benchmark
+  - dub build dyaml:constructor
+  - dub build dyaml:getting-started
+  - dub build dyaml:representer
+  - dub build dyaml:resolver
+  - dub build dyaml:testsuite
+  - dub build dyaml:tojson
+  - dub build dyaml:yaml_gen
+  - dub build dyaml:yaml_stats
   - dub test --build=unittest-cov
+  - dub --root examples/mir-serde
 after_success:
  - bash <(curl -s https://codecov.io/bash)

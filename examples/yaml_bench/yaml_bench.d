@@ -2,9 +2,9 @@
 module dyaml.yaml_bench;
 //Benchmark that loads, and optionally extracts data from and/or emits a YAML file.
 
+import mir.timestamp;
 import std.algorithm;
 import std.conv;
-import std.datetime.systime;
 import std.datetime.stopwatch;
 import std.file;
 import std.getopt;
@@ -23,12 +23,12 @@ void extract(ref Node document) @safe
             case NodeID.scalar:
                  switch(root.tag)
                 {
-                    case "tag:yaml.org,2002:null":      auto value = root.as!YAMLNull;  break;
+                    case "tag:yaml.org,2002:null":      auto value = root.as!(typeof(null));  break;
                     case "tag:yaml.org,2002:bool":      auto value = root.as!bool;      break;
                     case "tag:yaml.org,2002:int":       auto value = root.as!long;      break;
-                    case "tag:yaml.org,2002:float":     auto value = root.as!real;      break;
+                    case "tag:yaml.org,2002:float":     auto value = root.as!double;    break;
                     case "tag:yaml.org,2002:binary":    auto value = root.as!(ubyte[]); break;
-                    case "tag:yaml.org,2002:timestamp": auto value = root.as!SysTime;   break;
+                    case "tag:yaml.org,2002:timestamp": auto value = root.as!Timestamp; break;
                     case "tag:yaml.org,2002:str":       auto value = root.as!string;    break;
                     default: writeln("Unrecognozed tag: ", root.tag);
                 }

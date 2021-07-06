@@ -3,6 +3,6 @@
     "targetType": "executable",
     "dependencies":
     {
-        "dyaml": "*"
+        "dyaml": { "path" : "../../"}
     }
 }

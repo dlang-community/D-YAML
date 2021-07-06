@@ -901,6 +901,5 @@ void test1Byte(R)()
     import dyaml.loader : Loader;
     auto yaml = "hello ";
     auto root = Loader.fromString(yaml).load();
-
-    assert(root.isValid);
+    assert(root._is!string);
 }

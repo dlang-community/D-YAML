@@ -8,19 +8,15 @@
 /// and to prepare data to emit.
 module dyaml.node;
 
-
+import mir.timestamp;
 import std.algorithm;
 import std.array;
 import std.conv;
-import std.datetime;
 import std.exception;
-import std.math;
 import std.meta : AliasSeq;
 import std.range;
 import std.string;
 import std.traits;
-import std.typecons;
-import std.variant;
 
 import dyaml.event;
 import dyaml.exception;
@@ -51,11 +47,7 @@ enum NodeID : ubyte
 }
 
 /// Null YAML type. Used in nodes with _null values.
-struct YAMLNull
-{
-    /// Used for string conversion.
-    string toString() const pure @safe nothrow {return "null";}
-}
+alias YAMLNull = typeof(null);
 
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
@@ -93,20 +85,7 @@ private struct Pair
         }
 }
 
-enum NodeType
-{
-    null_,
-    merge,
-    boolean,
-    integer,
-    decimal,
-    binary,
-    timestamp,
-    string,
-    mapping,
-    sequence,
-    invalid
-}
+alias NodeType = Node.Value.Kind;
 
 /** YAML node.
  *
@@ -116,20 +95,57 @@ enum NodeType
  */
 struct Node
 {
+    import std.meta: staticIndexOf;
+    import mir.algebraic: TaggedVariant, visit, tryVisit, optionalVisit;
     public:
         alias Pair = .Pair;
 
+
+
+
+
+
+
+
+
+
+
+
     package:
         // YAML value type.
-        alias Value = Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
-                         Node.Pair[], Node[]);
+        alias Value = TaggedVariant!(
+            [
+                "null_",
+                "merge",
+                "boolean",
+                "integer",
+                "decimal",
+                "binary",
+                "timestamp",
+                "string",
+                "mapping",
+                "sequence",
+            ],
+            typeof(null),
+            YAMLMerge,
+            bool,
+            long,
+            double,
+            ubyte[],
+            Timestamp,
+            string,
+            Node.Pair[],
+            Node[],
+        );
 
         // Can Value hold this type naturally?
         enum allowed(T) = isIntegral!T ||
                        isFloatingPoint!T ||
                        isSomeString!T ||
                        is(Unqual!T == bool) ||
-                       Value.allowed!T;
+                       staticIndexOf!(T, Value.AllowedTypes) >= 0 ||
+                       __traits(compiles, Timestamp(T.init)) ||
+                       is(T == Value);
 
         // Stored value.
         Value value_;
@@ -194,7 +210,7 @@ struct Node
             }
             else static if(isFloatingPoint!T)
             {
-                setValue(cast(real)value);
+                setValue(cast(double)value);
             }
             else static if (isArray!T)
             {
@@ -255,7 +271,7 @@ struct Node
             }
             // Time
             {
-                auto node = Node(SysTime(DateTime(2005, 6, 15, 20, 0, 0), UTC()));
+                auto node = Node(Timestamp(2005, 6, 15, 20, 0, 0));
             }
             // Integer, dumped as a string
             {
@@ -390,12 +406,6 @@ struct Node
 
         }
 
-        /// Is this node valid (initialized)?
-        @property bool isValid()    const @safe pure nothrow
-        {
-            return value_.hasValue;
-        }
-
         /// Return tag of the node.
         @property string tag()      const @safe nothrow
         {
@@ -434,7 +444,7 @@ struct Node
                 // NaNs aren't normally equal to each other, but we'll pretend they are.
                 static if(isFloatingPoint!T)
                 {
-                    return rhs == stored || (isNaN(rhs) && isNaN(stored));
+                    return rhs == stored || (rhs != rhs && stored != stored);
                 }
                 else
                 {
@@ -455,8 +465,8 @@ struct Node
             assert(node != "42");
             assert(node != "43");
 
-            auto node2 = Node(YAMLNull());
-            assert(node2 == YAMLNull());
+            auto node2 = Node(null);
+            assert(node2 == null);
 
             const node3 = Node(42);
             assert(node3 == 42);
@@ -475,7 +485,7 @@ struct Node
          * Numeric values are range checked, throwing if out of range of
          * requested type.
          *
-         * Timestamps are stored as std.datetime.SysTime.
+         * Timestamps are stored as mir.timestamp.Timestamp.
          * Binary values are decoded and stored as ubyte[].
          *
          * To get a null value, use get!YAMLNull . This is to
@@ -500,8 +510,6 @@ struct Node
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
             if (allowed!(Unqual!T) || hasNodeConstructor!(inout(Unqual!T)) || (!hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T)))
         {
-            if(isType!(Unqual!T)){return getValue!T;}
-
             static if(!allowed!(Unqual!T))
             {
                 static if (hasSimpleNodeConstructor!(Unqual!T) || hasSimpleNodeConstructor!(inout(Unqual!T)))
@@ -529,10 +537,23 @@ struct Node
                 {
                     static assert(0, "Unhandled user type");
                 }
-            } else {
+            }
+            else
+            static if (is(typeof(Timestamp.init.opCast!(Unqual!T))))
+            {
+                return value_.trustedGet!Timestamp.opCast!(Unqual!T);
+            }
+            else
+            {
 
                 // If we're getting from a mapping and we're not getting Node.Pair[],
                 // we're getting the default value.
+                static if (staticIndexOf!(Unqual!T, Value.AllowedTypes) >= 0)
+                {
+                    if (_is!(Unqual!T))
+                        return value_.trustedGet!(Unqual!T);
+                }
+
                 if(nodeID == NodeID.mapping){return this["="].get!( T, stringConversion);}
 
                 static if(isSomeString!T)
@@ -551,7 +572,7 @@ struct Node
                         {
                             return coerceValue!T();
                         }
-                        catch(VariantException e)
+                        catch(Exception e)
                         {
                             throw new NodeException("Unable to convert node value to string", startMark_);
                         }
@@ -564,13 +585,12 @@ struct Node
                         case NodeType.integer:
                             return to!T(getValue!long);
                         case NodeType.decimal:
-                            return to!T(getValue!real);
+                            return to!T(getValue!double);
                         case NodeType.binary:
                         case NodeType.string:
                         case NodeType.boolean:
                         case NodeType.null_:
                         case NodeType.merge:
-                        case NodeType.invalid:
                         case NodeType.timestamp:
                         case NodeType.mapping:
                         case NodeType.sequence:
@@ -849,7 +869,7 @@ struct Node
             assertThrown!NodeException(Node("42").get!int);
             assertThrown!NodeException(Node("42").get!double);
             assertThrown!NodeException(Node(long.max).get!ushort);
-            Node(YAMLNull()).get!YAMLNull;
+            Node(null).get!YAMLNull;
         }
         @safe unittest
         {
@@ -971,10 +991,10 @@ struct Node
             assert(nmap["14"].as!int == 14);
             assert(null !is collectException(nmap["42"]));
 
-            narray.add(YAMLNull());
-            nmap.add(YAMLNull(), "Nothing");
-            assert(narray[4].as!YAMLNull == YAMLNull());
-            assert(nmap[YAMLNull()].as!string == "Nothing");
+            narray.add(null);
+            nmap.add(null, "Nothing");
+            assert(narray[4].as!YAMLNull == null);
+            assert(nmap[null].as!string == "Nothing");
 
             assertThrown!NodeException(nmap[11]);
             assertThrown!NodeException(nmap[14]);
@@ -1044,16 +1064,16 @@ struct Node
             assert(!map.containsKey(1));
             assert(!map.containsKey("5"));
 
-            assert(!seq.contains(YAMLNull()));
-            assert(!map.contains(YAMLNull()));
-            assert(!map.containsKey(YAMLNull()));
-            seq.add(YAMLNull());
-            map.add("Nothing", YAMLNull());
-            assert(seq.contains(YAMLNull()));
-            assert(map.contains(YAMLNull()));
-            assert(!map.containsKey(YAMLNull()));
-            map.add(YAMLNull(), "Nothing");
-            assert(map.containsKey(YAMLNull()));
+            assert(!seq.contains(null));
+            assert(!map.contains(null));
+            assert(!map.containsKey(null));
+            seq.add(null);
+            map.add("Nothing", null);
+            assert(seq.contains(null));
+            assert(map.contains(null));
+            assert(!map.containsKey(null));
+            map.add(null, "Nothing");
+            assert(map.containsKey(null));
 
             auto map2 = Node([1, 2, 3, 4], [1, 2, 3, 4]);
             assert(!map2.contains("1"));
@@ -1151,8 +1171,8 @@ struct Node
                 assert(length == 5);
                 assert(opIndex(3).as!int == 42);
 
-                opIndexAssign(YAMLNull(), 0);
-                assert(opIndex(0) == YAMLNull());
+                opIndexAssign(null, 0);
+                assert(opIndex(0) == null);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
@@ -1168,8 +1188,8 @@ struct Node
                 assert(opIndex("3").as!int == 42);
                 assert(opIndex(3).as!int == 43);
 
-                opIndexAssign(YAMLNull(), "2");
-                assert(opIndex("2") == YAMLNull());
+                opIndexAssign(null, "2");
+                assert(opIndex("2") == null);
             }
         }
 
@@ -1662,7 +1682,7 @@ struct Node
 
             Node nmap2 = Node([Pair(k1, Node(cast(long)5)),
                                Pair(k2, Node(true)),
-                               Pair(k3, Node(cast(real)1.0)),
+                               Pair(k3, Node(cast(double)1.0)),
                                Pair(k4, Node("yarly"))]);
 
             foreach(string key, Node value; nmap2)
@@ -1733,7 +1753,7 @@ struct Node
          */
         void add(T)(T value)
         {
-            if (!isValid)
+            if (value_.isNull)
             {
                 setValue(Node[].init);
             }
@@ -1784,7 +1804,7 @@ struct Node
          */
         void add(K, V)(K key, V value)
         {
-            if (!isValid)
+            if (value_.isNull)
             {
                 setValue(Node.Pair[].init);
             }
@@ -1895,18 +1915,18 @@ struct Node
                 assert(opIndex(2).as!int == 4);
                 assert(opIndex(3).as!int == 3);
 
-                add(YAMLNull());
+                add(null);
                 assert(length == 5);
-                remove(YAMLNull());
+                remove(null);
                 assert(length == 4);
             }
             with(Node(["1", "2", "3"], [4, 5, 6]))
             {
                 remove(4);
                 assert(length == 2);
-                add("nullkey", YAMLNull());
+                add("nullkey", null);
                 assert(length == 3);
-                remove(YAMLNull());
+                remove(null);
                 assert(length == 2);
             }
         }
@@ -1949,9 +1969,9 @@ struct Node
                 assert(length == 3);
                 removeAt("2");
                 assert(length == 2);
-                add(YAMLNull(), "nullval");
+                add(null, "nullval");
                 assert(length == 3);
-                removeAt(YAMLNull());
+                removeAt(null);
                 assert(length == 2);
             }
         }
@@ -1972,10 +1992,6 @@ struct Node
             }
 
             // Compare validity: if both valid, we have to compare further.
-            const v1 = isValid;
-            const v2 = rhs.isValid;
-            if(!v1){return v2 ? -1 : 0;}
-            if(!v2){return 1;}
 
             const typeCmp = cmp(type, rhs.type);
             if(typeCmp != 0){return typeCmp;}
@@ -2017,25 +2033,25 @@ struct Node
                 case NodeType.null_:
                     return 0;
                 case NodeType.decimal:
-                    const r1 = getValue!real;
-                    const r2 = rhs.getValue!real;
-                    if(isNaN(r1))
+                    const r1 = getValue!double;
+                    const r2 = rhs.getValue!double;
+                    if(r1 != r1)
                     {
-                        return isNaN(r2) ? 0 : -1;
+                        return r2 != r2 ? 0 : -1;
                     }
-                    if(isNaN(r2))
+                    if(r2 != r2)
                     {
                         return 1;
                     }
                     // Fuzzy equality.
-                    if(r1 <= r2 + real.epsilon && r1 >= r2 - real.epsilon)
+                    if(r1 <= r2 + double.epsilon && r1 >= r2 - double.epsilon)
                     {
                         return 0;
                     }
                     return cmp(r1, r2);
                 case NodeType.timestamp:
-                    const t1 = getValue!SysTime;
-                    const t2 = rhs.getValue!SysTime;
+                    const t1 = getValue!Timestamp;
+                    const t2 = rhs.getValue!Timestamp;
                     return cmp(t1, t2);
                 case NodeType.mapping:
                     return compareCollections!(Pair[])(this, rhs);
@@ -2043,8 +2059,6 @@ struct Node
                     return compareCollections!(Node[])(this, rhs);
                 case NodeType.merge:
                     assert(false, "Cannot compare merge nodes");
-                case NodeType.invalid:
-                    assert(false, "Cannot compare invalid nodes");
             }
         }
 
@@ -2081,53 +2095,9 @@ struct Node
         }
 
         /// Get type of the node value.
-        @property NodeType type() const @safe nothrow
+        @property NodeType type() const @safe pure nothrow
         {
-            if (value_.type is typeid(bool))
-            {
-                return NodeType.boolean;
-            }
-            else if (value_.type is typeid(long))
-            {
-                return NodeType.integer;
-            }
-            else if (value_.type is typeid(Node[]))
-            {
-                return NodeType.sequence;
-            }
-            else if (value_.type is typeid(ubyte[]))
-            {
-                return NodeType.binary;
-            }
-            else if (value_.type is typeid(string))
-            {
-                return NodeType.string;
-            }
-            else if (value_.type is typeid(Node.Pair[]))
-            {
-                return NodeType.mapping;
-            }
-            else if (value_.type is typeid(SysTime))
-            {
-                return NodeType.timestamp;
-            }
-            else if (value_.type is typeid(YAMLNull))
-            {
-                return NodeType.null_;
-            }
-            else if (value_.type is typeid(YAMLMerge))
-            {
-                return NodeType.merge;
-            }
-            else if (value_.type is typeid(real))
-            {
-                return NodeType.decimal;
-            }
-            else if (!value_.hasValue)
-            {
-                return NodeType.invalid;
-            }
-            else assert(0, text(value_.type));
+            return value_.kind;
         }
 
         /// Get the kind of node this is.
@@ -2148,8 +2118,6 @@ struct Node
                 case NodeType.merge:
                 case NodeType.decimal:
                     return NodeID.scalar;
-                case NodeType.invalid:
-                    return NodeID.invalid;
             }
         }
     package:
@@ -2210,7 +2178,9 @@ struct Node
         // Determine if the value can be converted to specified type.
         @property bool convertsTo(T)() const
         {
-            if(isType!T){return true;}
+            static if (staticIndexOf!(T, Value.AllowedTypes) >= 0)
+                if (value_._is!T)
+                    return true;
 
             // Every type allowed in Value should be convertible to string.
             static if(isSomeString!T)        {return true;}
@@ -2226,14 +2196,14 @@ struct Node
         */
         void setStyle(CollectionStyle style) @safe
         {
-            enforce(!isValid || (nodeID.among(NodeID.mapping, NodeID.sequence)), new NodeException(
+            enforce(nodeID.among(NodeID.mapping, NodeID.sequence), new NodeException(
                 "Cannot set collection style for non-collection nodes", startMark_));
             collectionStyle = style;
         }
         /// Ditto
         void setStyle(ScalarStyle style) @safe
         {
-            enforce(!isValid || (nodeID == NodeID.scalar), new NodeException(
+            enforce(nodeID == NodeID.scalar, new NodeException(
                 "Cannot set scalar style for non-scalar nodes", startMark_));
             scalarStyle = style;
         }
@@ -2319,14 +2289,16 @@ struct Node
             }
         }
 
-    private:
-        // Determine if the value stored by the node is of specified type.
-        //
-        // This only works for default YAML types, not for user defined types.
-        @property bool isType(T)() const
+        /++
+        Determine if the value stored by the node is of specified type.
+        This only works for default YAML types, not for user defined types.
+        +/
+        @property bool _is(T)() const
         {
-            return value_.type is typeid(Unqual!T);
+            return value_._is!T;
         }
+
+    private:
 
         // Implementation of contains() and containsKey().
         bool contains_(T, Flag!"key" key, string func)(T rhs) const
@@ -2412,12 +2384,15 @@ struct Node
                 static if(key){node = &pair.key;}
                 else          {node = &pair.value;}
 
-
-                const bool typeMatch = (isFloatingPoint!T && (node.type.among!(NodeType.integer, NodeType.decimal))) ||
-                                 (isIntegral!T && node.type == NodeType.integer) ||
-                                 (is(Unqual!T==bool) && node.type == NodeType.boolean) ||
-                                 (isSomeString!T && node.type == NodeType.string) ||
-                                 (node.isType!T);
+                static if (staticIndexOf!(T, Value.AllowedTypes) >= 0)
+                    const isT = node._is!T;
+                else
+                    enum isT = false;
+                const bool typeMatch = isFloatingPoint!T && node.type.among!(NodeType.integer, NodeType.decimal) ||
+                                 isIntegral!T && node.type == NodeType.integer ||
+                                 is(Unqual!T==bool) && node.type == NodeType.boolean ||
+                                 isSomeString!T && node.type == NodeType.string ||
+                                 isT;
                 if(typeMatch && *node == index)
                 {
                     return idx;
@@ -2451,14 +2426,15 @@ struct Node
         // Safe wrapper for coercing a value out of the variant.
         inout(T) coerceValue(T)() @trusted inout
         {
-            return (cast(Value)value_).coerce!T;
+            import mir.conv: to;
+            return value_.tryVisit!(to!T);
         }
         // Safe wrapper for setting a value for the variant.
         void setValue(T)(T value) @trusted
         {
             static if (allowed!T)
             {
-                value_ = value;
+                value_ = Value(value);
             }
             else
             {
@@ -2467,6 +2443,174 @@ struct Node
                 scalarStyle = tmpNode.scalarStyle;
                 collectionStyle = tmpNode.collectionStyle;
                 value_ = tmpNode.value_;
+            }
+        }
+
+        /// Serialization support for mir-ion and asdf
+        public void serialize(S)(ref S serializer) const @safe
+        {
+            value_.visit!(
+                (YAMLNull v) {
+                    serializer.putValue(null);
+                },
+                (YAMLMerge v) {
+                    serializer.putValue("tag:yaml.org,2002:merge");
+                },
+                (bool v) {
+                    serializer.putValue(v);
+                },
+                (long v) {
+                    serializer.putValue(v);
+                },
+                (double v) {
+                    serializer.putValue(v);
+                },
+                (const(ubyte)[] v) {
+                    import mir.lob: Blob;
+                    serializer.putValue(Blob(v));
+                },
+                (Timestamp v) {
+                    serializer.putValue(v);
+                },
+                (string v) {
+                    serializer.putValue(v);
+                },
+                (const(Node.Pair)[] v) {
+                    auto state = serializer.structBegin(v.length);
+                    foreach (ref e; v)
+                    {
+                        serializer.putKey(e.key.get!string);
+                        e.value.serialize(serializer);
+                    }
+                    serializer.structEnd(state);
+                },
+                (const(Node)[] v) {
+                    auto state = serializer.listBegin(v.length);
+                    foreach (ref e; v)
+                    {
+                        serializer.elemBegin;
+                        e.serialize(serializer);
+                    }
+                    serializer.listEnd(state);
+                },
+            );
+        }
+
+        /// Deserialization support for mir-ion
+        public auto deserializeFromIon(IonDescribedValue)(scope const(char[])[] symbolTable, IonDescribedValue value) @trusted {
+            import mir.ndslice.topology: map;
+            import mir.array.allocation: array;
+            return deserializeFromIon(symbolTable.map!idup.array, value);
+        }
+
+        /// ditto
+        public auto deserializeFromIon(IonDescribedValue)(const(string)[] symbolTable, IonDescribedValue value) @trusted {
+            import mir.ion.exception;
+            import mir.ion.type_code;
+            import mir.ion.value;
+            import mir.lob;
+            import mir.timestamp;
+
+            if (value == null) {
+                // Ion has typed null values
+                value_ = YAMLNull.init;
+                return null;
+            }
+
+            final switch (value.descriptor.type) {
+
+                case IonTypeCode.null_:
+                    assert(0); // handled above
+                case IonTypeCode.bool_:
+                    value_ = value.trustedGet!bool;
+                    return null;
+                case IonTypeCode.uInt:
+                case IonTypeCode.nInt:
+                    value_ = value.trustedGet!IonInt.get!long;
+                    return null;
+                case IonTypeCode.float_:
+                    value_ = value.trustedGet!IonFloat.get!double;
+                    return null;
+                case IonTypeCode.decimal:
+                    value_ = value.trustedGet!IonDecimal.get!double;
+                    return null;
+                case IonTypeCode.timestamp:
+                    value_ = value.trustedGet!IonTimestamp.get!Timestamp;
+                    return null;
+                case IonTypeCode.symbol: {
+                    auto symbolId = value.trustedGet!IonSymbolID.get;
+                    if (symbolId >= symbolTable.length)
+                        return IonErrorCode.symbolIdIsTooLargeForTheCurrentSymbolTable.ionException;
+                    value_ = symbolTable[symbolId];
+                    return null;
+                }
+                case IonTypeCode.string:
+                    value_ = value.trustedGet!(const(char)[]).idup;
+                    return null;
+                case IonTypeCode.clob:
+                    throw new IonException("Mir Ion: CLOBs aren't supported in DYAML");
+                case IonTypeCode.blob: // as ubyte[]
+                    value_ = value.trustedGet!Blob.data.dup;
+                    return null;
+                case IonTypeCode.list: {
+                    auto list = value.trustedGet!IonList;
+                    auto ret = new Node[list.walkLength];
+                    size_t i;
+                    foreach (IonDescribedValue elem; list) {
+                        Node val;
+                        if (auto exc = val.deserializeFromIon(symbolTable, elem))
+                            return exc;
+                        ret[i++] = val;
+                    }
+                    value_ = ret;
+                    return null;
+                }
+                case IonTypeCode.sexp: {
+                    // TODO: use special types for SEXP if needed.
+                    auto sexp = value.trustedGet!IonSexp;
+                    auto ret = new Node[sexp.walkLength];
+                    size_t i;
+                    foreach (IonDescribedValue elem; sexp) {
+                        Node val;
+                        if (auto exc = val.deserializeFromIon(symbolTable, elem))
+                            return exc;
+                        ret[i++] = val;
+                    }
+                    value_ = ret;
+                    return null;
+                }
+                case IonTypeCode.struct_: {
+                    auto obj = value.trustedGet!IonStruct;
+                    auto ret = new Pair[obj.walkLength];
+                    size_t i;
+                    foreach (size_t symbolId, IonDescribedValue elem; obj) {
+                        if (symbolId >= symbolTable.length)
+                            return IonErrorCode.symbolIdIsTooLargeForTheCurrentSymbolTable.ionException;
+                        auto key = symbolTable[symbolId];
+                        Node val;
+                        if (auto exc = val.deserializeFromIon(symbolTable, elem))
+                            return exc;
+                        ret[i++] = Pair(key, val);
+                    }
+                    value_ = ret;
+                    return null;
+                }
+                case IonTypeCode.annotations: {
+                    IonAnnotations annotations;
+                    value.trustedGet!IonAnnotationWrapper.unwrap(annotations, value);
+                    Node[] annotationValues;
+                    annotationValues.reserve(1);
+                    foreach (size_t symbolId; annotations) {
+                        if (symbolId >= symbolTable.length)
+                            return IonErrorCode.symbolIdIsTooLargeForTheCurrentSymbolTable.ionException;
+                        annotationValues ~= symbolTable[symbolId].Node;
+                    }
+                    Node val;
+                    if (auto exc = val.deserializeFromIon(symbolTable, value))
+                        return exc;
+                    value_ = [Pair(Node(annotationValues), val)];
+                    return null;
+                }
             }
         }
 }

@@ -390,5 +390,5 @@ struct Loader
 {
     auto yaml = "{\n\"root\": {\n\t\"key\": \"value\"\n    }\n}";
     auto doc = Loader.fromString(yaml).load();
-    assert(doc.isValid);
+    assert(doc._is!(Node.Pair[]));
 }

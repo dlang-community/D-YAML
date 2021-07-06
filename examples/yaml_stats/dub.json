@@ -5,6 +5,6 @@
     "mainSourceFile": "yaml_stats.d",
     "dependencies":
     {
-        "dyaml": { "version" : "*" }
+        "dyaml": { "path" : "../../"}
     }
 }
