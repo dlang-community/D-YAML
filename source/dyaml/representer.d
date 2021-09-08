@@ -142,7 +142,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
 {
     // Float comparison is pretty unreliable...
     auto result = representData(Node(1.0), ScalarStyle.invalid, CollectionStyle.invalid);
-    assert(approxEqual(result.as!string.to!real, 1.0));
+    assert(isClose(result.as!string.to!real, 1.0));
     assert(result.tag == "tag:yaml.org,2002:float");
 
     assert(representData(Node(real.nan), ScalarStyle.invalid, CollectionStyle.invalid) == Node(".nan", "tag:yaml.org,2002:float"));
