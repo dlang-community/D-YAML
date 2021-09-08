@@ -906,7 +906,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         {
 
             string tagString = tag;
-            if(tagString == "!"){return tagString;}
+            if (tagString == "!") return "!";
             string handle;
             string suffix = tagString;
 
