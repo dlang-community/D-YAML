@@ -44,18 +44,6 @@
        width="40.293034"
        height="63.194422"
        id="rect19230" />
-    <rect
-       x="263.13957"
-       y="64.205379"
-       width="9.5275772"
-       height="49.590636"
-       id="rect6389" />
-    <rect
-       x="9.5048731"
-       y="19.663118"
-       width="254.07685"
-       height="43.41802"
-       id="rect4139" />
   </defs>
   <g
      inkscape:groupmode="layer"
@@ -78,66 +66,12 @@
      style="display:inline">
     <text
        xml:space="preserve"
-       transform="scale(0.26458333)"
-       id="text4137"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect4139);fill:#000000;fill-opacity:1;stroke:none" />
-    <text
-       xml:space="preserve"
-       transform="scale(0.26458333)"
-       id="text6387"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect6389);fill:#000000;fill-opacity:1;stroke:none" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:12.2733px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.306832"
-       x="1.7295624"
-       y="30.552614"
-       id="text9035"><tspan
-         sodipodi:role="line"
-         id="tspan9033"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.306832"
-         x="1.7295624"
-         y="30.552614" /></text>
-    <text
-       xml:space="preserve"
        transform="matrix(0.40464801,0,0,0.39609019,-10.936262,-5.6226013)"
        id="text19228"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:1.25;font-family:'Droid Sans';-inkscape-font-specification:'Droid Sans';white-space:pre;shape-inside:url(#rect19230);fill:#ffaaaa;fill-opacity:1"><tspan
          x="66.339844"
          y="57.498603"
          id="tspan71321">D</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
-       x="26.363348"
-       y="15.742863"
-       id="text65795"><tspan
-         sodipodi:role="line"
-         id="tspan65793"
-         style="stroke-width:0.264583"
-         x="26.363348"
-         y="15.742863" /></text>
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
-       x="28.463366"
-       y="21.260487"
-       id="text76253"><tspan
-         sodipodi:role="line"
-         id="tspan76251"
-         style="stroke-width:0.264583"
-         x="28.463366"
-         y="21.260487" /></text>
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
-       x="29.878765"
-       y="12.296494"
-       id="text88228"><tspan
-         sodipodi:role="line"
-         id="tspan88226"
-         style="stroke-width:0.264583"
-         x="29.878765"
-         y="12.296494" /></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
