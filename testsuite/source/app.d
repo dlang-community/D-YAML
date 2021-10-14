@@ -291,7 +291,7 @@ TestResult runTests(string tml) @safe
 // Can't be @safe due to dirEntries()
 void main(string[] args) @system
 {
-    string path = "yaml-test-suite/test";
+    string path = "yaml-test-suite/src";
 
     void printResult(string id, TestResult result)
     {
