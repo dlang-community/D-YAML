@@ -102,6 +102,7 @@ abstract class MarkedYAMLException : YAMLException
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
                     problem ~ '\n' ~ problemMark.toString() ~ '\n';
         super(msg, file, line);
+        mark = problemMark;
     }
 
     // Construct a MarkedYAMLException with specified problem.
@@ -110,6 +111,7 @@ abstract class MarkedYAMLException : YAMLException
         @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
+        mark = problemMark;
     }
 
     /// Construct a MarkedYAMLException from a struct storing constructor parameters.
@@ -117,6 +119,8 @@ abstract class MarkedYAMLException : YAMLException
     {
         with(data) this(context, contextMark, problem, problemMark);
     }
+
+    Mark mark;
 }
 
 // Constructors of YAML exceptions are mostly the same, so we use a mixin.
