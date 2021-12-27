@@ -165,6 +165,7 @@ struct Loader
         void name(string name) pure @safe nothrow @nogc
         {
             name_ = name;
+            scanner_.name = name;
         }
 
         /// Specify custom Resolver to use.
@@ -391,4 +392,20 @@ struct Loader
     auto yaml = "{\n\"root\": {\n\t\"key\": \"value\"\n    }\n}";
     auto doc = Loader.fromString(yaml).load();
     assert(doc.isValid);
+}
+
+@safe unittest
+{
+    import std.exception : collectException;
+
+    auto yaml = q"EOS
+    value: invalid: string
+EOS";
+    auto filename = "invalid.yml";
+    auto loader = Loader.fromString(yaml);
+    loader.name = filename;
+
+    Node unused;
+    auto e = loader.load().collectException!ScannerException(unused);
+    assert(e.mark.name == filename);
 }
