@@ -94,6 +94,9 @@ struct MarkedYAMLExceptionData
 // Base class of YAML exceptions with marked positions of the problem.
 abstract class MarkedYAMLException : YAMLException
 {
+    /// Position of the error.
+    Mark mark;
+
     // Construct a MarkedYAMLException with specified context and problem.
     this(string context, const Mark contextMark, string problem, const Mark problemMark,
          string file = __FILE__, size_t line = __LINE__) @safe pure nothrow
@@ -102,6 +105,7 @@ abstract class MarkedYAMLException : YAMLException
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
                     problem ~ '\n' ~ problemMark.toString() ~ '\n';
         super(msg, file, line);
+        mark = problemMark;
     }
 
     // Construct a MarkedYAMLException with specified problem.
@@ -110,6 +114,7 @@ abstract class MarkedYAMLException : YAMLException
         @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
+        mark = problemMark;
     }
 
     /// Construct a MarkedYAMLException from a struct storing constructor parameters.
