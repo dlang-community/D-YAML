@@ -405,6 +405,9 @@ final class Reader
         /// Get file name.
         string name() const @safe pure nothrow @nogc { return name_; }
 
+        /// Set file name.
+        void name(string name) pure @safe nothrow @nogc { name_ = name; }
+
         /// Get current line number.
         uint line() const @safe pure nothrow @nogc { return line_; }
 

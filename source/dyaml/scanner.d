@@ -185,6 +185,12 @@ struct Scanner
             return tokens_.empty;
         }
 
+        /// Set file name.
+        void name(string name) @safe pure nothrow @nogc
+        {
+            reader_.name = name;
+        }
+
     private:
         /// Most scanning error messages have the same format; so build them with this
         /// function.
