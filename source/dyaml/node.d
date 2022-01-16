@@ -27,7 +27,7 @@ import dyaml.exception;
 import dyaml.style;
 
 /// Exception thrown at node related errors.
-class NodeException : YAMLException
+class NodeException : MarkedYAMLException
 {
     package:
         // Construct a NodeException.
@@ -37,7 +37,7 @@ class NodeException : YAMLException
         this(string msg, Mark start, string file = __FILE__, size_t line = __LINE__)
             @safe
         {
-            super(msg ~ "\nNode at: " ~ start.toString(), file, line);
+            super(msg, start, file, line);
         }
 }
 
