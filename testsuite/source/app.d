@@ -14,6 +14,7 @@ import std.stdio;
 import std.string;
 import std.typecons;
 import std.utf;
+import std.uni;
 
 auto dumpEventString(string str) @safe
 {
@@ -160,12 +161,12 @@ struct TestResult
     }
 }
 
-TestResult runTests(string tml) @safe
+TestResult runTests(string yaml) @safe
 {
     TestResult output;
     output.state = TestState.success;
-    auto splitFile = tml.splitter("\n--- ");
-    output.name = splitFile.front.findSplit("=== ")[2];
+    auto testDoc = Loader.fromString(yaml).load();
+    output.name = testDoc[0]["name"].as!string;
     bool loadFailed, shouldFail;
     string failMsg;
     JSONValue json;
@@ -197,10 +198,15 @@ TestResult runTests(string tml) @safe
             failMsg = e.msg;
         }
     }
-    void compareLineByLine(const string a, const string b, const string msg) @safe
+    void compareLineByLine(const string a, const string b, bool skipWhitespace, const string msg) @safe
     {
         foreach (line1, line2; zip(a.lineSplitter, b.lineSplitter))
         {
+            if (skipWhitespace)
+            {
+                line1.skipOver!isWhite;
+                line2.skipOver!isWhite;
+            }
             if (line1 != line2)
             {
                 fail(text(msg, " Got ", line1, ", expected ", line2));
@@ -208,69 +214,44 @@ TestResult runTests(string tml) @safe
             }
         }
     }
-    foreach (section; splitFile.drop(1))
+    foreach (Node test; testDoc)
     {
-        auto splitSection = section.findSplit("\n");
-        auto splitSectionHeader = splitSection[0].findSplit(":");
-        const splitSectionName = splitSectionHeader[0].findSplit("(");
-        const sectionName = splitSectionName[0];
-        const sectionParams = splitSectionName[2].findSplit(")")[0];
-        string sectionData = splitSection[2];
-        if (sectionData != "")
+        if ("yaml" in test)
         {
-            //< means dedent.
-            if (sectionParams.canFind("<"))
-            {
-                sectionData = sectionData[4..$].substitute("\n    ", "\n", "<SPC>", " ", "<TAB>", "\t").toUTF8;
-            }
-            else
-            {
-                sectionData = sectionData.substitute("<SPC>", " ", "<TAB>", "\t").toUTF8;
-            }
-            //Not sure what + means.
+            parseYAML(test["yaml"].as!string);
         }
-        switch(sectionName)
+        if ("json" in test)
         {
-            case "in-yaml":
-                parseYAML(sectionData);
-                break;
-            case "in-json":
-                json = parseJSON(sectionData);
-                break;
-            case "test-event":
-                events = sectionData;
-                break;
-            case "error":
-                shouldFail = true;
+            json = parseJSON(test["json"].as!string);
+        }
+        if ("tree" in test)
+        {
+            events = test["tree"].as!string;
+        }
+        if ("fail" in test)
+        {
+            shouldFail = test["fail"].as!bool;
+            if (shouldFail)
+            {
                 testsRun++;
-                break;
-            case "out-yaml":
-                compareYAMLString = sectionData;
-                break;
-            case "emit-yaml":
-                // TODO: Figure out how/if to implement this
-                //fail("Unhandled test - emit-yaml");
-                break;
-            case "lex-token":
-                // TODO: Should this be implemented?
-                //fail("Unhandled test - lex-token");
-                break;
-            case "from": break;
-            case "tags": break;
-            default: assert(false, text("Unhandled section ", sectionName, "in ", output.name));
+            }
+        }
+        if ("emit" in test)
+        {
+            compareYAMLString = test["emit"].as!string;
         }
     }
     if (!loadFailed && !compareYAMLString.isNull && !shouldFail)
     {
         Appender!string buf;
         dumper().dump(buf);
-        compareLineByLine(buf.data, compareYAMLString.get, "Dumped YAML mismatch");
+        compareLineByLine(buf.data, compareYAMLString.get, false, "Dumped YAML mismatch");
         testsRun++;
     }
     if (!loadFailed && !events.isNull && !shouldFail)
     {
         const compare = dumpEventString(yamlString);
-        compareLineByLine(compare, events.get, "Event mismatch");
+        compareLineByLine(compare, events.get, true, "Event mismatch");
         testsRun++;
     }
     if (loadFailed && !shouldFail)
@@ -305,7 +286,7 @@ void main(string[] args) @system
 
     ulong total;
     ulong successes;
-    foreach (file; dirEntries(path, "*.tml", SpanMode.shallow))
+    foreach (file; dirEntries(path, "*.yaml", SpanMode.shallow))
     {
         auto result = runTests(readText(file));
         if (result.state == TestState.success)
