@@ -100,7 +100,7 @@ will try to convert it, throwing *YAMLException* if not possible.
 
 Finally we dump the document we just read to `output.yaml` with the
 *Dumper.dump()* method. *Dumper* is a struct used to dump YAML
-documents. *dumper()* returns a *Dumpper* with the default setting.
+documents. *dumper()* returns a *Dumper* with the default setting.
 The *dump()* method writes one or more documents to a range,
 throwing *YAMLException* if it could not be written to.
 
