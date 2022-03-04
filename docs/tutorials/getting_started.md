@@ -58,7 +58,7 @@ void main()
     writeln("The answer is ", root["Answer"].as!int);
 
     //Dump the loaded document to output.yaml.
-    dumper(File("output.yaml", "w").lockingTextWriter).dump(root);
+    dumper.dump(File("output.yaml", "w").lockingTextWriter, root);
 }
 ```
 
@@ -100,8 +100,8 @@ will try to convert it, throwing *YAMLException* if not possible.
 
 Finally we dump the document we just read to `output.yaml` with the
 *Dumper.dump()* method. *Dumper* is a struct used to dump YAML
-documents. *dumper()* accepts a range to write the document to.
-The *dump()* method writes one or more documents to the range,
+documents. *dumper()* returns a *Dumper* with the default setting.
+The *dump()* method writes one or more documents to a range,
 throwing *YAMLException* if it could not be written to.
 
 D:YAML tries to preserve style information in documents so e.g. `[Hello,
