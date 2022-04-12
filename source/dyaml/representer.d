@@ -91,6 +91,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
             {
                 result.collectionStyle = defaultCollectionStyle;
             }
+            break;
         case NodeID.invalid:
     }
 
