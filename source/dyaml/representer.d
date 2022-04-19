@@ -124,7 +124,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
 
 @safe unittest
 {
-    assert(representData(Node(cast(string)null), ScalarStyle.invalid, CollectionStyle.invalid) == Node("null", "tag:yaml.org,2002:null"));
+    assert(representData(Node(cast(string)null), ScalarStyle.invalid, CollectionStyle.invalid) == Node("", "tag:yaml.org,2002:str"));
     assert(representData(Node("Hello world!"), ScalarStyle.invalid, CollectionStyle.invalid) == Node("Hello world!", "tag:yaml.org,2002:str"));
 }
 
@@ -290,9 +290,7 @@ Node representNull() @safe
 Node representString(const Node node) @safe
 {
     string value = node.as!string;
-    return value is null
-           ? Node("null", "tag:yaml.org,2002:null")
-           : Node(value, "tag:yaml.org,2002:str");
+    return Node(value, "tag:yaml.org,2002:str");
 }
 
 //Represent a bytes _node as a binary scalar.
