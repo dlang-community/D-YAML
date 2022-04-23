@@ -25,7 +25,6 @@ import dyaml.token;
 import dyaml.tagdirective;
 
 
-package:
 /**
  * The following YAML grammar is LL(1) and is parsed by a recursive descent
  * parser.
@@ -99,6 +98,7 @@ class ParserException : MarkedYAMLException
     mixin MarkedExceptionCtors;
 }
 
+package:
 /// Generates events from tokens provided by a Scanner.
 ///
 /// While Parser receives tokens with non-const character slices, the events it

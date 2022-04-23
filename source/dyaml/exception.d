@@ -77,20 +77,6 @@ struct Mark
         }
 }
 
-package:
-// A struct storing parameters to the MarkedYAMLException constructor.
-struct MarkedYAMLExceptionData
-{
-    // Context of the error.
-    string context;
-    // Position of the context in a YAML buffer.
-    Mark contextMark;
-    // The error itself.
-    string problem;
-    // Position if the error.
-    Mark problemMark;
-}
-
 // Base class of YAML exceptions with marked positions of the problem.
 abstract class MarkedYAMLException : YAMLException
 {
@@ -122,6 +108,20 @@ abstract class MarkedYAMLException : YAMLException
     {
         with(data) this(context, contextMark, problem, problemMark);
     }
+}
+
+package:
+// A struct storing parameters to the MarkedYAMLException constructor.
+struct MarkedYAMLExceptionData
+{
+    // Context of the error.
+    string context;
+    // Position of the context in a YAML buffer.
+    Mark contextMark;
+    // The error itself.
+    string problem;
+    // Position if the error.
+    Mark problemMark;
 }
 
 // Constructors of YAML exceptions are mostly the same, so we use a mixin.
