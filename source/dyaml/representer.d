@@ -93,6 +93,7 @@ Node representData(const Node data, ScalarStyle defaultScalarStyle, CollectionSt
             }
             break;
         case NodeID.invalid:
+            break;
     }
 
 
