@@ -2096,7 +2096,7 @@ struct Node
         }
 
         /// Get type of the node value.
-        @property NodeType type() const @safe nothrow
+        @property NodeType type() const scope @safe pure nothrow @nogc
         {
             return this.value_.match!(
                 (const bool _)        => NodeType.boolean,
@@ -2114,7 +2114,7 @@ struct Node
         }
 
         /// Get the kind of node this is.
-        @property NodeID nodeID() const @safe nothrow
+        @property NodeID nodeID() const scope @safe pure nothrow @nogc
         {
             final switch (type)
             {
@@ -2175,7 +2175,7 @@ struct Node
 
 
     public:
-        @property string nodeTypeString() const @safe nothrow
+        @property string nodeTypeString() const scope @safe pure nothrow @nogc
         {
             final switch (nodeID)
             {
