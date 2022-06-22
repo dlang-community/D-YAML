@@ -481,7 +481,7 @@ Node.Pair[] constructOrderedMap(const Node[] nodes) @safe
 
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
-    auto keys = redBlackTree!Node();
+    auto keys = new RedBlackTree!Node();
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
@@ -600,7 +600,7 @@ Node.Pair[] constructMap(Node.Pair[] pairs) @safe
 {
     //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
-    auto keys = redBlackTree!Node();
+    auto keys = new RedBlackTree!Node();
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
