@@ -77,7 +77,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         Range stream_;
 
         /// Type used for upcoming emitter steps
-        alias EmitterFunction = void function(typeof(this)*) @safe;
+        alias EmitterFunction = void function(scope typeof(this)*) @safe;
 
         ///Stack of states.
         Appender!(EmitterFunction[]) states_;
