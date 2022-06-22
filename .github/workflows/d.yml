@@ -22,6 +22,7 @@ jobs:
         compiler: ${{ matrix.dc }}
     - name: 'Test'
       run: |
+        dub test -c unittest-dip1000
         dub test --build=unittest-cov
         bash <(curl -s https://codecov.io/bash)
   examples:
