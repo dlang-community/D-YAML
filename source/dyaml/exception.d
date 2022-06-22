@@ -19,7 +19,7 @@ class YAMLException : Exception
 {
     /// Construct a YAMLException with specified message and position where it was thrown.
     public this(string msg, string file = __FILE__, size_t line = __LINE__)
-        @safe pure nothrow
+        @safe pure nothrow @nogc
     {
         super(msg, file, line);
     }

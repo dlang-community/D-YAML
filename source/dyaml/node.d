@@ -35,7 +35,7 @@ class NodeException : MarkedYAMLException
         // Params:  msg   = Error message.
         //          start = Start position of the node.
         this(string msg, Mark start, string file = __FILE__, size_t line = __LINE__)
-            @safe
+            @safe pure nothrow
         {
             super(msg, start, file, line);
         }
