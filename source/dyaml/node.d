@@ -14,6 +14,7 @@ import std.array;
 import std.conv;
 import std.datetime;
 import std.exception;
+import std.format;
 import std.math;
 import std.meta : AliasSeq;
 import std.range;
@@ -94,6 +95,13 @@ private struct Pair
             return keyCmp != 0 ? keyCmp
                                 : value.opCmp(rhs.value);
         }
+
+    ///
+    public void toString (scope void delegate(scope const(char)[]) @safe sink)
+        const scope @safe
+    {
+        formattedWrite(sink, "%s: %s", this.key, this.value);
+    }
 }
 
 enum NodeType
@@ -2432,7 +2440,7 @@ struct Node
             return value_.tryMatch!((RType r) => r);
         }
         // Safe wrapper for coercing a value out of the variant.
-        inout(T) coerceValue(T)() @trusted inout
+        inout(T) coerceValue(T)() @safe inout
         {
             alias RType = typeof(return);
             static if (is(typeof({ RType rt = T.init; T t = RType.init; })))
@@ -2440,14 +2448,24 @@ struct Node
             else // `inout` matters (indirection)
                 alias TType = RType;
 
-            // `inout` made me do it
+            // `inout(Node[]).to!string` apparently is not safe:
+            // struct SumTypeBug {
+            //     import std.conv;
+            //     Node[] data;
+            //
+            //     string bug () inout @safe
+            //     {
+            //         return this.data.to!string;
+            //     }
+            // }
+            // Doesn't compile with DMD v2.100.0
             return this.value_.tryMatch!(
                 (inout bool v  )      => v.to!TType,
                 (inout long v)        => v.to!TType,
-                (inout Node[] v)      => v.to!TType,
+                (inout Node[] v) @trusted => v.to!TType,
                 (inout ubyte[] v)     => v.to!TType,
                 (inout string v)      => v.to!TType,
-                (inout Node.Pair[] v) => v.to!TType,
+                (inout Node.Pair[] v) @trusted => v.to!TType,
                 (inout SysTime v)     => v.to!TType,
                 (inout real v)        => v.to!TType,
                 (inout YAMLNull v)    => null.to!TType,
@@ -2469,6 +2487,25 @@ struct Node
                 value_ = tmpNode.value_;
             }
         }
+
+    ///
+    public void toString (DGT) (scope DGT sink)
+        const scope @safe
+    {
+        this.value_.match!(
+            (const bool v)        => formattedWrite(sink, v ? "true" : "false"),
+            (const long v)        => formattedWrite(sink, "%s", v),
+            (const Node[] v)      => formattedWrite(sink, "[%(%s, %)]", v),
+            (const ubyte[] v)     => formattedWrite(sink, "%s", v),
+            (const string v)      => formattedWrite(sink, `"%s"`, v),
+            (const Node.Pair[] v) => formattedWrite(sink, "{%(%s, %)}", v),
+            (const SysTime v)     => formattedWrite(sink, "%s", v),
+            (const YAMLNull v)    => formattedWrite(sink, "%s", v),
+            (const YAMLMerge v)   => formattedWrite(sink, "%s", v),
+            (const real v)        => formattedWrite(sink, "%s", v),
+            (const YAMLInvalid v) => formattedWrite(sink, "%s", v),
+        );
+    }
 }
 
 package:
