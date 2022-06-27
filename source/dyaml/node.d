@@ -14,13 +14,14 @@ import std.array;
 import std.conv;
 import std.datetime;
 import std.exception;
+import std.format;
 import std.math;
 import std.meta : AliasSeq;
 import std.range;
 import std.string;
+import std.sumtype;
 import std.traits;
 import std.typecons;
-import std.variant;
 
 import dyaml.event;
 import dyaml.exception;
@@ -57,6 +58,9 @@ struct YAMLNull
     string toString() const pure @safe nothrow {return "null";}
 }
 
+/// Invalid YAML type, used internally by SumType
+private struct YAMLInvalid {}
+
 // Merge YAML type, used to support "tag:yaml.org,2002:merge".
 package struct YAMLMerge{}
 
@@ -91,6 +95,13 @@ private struct Pair
             return keyCmp != 0 ? keyCmp
                                 : value.opCmp(rhs.value);
         }
+
+    ///
+    public void toString (scope void delegate(scope const(char)[]) @safe sink)
+        const scope @safe
+    {
+        formattedWrite(sink, "%s: %s", this.key, this.value);
+    }
 }
 
 enum NodeType
@@ -121,15 +132,16 @@ struct Node
 
     package:
         // YAML value type.
-        alias Value = Algebraic!(YAMLNull, YAMLMerge, bool, long, real, ubyte[], SysTime, string,
-                         Node.Pair[], Node[]);
+        alias Value = SumType!(
+            YAMLInvalid, YAMLNull, YAMLMerge,
+            bool, long, real, ubyte[], SysTime, string,
+            Node.Pair[], Node[]);
 
         // Can Value hold this type naturally?
         enum allowed(T) = isIntegral!T ||
-                       isFloatingPoint!T ||
-                       isSomeString!T ||
-                       is(Unqual!T == bool) ||
-                       Value.allowed!T;
+            isFloatingPoint!T ||
+            isSomeString!T ||
+            is(typeof({ Value i = T.init; }));
 
         // Stored value.
         Value value_;
@@ -393,7 +405,7 @@ struct Node
         /// Is this node valid (initialized)?
         @property bool isValid()    const @safe pure nothrow
         {
-            return value_.hasValue;
+            return value_.match!((const YAMLInvalid _) => false, _ => true);
         }
 
         /// Return tag of the node.
@@ -498,9 +510,10 @@ struct Node
          *          the value is out of range of requested type.
          */
         inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
-            if (allowed!(Unqual!T) || hasNodeConstructor!(inout(Unqual!T)) || (!hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T)))
         {
-            if(isType!(Unqual!T)){return getValue!T;}
+            static assert (allowed!(Unqual!T) ||
+                           hasNodeConstructor!(inout(Unqual!T)) ||
+                           (!hasIndirections!(Unqual!T) && hasNodeConstructor!(Unqual!T)));
 
             static if(!allowed!(Unqual!T))
             {
@@ -530,6 +543,8 @@ struct Node
                     static assert(0, "Unhandled user type");
                 }
             } else {
+                static if (canBeType!T)
+                    if (isType!(Unqual!T)) { return getValue!T; }
 
                 // If we're getting from a mapping and we're not getting Node.Pair[],
                 // we're getting the default value.
@@ -551,7 +566,7 @@ struct Node
                         {
                             return coerceValue!T();
                         }
-                        catch(VariantException e)
+                        catch (MatchException e)
                         {
                             throw new NodeException("Unable to convert node value to string", startMark_);
                         }
@@ -2070,7 +2085,7 @@ struct Node
         // Compute hash of the node.
         hash_t toHash() nothrow const @trusted
         {
-            const valueHash = value_.toHash();
+            const valueHash = value_.match!(v => hashOf(v));
 
             return tag_ is null ? valueHash : tag_.hashOf(valueHash);
         }
@@ -2083,51 +2098,19 @@ struct Node
         /// Get type of the node value.
         @property NodeType type() const @safe nothrow
         {
-            if (value_.type is typeid(bool))
-            {
-                return NodeType.boolean;
-            }
-            else if (value_.type is typeid(long))
-            {
-                return NodeType.integer;
-            }
-            else if (value_.type is typeid(Node[]))
-            {
-                return NodeType.sequence;
-            }
-            else if (value_.type is typeid(ubyte[]))
-            {
-                return NodeType.binary;
-            }
-            else if (value_.type is typeid(string))
-            {
-                return NodeType.string;
-            }
-            else if (value_.type is typeid(Node.Pair[]))
-            {
-                return NodeType.mapping;
-            }
-            else if (value_.type is typeid(SysTime))
-            {
-                return NodeType.timestamp;
-            }
-            else if (value_.type is typeid(YAMLNull))
-            {
-                return NodeType.null_;
-            }
-            else if (value_.type is typeid(YAMLMerge))
-            {
-                return NodeType.merge;
-            }
-            else if (value_.type is typeid(real))
-            {
-                return NodeType.decimal;
-            }
-            else if (!value_.hasValue)
-            {
-                return NodeType.invalid;
-            }
-            else assert(0, text(value_.type));
+            return this.value_.match!(
+                (const bool _)        => NodeType.boolean,
+                (const long _)        => NodeType.integer,
+                (const Node[] _)      => NodeType.sequence,
+                (const ubyte[] _)     => NodeType.binary,
+                (const string _)      => NodeType.string,
+                (const Node.Pair[] _) => NodeType.mapping,
+                (const SysTime _)     => NodeType.timestamp,
+                (const YAMLNull _)    => NodeType.null_,
+                (const YAMLMerge _)   => NodeType.merge,
+                (const real _)        => NodeType.decimal,
+                (const YAMLInvalid _) => NodeType.invalid,
+            );
         }
 
         /// Get the kind of node this is.
@@ -2325,8 +2308,15 @@ struct Node
         // This only works for default YAML types, not for user defined types.
         @property bool isType(T)() const
         {
-            return value_.type is typeid(Unqual!T);
+            return value_.match!(
+                (const T _) => true,
+                _    => false,
+            );
         }
+
+        /// Check at compile time if a type is stored natively
+        enum canBeType (T) = is(typeof({ value_.match!((const T _) => true, _ => false); }));
+
 
         // Implementation of contains() and containsKey().
         bool contains_(T, Flag!"key" key, string func)(T rhs) const
@@ -2444,14 +2434,42 @@ struct Node
             }
         }
         // Safe wrapper for getting a value out of the variant.
-        inout(T) getValue(T)() @trusted inout
+        inout(T) getValue(T)() @safe inout
         {
-            return value_.get!T;
+            alias RType = typeof(return);
+            return value_.tryMatch!((RType r) => r);
         }
         // Safe wrapper for coercing a value out of the variant.
-        inout(T) coerceValue(T)() @trusted inout
+        inout(T) coerceValue(T)() @safe inout
         {
-            return (cast(Value)value_).coerce!T;
+            alias RType = typeof(return);
+            static if (is(typeof({ RType rt = T.init; T t = RType.init; })))
+                alias TType = T;
+            else // `inout` matters (indirection)
+                alias TType = RType;
+
+            // `inout(Node[]).to!string` apparently is not safe:
+            // struct SumTypeBug {
+            //     import std.conv;
+            //     Node[] data;
+            //
+            //     string bug () inout @safe
+            //     {
+            //         return this.data.to!string;
+            //     }
+            // }
+            // Doesn't compile with DMD v2.100.0
+            return this.value_.tryMatch!(
+                (inout bool v  )      => v.to!TType,
+                (inout long v)        => v.to!TType,
+                (inout Node[] v) @trusted => v.to!TType,
+                (inout ubyte[] v)     => v.to!TType,
+                (inout string v)      => v.to!TType,
+                (inout Node.Pair[] v) @trusted => v.to!TType,
+                (inout SysTime v)     => v.to!TType,
+                (inout real v)        => v.to!TType,
+                (inout YAMLNull v)    => null.to!TType,
+            );
         }
         // Safe wrapper for setting a value for the variant.
         void setValue(T)(T value) @trusted
@@ -2469,6 +2487,25 @@ struct Node
                 value_ = tmpNode.value_;
             }
         }
+
+    ///
+    public void toString (DGT) (scope DGT sink)
+        const scope @safe
+    {
+        this.value_.match!(
+            (const bool v)        => formattedWrite(sink, v ? "true" : "false"),
+            (const long v)        => formattedWrite(sink, "%s", v),
+            (const Node[] v)      => formattedWrite(sink, "[%(%s, %)]", v),
+            (const ubyte[] v)     => formattedWrite(sink, "%s", v),
+            (const string v)      => formattedWrite(sink, `"%s"`, v),
+            (const Node.Pair[] v) => formattedWrite(sink, "{%(%s, %)}", v),
+            (const SysTime v)     => formattedWrite(sink, "%s", v),
+            (const YAMLNull v)    => formattedWrite(sink, "%s", v),
+            (const YAMLMerge v)   => formattedWrite(sink, "%s", v),
+            (const real v)        => formattedWrite(sink, "%s", v),
+            (const YAMLInvalid v) => formattedWrite(sink, "%s", v),
+        );
+    }
 }
 
 package:
