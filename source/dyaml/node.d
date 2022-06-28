@@ -1974,10 +1974,14 @@ struct Node
         /// Compare with another _node.
         int opCmp(const ref Node rhs) const @safe
         {
-            // Compare tags - if equal or both null, we need to compare further.
-            const tagCmp = (tag_ is null) ? (rhs.tag_ is null) ? 0 : -1
-                                       : (rhs.tag_ is null) ? 1 : std.algorithm.comparison.cmp(tag_, rhs.tag_);
-            if(tagCmp != 0){return tagCmp;}
+            const bool hasNullTag = this.tag_ is null;
+            // Only one of them is null: we can order nodes
+            if ((hasNullTag) ^ (rhs.tag is null))
+                return hasNullTag ? -1 : 1;
+            // Either both `null` or both have a value
+            if (!hasNullTag)
+                if (int result = std.algorithm.comparison.cmp(tag_, rhs.tag_))
+                    return result;
 
             static int cmp(T1, T2)(T1 a, T2 b)
             {
