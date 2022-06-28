@@ -1991,13 +1991,12 @@ struct Node
             }
 
             // Compare validity: if both valid, we have to compare further.
-            const v1 = isValid;
-            const v2 = rhs.isValid;
-            if(!v1){return v2 ? -1 : 0;}
-            if(!v2){return 1;}
-
-            const typeCmp = cmp(type, rhs.type);
-            if(typeCmp != 0){return typeCmp;}
+            if (!this.isValid())
+                return rhs.isValid() ? -1 : 0;
+            if (!rhs.isValid())
+                return 1;
+            if (const typeCmp = cmp(type, rhs.type))
+                return typeCmp;
 
             static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
             {
