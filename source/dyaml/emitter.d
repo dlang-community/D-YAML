@@ -732,14 +732,14 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             //}
             auto writer = ScalarWriter!(Range, CharType)(&this, analysis_.scalar,
                                        context_ != Context.mappingSimpleKey);
-            with(writer) final switch(style_)
+            final switch(style_)
             {
                 case ScalarStyle.invalid:      assert(false);
-                case ScalarStyle.doubleQuoted: writeDoubleQuoted(); break;
-                case ScalarStyle.singleQuoted: writeSingleQuoted(); break;
-                case ScalarStyle.folded:       writeFolded();       break;
-                case ScalarStyle.literal:      writeLiteral();      break;
-                case ScalarStyle.plain:        writePlain();        break;
+                case ScalarStyle.doubleQuoted: writer.writeDoubleQuoted(); break;
+                case ScalarStyle.singleQuoted: writer.writeSingleQuoted(); break;
+                case ScalarStyle.folded:       writer.writeFolded();       break;
+                case ScalarStyle.literal:      writer.writeLiteral();      break;
+                case ScalarStyle.plain:        writer.writePlain();        break;
             }
             analysis_.flags.isNull = true;
             style_ = ScalarStyle.invalid;
