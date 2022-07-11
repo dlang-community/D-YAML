@@ -152,8 +152,8 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ScalarStyle style_ = ScalarStyle.invalid;
 
     public:
-        @disable int opCmp(ref Emitter);
-        @disable bool opEquals(ref Emitter);
+        @disable int opCmp(ref const Emitter) const scope @safe pure nothrow @nogc;
+        @disable bool opEquals(ref const Emitter) const scope @safe pure nothrow @nogc;
 
         /**
          * Construct an emitter.

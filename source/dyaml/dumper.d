@@ -73,8 +73,8 @@ struct Dumper
         // Default style for collection nodes. If style is $(D CollectionStyle.invalid), the _style is chosen automatically.
         CollectionStyle defaultCollectionStyle = CollectionStyle.invalid;
 
-        @disable bool opEquals(ref Dumper);
-        @disable int opCmp(ref Dumper);
+        @disable bool opEquals(ref const Dumper) const scope @safe pure nothrow @nogc;
+        @disable int opCmp(ref const Dumper) const scope @safe pure nothrow @nogc;
 
         ///Set indentation width. 2 by default. Must not be zero.
         @property void indent(uint indent) pure @safe nothrow

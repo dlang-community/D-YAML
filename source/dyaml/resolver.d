@@ -100,8 +100,8 @@ struct Resolver
         }
 
     public:
-        @disable bool opEquals(ref Resolver);
-        @disable int opCmp(ref Resolver);
+        @disable bool opEquals(ref const Resolver) const scope @safe pure nothrow @nogc;
+        @disable int opCmp(ref const Resolver) const scope @safe pure nothrow @nogc;
 
         /**
          * Add an implicit scalar resolver.
