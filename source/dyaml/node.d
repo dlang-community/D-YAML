@@ -19,9 +19,12 @@ import std.math;
 import std.meta : AliasSeq;
 import std.range;
 import std.string;
-import std.sumtype;
 import std.traits;
 import std.typecons;
+
+// FIXME: Switch back to upstream's when v2.101 is the oldest
+// supported version (recommended: after v2.111 release).
+import dyaml.stdsumtype;
 
 import dyaml.event;
 import dyaml.exception;
@@ -35,7 +38,8 @@ class NodeException : MarkedYAMLException
         //
         // Params:  msg   = Error message.
         //          start = Start position of the node.
-        this(string msg, Mark start, string file = __FILE__, size_t line = __LINE__)
+        this(string msg, const scope Mark start,
+             string file = __FILE__, size_t line = __LINE__)
             @safe pure nothrow
         {
             super(msg, start, file, line);
@@ -83,13 +87,13 @@ private struct Pair
         }
 
         /// Equality test with another Pair.
-        bool opEquals(const ref Pair rhs) const @safe
+        bool opEquals(const ref Pair rhs) const scope @safe
         {
             return key == rhs.key && value == rhs.value;
         }
 
         // Comparison with another Pair.
-        int opCmp(ref const(Pair) rhs) const @safe
+        int opCmp(const scope ref Pair rhs) const scope @safe
         {
             const keyCmp = key.opCmp(rhs.key);
             return keyCmp != 0 ? keyCmp
@@ -100,7 +104,10 @@ private struct Pair
     public void toString (scope void delegate(scope const(char)[]) @safe sink)
         const scope @safe
     {
-        formattedWrite(sink, "%s: %s", this.key, this.value);
+        // formattedWrite does not accept `scope` parameters
+        () @trusted {
+            formattedWrite(sink, "%s: %s", this.key, this.value);
+        }();
     }
 }
 
@@ -403,19 +410,19 @@ struct Node
         }
 
         /// Is this node valid (initialized)?
-        @property bool isValid()    const @safe pure nothrow
+        @property bool isValid()    const scope @safe pure nothrow @nogc
         {
             return value_.match!((const YAMLInvalid _) => false, _ => true);
         }
 
         /// Return tag of the node.
-        @property string tag()      const @safe nothrow
+        @property string tag()      const return scope @safe pure nothrow @nogc
         {
             return tag_;
         }
 
         /// Return the start position of the node.
-        @property Mark startMark()  const @safe pure nothrow
+        @property Mark startMark()  const return scope @safe pure nothrow @nogc
         {
             return startMark_;
         }
@@ -434,11 +441,11 @@ struct Node
          *
          * Returns: true if equal, false otherwise.
          */
-        bool opEquals(const Node rhs) const @safe
+        bool opEquals(const scope Node rhs) const scope @safe
         {
             return opCmp(rhs) == 0;
         }
-        bool opEquals(T)(const auto ref T rhs) const
+        bool opEquals(T)(const scope auto ref T rhs) const @safe
         {
             try
             {
@@ -509,7 +516,7 @@ struct Node
          * Throws:  NodeException if unable to convert to specified type, or if
          *          the value is out of range of requested type.
          */
-        inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout
+        inout(T) get(T, Flag!"stringConversion" stringConversion = Yes.stringConversion)() inout @safe return scope
         {
             static assert (allowed!(Unqual!T) ||
                            hasNodeConstructor!(inout(Unqual!T)) ||
@@ -564,7 +571,7 @@ struct Node
                         // Try to convert to string.
                         try
                         {
-                            return coerceValue!T();
+                            return coerceValue!T().dup;
                         }
                         catch (MatchException e)
                         {
@@ -661,9 +668,11 @@ struct Node
                     this.z = z;
                 }
 
-                this(Node node) @safe
+                this(scope const Node node) @safe
                 {
-                    auto parts = node.as!string().split(":");
+                    // `std.array.split` is not marked as taking a `scope` range,
+                    // but we don't escape a reference.
+                    scope parts = () @trusted { return node.as!string().split(":"); }();
                     x = parts[0].to!int;
                     y = parts[1].to!int;
                     z = parts[2].to!int;
@@ -785,9 +794,11 @@ struct Node
                     this.z = z;
                 }
 
-                this(Node node) @safe inout
+                this(scope const Node node) @safe inout
                 {
-                    auto parts = node.as!string().split(":");
+                    // `std.array.split` is not marked as taking a `scope` range,
+                    // but we don't escape a reference.
+                    scope parts = () @trusted { return node.as!string().split(":"); }();
                     x = parts[0].to!int;
                     y = parts[1].to!int;
                     z = parts[2].to!int;
@@ -936,7 +947,7 @@ struct Node
          *          non-integral index is used with a sequence or the node is
          *          not a collection.
          */
-        ref inout(Node) opIndex(T)(T index) inout @safe
+        ref inout(Node) opIndex(T)(T index) inout return scope @safe
         {
             final switch (nodeID)
             {
@@ -1377,7 +1388,7 @@ struct Node
 
             string[int] test;
             foreach (pair; n.mapping)
-                test[pair.key.as!int] = pair.value.as!string;
+                test[pair.key.as!int] = pair.value.as!string.idup;
 
             assert(test[1] == "foo");
             assert(test[2] == "bar");
@@ -1680,7 +1691,7 @@ struct Node
                                Pair(k3, Node(cast(real)1.0)),
                                Pair(k4, Node("yarly"))]);
 
-            foreach(string key, Node value; nmap2)
+            foreach(scope string key, scope Node value; nmap2)
             {
                 switch(key)
                 {
@@ -1972,7 +1983,7 @@ struct Node
         }
 
         /// Compare with another _node.
-        int opCmp(const ref Node rhs) const @safe
+        int opCmp(const scope ref Node rhs) const scope @safe
         {
             const bool hasNullTag = this.tag_ is null;
             // Only one of them is null: we can order nodes
@@ -1998,7 +2009,7 @@ struct Node
             if (const typeCmp = cmp(type, rhs.type))
                 return typeCmp;
 
-            static int compareCollections(T)(const ref Node lhs, const ref Node rhs)
+            static int compareCollections(T)(const scope ref Node lhs, const scope ref Node rhs)
             {
                 const c1 = lhs.getValue!T;
                 const c2 = rhs.getValue!T;
@@ -2145,7 +2156,7 @@ struct Node
         // Params:  level = Level of the node in the tree.
         //
         // Returns: String representing the node tree.
-        @property string debugString(uint level = 0) const @safe
+        @property string debugString(uint level = 0) const scope @safe
         {
             string indent;
             foreach(i; 0 .. level){indent ~= " ";}
@@ -2396,7 +2407,8 @@ struct Node
 
         // Get index of pair with key (or value, if key is false) matching index.
         // Cannot be inferred @safe due to https://issues.dlang.org/show_bug.cgi?id=16528
-        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const ref T index) const @safe
+        sizediff_t findPair(T, Flag!"key" key = Yes.key)(const scope ref T index)
+            const scope @safe
         {
             const pairs = getValue!(Pair[])();
             const(Node)* node;
@@ -2420,7 +2432,7 @@ struct Node
         }
 
         // Check if index is integral and in range.
-        void checkSequenceIndex(T)(T index) const
+        void checkSequenceIndex(T)(T index) const scope @safe
         {
             assert(nodeID == NodeID.sequence,
                    "checkSequenceIndex() called on a " ~ nodeTypeString ~ " node");
@@ -2437,13 +2449,13 @@ struct Node
             }
         }
         // Safe wrapper for getting a value out of the variant.
-        inout(T) getValue(T)() @safe inout
+        inout(T) getValue(T)() @safe return scope inout
         {
             alias RType = typeof(return);
             return value_.tryMatch!((RType r) => r);
         }
         // Safe wrapper for coercing a value out of the variant.
-        inout(T) coerceValue(T)() @safe inout
+        inout(T) coerceValue(T)() @trusted scope return inout
         {
             alias RType = typeof(return);
             static if (is(typeof({ RType rt = T.init; T t = RType.init; })))
@@ -2463,15 +2475,15 @@ struct Node
             // }
             // Doesn't compile with DMD v2.100.0
             return this.value_.tryMatch!(
-                (inout bool v  )      => v.to!TType,
-                (inout long v)        => v.to!TType,
+                (inout bool v) @safe      => v.to!TType,
+                (inout long v) @safe      => v.to!TType,
                 (inout Node[] v) @trusted => v.to!TType,
-                (inout ubyte[] v)     => v.to!TType,
-                (inout string v)      => v.to!TType,
+                (inout ubyte[] v) @safe   => v.to!TType,
+                (inout string v) @safe    => v.to!TType,
                 (inout Node.Pair[] v) @trusted => v.to!TType,
-                (inout SysTime v)     => v.to!TType,
-                (inout real v)        => v.to!TType,
-                (inout YAMLNull v)    => null.to!TType,
+                (inout SysTime v) @trusted   => v.to!TType,
+                (inout real v) @safe      => v.to!TType,
+                (inout YAMLNull v) @safe  => null.to!TType,
             );
         }
         // Safe wrapper for setting a value for the variant.
@@ -2521,7 +2533,10 @@ package:
 //          toMerge = Pairs to merge.
 void merge(ref Appender!(Node.Pair[]) pairs, Node.Pair[] toMerge) @safe
 {
-    bool eq(ref Node.Pair a, ref Node.Pair b){return a.key == b.key;}
+    bool eq(ref Node.Pair a, ref Node.Pair b) @safe
+    {
+        return a.key == b.key;
+    }
 
     foreach(ref pair; toMerge) if(!canFind!eq(pairs.data, pair))
     {
@@ -2568,7 +2583,7 @@ enum castableToNode(T) = (is(T == struct) || is(T == class)) && is(typeof(T.opCa
         {
             foreach(value; node["bars"].sequence)
             {
-                bars ~= value.as!string;
+                bars ~= value.as!string.idup;
             }
         }
     }

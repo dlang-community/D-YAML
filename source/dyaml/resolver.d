@@ -163,7 +163,7 @@ struct Resolver
          *
          * Returns: Resolved tag.
          */
-        string resolve(const NodeID kind, const string tag, const string value,
+        string resolve(const NodeID kind, const string tag, scope string value,
                     const bool implicit) @safe
         {
             import std.array : empty, front;
@@ -189,7 +189,13 @@ struct Resolver
                     //If regexp matches, return tag.
                     foreach(resolver; resolvers)
                     {
-                        if(!(match(value, resolver[1]).empty))
+                        // source/dyaml/resolver.d(192,35): Error: scope variable `__tmpfordtorXXX`
+                        // assigned to non-scope parameter `this` calling
+                        // `std.regex.RegexMatch!string.RegexMatch.~this`
+                        bool isEmpty = () @trusted {
+                            return match(value, resolver[1]).empty;
+                        }();
+                        if(!isEmpty)
                         {
                             return resolver[0];
                         }

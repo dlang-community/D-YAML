@@ -65,8 +65,14 @@ struct Mark
             return column_;
         }
 
+        /// Duplicate a mark
+        Mark dup () const scope @safe pure nothrow
+        {
+            return Mark(this.name_.idup, this.line_, this.column_);
+        }
+
         /// Get a string representation of the mark.
-        string toString() @safe pure nothrow const
+        string toString() const scope @safe pure nothrow
         {
             // Line/column numbers start at zero internally, make them start at 1.
             static string clamped(ushort v) @safe pure nothrow
@@ -84,23 +90,24 @@ abstract class MarkedYAMLException : YAMLException
     Mark mark;
 
     // Construct a MarkedYAMLException with specified context and problem.
-    this(string context, const Mark contextMark, string problem, const Mark problemMark,
+    this(string context, scope const Mark contextMark,
+         string problem, scope const Mark problemMark,
          string file = __FILE__, size_t line = __LINE__) @safe pure nothrow
     {
         const msg = context ~ '\n' ~
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
                     problem ~ '\n' ~ problemMark.toString() ~ '\n';
         super(msg, file, line);
-        mark = problemMark;
+        mark = problemMark.dup;
     }
 
     // Construct a MarkedYAMLException with specified problem.
-    this(string problem, const Mark problemMark,
+    this(string problem, scope const Mark problemMark,
          string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
-        mark = problemMark;
+        mark = problemMark.dup;
     }
 
     /// Construct a MarkedYAMLException from a struct storing constructor parameters.

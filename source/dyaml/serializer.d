@@ -236,7 +236,7 @@ struct Serializer
                     const bool isDetected = node.tag_ == detectedTag;
 
                     emitter.emit(scalarEvent(Mark(), Mark(), aliased, node.tag_,
-                                  isDetected, value, node.scalarStyle));
+                                  isDetected, value.idup, node.scalarStyle));
                     return;
                 case NodeID.invalid:
                     assert(0);
