@@ -72,6 +72,10 @@ auto dumpEventString(string str) @safe
                     break;
                 case EventID.mappingStart:
                     line = "+MAP";
+                    if (event.collectionStyle == CollectionStyle.flow)
+                    {
+                        line ~= text(" {}");
+                    }
                     if (event.anchor != "")
                     {
                         line ~= text(" &", event.anchor);
@@ -83,6 +87,10 @@ auto dumpEventString(string str) @safe
                     break;
                 case EventID.sequenceStart:
                     line = "+SEQ";
+                    if (event.collectionStyle == CollectionStyle.flow)
+                    {
+                        line ~= text(" []");
+                    }
                     if (event.anchor != "")
                     {
                         line ~= text(" &", event.anchor);
