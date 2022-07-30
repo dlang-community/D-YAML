@@ -13,6 +13,7 @@
 /examples/getting_started/main.obj
 /cdc.obj
 /unittest
+*.pdb
 
 # Backups #
 ###########
