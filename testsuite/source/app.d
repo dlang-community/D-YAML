@@ -226,7 +226,7 @@ TestResult runTests(string yaml) @safe
     {
         if ("yaml" in test)
         {
-            parseYAML(test["yaml"].as!string);
+            parseYAML(cleanup(test["yaml"].as!string));
         }
         if ("json" in test)
         {
@@ -234,7 +234,7 @@ TestResult runTests(string yaml) @safe
         }
         if ("tree" in test)
         {
-            events = test["tree"].as!string;
+            events = cleanup(test["tree"].as!string);
         }
         if ("fail" in test)
         {
@@ -309,4 +309,20 @@ void main(string[] args) @system
         total++;
     }
     writefln!"%d/%d tests passed"(successes, total);
+}
+
+string cleanup(string input) @safe
+{
+    return input.substitute(
+        "␣", " ",
+        "————»", "\t",
+        "———»", "\t",
+        "——»", "\t",
+        "—»", "\t",
+        "»", "\t",
+        "↵", "\n",
+        "∎", "",
+        "←", "\r",
+        "⇔", "\uFEFF"
+    ).toUTF8;
 }
