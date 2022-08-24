@@ -16,8 +16,10 @@ jobs:
           - dmd-beta
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - uses: dlang-community/setup-dlang@v1
       with:
         compiler: ${{ matrix.dc }}
     - name: 'Test'
@@ -29,8 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/checkout@v2
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: actions/checkout@v3
+    - uses: dlang-community/setup-dlang@v1
       with:
         compiler: dmd-latest
     - name: 'Build Examples'
@@ -47,8 +49,8 @@ jobs:
   ninja:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: actions/checkout@v3
+    - uses: dlang-community/setup-dlang@v1
       with:
         compiler: dmd-latest
     - name: 'Install dependencies'
@@ -64,8 +66,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/checkout@v2
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: actions/checkout@v3
+    - uses: dlang-community/setup-dlang@v1
       with:
         compiler: dmd-latest
     - name: 'Run YAML test suite'
