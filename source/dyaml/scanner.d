@@ -1227,7 +1227,10 @@ struct Scanner
                 // is not Strip)
                 else
                 {
-                    reader_.sliceBuilder.write(lineBreak);
+                    if (lineBreak != '\0')
+                    {
+                        reader_.sliceBuilder.write(lineBreak);
+                    }
                 }
             }
 
@@ -1806,4 +1809,18 @@ struct Scanner
             }
             return '\0';
         }
+}
+
+// Issue 309 - https://github.com/dlang-community/D-YAML/issues/309
+@safe unittest
+{
+    enum str = q"EOS
+exp: |
+  foobar
+EOS".chomp;
+
+    auto r = new Reader(cast(ubyte[])str.dup);
+    auto s = Scanner(r);
+    auto elems = s.map!"a.value".filter!"a.length > 0".array;
+    assert(elems[1] == "foobar");
 }
