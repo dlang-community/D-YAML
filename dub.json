@@ -28,6 +28,7 @@
         "examples/representer",
         "examples/resolver",
         "examples/tojson",
+        "examples/tokens",
         "examples/yaml_bench",
         "examples/yaml_gen",
         "examples/yaml_stats",
