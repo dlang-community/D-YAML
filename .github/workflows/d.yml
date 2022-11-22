@@ -44,6 +44,7 @@ jobs:
         dub build dyaml:resolver
         dub build dyaml:testsuite
         dub build dyaml:tojson
+        dub build dyaml:tokens
         dub build dyaml:yaml_gen
         dub build dyaml:yaml_stats
   ninja:
