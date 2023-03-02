@@ -2477,7 +2477,28 @@ struct Node
             return this.value_.tryMatch!(
                 (inout bool v) @safe      => v.to!TType,
                 (inout long v) @safe      => v.to!TType,
-                (inout Node[] v) @trusted => v.to!TType,
+                (inout Node[] v) @trusted
+                {
+                    static if (is(TType == string))
+                    {
+                        auto sink = appender!string();
+                        sink ~= "[";
+
+                        foreach(i, ref node; v)
+                        {
+                            if (i > 0)
+                                sink ~= ", ";
+                            node.toString(sink);
+                        }
+
+                        sink ~= "]";
+                        return sink.data;
+                    }
+                    else
+                    {
+                        return v.to!TType;
+                    }
+                },
                 (inout ubyte[] v) @safe   => v.to!TType,
                 (inout string v) @safe    => v.to!TType,
                 (inout Node.Pair[] v) @trusted => v.to!TType,
@@ -2510,16 +2531,53 @@ struct Node
         this.value_.match!(
             (const bool v)        => formattedWrite(sink, v ? "true" : "false"),
             (const long v)        => formattedWrite(sink, "%s", v),
-            (const Node[] v)      => formattedWrite(sink, "[%(%s, %)]", v),
+            (scope const Node[] v) @trusted
+            {
+                sink ~= "[";
+
+                foreach(i, ref node; v)
+                {
+                    if (i > 0)
+                        sink ~= ", ";
+                    node.toString(sink);
+                }
+
+                sink ~= "]";
+                return 0;
+            },
             (const ubyte[] v)     => formattedWrite(sink, "%s", v),
             (const string v)      => formattedWrite(sink, `"%s"`, v),
             (const Node.Pair[] v) => formattedWrite(sink, "{%(%s, %)}", v),
-            (const SysTime v)     => formattedWrite(sink, "%s", v),
+            (const SysTime v)
+            {
+                v.toString(sink);
+                return 0;
+            },
             (const YAMLNull v)    => formattedWrite(sink, "%s", v),
             (const YAMLMerge v)   => formattedWrite(sink, "%s", v),
             (const real v)        => formattedWrite(sink, "%s", v),
             (const YAMLInvalid v) => formattedWrite(sink, "%s", v),
         );
+    }
+
+    @safe unittest
+    {
+        import std.array : appender;
+        auto output = appender!string();
+        auto seq1 = Node([1, 2, 3, 4, 5]);
+        
+        seq1.toString(output);
+        assert(output.data.length > 0);
+    }
+
+    @safe unittest
+    {
+        import std.array : appender;
+        auto output = appender!string();
+        auto node = Node(SysTime(DateTime(2005, 6, 15, 20, 0, 0), UTC()));
+        
+        node.toString(output);
+        assert(output.data.length > 0);
     }
 }
 
