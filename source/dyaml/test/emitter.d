@@ -8,7 +8,7 @@ module dyaml.test.emitter;
 
 @safe unittest
 {
-    import std.array : Appender;
+    import std.array : Appender, array;
     import std.range : ElementType, isInputRange;
 
     import dyaml : CollectionStyle, LineBreak, Loader, Mark, ScalarStyle;
@@ -17,11 +17,11 @@ module dyaml.test.emitter;
     import dyaml.test.common : assertEventsEqual, run;
 
     // Try to emit an event range.
-    static void emitTestCommon(T)(ref Appender!string emitStream, T events, bool canonical = false) @safe
+    static void emitTestCommon(T)(Appender!string* emitStream, T events, bool canonical = false) @safe
         if (isInputRange!T && is(ElementType!T == Event))
     {
         auto emitter = Emitter!(typeof(emitStream), char)(emitStream, canonical, 2, 80, LineBreak.unix);
-        foreach (ref event; events)
+        foreach (event; events)
         {
             emitter.emit(event);
         }
@@ -40,8 +40,8 @@ module dyaml.test.emitter;
     {
         //Must exist due to Anchor, Tags reference counts.
         auto loader = Loader.fromFile(dataFilename);
-        auto events = loader.parse();
-        auto emitStream = Appender!string();
+        auto events = loader.parse().array;
+        auto emitStream = new Appender!string();
         emitTestCommon(emitStream, events);
 
         auto loader2 = Loader.fromString(emitStream.data);
@@ -60,10 +60,10 @@ module dyaml.test.emitter;
     {
         //Must exist due to Anchor, Tags reference counts.
         auto loader = Loader.fromFile(canonicalFilename);
-        auto events = loader.parse();
+        auto events = loader.parse().array;
         foreach (canonical; [false, true])
         {
-            auto emitStream = Appender!string();
+            auto emitStream = new Appender!string();
             emitTestCommon(emitStream, events, canonical);
 
             auto loader2 = Loader.fromString(emitStream.data);
@@ -88,7 +88,7 @@ module dyaml.test.emitter;
         {
             //must exist due to Anchor, Tags reference counts
             auto loader = Loader.fromFile(canonicalFilename);
-            auto events = loader.parse();
+            auto events = loader.parse().array;
             foreach (flowStyle; [CollectionStyle.block, CollectionStyle.flow])
             {
                 foreach (style; [ScalarStyle.literal, ScalarStyle.folded,
@@ -116,7 +116,7 @@ module dyaml.test.emitter;
                         }
                         styledEvents ~= event;
                     }
-                    auto emitStream = Appender!string();
+                    auto emitStream = new Appender!string();
                     emitTestCommon(emitStream, styledEvents);
                     auto loader2 = Loader.fromString(emitStream.data);
                     loader2.name = "TEST";
