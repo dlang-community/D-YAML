@@ -9,7 +9,7 @@ module dyaml.test.compare;
 @safe unittest
 {
     import dyaml : Loader;
-    import dyaml.test.common : assertNodesEqual, compareEvents, run;
+    import dyaml.test.common : assertNodesEqual, compareEvents, parseFile, run;
 
     /**
     Test parser by comparing output from parsing two equivalent YAML files.
@@ -20,8 +20,8 @@ module dyaml.test.compare;
     */
     static void testParser(string dataFilename, string canonicalFilename) @safe
     {
-        auto dataEvents = Loader.fromFile(dataFilename).parse();
-        auto canonicalEvents = Loader.fromFile(canonicalFilename).parse();
+        auto dataEvents = parseFile(dataFilename);
+        auto canonicalEvents = parseFile(canonicalFilename);
 
         //BUG: the return value isn't checked! This test currently fails...
         compareEvents(dataEvents, canonicalEvents);

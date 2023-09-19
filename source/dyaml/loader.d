@@ -265,13 +265,6 @@ struct Loader
                                         name_ ~ " : " ~ e.msg, e.file, e.line);
             }
         }
-
-
-        // Parse and return all events. Used for debugging.
-        auto parse() @safe
-        {
-            return parser_;
-        }
 }
 /// Load single YAML document from a file:
 @safe unittest
