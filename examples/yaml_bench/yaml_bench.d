@@ -12,6 +12,8 @@ import std.range;
 import std.stdio;
 import std.string;
 import dyaml;
+import dyaml.reader;
+import dyaml.scanner;
 
 ///Get data out of every node.
 void extract(ref Node document) @safe
@@ -115,15 +117,21 @@ void main(string[] args) //@safe
             else       { fileWorkingCopy[] = fileInMemory[]; }
             void[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
 
-            auto loader        = Loader.fromBuffer(fileToLoad);
             if(scanOnly)
             {
-                loader.scanBench();
-                return;
+                auto reader = new Reader(cast(ubyte[])fileToLoad, "benchmark");
+                auto scanner = Scanner(reader);
+                while(!scanner.empty)
+                {
+                    scanner.popFront();
+                }
             }
-
-            loader.resolver = resolver;
-            nodes = loader.array;
+            else
+            {
+                auto loader = Loader.fromBuffer(fileToLoad);
+                loader.resolver = resolver;
+                nodes = loader.array;
+            }
         }
         void runDumpBenchmark() @safe
         {
