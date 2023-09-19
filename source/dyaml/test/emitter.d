@@ -14,7 +14,7 @@ module dyaml.test.emitter;
     import dyaml : CollectionStyle, LineBreak, Loader, Mark, ScalarStyle;
     import dyaml.emitter : Emitter;
     import dyaml.event : Event, EventID, mappingStartEvent, scalarEvent, sequenceStartEvent;
-    import dyaml.test.common : assertEventsEqual, run;
+    import dyaml.test.common : assertEventsEqual, parseData, parseFile, run;
 
     // Try to emit an event range.
     static void emitTestCommon(T)(Appender!string* emitStream, T events, bool canonical = false) @safe
@@ -39,14 +39,11 @@ module dyaml.test.emitter;
     static void testEmitterOnData(string dataFilename, string canonicalFilename) @safe
     {
         //Must exist due to Anchor, Tags reference counts.
-        auto loader = Loader.fromFile(dataFilename);
-        auto events = loader.parse().array;
+        auto events = parseFile(dataFilename).array;
         auto emitStream = new Appender!string();
         emitTestCommon(emitStream, events);
 
-        auto loader2 = Loader.fromString(emitStream.data);
-        loader2.name = "TEST";
-        auto newEvents = loader2.parse();
+        auto newEvents = parseData(cast(ubyte[])emitStream.data.dup);
         assertEventsEqual(events, newEvents);
     }
     /**
@@ -59,16 +56,13 @@ module dyaml.test.emitter;
     static void testEmitterOnCanonical(string canonicalFilename) @safe
     {
         //Must exist due to Anchor, Tags reference counts.
-        auto loader = Loader.fromFile(canonicalFilename);
-        auto events = loader.parse().array;
+        auto events = parseFile(canonicalFilename).array;
         foreach (canonical; [false, true])
         {
             auto emitStream = new Appender!string();
             emitTestCommon(emitStream, events, canonical);
 
-            auto loader2 = Loader.fromString(emitStream.data);
-            loader2.name = "TEST";
-            auto newEvents = loader2.parse();
+            auto newEvents = parseData(cast(ubyte[])emitStream.data.dup);
             assertEventsEqual(events, newEvents);
         }
     }
@@ -87,8 +81,7 @@ module dyaml.test.emitter;
         foreach (filename; [dataFilename, canonicalFilename])
         {
             //must exist due to Anchor, Tags reference counts
-            auto loader = Loader.fromFile(canonicalFilename);
-            auto events = loader.parse().array;
+            auto events = parseFile(canonicalFilename).array;
             foreach (flowStyle; [CollectionStyle.block, CollectionStyle.flow])
             {
                 foreach (style; [ScalarStyle.literal, ScalarStyle.folded,
@@ -118,9 +111,7 @@ module dyaml.test.emitter;
                     }
                     auto emitStream = new Appender!string();
                     emitTestCommon(emitStream, styledEvents);
-                    auto loader2 = Loader.fromString(emitStream.data);
-                    loader2.name = "TEST";
-                    auto newEvents = loader2.parse();
+                    auto newEvents = parseData(cast(ubyte[])emitStream.data.dup);
                     assertEventsEqual(events, newEvents);
                 }
             }

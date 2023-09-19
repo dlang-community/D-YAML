@@ -11,6 +11,9 @@ version(unittest)
 
 import dyaml.node;
 import dyaml.event;
+import dyaml.parser;
+import dyaml.reader;
+import dyaml.scanner;
 
 import core.exception;
 import std.algorithm;
@@ -146,6 +149,17 @@ if (isInputRange!T && isInputRange!U && is(ElementType!T == Event) && is(Element
     auto events1Copy = events1.array;
     auto events2Copy = events2.array;
     assert(compareEvents(events1Copy, events2Copy), text("Got '", events1Copy, "', expected '", events2Copy, "'"));
+}
+
+auto parseData(ubyte[] data, string name = "TEST") @safe
+{
+    auto reader = new Reader(data, name);
+    auto scanner = Scanner(reader);
+    return new Parser(scanner);
+}
+auto parseFile(string path) @safe
+{
+    return parseData(readData(path), path);
 }
 
 private:

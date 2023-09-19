@@ -2,6 +2,9 @@ module dyaml.testsuite;
 
 import dyaml;
 import dyaml.event;
+import dyaml.parser;
+import dyaml.reader;
+import dyaml.scanner;
 
 import std.algorithm;
 import std.conv;
@@ -19,7 +22,7 @@ import std.uni;
 
 void dumpEventString(string str) @safe
 {
-    auto events = Loader.fromString(str).parse();
+    auto events = new Parser(Scanner(new Reader(cast(ubyte[])str.dup)));
     foreach (event; events)
     {
         string line;
@@ -125,7 +128,7 @@ void dumpEventString(string str) @safe
 }
 void dumpTokens(string str) @safe
 {
-    writefln("%(%s\n%)", Loader.fromString(str).parse());
+    writefln("%(%s\n%)", new Parser(Scanner(new Reader(cast(ubyte[])str.dup))));
 }
 
 
