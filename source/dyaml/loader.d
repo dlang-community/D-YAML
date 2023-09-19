@@ -248,23 +248,6 @@ struct Loader
             }
             return currentNode;
         }
-
-        // Scan all tokens, throwing them away. Used for benchmarking.
-        void scanBench() @safe
-        {
-            try
-            {
-                while(!scanner_.empty)
-                {
-                    scanner_.popFront();
-                }
-            }
-            catch(YAMLException e)
-            {
-                throw new YAMLException("Unable to scan YAML from stream " ~
-                                        name_ ~ " : " ~ e.msg, e.file, e.line);
-            }
-        }
 }
 /// Load single YAML document from a file:
 @safe unittest
