@@ -95,18 +95,12 @@ struct Scanner
         /// We emit the KEY token before all keys, so when we find a potential simple
         /// key, we try to locate the corresponding ':' indicator. Simple keys should be
         /// limited to a single line and 1024 characters.
-        ///
-        /// 16 bytes on 64-bit.
         static struct SimpleKey
         {
-            /// Character index in reader where the key starts.
-            uint charIndex = uint.max;
+            /// Position of the key
+            Mark mark;
             /// Index of the key token from start (first token scanned being 0).
             uint tokenIndex;
-            /// Line the key starts at.
-            uint line;
-            /// Column the key starts at.
-            ushort column;
             /// Is this required to be a simple key?
             bool required;
             /// Is this struct "null" (invalid)?.
@@ -284,11 +278,11 @@ struct Scanner
             foreach(level, ref key; possibleSimpleKeys_)
             {
                 if(key.isNull) { continue; }
-                if(key.line != reader_.line || reader_.charIndex - key.charIndex > 1024)
+                if(key.mark.line != reader_.mark.line || reader_.mark.column - key.mark.column > 1024)
                 {
                     enforce(!key.required,
                             new ScannerException("While scanning a simple key",
-                                                 Mark(reader_.name, key.line, key.column),
+                                                 key.mark,
                                                  "could not find expected ':'", reader_.mark));
                     key.isNull = true;
                 }
@@ -311,10 +305,9 @@ struct Scanner
             removePossibleSimpleKey();
             const tokenCount = tokensTaken_ + cast(uint)tokens_.length;
 
-            const line   = reader_.line;
+            const line = reader_.line;
             const column = reader_.column;
-            const key    = SimpleKey(cast(uint)reader_.charIndex, tokenCount, line,
-                                     cast(ushort)min(column, ushort.max), required);
+            const key = SimpleKey(reader_.mark, tokenCount, required);
 
             if(possibleSimpleKeys_.length <= flowLevel_)
             {
@@ -336,7 +329,7 @@ struct Scanner
                 const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required,
                         new ScannerException("While scanning a simple key",
-                                             Mark(reader_.name, key.line, key.column),
+                                             key.mark,
                                              "could not find expected ':'", reader_.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
@@ -548,7 +541,7 @@ struct Scanner
             {
                 const key = possibleSimpleKeys_[flowLevel_];
                 possibleSimpleKeys_[flowLevel_].isNull = true;
-                Mark keyMark = Mark(reader_.name, key.line, key.column);
+                Mark keyMark = key.mark;
                 const idx = key.tokenIndex - tokensTaken_;
 
                 assert(idx >= 0);
@@ -558,7 +551,7 @@ struct Scanner
                 tokens_.insert(keyToken(keyMark, keyMark), idx);
 
                 // If this key starts a new block mapping, we need to add BLOCK-MAPPING-START.
-                if(flowLevel_ == 0 && addIndent(key.column))
+                if(flowLevel_ == 0 && addIndent(key.mark.column))
                 {
                     tokens_.insert(blockMappingStartToken(keyMark, keyMark), idx);
                 }
