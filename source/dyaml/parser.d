@@ -173,6 +173,12 @@ final class Parser
             ensureState();
         }
 
+        /// Set file name.
+        void name(string name) @safe pure nothrow @nogc
+        {
+            scanner_.name = name;
+        }
+
     private:
         /// If current event is invalid, load the next valid one if possible.
         void ensureState() @safe

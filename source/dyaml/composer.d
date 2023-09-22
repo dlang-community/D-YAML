@@ -101,6 +101,17 @@ struct Composer
             return composeDocument();
         }
 
+        /// Set file name.
+        void name(string name) @safe pure nothrow @nogc
+        {
+            parser_.name = name;
+        }
+
+        /// Get resolver
+        ref Resolver resolver() @safe return pure nothrow @nogc {
+            return resolver_;
+        }
+
     private:
 
         void skipExpected(const EventID id) @safe

@@ -20,7 +20,7 @@ module dyaml.test.reader;
     */
     static void runReader(ubyte[] fileData) @safe
     {
-        auto reader = new Reader(fileData);
+        auto reader = Reader(fileData);
         while(reader.peek() != '\0') { reader.forward(); }
     }
 

@@ -1799,7 +1799,7 @@ exp: |
   foobar
 EOS".chomp;
 
-    auto r = new Reader(cast(ubyte[])str.dup);
+    auto r = Reader(cast(ubyte[])str.dup);
     auto s = Scanner(r);
     auto elems = s.map!"a.value".filter!"a.length > 0".array;
     assert(elems[1] == "foobar");

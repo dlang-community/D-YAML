@@ -33,14 +33,8 @@ import dyaml.token;
 struct Loader
 {
     private:
-        // Processes character data to YAML tokens.
-        Scanner scanner_;
-        // Processes tokens to YAML events.
-        Parser parser_;
-        // Resolves tags (data types).
-        Resolver resolver_;
-        // Name of the input file or stream, used in error messages.
-        string name_ = "<unknown>";
+        // Assembles YAML documents
+        Composer composer_;
         // Are we done loading?
         bool done_;
         // Last node read from stream
@@ -49,7 +43,6 @@ struct Loader
         bool rangeInitialized;
 
     public:
-        @disable this();
         @disable int opCmp(ref Loader);
         @disable bool opEquals(ref Loader);
 
@@ -147,18 +140,16 @@ struct Loader
         /// Ditto
         private this(ubyte[] yamlData, string name = "<unknown>") @safe
         {
-            resolver_ = Resolver.withDefaultResolvers;
-            name_ = name;
             try
             {
-                auto reader_ = new Reader(yamlData, name);
-                scanner_ = Scanner(reader_);
-                parser_ = new Parser(scanner_);
+                auto reader = Reader(yamlData, name);
+                auto parser = new Parser(Scanner(reader));
+                composer_ = Composer(parser, Resolver.withDefaultResolvers);
             }
             catch(YAMLException e)
             {
                 throw new YAMLException("Unable to open %s for YAML loading: %s"
-                                        .format(name_, e.msg), e.file, e.line);
+                                        .format(name, e.msg), e.file, e.line);
             }
         }
 
@@ -166,14 +157,13 @@ struct Loader
         /// Set stream _name. Used in debugging messages.
         void name(string name) pure @safe nothrow @nogc
         {
-            name_ = name;
-            scanner_.name = name;
+            composer_.name = name;
         }
 
         /// Specify custom Resolver to use.
         auto ref resolver() pure @safe nothrow @nogc
         {
-            return resolver_;
+            return composer_.resolver;
         }
 
         /** Load single YAML document.
@@ -217,18 +207,11 @@ struct Loader
         */
         void popFront() @safe
         {
-            // Composer initialization is done here in case the constructor is
-            // modified, which is a pretty common case.
-            static Composer composer;
-            if (!rangeInitialized)
-            {
-                composer = Composer(parser_, resolver_);
-                rangeInitialized = true;
-            }
+            scope(success) rangeInitialized = true;
             assert(!done_, "Loader.popFront called on empty range");
-            if (composer.checkNode())
+            if (composer_.checkNode())
             {
-                currentNode = composer.getNode();
+                currentNode = composer_.getNode();
             }
             else
             {

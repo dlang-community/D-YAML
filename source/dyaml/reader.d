@@ -42,7 +42,7 @@ class ReaderException : YAMLException
 }
 
 /// Provides an API to read characters from a UTF-8 buffer.
-final class Reader
+struct Reader
 {
     private:
         // Buffer of currently loaded characters.
