@@ -22,7 +22,7 @@ import std.uni;
 
 void dumpEventString(string str) @safe
 {
-    auto events = new Parser(Scanner(new Reader(cast(ubyte[])str.dup)));
+    auto events = new Parser(Scanner(Reader(cast(ubyte[])str.dup)));
     foreach (event; events)
     {
         string line;
@@ -128,7 +128,7 @@ void dumpEventString(string str) @safe
 }
 void dumpTokens(string str) @safe
 {
-    writefln("%(%s\n%)", new Parser(Scanner(new Reader(cast(ubyte[])str.dup))));
+    writefln("%(%s\n%)", new Parser(Scanner(Reader(cast(ubyte[])str.dup))));
 }
 
 

@@ -153,7 +153,7 @@ if (isInputRange!T && isInputRange!U && is(ElementType!T == Event) && is(Element
 
 auto parseData(ubyte[] data, string name = "TEST") @safe
 {
-    auto reader = new Reader(data, name);
+    auto reader = Reader(data, name);
     auto scanner = Scanner(reader);
     return new Parser(scanner);
 }

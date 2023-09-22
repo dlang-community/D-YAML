@@ -24,7 +24,7 @@ auto dumpEventString(string str) @safe
     string[] output;
     try
     {
-        auto events = new Parser(Scanner(new Reader(cast(ubyte[])str.dup)));
+        auto events = new Parser(Scanner(Reader(cast(ubyte[])str.dup)));
         foreach (event; events)
         {
             string line;

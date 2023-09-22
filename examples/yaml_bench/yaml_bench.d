@@ -119,7 +119,7 @@ void main(string[] args) //@safe
 
             if(scanOnly)
             {
-                auto reader = new Reader(cast(ubyte[])fileToLoad, "benchmark");
+                auto reader = Reader(cast(ubyte[])fileToLoad, "benchmark");
                 auto scanner = Scanner(reader);
                 while(!scanner.empty)
                 {
