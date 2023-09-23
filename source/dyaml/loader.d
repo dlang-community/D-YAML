@@ -49,9 +49,10 @@ struct Loader
         bool rangeInitialized;
 
     public:
-        @disable this();
-        @disable int opCmp(ref Loader);
-        @disable bool opEquals(ref Loader);
+        @disable this() @safe pure nothrow @nogc;
+        @disable this() const @safe pure nothrow @nogc;
+        @disable int opCmp(ref const Loader) const scope @safe pure nothrow @nogc;
+        @disable bool opEquals(ref const Loader) const scope @safe pure nothrow @nogc;
 
         /** Construct a Loader to load YAML from a file.
          *
