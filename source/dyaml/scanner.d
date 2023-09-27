@@ -1541,22 +1541,14 @@ struct Scanner
                     const cNext = reader_.peek(length + 1);
                     if(c.isWhiteSpace ||
                        (flowLevel_ == 0 && c == ':' && cNext.isWhiteSpace) ||
-                       (flowLevel_ > 0 && c.among!(',', ':', '?', '[', ']', '{', '}')))
+                       (flowLevel_ > 0 && c == ':' && (cNext.isWhiteSpace || cNext.among!(',', '[', ']', '{', '}'))) ||
+                       (flowLevel_ > 0 && c.among!(',', '[', ']', '{', '}')))
                     {
                         break;
                     }
                     ++length;
                     c = cNext;
                 }
-
-                // It's not clear what we should do with ':' in the flow context.
-                enforce(flowLevel_ == 0 || c != ':' ||
-                   reader_.peek(length + 1).isWhiteSpace ||
-                   reader_.peek(length + 1).among!(',', '[', ']', '{', '}'),
-                    new ScannerException("While scanning a plain scalar", startMark,
-                        "found unexpected ':' . Please check " ~
-                        "http://pyyaml.org/wiki/YAMLColonInFlowContext for details.",
-                        reader_.mark));
 
                 if(length == 0) { break; }
 
