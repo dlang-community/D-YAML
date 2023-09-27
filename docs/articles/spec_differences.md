@@ -17,10 +17,6 @@ Differences that can cause valid YAML documents not to load:
   - No support for byte order marks and multiple Unicode encodings in a
     stream.
 
-  - Plain scalars in flow context cannot contain `,`, `:` and `?`. This
-    might change with `:` in the future. See
-    <http://pyyaml.org/wiki/YAMLColonInFlowContext> for details.
-
   - The specification does not restrict characters for anchors and
     aliases. This may lead to problems, for instance, the document:
 
