@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: spec-06-07
+  yaml: "- foo\n \n  bar\n- |-\n  foo\n \n  bar\n  \n"
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :foo\nbar
+          =VAL |foo\n\nbar
+        -SEQ
+      -DOC
+    -STR
+- name: spec-06-07-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "foo\nbar",
+      !!str "foo\n\nbar"
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "foo\nbar
+          =VAL <tag:yaml.org,2002:str> "foo\n\nbar
+        -SEQ
+      -DOC
+    -STR

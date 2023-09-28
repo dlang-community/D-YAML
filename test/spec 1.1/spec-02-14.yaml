@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+- name: spec-02-14
+  tree: |
+    +STR
+    +DOC ---
+    =VAL :Mark McGwire's year was crippled by a knee injury.
+    -DOC
+    -STR
+  yaml: |
+    ---
+      Mark McGwire's
+      year was crippled
+      by a knee injury.

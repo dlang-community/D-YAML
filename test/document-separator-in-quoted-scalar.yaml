@@ -1,0 +1,19 @@
+%YAML 1.1
+---
+- name: document-separator-in-quoted-scalar
+  fail: true
+  mark: { line: 10, column: 1 }
+  mark2: { line: 8, column: 1 }
+  error: "While scanning a quoted scalar, found unexpected document separator"
+  yaml: |
+    ---
+    "this --- is correct"
+    ---
+    "this
+    ...is also
+    correct"
+    ---
+    "a quoted scalar
+    cannot contain
+    ---
+    document separators"

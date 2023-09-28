@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: spec-02-17
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :unicode
+    =VAL "Sosa did fine.☺
+    =VAL :control
+    =VAL "\b1998\t1999\t2000\n
+    =VAL :hexesc
+    =VAL "\r\n is \r\n
+    =VAL :single
+    =VAL '"Howdy!" he cried.
+    =VAL :quoted
+    =VAL ' # not a 'comment'.
+    =VAL :tie-fighter
+    =VAL '|\\-*-/|
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    unicode: "Sosa did fine.\u263A"
+    control: "\b1998\t1999\t2000\n"
+    hexesc:  "\x0D\x0A is \r\n"
+
+    single: '"Howdy!" he cried.'
+    quoted: ' # not a ''comment''.'
+    tie-fighter: '|\-*-/|'

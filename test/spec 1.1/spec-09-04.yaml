@@ -1,0 +1,24 @@
+%YAML 1.1
+---
+- name: spec-09-04
+  yaml: " \"first\n \tinner 1\t\n \\ inner 2 \\\n last\"\n"
+  tree: |
+    +STR
+      +DOC
+       =VAL "first inner 1  inner 2 last
+      -DOC
+    -STR
+- name: spec-09-04-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "first \
+      inner 1  \
+      inner 2 \
+      last"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "first inner 1  inner 2 last
+      -DOC
+    -STR

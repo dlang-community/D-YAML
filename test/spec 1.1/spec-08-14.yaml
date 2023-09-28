@@ -1,0 +1,47 @@
+%YAML 1.1
+---
+- name: spec-08-14
+  yaml: |
+    - "flow in block"
+    - >
+     Block scalar
+    - !!map # Block collection
+      foo : bar
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL "flow in block
+          =VAL >Block scalar\n
+          +MAP <tag:yaml.org,2002:map>
+            =VAL :foo
+            =VAL :bar
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-08-14-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "flow in block",
+      !!str "Block scalar\n",
+      !!map {
+        ? !!str "foo"
+        : !!str "bar"
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "flow in block
+          =VAL <tag:yaml.org,2002:str> "Block scalar\n
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "foo
+            =VAL <tag:yaml.org,2002:str> "bar
+          -MAP
+        -SEQ
+      -DOC
+    -STR

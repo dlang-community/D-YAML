@@ -1,0 +1,24 @@
+%YAML 1.1
+---
+- name: spec-07-04
+  yaml: |
+    %TAG !yaml! tag:yaml.org,2002:
+    ---
+    !yaml!str "foo"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "foo
+      -DOC
+    -STR
+- name: spec-07-04-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "foo"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "foo
+      -DOC
+    -STR

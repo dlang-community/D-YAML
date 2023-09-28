@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-08-01
+  yaml: |
+    !!str &a1 "foo" : !!str bar
+    &a2 baz : *a1
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL &a1 <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> :bar
+          =VAL &a2 :baz
+          =ALI *a1
+        -MAP
+      -DOC
+    -STR
+- name: spec-08-01-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? &A1 !!str "foo"
+      : !!str "bar",
+      ? &A2 !!str "baz"
+      : *A1
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL &A1 <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "bar
+          =VAL &A2 <tag:yaml.org,2002:str> "baz
+          =ALI *A1
+        -MAP
+      -DOC
+    -STR

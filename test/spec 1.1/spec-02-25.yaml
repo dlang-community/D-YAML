@@ -1,0 +1,24 @@
+%YAML 1.1
+---
+- name: spec-02-25
+  tree: |
+    +STR
+    +DOC ---
+    +MAP <tag:yaml.org,2002:set>
+    =VAL :Mark McGwire
+    =VAL :
+    =VAL :Sammy Sosa
+    =VAL :
+    =VAL :Ken Griff
+    =VAL :
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # sets are represented as a
+    # mapping where each key is
+    # associated with the empty string
+    --- !!set
+    ? Mark McGwire
+    ? Sammy Sosa
+    ? Ken Griff

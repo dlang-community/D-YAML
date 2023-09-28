@@ -1,0 +1,71 @@
+%YAML 1.1
+---
+- name: spec-05-03
+  yaml: |
+    sequence:
+    - one
+    - two
+    mapping:
+      ? sky
+      : blue
+      ? sea : green
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :sequence
+          +SEQ
+            =VAL :one
+            =VAL :two
+          -SEQ
+          =VAL :mapping
+          +MAP
+            =VAL :sky
+            =VAL :blue
+            +MAP
+              =VAL :sea
+              =VAL :green
+            -MAP
+            =VAL :
+          -MAP
+        -MAP
+      -DOC
+    -STR
+- name: spec-05-03-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "sequence"
+      : !!seq [
+        !!str "one", !!str "two"
+      ],
+      ? !!str "mapping"
+      : !!map {
+        ? !!str "sky" : !!str "blue",
+    #    ? !!str "sea" : !!str "green",
+        ? !!map { ? !!str "sea" : !!str "green" } : !!null "",
+      }
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "sequence
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "one
+            =VAL <tag:yaml.org,2002:str> "two
+          -SEQ
+          =VAL <tag:yaml.org,2002:str> "mapping
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "sky
+            =VAL <tag:yaml.org,2002:str> "blue
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "sea
+              =VAL <tag:yaml.org,2002:str> "green
+            -MAP
+            =VAL <tag:yaml.org,2002:null> "
+          -MAP
+        -MAP
+      -DOC
+    -STR

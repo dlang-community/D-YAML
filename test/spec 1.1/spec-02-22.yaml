@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+- name: spec-02-22
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :2001-12-15T02:59:43.1Z
+    =VAL :iso8601
+    =VAL :2001-12-14t21:59:43.10-05:00
+    =VAL :spaced
+    =VAL :2001-12-14 21:59:43.10 -5
+    =VAL :date
+    =VAL :2002-12-14
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: 2001-12-15T02:59:43.1Z
+    iso8601: 2001-12-14t21:59:43.10-05:00
+    spaced: 2001-12-14 21:59:43.10 -5
+    date: 2002-12-14

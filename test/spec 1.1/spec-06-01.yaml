@@ -1,0 +1,61 @@
+%YAML 1.1
+---
+- name: spec-06-01
+  yaml: "  # Leading comment line spaces are\n   # neither content nor indentation.\n\
+    \    \nNot indented:\n By one space: |\n    By four\n      spaces\n Flow style:\
+    \ [    # Leading spaces\n   By two,        # in flow style\n  Also by two,    #\
+    \ are neither\n# Tabs are not allowed:\n#  \tStill by two   # content nor\n    Still\
+    \ by two   # content nor\n    ]             # indentation.\n"
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :Not indented
+          +MAP
+            =VAL :By one space
+            =VAL |By four\n  spaces\n
+            =VAL :Flow style
+            +SEQ []
+              =VAL :By two
+              =VAL :Also by two
+              =VAL :Still by two
+            -SEQ
+          -MAP
+        -MAP
+      -DOC
+    -STR
+- name: spec-06-01-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "Not indented"
+      : !!map {
+          ? !!str "By one space"
+          : !!str "By four\n  spaces\n",
+          ? !!str "Flow style"
+          : !!seq [
+              !!str "By two",
+              !!str "Also by two",
+              !!str "Still by two",
+            ]
+        }
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "Not indented
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "By one space
+            =VAL <tag:yaml.org,2002:str> "By four\n  spaces\n
+            =VAL <tag:yaml.org,2002:str> "Flow style
+            +SEQ [] <tag:yaml.org,2002:seq>
+              =VAL <tag:yaml.org,2002:str> "By two
+              =VAL <tag:yaml.org,2002:str> "Also by two
+              =VAL <tag:yaml.org,2002:str> "Still by two
+            -SEQ
+          -MAP
+        -MAP
+      -DOC
+    -STR

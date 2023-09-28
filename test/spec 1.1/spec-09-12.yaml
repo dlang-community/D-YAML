@@ -1,0 +1,56 @@
+%YAML 1.1
+---
+- name: spec-09-12
+  yaml: |
+    # Outside flow collection:
+    - ::std::vector
+    - Up, up, and away!
+    - -123
+    # Inside flow collection:
+    - [ '::std::vector',
+      "Up, up, and away!",
+      -123 ]
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :::std::vector
+          =VAL :Up, up, and away!
+          =VAL :-123
+          +SEQ []
+            =VAL '::std::vector
+            =VAL "Up, up, and away!
+            =VAL :-123
+          -SEQ
+        -SEQ
+      -DOC
+    -STR
+- name: spec-09-12-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "::std::vector",
+      !!str "Up, up, and away!",
+      !!int "-123",
+      !!seq [
+        !!str "::std::vector",
+        !!str "Up, up, and away!",
+        !!int "-123",
+      ]
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "::std::vector
+          =VAL <tag:yaml.org,2002:str> "Up, up, and away!
+          =VAL <tag:yaml.org,2002:int> "-123
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "::std::vector
+            =VAL <tag:yaml.org,2002:str> "Up, up, and away!
+            =VAL <tag:yaml.org,2002:int> "-123
+          -SEQ
+        -SEQ
+      -DOC
+    -STR

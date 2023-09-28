@@ -473,7 +473,7 @@ private:
 //                            this first.
 // $(D char[] utf8)           input converted to UTF-8. May be a slice of input.
 // $(D size_t characterCount) Number of characters (code points) in input.
-auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
+public auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
 {
     // Documented in function ddoc.
     struct Result

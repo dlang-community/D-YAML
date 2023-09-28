@@ -1,0 +1,25 @@
+%YAML 1.1
+---
+- name: spec-07-02
+  yaml: |
+    %YAML 1.2 # Attempt parsing
+               # with a warning
+    ---
+    "foo"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL "foo
+      -DOC
+    -STR
+- name: spec-07-02-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "foo"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "foo
+      -DOC
+    -STR

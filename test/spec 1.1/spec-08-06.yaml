@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+- name: spec-08-06
+  fail: true
+  mark: { line: 3, column: 4 }
+  mark2: { line: 3, column: 3 }
+  error: |
+    While scanning a tag, expected a !, but found $
+  yaml: |
+    %TAG !o! tag:ben-kiki.org,2000:
+    ---
+    - !$a!b foo
+    - !o! bar
+    - !h!type baz

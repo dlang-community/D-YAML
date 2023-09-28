@@ -1,0 +1,51 @@
+%YAML 1.1
+---
+- name: spec-09-01
+  yaml: |
+    "simple key" : {
+      "also simple" : value,
+      ? "not a
+      simple key" : "any
+      value"
+    }
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL "simple key
+          +MAP {}
+            =VAL "also simple
+            =VAL :value
+            =VAL "not a simple key
+            =VAL "any value
+          -MAP
+        -MAP
+      -DOC
+    -STR
+- name: spec-09-01-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "simple key"
+      : !!map {
+        ? !!str "also simple"
+        : !!str "value",
+        ? !!str "not a simple key"
+        : !!str "any value"
+      }
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "simple key
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "also simple
+            =VAL <tag:yaml.org,2002:str> "value
+            =VAL <tag:yaml.org,2002:str> "not a simple key
+            =VAL <tag:yaml.org,2002:str> "any value
+          -MAP
+        -MAP
+      -DOC
+    -STR

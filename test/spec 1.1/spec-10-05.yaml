@@ -1,0 +1,61 @@
+%YAML 1.1
+---
+- name: spec-10-05
+  yaml: |
+    - # Empty
+    - |
+     block node
+    - - one # in-line
+      - two # sequence
+    - one: two # in-line
+               # mapping
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :
+          =VAL |block node\n
+          +SEQ
+            =VAL :one
+            =VAL :two
+          -SEQ
+          +MAP
+            =VAL :one
+            =VAL :two
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-10-05-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!null "",
+      !!str "block node\n",
+      !!seq [
+        !!str "one",
+        !!str "two",
+      ],
+      !!map {
+        ? !!str "one"
+        : !!str "two",
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "block node\n
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "one
+            =VAL <tag:yaml.org,2002:str> "two
+          -SEQ
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "one
+            =VAL <tag:yaml.org,2002:str> "two
+          -MAP
+        -SEQ
+      -DOC
+    -STR

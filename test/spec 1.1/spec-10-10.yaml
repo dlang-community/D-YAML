@@ -1,0 +1,68 @@
+%YAML 1.1
+---
+- name: spec-10-10
+  yaml: |
+    {
+    ? explicit key1 : explicit value,
+    ? explicit key2 : , # Explicit empty
+    ? explicit key3,     # Empty value
+    simple key1 : explicit value,
+    simple key2 : ,     # Explicit empty
+    simple key3,         # Empty value
+    }
+  tree: |
+    +STR
+      +DOC
+        +MAP {}
+          =VAL :explicit key1
+          =VAL :explicit value
+          =VAL :explicit key2
+          =VAL :
+          =VAL :explicit key3
+          =VAL :
+          =VAL :simple key1
+          =VAL :explicit value
+          =VAL :simple key2
+          =VAL :
+          =VAL :simple key3
+          =VAL :
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-10-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "explicit key1"
+      : !!str "explicit value",
+      ? !!str "explicit key2"
+      : !!null "",
+      ? !!str "explicit key3"
+      : !!null "",
+      ? !!str "simple key1"
+      : !!str "explicit value",
+      ? !!str "simple key2"
+      : !!null "",
+      ? !!str "simple key3"
+      : !!null "",
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "explicit key1
+          =VAL <tag:yaml.org,2002:str> "explicit value
+          =VAL <tag:yaml.org,2002:str> "explicit key2
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "explicit key3
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "simple key1
+          =VAL <tag:yaml.org,2002:str> "explicit value
+          =VAL <tag:yaml.org,2002:str> "simple key2
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "simple key3
+          =VAL <tag:yaml.org,2002:null> "
+        -MAP
+      -DOC
+    -STR

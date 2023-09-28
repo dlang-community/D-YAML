@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-08-02
+  yaml: |
+    First occurrence: &anchor Value
+    Second occurrence: *anchor
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :First occurrence
+          =VAL &anchor :Value
+          =VAL :Second occurrence
+          =ALI *anchor
+        -MAP
+      -DOC
+    -STR
+- name: spec-08-02-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "First occurrence"
+      : &A !!str "Value",
+      ? !!str "Second occurrence"
+      : *A
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "First occurrence
+          =VAL &A <tag:yaml.org,2002:str> "Value
+          =VAL <tag:yaml.org,2002:str> "Second occurrence
+          =ALI *A
+        -MAP
+      -DOC
+    -STR

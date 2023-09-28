@@ -1,0 +1,67 @@
+%YAML 1.1
+---
+- name: spec-10-07
+  yaml: |
+    {
+    ? : value, # Empty key
+    ? explicit
+     key: value,
+    simple key : value,
+    [ collection, simple, key ]: value
+    }
+  tree: |
+    +STR
+      +DOC
+        +MAP {}
+          =VAL :
+          =VAL :value
+          =VAL :explicit key
+          =VAL :value
+          =VAL :simple key
+          =VAL :value
+          +SEQ []
+            =VAL :collection
+            =VAL :simple
+            =VAL :key
+          -SEQ
+          =VAL :value
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-07-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!null ""
+      : !!str "value",
+      ? !!str "explicit key"
+      : !!str "value",
+      ? !!str "simple key"
+      : !!str "value",
+      ? !!seq [
+        !!str "collection",
+        !!str "simple",
+        !!str "key"
+      ]
+      : !!str "value"
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "value
+          =VAL <tag:yaml.org,2002:str> "explicit key
+          =VAL <tag:yaml.org,2002:str> "value
+          =VAL <tag:yaml.org,2002:str> "simple key
+          =VAL <tag:yaml.org,2002:str> "value
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "collection
+            =VAL <tag:yaml.org,2002:str> "simple
+            =VAL <tag:yaml.org,2002:str> "key
+          -SEQ
+          =VAL <tag:yaml.org,2002:str> "value
+        -MAP
+      -DOC
+    -STR

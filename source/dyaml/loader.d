@@ -420,3 +420,46 @@ EOS";
         assert(mark.column == 1);
     }
 }
+
+@safe unittest
+{
+    assertThrown(Loader.fromString("Invalid character: \xFF").load());
+}
+
+@safe unittest
+{
+    assertThrown(Loader.fromFile("test/data/odd-utf16.stream-error").load());
+}
+
+// UTF-16 and 32 test
+@safe unittest
+{
+    import std.conv : to;
+    import std.range : only;
+    enum string yaml = `ABCDØ`;
+    enum bom = '\uFEFF';
+    foreach (doc; only(
+        cast(ubyte[])(bom~yaml.to!(wchar[])),
+        cast(ubyte[])(bom~yaml.to!(dchar[])),
+    ))
+    {
+        assert(Loader.fromBuffer(doc).load().as!string == yaml);
+    }
+}
+// Invalid unicode test
+@safe unittest
+{
+    import std.conv : to;
+    import std.range : only;
+    enum string yaml = `ABCDØ`;
+    enum badBOM = '\uFFFE';
+    foreach (doc; only(
+        cast(ubyte[])yaml.to!(wchar[]),
+        cast(ubyte[])yaml.to!(dchar[]),
+        cast(ubyte[])(badBOM~yaml.to!(wchar[])),
+        cast(ubyte[])(badBOM~yaml.to!(dchar[])),
+    ))
+    {
+        assertThrown(Loader.fromBuffer(doc).load());
+    }
+}

@@ -1,0 +1,34 @@
+%YAML 1.1
+---
+- name: emit-block-scalar-in-simple-key-context-bug
+  yaml: |
+    ? |-
+      foo
+    : |-
+      bar
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL |foo
+          =VAL |bar
+        -MAP
+      -DOC
+    -STR
+- name: emit-block-scalar-in-simple-key-context-bug-canonical
+  yaml: |
+    %YAML 1.1
+    --- !!map
+    {
+      ? !!str "foo"
+      : !!str "bar"
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "bar
+        -MAP
+      -DOC
+    -STR

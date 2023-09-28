@@ -1,0 +1,21 @@
+%YAML 1.1
+---
+- name: spec-09-26
+  yaml: "|\n \n  \n  literal\n \n  text\n\n # Comment\n"
+  tree: |
+    +STR
+      +DOC
+        =VAL |\n\nliteral\n\ntext\n
+      -DOC
+    -STR
+- name: spec-09-26-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "\n\nliteral\n\ntext\n"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "\n\nliteral\n\ntext\n
+      -DOC
+    -STR

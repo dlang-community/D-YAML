@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: spec-09-11
+  yaml: "- 'first\n  \t'\n- 'first\n\n  \tlast'\n"
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL 'first 
+          =VAL 'first\nlast
+        -SEQ
+      -DOC
+    -STR
+- name: spec-09-11-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "first ",
+      !!str "first\nlast",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "first 
+          =VAL <tag:yaml.org,2002:str> "first\nlast
+        -SEQ
+      -DOC
+    -STR
