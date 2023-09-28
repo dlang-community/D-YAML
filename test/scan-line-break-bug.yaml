@@ -1,0 +1,27 @@
+%YAML 1.1
+---
+- name: scan-line-break-bug
+  yaml: "foo:\r\n    bar\r\n    baz\r\n"
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :foo
+          =VAL :bar baz
+        -MAP
+      -DOC
+    -STR
+- name: scan-line-break-bug-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map { ? !!str "foo" : !!str "bar baz" }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "bar baz
+        -MAP
+      -DOC
+    -STR

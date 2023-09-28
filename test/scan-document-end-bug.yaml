@@ -1,0 +1,24 @@
+%YAML 1.1
+---
+- name: scan-document-end-bug
+  yaml: |-
+    # Ticket #4
+    ---
+    ...
+  tree: |
+    +STR
+      +DOC ---
+        =VAL :
+      -DOC ...
+    -STR
+- name: scan-document-end-bug-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!null ""
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:null> "
+      -DOC
+    -STR

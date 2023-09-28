@@ -1,0 +1,108 @@
+%YAML 1.1
+---
+- name: spec-08-09
+  yaml: |
+    ---
+    scalars:
+      plain: !!str some text
+      quoted:
+        single: 'some text'
+        double: "some text"
+    collections:
+      sequence: !!seq [ !!str entry,
+        # Mapping entry:
+          key: value ]
+      mapping: { key: value }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP
+          =VAL :scalars
+          +MAP
+            =VAL :plain
+            =VAL <tag:yaml.org,2002:str> :some text
+            =VAL :quoted
+            +MAP
+              =VAL :single
+              =VAL 'some text
+              =VAL :double
+              =VAL "some text
+            -MAP
+          -MAP
+          =VAL :collections
+          +MAP
+            =VAL :sequence
+            +SEQ [] <tag:yaml.org,2002:seq>
+              =VAL <tag:yaml.org,2002:str> :entry
+              +MAP {}
+                =VAL :key
+                =VAL :value
+              -MAP
+            -SEQ
+            =VAL :mapping
+            +MAP {}
+              =VAL :key
+              =VAL :value
+            -MAP
+          -MAP
+        -MAP
+      -DOC
+    -STR
+- name: spec-08-09-canonical
+  yaml: |
+    %YAML 1.1
+    --- !!map {
+      ? !!str "scalars" : !!map {
+          ? !!str "plain"
+          : !!str "some text",
+          ? !!str "quoted"
+          : !!map {
+            ? !!str "single"
+            : !!str "some text",
+            ? !!str "double"
+            : !!str "some text"
+      } },
+      ? !!str "collections" : !!map {
+        ? !!str "sequence" : !!seq [
+          !!str "entry",
+          !!map {
+            ? !!str "key" : !!str "value"
+        } ],
+        ? !!str "mapping" : !!map {
+          ? !!str "key" : !!str "value"
+    } } }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "scalars
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "plain
+            =VAL <tag:yaml.org,2002:str> "some text
+            =VAL <tag:yaml.org,2002:str> "quoted
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "single
+              =VAL <tag:yaml.org,2002:str> "some text
+              =VAL <tag:yaml.org,2002:str> "double
+              =VAL <tag:yaml.org,2002:str> "some text
+            -MAP
+          -MAP
+          =VAL <tag:yaml.org,2002:str> "collections
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "sequence
+            +SEQ [] <tag:yaml.org,2002:seq>
+              =VAL <tag:yaml.org,2002:str> "entry
+              +MAP {} <tag:yaml.org,2002:map>
+                =VAL <tag:yaml.org,2002:str> "key
+                =VAL <tag:yaml.org,2002:str> "value
+              -MAP
+            -SEQ
+            =VAL <tag:yaml.org,2002:str> "mapping
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "key
+              =VAL <tag:yaml.org,2002:str> "value
+            -MAP
+          -MAP
+        -MAP
+      -DOC
+    -STR

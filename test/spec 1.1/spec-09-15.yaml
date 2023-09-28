@@ -1,0 +1,78 @@
+%YAML 1.1
+---
+- name: spec-09-15
+  yaml: |
+    ---
+    "---" : foo
+    ...: bar
+    ---
+    [
+    ---,
+    ...,
+    {
+    ? ---
+    : ...
+    }
+    ]
+    ...
+  tree: |
+    +STR
+      +DOC ---
+        +MAP
+          =VAL "---
+          =VAL :foo
+          =VAL :...
+          =VAL :bar
+        -MAP
+      -DOC
+    +DOC ---
+      +SEQ []
+        =VAL :---
+        =VAL :...
+        +MAP {}
+          =VAL :---
+          =VAL :...
+        -MAP
+        -SEQ
+      -DOC ...
+    -STR
+- name: spec-09-15-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "---"
+      : !!str "foo",
+      ? !!str "..."
+      : !!str "bar"
+    }
+    ---
+    !!seq [
+      !!str "---",
+      !!str "...",
+      !!map {
+        ? !!str "---"
+        : !!str "..."
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "---
+          =VAL <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "...
+          =VAL <tag:yaml.org,2002:str> "bar
+        -MAP
+      -DOC
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "---
+          =VAL <tag:yaml.org,2002:str> "...
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "---
+            =VAL <tag:yaml.org,2002:str> "...
+          -MAP
+        -SEQ
+      -DOC
+    -STR

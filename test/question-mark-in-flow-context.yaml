@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+- name: question-mark-in-flow-context
+  yaml: |
+    { foo?bar }
+  tree: |
+    +STR
+    +DOC
+    +MAP {}
+    =VAL :foo?bar
+    =VAL :
+    -MAP
+    -DOC
+    -STR

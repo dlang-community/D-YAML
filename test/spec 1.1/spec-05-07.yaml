@@ -1,0 +1,40 @@
+%YAML 1.1
+---
+- name: spec-05-07
+  yaml: |
+    literal: |
+      text
+    folded: >
+      text
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :literal
+          =VAL |text\n
+          =VAL :folded
+          =VAL >text\n
+        -MAP
+      -DOC
+    -STR
+- name: spec-05-07-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "literal"
+      : !!str "text\n",
+      ? !!str "folded"
+      : !!str "text\n",
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "literal
+          =VAL <tag:yaml.org,2002:str> "text\n
+          =VAL <tag:yaml.org,2002:str> "folded
+          =VAL <tag:yaml.org,2002:str> "text\n
+        -MAP
+      -DOC
+    -STR

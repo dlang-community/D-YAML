@@ -1,0 +1,19 @@
+%YAML 1.1
+---
+- name: spec-09-08
+  yaml: " 'as space\t\N trimmed \N\N specific\L\N none'\n"
+- name: spec-09-08-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "as space \
+      trimmed\n\
+      specific\L\n\
+      none"
+  # FIXME
+  # tree: |
+  #   +STR
+  #     +DOC ---
+  #       =VAL <tag:yaml.org,2002:str> "as space trimmed\nspecific\L\nnone
+  #     -DOC
+  #   -STR

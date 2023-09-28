@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-05-08
+  yaml: |
+    single: 'text'
+    double: "text"
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :single
+          =VAL 'text
+          =VAL :double
+          =VAL "text
+        -MAP
+      -DOC
+    -STR
+- name: spec-05-08-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "single"
+      : !!str "text",
+      ? !!str "double"
+      : !!str "text",
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "single
+          =VAL <tag:yaml.org,2002:str> "text
+          =VAL <tag:yaml.org,2002:str> "double
+          =VAL <tag:yaml.org,2002:str> "text
+        -MAP
+      -DOC
+    -STR

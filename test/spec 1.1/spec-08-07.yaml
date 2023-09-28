@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-08-07
+  yaml: |
+    # Assuming conventional resolution:
+    - "12"
+    - 12
+    - ! 12
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL "12
+          =VAL :12
+          =VAL <!> :12
+        -SEQ
+      -DOC
+    -STR
+- name: spec-08-07-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !<tag:yaml.org,2002:str> "12",
+      !<tag:yaml.org,2002:int> "12",
+    #  !<tag:yaml.org,2002:str> "12",
+      !<tag:yaml.org,2002:int> "12",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "12
+          =VAL <tag:yaml.org,2002:int> "12
+          =VAL <tag:yaml.org,2002:int> "12
+        -SEQ
+      -DOC
+    -STR

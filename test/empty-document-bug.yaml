@@ -1,0 +1,13 @@
+%YAML 1.1
+---
+- name: empty-document-bug
+  yaml: ""
+  tree: |
+    +STR
+    -STR
+- name: empty-document-bug-canonical
+  yaml: |
+    # This YAML stream contains no YAML documents.
+  tree: |
+    +STR
+    -STR

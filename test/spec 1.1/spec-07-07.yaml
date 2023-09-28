@@ -1,0 +1,46 @@
+%YAML 1.1
+---
+- name: spec-07-07a
+  yaml: |
+    # Private application:
+    !foo "bar"
+  tree: |
+    +STR
+      +DOC
+        =VAL <!foo> "bar
+      -DOC
+    -STR
+- name: spec-07-07b
+  yaml: |
+    # Migrated to global:
+    %TAG ! tag:ben-kiki.org,2000:app/
+    ---
+    !foo "bar"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:ben-kiki.org,2000:app/foo> "bar
+      -DOC
+    -STR
+- name: spec-07-07a-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !<!foo> "bar"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <!foo> "bar
+      -DOC
+    -STR
+- name: spec-07-07b-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !<tag:ben-kiki.org,2000:app/foo> "bar"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:ben-kiki.org,2000:app/foo> "bar
+      -DOC
+    -STR

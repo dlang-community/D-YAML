@@ -1,0 +1,50 @@
+%YAML 1.1
+---
+- name: spec-10-01
+  yaml: |
+    - [ inner, inner, ]
+    - [inner,last]
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          +SEQ []
+            =VAL :inner
+            =VAL :inner
+          -SEQ
+          +SEQ []
+            =VAL :inner
+            =VAL :last
+          -SEQ
+        -SEQ
+      -DOC
+    -STR
+- name: spec-10-01-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!seq [
+        !!str "inner",
+        !!str "inner",
+      ],
+      !!seq [
+        !!str "inner",
+        !!str "last",
+      ],
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "inner
+            =VAL <tag:yaml.org,2002:str> "inner
+          -SEQ
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "inner
+            =VAL <tag:yaml.org,2002:str> "last
+          -SEQ
+        -SEQ
+      -DOC
+    -STR

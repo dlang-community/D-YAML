@@ -1,0 +1,91 @@
+%YAML 1.1
+---
+- name: spec-10-11
+  yaml: |
+    [
+    ? explicit key1 : explicit value,
+    ? explicit key2 : , # Explicit empty
+    ? explicit key3,     # Implicit empty
+    simple key1 : explicit value,
+    simple key2 : ,     # Explicit empty
+    ]
+  tree: |
+    +STR
+      +DOC
+        +SEQ []
+          +MAP {}
+            =VAL :explicit key1
+            =VAL :explicit value
+          -MAP
+          +MAP {}
+            =VAL :explicit key2
+            =VAL :
+          -MAP
+          +MAP {}
+            =VAL :explicit key3
+            =VAL :
+          -MAP
+          +MAP {}
+            =VAL :simple key1
+            =VAL :explicit value
+          -MAP
+          +MAP {}
+            =VAL :simple key2
+            =VAL :
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-10-11-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!map {
+        ? !!str "explicit key1"
+        : !!str "explicit value",
+      },
+      !!map {
+        ? !!str "explicit key2"
+        : !!null "",
+      },
+      !!map {
+        ? !!str "explicit key3"
+        : !!null "",
+      },
+      !!map {
+        ? !!str "simple key1"
+        : !!str "explicit value",
+      },
+      !!map {
+        ? !!str "simple key2"
+        : !!null "",
+      },
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "explicit key1
+            =VAL <tag:yaml.org,2002:str> "explicit value
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "explicit key2
+            =VAL <tag:yaml.org,2002:null> "
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "explicit key3
+            =VAL <tag:yaml.org,2002:null> "
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "simple key1
+            =VAL <tag:yaml.org,2002:str> "explicit value
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "simple key2
+            =VAL <tag:yaml.org,2002:null> "
+          -MAP
+        -SEQ
+      -DOC
+    -STR

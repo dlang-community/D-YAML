@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+- name: spec-09-10
+  yaml: " 'first\n \tinner\t\n last'\n"
+  tree: |
+    +STR
+      +DOC
+        =VAL 'first inner last
+      -DOC
+    -STR
+- name: spec-09-10-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "first \
+      inner \
+      last"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "first inner last
+      -DOC
+    -STR

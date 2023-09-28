@@ -1,0 +1,11 @@
+%YAML 1.1
+---
+- name: undefined-anchor
+  fail: true
+  error: |
+    Unable to load test/undefined-anchor.yaml#undefined-anchor:yaml: Found undefined alias: bat
+  mark: { line: 3, column: 3 }
+  yaml: |
+    - foo
+    - &bar baz
+    - *bat

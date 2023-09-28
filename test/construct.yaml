@@ -1,0 +1,775 @@
+%YAML 1.1
+---
+- name: construct-binary
+  tags: dyaml construct
+  code: construct-binary
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL <tag:yaml.org,2002:binary> "R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLCAgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs=
+    =VAL :generic
+    =VAL <tag:yaml.org,2002:binary> |R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5\nOTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+\n+f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLC\nAgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs=\n
+    =VAL :description
+    =VAL :The binary value above is a tiny arrow encoded as a gif image.
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: !!binary "\
+     R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5\
+     OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+\
+     +f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLC\
+     AgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs="
+    generic: !!binary |
+     R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5
+     OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+
+     +f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLC
+     AgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs=
+    description:
+     The binary value above is a tiny arrow encoded as a gif image.
+- name: construct-bool
+  tags: dyaml construct
+  code: construct-bool
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :yes
+    =VAL :answer
+    =VAL :NO
+    =VAL :logical
+    =VAL :True
+    =VAL :option
+    =VAL :on
+    =VAL :constbool
+    =VAL :on
+    =VAL :imutbool
+    =VAL :on
+    =VAL :const_bool
+    =VAL :on
+    =VAL :imut_bool
+    =VAL :on
+    =VAL :but
+    +MAP
+    =VAL :y
+    =VAL :is a string
+    =VAL :n
+    =VAL :is a string
+    -MAP
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: yes
+    answer: NO
+    logical: True
+    option: on
+    constbool: on
+    imutbool: on
+    const_bool: on
+    imut_bool: on
+
+
+    but:
+        y: is a string
+        n: is a string
+- name: construct-custom
+  tags: dyaml construct
+  code: construct-custom
+  tree: |
+    +STR
+    +DOC ---
+    +SEQ
+    +MAP <!tag1>
+    =VAL :x
+    =VAL :1
+    =VAL 'y
+    =VAL :2
+    =VAL :z
+    =VAL :3
+    -MAP
+    =VAL <!tag2> :10
+    -SEQ
+    -DOC
+    -STR
+  yaml: |
+    ---
+    - !tag1
+      x: 1
+      'y': 2
+      z: 3
+    - !tag2
+      10
+- name: construct-float
+  tags: dyaml construct
+  code: construct-float
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :6.8523015e+5
+    =VAL :exponential
+    =VAL :685.230_15e+03
+    =VAL :fixed
+    =VAL :685_230.15
+    =VAL :sexagesimal
+    =VAL :190:20:30.15
+    =VAL :negative infinity
+    =VAL :-.inf
+    =VAL :not a number
+    =VAL :.NaN
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: 6.8523015e+5
+    exponential: 685.230_15e+03
+    fixed: 685_230.15
+    sexagesimal: 190:20:30.15
+    negative infinity: -.inf
+    not a number: .NaN
+- name: construct-int
+  tags: dyaml construct
+  code: construct-int
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :685230
+    =VAL :decimal
+    =VAL :+685_230
+    =VAL :octal
+    =VAL :02472256
+    =VAL :hexadecimal
+    =VAL :0x_0A_74_AE
+    =VAL :binary
+    =VAL :0b1010_0111_0100_1010_1110
+    =VAL :sexagesimal
+    =VAL :190:20:30
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: 685230
+    decimal: +685_230
+    octal: 02472256
+    hexadecimal: 0x_0A_74_AE
+    binary: 0b1010_0111_0100_1010_1110
+    sexagesimal: 190:20:30
+- name: construct-map
+  tags: dyaml construct
+  code: construct-map
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :Block style
+    +MAP <tag:yaml.org,2002:map>
+    =VAL :Clark
+    =VAL :Evans
+    =VAL :Brian
+    =VAL :Ingerson
+    =VAL :Oren
+    =VAL :Ben-Kiki
+    -MAP
+    =VAL :Flow style
+    +MAP {} <tag:yaml.org,2002:map>
+    =VAL :Clark
+    =VAL :Evans
+    =VAL :Brian
+    =VAL :Ingerson
+    =VAL :Oren
+    =VAL :Ben-Kiki
+    -MAP
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # Unordered set of key: value pairs.
+    Block style: !!map
+      Clark : Evans
+      Brian : Ingerson
+      Oren  : Ben-Kiki
+    Flow style: !!map { Clark: Evans, Brian: Ingerson, Oren: Ben-Kiki }
+- name: construct-merge
+  tags: dyaml construct
+  code: construct-merge
+  tree: |
+    +STR
+    +DOC ---
+    +SEQ
+    +MAP {} &CENTER
+    =VAL :x
+    =VAL :1
+    =VAL 'y
+    =VAL :2
+    -MAP
+    +MAP {} &LEFT
+    =VAL :x
+    =VAL :0
+    =VAL 'y
+    =VAL :2
+    -MAP
+    +MAP {} &BIG
+    =VAL :r
+    =VAL :10
+    -MAP
+    +MAP {} &SMALL
+    =VAL :r
+    =VAL :1
+    -MAP
+    +MAP
+    =VAL :x
+    =VAL :1
+    =VAL 'y
+    =VAL :2
+    =VAL :r
+    =VAL :10
+    =VAL :label
+    =VAL :center/big
+    -MAP
+    +MAP
+    =VAL :<<
+    =ALI *CENTER
+    =VAL :r
+    =VAL :10
+    =VAL :label
+    =VAL :center/big
+    -MAP
+    +MAP
+    =VAL :<<
+    +SEQ []
+    =ALI *CENTER
+    =ALI *BIG
+    -SEQ
+    =VAL :label
+    =VAL :center/big
+    -MAP
+    +MAP
+    =VAL :<<
+    +SEQ []
+    =ALI *BIG
+    =ALI *LEFT
+    =ALI *SMALL
+    -SEQ
+    =VAL :x
+    =VAL :1
+    =VAL :label
+    =VAL :center/big
+    -MAP
+    -SEQ
+    -DOC
+    -STR
+  yaml: |
+    ---
+    - &CENTER { x: 1, 'y': 2 }
+    - &LEFT { x: 0, 'y': 2 }
+    - &BIG { r: 10 }
+    - &SMALL { r: 1 }
+
+    # All the following maps are equal:
+
+    - # Explicit keys
+      x: 1
+      'y': 2
+      r: 10
+      label: center/big
+
+    - # Merge one map
+      << : *CENTER
+      r: 10
+      label: center/big
+
+    - # Merge multiple maps
+      << : [ *CENTER, *BIG ]
+      label: center/big
+
+    - # Override
+      << : [ *BIG, *LEFT, *SMALL ]
+      x: 1
+      label: center/big
+- name: construct-null
+  tags: dyaml construct
+  code: construct-null
+  tree: |
+    +STR
+    +DOC ---
+    =VAL :
+    -DOC
+    +DOC ---
+    +MAP
+    =VAL :empty
+    =VAL :
+    =VAL :canonical
+    =VAL :~
+    =VAL :english
+    =VAL :null
+    =VAL :~
+    =VAL :null key
+    -MAP
+    -DOC
+    +DOC ---
+    +MAP
+    =VAL :sparse
+    +SEQ
+    =VAL :~
+    =VAL :2nd entry
+    =VAL :
+    =VAL :4th entry
+    =VAL :Null
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # A document may be null.
+    ---
+    ---
+    # This mapping has four keys,
+    # one has a value.
+    empty:
+    canonical: ~
+    english: null
+    ~: null key
+    ---
+    # This sequence has five
+    # entries, two have values.
+    sparse:
+      - ~
+      - 2nd entry
+      -
+      - 4th entry
+      - Null
+- name: construct-omap
+  tags: dyaml construct
+  code: construct-omap
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :Bestiary
+    +SEQ <tag:yaml.org,2002:omap>
+    +MAP
+    =VAL :aardvark
+    =VAL :African pig-like ant eater. Ugly.
+    -MAP
+    +MAP
+    =VAL :anteater
+    =VAL :South-American ant eater. Two species.
+    -MAP
+    +MAP
+    =VAL :anaconda
+    =VAL :South-American constrictor snake. Scaly.
+    -MAP
+    -SEQ
+    =VAL :Numbers
+    +SEQ [] <tag:yaml.org,2002:omap>
+    +MAP {}
+    =VAL :one
+    =VAL :1
+    -MAP
+    +MAP {}
+    =VAL :two
+    =VAL :2
+    -MAP
+    +MAP {}
+    =VAL :three
+    =VAL :3
+    -MAP
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # Explicitly typed ordered map (dictionary).
+    Bestiary: !!omap
+      - aardvark: African pig-like ant eater. Ugly.
+      - anteater: South-American ant eater. Two species.
+      - anaconda: South-American constrictor snake. Scaly.
+      # Etc.
+    # Flow style
+    Numbers: !!omap [ one: 1, two: 2, three : 3 ]
+- name: construct-pairs
+  tags: dyaml construct
+  code: construct-pairs
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :Block tasks
+    +SEQ <tag:yaml.org,2002:pairs>
+    +MAP
+    =VAL :meeting
+    =VAL :with team.
+    -MAP
+    +MAP
+    =VAL :meeting
+    =VAL :with boss.
+    -MAP
+    +MAP
+    =VAL :break
+    =VAL :lunch.
+    -MAP
+    +MAP
+    =VAL :meeting
+    =VAL :with client.
+    -MAP
+    -SEQ
+    =VAL :Flow tasks
+    +SEQ [] <tag:yaml.org,2002:pairs>
+    +MAP {}
+    =VAL :meeting
+    =VAL :with team
+    -MAP
+    +MAP {}
+    =VAL :meeting
+    =VAL :with boss
+    -MAP
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # Explicitly typed pairs.
+    Block tasks: !!pairs
+      - meeting: with team.
+      - meeting: with boss.
+      - break: lunch.
+      - meeting: with client.
+    Flow tasks: !!pairs [ meeting: with team, meeting: with boss ]
+- name: construct-seq
+  tags: dyaml construct
+  code: construct-seq
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :Block style
+    +SEQ <tag:yaml.org,2002:seq>
+    =VAL :Mercury
+    =VAL :Venus
+    =VAL :Earth
+    =VAL :Mars
+    =VAL :Jupiter
+    =VAL :Saturn
+    =VAL :Uranus
+    =VAL :Neptune
+    =VAL :Pluto
+    -SEQ
+    =VAL :Flow style
+    +SEQ [] <tag:yaml.org,2002:seq>
+    =VAL :Mercury
+    =VAL :Venus
+    =VAL :Earth
+    =VAL :Mars
+    =VAL :Jupiter
+    =VAL :Saturn
+    =VAL :Uranus
+    =VAL :Neptune
+    =VAL :Pluto
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |+
+    # Ordered sequence of nodes
+    Block style: !!seq
+    - Mercury   # Rotates - no light/dark sides.
+    - Venus     # Deadliest. Aptly named.
+    - Earth     # Mostly dirt.
+    - Mars      # Seems empty.
+    - Jupiter   # The king.
+    - Saturn    # Pretty.
+    - Uranus    # Where the sun hardly shines.
+    - Neptune   # Boring. No rings.
+    - Pluto     # You call this a planet?
+    Flow style: !!seq [ Mercury, Venus, Earth, Mars,      # Rocks
+                        Jupiter, Saturn, Uranus, Neptune, # Gas
+                        Pluto ]                           # Overrated
+
+- name: construct-set
+  tags: dyaml construct
+  code: construct-set
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :baseball players
+    +MAP <tag:yaml.org,2002:set>
+    =VAL :Mark McGwire
+    =VAL :
+    =VAL :Sammy Sosa
+    =VAL :
+    =VAL :Ken Griffey
+    =VAL :
+    -MAP
+    =VAL :baseball teams
+    +MAP {} <tag:yaml.org,2002:set>
+    =VAL :Boston Red Sox
+    =VAL :
+    =VAL :Detroit Tigers
+    =VAL :
+    =VAL :New York Yankees
+    =VAL :
+    -MAP
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    # Explicitly typed set.
+    baseball players: !!set
+      ? Mark McGwire
+      ? Sammy Sosa
+      ? Ken Griffey
+    # Flow style
+    baseball teams: !!set { Boston Red Sox, Detroit Tigers, New York Yankees }
+- name: construct-str-ascii
+  tags: dyaml construct
+  code: construct-str-ascii
+  tree: |
+    +STR
+    +DOC ---
+    =VAL <tag:yaml.org,2002:str> "ascii string
+    -DOC
+    -STR
+  yaml: |
+    --- !!str "ascii string"
+- name: construct-str-utf8
+  tags: dyaml construct
+  code: construct-str-utf8
+  tree: |
+    +STR
+    +DOC ---
+    =VAL <tag:yaml.org,2002:str> "Это уникодная строка
+    -DOC
+    -STR
+  yaml: |
+    --- !!str "Это уникодная строка"
+- name: construct-str
+  tags: dyaml construct
+  code: construct-str
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :string
+    =VAL :abcd
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    string: abcd
+- name: construct-timestamp
+  tags: dyaml construct
+  code: construct-timestamp
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :2001-12-15T02:59:43.1Z
+    =VAL :valid iso8601
+    =VAL :2001-12-14t21:59:43.1-05:00
+    =VAL :space separated
+    =VAL :2001-12-14 21:59:43.1 -5
+    =VAL :no time zone (Z)
+    =VAL :2001-12-15 2:59:43.1
+    =VAL :date (00:00:00Z)
+    =VAL :2002-12-14
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical:        2001-12-15T02:59:43.1Z
+    valid iso8601:    2001-12-14t21:59:43.1-05:00
+    space separated:  2001-12-14 21:59:43.1 -5
+    no time zone (Z): 2001-12-15 2:59:43.1
+    date (00:00:00Z): 2002-12-14
+- name: construct-value
+  tags: dyaml construct
+  code: construct-value
+  tree: |
+    +STR
+    +DOC ---
+    +MAP
+    =VAL :link with
+    +SEQ
+    =VAL :library1.dll
+    =VAL :library2.dll
+    -SEQ
+    -MAP
+    -DOC
+    +DOC ---
+    +MAP
+    =VAL :link with
+    +SEQ
+    +MAP
+    =VAL :=
+    =VAL :library1.dll
+    =VAL :version
+    =VAL :1.2
+    -MAP
+    +MAP
+    =VAL :=
+    =VAL :library2.dll
+    =VAL :version
+    =VAL :2.3
+    -MAP
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    ---     # Old schema
+    link with:
+      - library1.dll
+      - library2.dll
+    ---     # New schema
+    link with:
+      - = : library1.dll
+        version: 1.2
+      - = : library2.dll
+        version: 2.3
+- name: more-floats
+  code: more-floats
+  tree: |
+    +STR
+    +DOC
+    +SEQ []
+    =VAL :0.0
+    =VAL :+1.0
+    =VAL :-1.0
+    =VAL :+.inf
+    =VAL :-.inf
+    =VAL :.nan
+    =VAL :.nan
+    -SEQ
+    -DOC
+    -STR
+  yaml: |
+    [0.0, +1.0, -1.0, +.inf, -.inf, .nan, .nan]
+- name: invalid-single-quote-bug
+  code: invalid-single-quote-bug
+  yaml: |
+    - "foo 'bar'"
+    - "foo\n'bar'"
+- name: duplicate-merge-key
+  code: duplicate-merge-key
+  tree: |
+    +STR
+    +DOC ---
+    +MAP
+    =VAL :<<
+    +MAP {}
+    =VAL :x
+    =VAL :1
+    =VAL :y
+    =VAL :2
+    -MAP
+    =VAL :foo
+    =VAL :bar
+    =VAL :<<
+    +MAP {}
+    =VAL :z
+    =VAL :3
+    =VAL :t
+    =VAL :4
+    -MAP
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    ---
+    <<: {x: 1, y: 2}
+    foo: bar
+    <<: {z: 3, t: 4}
+- name: float-representer-2.3-bug
+  code: float-representer-2.3-bug
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :1.0
+    =VAL :1
+    =VAL :+.inf
+    =VAL :10
+    =VAL :-.inf
+    =VAL :-10
+    =VAL :.nan
+    =VAL :100
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    #0.0:   # hash(0) == hash(nan) and 0 == nan in Python 2.3
+    1.0: 1
+    +.inf: 10
+    -.inf: -10
+    .nan: 100
+- name: single-dot-is-not-float-bug
+  code: single-dot-is-not-float-bug
+  tree: |
+    +STR
+    +DOC
+    =VAL :.
+    -DOC
+    -STR
+  yaml: |
+    .
+- name: negative-float-bug
+  code: negative-float-bug
+  tree: |
+    +STR
+    +DOC
+    =VAL :-1.0
+    -DOC
+    -STR
+  yaml: |
+    -1.0
+- name: timestamp-bugs
+  code: timestamp-bugs
+  tree: |
+    +STR
+    +DOC
+    +SEQ
+    =VAL :2001-12-14 21:59:43.1 -5:30
+    =VAL :2001-12-14 21:59:43.1 +5:30
+    =VAL :2001-12-14 21:59:43.00101
+    =VAL :2001-12-14 21:59:43+1
+    =VAL :2001-12-14 21:59:43-1:30
+    =VAL :2005-07-08 17:35:04.517600
+    -SEQ
+    -DOC
+    -STR
+  yaml: |
+    - 2001-12-14 21:59:43.1 -5:30
+    - 2001-12-14 21:59:43.1 +5:30
+    - 2001-12-14 21:59:43.00101
+    - 2001-12-14 21:59:43+1
+    - 2001-12-14 21:59:43-1:30
+    - 2005-07-08 17:35:04.517600
+- name: utf8-implicit
+  code: utf8-implicit
+  tree: |
+    +STR
+    +DOC ---
+    =VAL :implicit UTF-8
+    -DOC
+    -STR
+  yaml: |
+    --- implicit UTF-8
+- name: utf8
+  code: utf8
+  tree: |
+    +STR
+    +DOC ---
+    =VAL :UTF-8
+    -DOC
+    -STR
+  yaml: |
+    --- UTF-8

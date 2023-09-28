@@ -1,0 +1,22 @@
+%YAML 1.1
+---
+- name: spec-09-17
+  yaml: " first line \n   \n  more line\n"
+  tree: |
+    +STR
+      +DOC
+        =VAL :first line\nmore line
+      -DOC
+    -STR
+- name: spec-09-17-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "first line\n\
+          more line"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "first line\nmore line
+      -DOC
+    -STR

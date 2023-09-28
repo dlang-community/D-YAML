@@ -1,0 +1,22 @@
+%YAML 1.1
+---
+- name: spec-09-29
+  yaml: "> # Simple folded scalar\n folded\n text\n \tlines\n"
+  tree: |
+    +STR
+      +DOC
+        =VAL >folded text\n\tlines\n
+      -DOC
+    -STR
+- name: spec-09-29-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "folded text\n\
+          \tlines\n"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "folded text\n\tlines\n
+      -DOC
+    -STR

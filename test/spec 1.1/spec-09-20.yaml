@@ -1,0 +1,36 @@
+%YAML 1.1
+---
+- name: spec-09-20
+  yaml: "- |\n detected\n- >\n \n  \n  # detected\n- |1\n  explicit\n- >\n \t\n detected\n"
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL |detected\n
+          =VAL >\n\n# detected\n
+          =VAL | explicit\n
+          =VAL >\t\ndetected\n
+        -SEQ
+      -DOC
+    -STR
+- name: spec-09-20-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "detected\n",
+      !!str "\n\n# detected\n",
+      !!str " explicit\n",
+      !!str "\t\ndetected\n",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "detected\n
+          =VAL <tag:yaml.org,2002:str> "\n\n# detected\n
+          =VAL <tag:yaml.org,2002:str> " explicit\n
+          =VAL <tag:yaml.org,2002:str> "\t\ndetected\n
+        -SEQ
+      -DOC
+    -STR

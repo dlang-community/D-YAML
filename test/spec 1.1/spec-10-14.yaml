@@ -1,0 +1,49 @@
+%YAML 1.1
+---
+- name: spec-10-14
+  yaml: |
+    plain key: # empty value
+    "quoted key":
+    - one # explicit next-line
+    - two # block value
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :plain key
+          =VAL :
+          =VAL "quoted key
+          +SEQ
+            =VAL :one
+            =VAL :two
+          -SEQ
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-14-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "plain key"
+      : !!null "",
+      ? !!str "quoted key"
+      : !!seq [
+        !!str "one",
+        !!str "two",
+      ]
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "plain key
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "quoted key
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "one
+            =VAL <tag:yaml.org,2002:str> "two
+          -SEQ
+        -MAP
+      -DOC
+    -STR

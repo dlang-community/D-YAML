@@ -1,0 +1,33 @@
+%YAML 1.1
+---
+- name: spec-09-03
+  yaml: "- \"\n  last\"\n- \" \t\n  last\"\n- \" \tfirst\n  last\"\n"
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL " last
+          =VAL " last
+          =VAL " \tfirst last
+        -SEQ
+      -DOC
+    -STR
+- name: spec-09-03-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str " last",
+      !!str " last",
+      !!str " \tfirst last",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> " last
+          =VAL <tag:yaml.org,2002:str> " last
+          =VAL <tag:yaml.org,2002:str> " \tfirst last
+        -SEQ
+      -DOC
+    -STR

@@ -1,0 +1,26 @@
+%YAML 1.1
+---
+- name: expected-mapping
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 1, column: 24 }
+  error: |
+    Unable to load test/expected.yaml#expected-mapping:yaml: Error constructing Node[]: Only mappings can be maps
+  yaml: |
+    --- !!map [not, a, map]
+- name: expected-scalar
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 1, column: 25 }
+  error: |
+    Unable to load test/expected.yaml#expected-scalar:yaml: Error constructing Node[]: Only scalars can be strings
+  yaml: |
+    --- !!str [not a scalar]
+- name: expected-sequence
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 1, column: 26 }
+  error: |
+    Unable to load test/expected.yaml#expected-sequence:yaml: Error constructing Pair[]: Only sequences can be sequences
+  yaml: |
+    --- !!seq {foo, bar, baz}

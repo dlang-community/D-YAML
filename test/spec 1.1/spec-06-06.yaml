@@ -1,0 +1,35 @@
+%YAML 1.1
+---
+- name: spec-06-06
+  yaml: "plain: text\n  lines\nquoted: \"text\n  \tlines\"\nblock: |\n  text\n   \t\
+    lines\n"
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :plain
+          =VAL :text lines
+          =VAL :quoted
+          =VAL "text lines
+          =VAL :block
+          =VAL |text\n \tlines\n
+        -MAP
+      -DOC
+    -STR
+- name: spec-06-06-canonical
+  yaml: "%YAML 1.1\n---\n!!map {\n  ? !!str \"plain\"\n  : !!str \"text lines\"\
+    ,\n  ? !!str \"quoted\"\n  : !!str \"text lines\",\n  ? !!str \"block\"\n  : !!str\
+    \ \"text\\n \tlines\\n\"\n}\n"
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "plain
+          =VAL <tag:yaml.org,2002:str> "text lines
+          =VAL <tag:yaml.org,2002:str> "quoted
+          =VAL <tag:yaml.org,2002:str> "text lines
+          =VAL <tag:yaml.org,2002:str> "block
+          =VAL <tag:yaml.org,2002:str> "text\n \tlines\n
+        -MAP
+      -DOC
+    -STR

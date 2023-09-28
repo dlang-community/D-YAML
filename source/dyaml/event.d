@@ -10,6 +10,7 @@
  */
 module dyaml.event;
 
+import std.algorithm;
 import std.array;
 import std.conv;
 
@@ -43,8 +44,6 @@ enum EventID : ubyte
  */
 struct Event
 {
-    @disable int opCmp(ref Event);
-
     ///Value of the event, if any.
     string value;
     ///Start position of the event in file/stream.

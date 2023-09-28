@@ -1,0 +1,13 @@
+%YAML 1.1
+---
+- name: spec-05-05
+  yaml: |
+    # Comment only.
+  tree: |
+    +STR
+    -STR
+- name: spec-05-05-canonical
+  yaml: ""
+  tree: |
+    +STR
+    -STR

@@ -1,0 +1,45 @@
+%YAML 1.1
+---
+- name: duplicate-anchor-1
+  fail: true
+  mark: { line: 3, column: 3 }
+  mark2: { line: 1, column: 3 }
+  error: |
+    Unable to load test/duplicate-errors.yaml#duplicate-anchor-1:yaml: Found duplicate anchor: foo
+  yaml: |
+    - &foo bar
+    - &bar bar
+    - &foo bar
+- name: duplicate-anchor-2
+  fail: true
+  mark: { line: 1, column: 16 }
+  mark2: { line: 1, column: 1 }
+  error: |
+    Unable to load test/duplicate-errors.yaml#duplicate-anchor-2:yaml: Found duplicate anchor: foo
+  yaml: |
+    &foo [1, 2, 3, &foo 4]
+- name: duplicate-mapping-key
+  fail: true
+  mark: { line: 2, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: |
+    Unable to load test/duplicate-errors.yaml#duplicate-mapping-key:yaml: Key 'a' appears multiple times in mapping
+  yaml: |-
+    a: 1
+    a: 2
+- name: duplicate-tag-directive
+  fail: true
+  mark: { line: 2, column: 1 }
+  error: "Duplicate tag handle: !foo!"
+  yaml: |
+    %TAG    !foo!   bar
+    %TAG    !foo!   baz
+    --- foo
+- name: duplicate-yaml-directive
+  fail: true
+  mark: { line: 2, column: 1 }
+  error: "Duplicate YAML directive"
+  yaml: |
+    %YAML   1.1
+    %YAML   1.1
+    --- foo

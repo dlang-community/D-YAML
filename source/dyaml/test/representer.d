@@ -9,12 +9,12 @@ module dyaml.test.representer;
 @safe unittest
 {
     import std.array : Appender, array;
+    import std.conv : text;
     import std.meta : AliasSeq;
     import std.path : baseName, stripExtension;
     import std.utf : toUTF8;
 
     import dyaml : dumper, Loader, Node;
-    import dyaml.test.common : assertNodesEqual, run;
     import dyaml.test.constructor : expected;
 
     /**
@@ -38,13 +38,9 @@ module dyaml.test.representer;
 
             auto loader = Loader.fromString(emitStream.data.toUTF8);
             loader.name = "TEST";
-            const readNodes = loader.array;
+            auto readNodes = loader.array;
 
-            assert(expectedNodes.length == readNodes.length);
-            foreach (n; 0 .. expectedNodes.length)
-            {
-                assertNodesEqual(expectedNodes[n], readNodes[n]);
-            }
+            assert(expectedNodes == readNodes, text("Got '", readNodes, "', expected '", expectedNodes, "'"));
         }
     }
     foreach (key, _; expected)

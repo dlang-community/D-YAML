@@ -1,0 +1,171 @@
+%YAML 1.1
+---
+- name: bool
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:bool
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :yes
+          =VAL :NO
+          =VAL :True
+          =VAL :on
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - yes
+    - NO
+    - True
+    - on
+- name: float
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:float
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :6.8523015e+5
+          =VAL :685.230_15e+03
+          =VAL :685_230.15
+          =VAL :190:20:30.15
+          =VAL :-.inf
+          =VAL :.NaN
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - 6.8523015e+5
+    - 685.230_15e+03
+    - 685_230.15
+    - 190:20:30.15
+    - -.inf
+    - .NaN
+- name: int
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:int
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :685230
+          =VAL :+685_230
+          =VAL :02472256
+          =VAL :0x_0A_74_AE
+          =VAL :0b1010_0111_0100_1010_1110
+          =VAL :190:20:30
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - 685230
+    - +685_230
+    - 02472256
+    - 0x_0A_74_AE
+    - 0b1010_0111_0100_1010_1110
+    - 190:20:30
+- name: merge
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:merge
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :<<
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - <<
+- name: "null"
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:null
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :
+          =VAL :~
+          =VAL :null
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    -
+    - ~
+    - null
+- name: str
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:str
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :abcd
+          =VAL :9a8b
+          =VAL :9.1adsf
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - abcd
+    - 9a8b
+    - 9.1adsf
+- name: timestamp
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:timestamp
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :2001-12-15T02:59:43.1Z
+          =VAL :2001-12-14t21:59:43.10-05:00
+          =VAL :2001-12-14 21:59:43.10 -5
+          =VAL :2001-12-15 2:59:43.10
+          =VAL :2002-12-14
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - 2001-12-15T02:59:43.1Z
+    - 2001-12-14t21:59:43.10-05:00
+    - 2001-12-14 21:59:43.10 -5
+    - 2001-12-15 2:59:43.10
+    - 2002-12-14
+- name: uri
+  tags: dyaml composer
+  detect: "tag:example.com,2000:app/tag\U0001F914\n"
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ
+          =VAL <tag:example.com,2000:app/tag🤔> :baz
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    %TAG !e! tag:example.com,2000:app/
+    ---
+    - !e!tag%F0%9F%A4%94 baz
+- name: value
+  tags: dyaml composer
+  detect: |
+    tag:yaml.org,2002:value
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :=
+        -SEQ
+      -DOC
+    -STR
+  yaml: |
+    - =

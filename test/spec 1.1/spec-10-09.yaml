@@ -1,0 +1,40 @@
+%YAML 1.1
+---
+- name: spec-10-09
+  yaml: |
+    {
+    key : value,
+    empty: # empty value↓
+    }
+  tree: |
+    +STR
+      +DOC
+        +MAP {}
+          =VAL :key
+          =VAL :value
+          =VAL :empty
+          =VAL :
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-09-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "key"
+      : !!str "value",
+      ? !!str "empty"
+      : !!null "",
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "key
+          =VAL <tag:yaml.org,2002:str> "value
+          =VAL <tag:yaml.org,2002:str> "empty
+          =VAL <tag:yaml.org,2002:null> "
+        -MAP
+      -DOC
+    -STR

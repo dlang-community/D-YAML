@@ -1,0 +1,17 @@
+%YAML 1.1
+---
+- name: sloppy-indentation
+  yaml: "---\nin the block context:\n    indentation should be kept: { \n    but in\
+    \ the flow context: [\nit may be violated]\n}\n---\nthe parser does not require\
+    \ scalars\nto be indented with at least one space\n...\n---\n\"the parser does not\
+    \ require scalars\nto be indented with at least one space\"\n---\nfoo:\n    bar:\
+    \ 'quoted scalars\nmay not adhere indentation'\n"
+- name: sloppy-indentation-canonical
+  yaml: "%YAML 1.1\n---\n!!map { \n    ? !!str \"in the block context\"\n   \
+    \ : !!map {\n        ? !!str \"indentation should be kept\"\n        : !!map {\n\
+    \            ? !!str \"but in the flow context\"\n            : !!seq [ !!str \"\
+    it may be violated\" ]\n        }\n    }\n}\n--- !!str\n\"the parser does not require\
+    \ scalars to be indented with at least one space\"\n--- !!str\n\"the parser does\
+    \ not require scalars to be indented with at least one space\"\n--- !!map\n{ ? !!str\
+    \ \"foo\": { ? !!str \"bar\" : !!str \"quoted scalars may not adhere indentation\"\
+    \ } }\n"
