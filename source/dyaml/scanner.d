@@ -540,11 +540,11 @@ struct Scanner
                !possibleSimpleKeys_[flowLevel_].isNull)
             {
                 const key = possibleSimpleKeys_[flowLevel_];
+                assert(key.tokenIndex >= tokensTaken_);
+
                 possibleSimpleKeys_[flowLevel_].isNull = true;
                 Mark keyMark = key.mark;
                 const idx = key.tokenIndex - tokensTaken_;
-
-                assert(idx >= 0);
 
                 // Add KEY.
                 // Manually inserting since tokens are immutable (need linked list).
