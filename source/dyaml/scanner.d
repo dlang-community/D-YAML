@@ -313,8 +313,11 @@ struct Scanner
             {
                 const oldLength = possibleSimpleKeys_.length;
                 possibleSimpleKeys_.length = flowLevel_ + 1;
-                //No need to initialize the last element, it's already done in the next line.
-                possibleSimpleKeys_[oldLength .. flowLevel_] = SimpleKey.init;
+                // Make sure all the empty keys are null
+                foreach (ref emptyKey; possibleSimpleKeys_[oldLength .. flowLevel_])
+                {
+                    emptyKey.isNull = true;
+                }
             }
             possibleSimpleKeys_[flowLevel_] = key;
         }

@@ -370,3 +370,8 @@ EOS";
     auto e = loader.load().collectException!ScannerException(unused);
     assert(e.mark.name == filename);
 }
+/// https://github.com/dlang-community/D-YAML/issues/325
+@safe unittest
+{
+    assert(Loader.fromString("--- {x: a}").load()["x"] == "a");
+}
