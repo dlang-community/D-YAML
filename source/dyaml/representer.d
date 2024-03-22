@@ -31,11 +31,6 @@ import dyaml.serializer;
 import dyaml.style;
 
 package:
-///Exception thrown on Representer errors.
-class RepresenterException : YAMLException
-{
-    mixin ExceptionCtors;
-}
 
 /**
  * Represents YAML nodes as scalar, sequence and mapping nodes ready for output.
