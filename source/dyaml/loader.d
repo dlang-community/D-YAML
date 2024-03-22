@@ -146,18 +146,18 @@ struct Loader
                 auto parser = new Parser(Scanner(reader));
                 composer_ = Composer(parser, Resolver.withDefaultResolvers);
             }
-            catch(YAMLException e)
+            catch(MarkedYAMLException e)
             {
-                throw new YAMLException("Unable to open %s for YAML loading: %s"
-                                        .format(name, e.msg), e.file, e.line);
+                throw new LoaderException("Unable to open %s for YAML loading: %s"
+                                        .format(name, e.msg), e.mark, e.file, e.line);
             }
         }
 
 
         /// Set stream _name. Used in debugging messages.
-        void name(string name) pure @safe nothrow @nogc
+        ref inout(string) name() inout @safe return pure nothrow @nogc
         {
-            composer_.name = name;
+            return composer_.name;
         }
 
         /// Specify custom Resolver to use.
@@ -179,10 +179,12 @@ struct Loader
          */
         Node load() @safe
         {
-            enforce!YAMLException(!empty, "Zero documents in stream");
+            enforce(!empty,
+                new LoaderException("Zero documents in stream", composer_.mark));
             auto output = front;
             popFront();
-            enforce!YAMLException(empty, "More than one document in stream");
+            enforce(empty,
+                new LoaderException("More than one document in stream", composer_.mark));
             return output;
         }
 
@@ -209,13 +211,21 @@ struct Loader
         {
             scope(success) rangeInitialized = true;
             assert(!done_, "Loader.popFront called on empty range");
-            if (composer_.checkNode())
+            try
             {
-                currentNode = composer_.getNode();
+                if (composer_.checkNode())
+                {
+                    currentNode = composer_.getNode();
+                }
+                else
+                {
+                    done_ = true;
+                }
             }
-            else
+            catch(MarkedYAMLException e)
             {
-                done_ = true;
+                throw new LoaderException("Unable to load %s: %s"
+                                        .format(name, e.msg), e.mark, e.mark2Label, e.mark2, e.file, e.line);
             }
         }
         /** Implements the front range primitive.
@@ -367,11 +377,46 @@ EOS";
     loader.name = filename;
 
     Node unused;
-    auto e = loader.load().collectException!ScannerException(unused);
+    auto e = loader.load().collectException!LoaderException(unused);
     assert(e.mark.name == filename);
 }
 /// https://github.com/dlang-community/D-YAML/issues/325
 @safe unittest
 {
     assert(Loader.fromString("--- {x: a}").load()["x"] == "a");
+}
+
+// Ensure exceptions are thrown as appropriate
+@safe unittest
+{
+    LoaderException e;
+    // No documents
+    e = collectException!LoaderException(Loader.fromString("", "filename.yaml").load());
+    assert(e);
+    with(e)
+    {
+        assert(mark.name == "filename.yaml");
+        assert(mark.line == 0);
+        assert(mark.column == 0);
+    }
+    // Too many documents
+    e = collectException!LoaderException(Loader.fromString("--- 4\n--- 6\n--- 5", "filename.yaml").load());
+    assert(e, "No exception thrown");
+    with(e)
+    {
+        assert(mark.name == "filename.yaml");
+        // FIXME: should be position of second document, not end of file
+        //assert(mark.line == 1);
+        //assert(mark.column == 0);
+    }
+    // Invalid document
+    e = collectException!LoaderException(Loader.fromString("[", "filename.yaml").load());
+    assert(e, "No exception thrown");
+    with(e)
+    {
+        assert(mark.name == "filename.yaml");
+        // FIXME: should be position of second document, not end of file
+        assert(mark.line == 0);
+        assert(mark.column == 1);
+    }
 }

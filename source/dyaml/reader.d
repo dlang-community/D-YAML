@@ -31,16 +31,6 @@ alias isBreak = among!('\n', '\u0085', '\u2028', '\u2029');
 package:
 
 
-///Exception thrown at Reader errors.
-class ReaderException : YAMLException
-{
-    this(string msg, string file = __FILE__, size_t line = __LINE__)
-        @safe pure nothrow
-    {
-        super("Reader error: " ~ msg, file, line);
-    }
-}
-
 /// Provides an API to read characters from a UTF-8 buffer.
 struct Reader
 {
@@ -101,8 +91,9 @@ struct Reader
             auto endianResult = fixUTFByteOrder(buffer);
             if(endianResult.bytesStripped > 0)
             {
+                // TODO: add line and column
                 throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned " ~
-                                          "to 2 or 4 bytes, respectively");
+                                          "to 2 or 4 bytes, respectively", Mark(name, 0, 0));
             }
 
             version(unittest) { endian_ = endianResult.endian; }
@@ -112,15 +103,17 @@ struct Reader
             const msg = utf8Result.errorMessage;
             if(msg !is null)
             {
-                throw new ReaderException("Error when converting to UTF-8: " ~ msg);
+                // TODO: add line and column
+                throw new ReaderException("Error when converting to UTF-8: " ~ msg, Mark(name, 0, 0));
             }
 
             buffer_ = utf8Result.utf8;
 
             characterCount_ = utf8Result.characterCount;
             // Check that all characters in buffer are printable.
+            // TODO: add line and column
             enforce(isPrintableValidUTF8(buffer_),
-                    new ReaderException("Special unicode characters are not allowed"));
+                    new ReaderException("Special unicode characters are not allowed", Mark(name, 0, 0)));
 
             checkASCII();
         }
@@ -392,14 +385,34 @@ struct Reader
             checkASCII();
         }
 
-        /// Get a string describing current buffer position, used for error messages.
+        /// Get filename, line and column of current position.
         Mark mark() const pure nothrow @nogc @safe { return Mark(name_, line_, column_); }
 
-        /// Get file name.
-        string name() const @safe pure nothrow @nogc { return name_; }
+        /// Get filename, line and column of current position + some number of chars
+        Mark mark(size_t advance) const pure @safe
+        {
+            auto lineTemp = cast()line_;
+            auto columnTemp = cast()column_;
+            auto bufferOffsetTemp = cast()bufferOffset_;
+            for (size_t pos = 0; pos < advance; pos++)
+            {
+                if (bufferOffsetTemp >= buffer_.length)
+                {
+                    break;
+                }
+                const c = decode(buffer_, bufferOffsetTemp);
+                if (c.isBreak || (c == '\r' && buffer_[bufferOffsetTemp] == '\n'))
+                {
+                    lineTemp++;
+                    columnTemp = 0;
+                }
+                columnTemp++;
+            }
+            return Mark(name_, lineTemp, columnTemp);
+        }
 
-        /// Set file name.
-        void name(string name) pure @safe nothrow @nogc { name_ = name; }
+        /// Get file name.
+        ref inout(string) name() inout @safe return pure nothrow @nogc { return name_; }
 
         /// Get current line number.
         uint line() const @safe pure nothrow @nogc { return line_; }

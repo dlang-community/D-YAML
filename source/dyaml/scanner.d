@@ -74,14 +74,6 @@ alias isFlowScalarBreakSpace = among!(' ', '\t', '\0', '\n', '\r', '\u0085', '\u
 
 alias isNSAnchorName = c => !c.isWhiteSpace && !c.among!('[', ']', '{', '}', ',', '\uFEFF');
 
-/// Marked exception thrown at scanner errors.
-///
-/// See_Also: MarkedYAMLException
-class ScannerException : MarkedYAMLException
-{
-    mixin MarkedExceptionCtors;
-}
-
 /// Generates tokens from data provided by a Reader.
 struct Scanner
 {
@@ -182,9 +174,14 @@ struct Scanner
         }
 
         /// Set file name.
-        void name(string name) @safe pure nothrow @nogc
+        ref inout(string) name() inout @safe return pure nothrow @nogc
         {
-            reader_.name = name;
+            return reader_.name;
+        }
+        /// Get a mark from the current reader position
+        Mark mark() const @safe pure nothrow @nogc
+        {
+            return reader_.mark;
         }
 
     private:
@@ -192,7 +189,7 @@ struct Scanner
         /// function.
         string expected(T)(string expected, T found)
         {
-            return text("expected ", expected, ", but found ", found);
+            return text(expected, ", but found ", found);
         }
 
         /// Determine whether or not we need to fetch more tokens before peeking/getting a token.
@@ -281,9 +278,8 @@ struct Scanner
                 if(key.mark.line != reader_.mark.line || reader_.mark.column - key.mark.column > 1024)
                 {
                     enforce(!key.required,
-                            new ScannerException("While scanning a simple key",
-                                                 key.mark,
-                                                 "could not find expected ':'", reader_.mark));
+                        new ScannerException("While scanning a simple key, could not find expected ':'",
+                            reader_.mark, "key started here", key.mark));
                     key.isNull = true;
                 }
             }
@@ -331,9 +327,8 @@ struct Scanner
             {
                 const key = possibleSimpleKeys_[flowLevel_];
                 enforce(!key.required,
-                        new ScannerException("While scanning a simple key",
-                                             key.mark,
-                                             "could not find expected ':'", reader_.mark));
+                    new ScannerException("While scanning a simple key, could not find expected ':'",
+                         reader_.mark, "key started here", key.mark));
                 possibleSimpleKeys_[flowLevel_].isNull = true;
             }
         }
@@ -755,8 +750,8 @@ struct Scanner
             dchar c = reader_.peek();
             while(c.isAlphaNum || c.among!('-', '_')) { c = reader_.peek(++length); }
 
-            enforce(length > 0, new ScannerException("While scanning " ~ name,
-                startMark, expected("alphanumeric, '-' or '_'", c), reader_.mark));
+            enforce(length > 0, new ScannerException(expected("While scanning a " ~ name ~ ", expected alphanumeric, '-' or '_'", c),
+                reader_.mark, name~" started here", startMark));
 
             slice ~= reader_.get(length);
         }
@@ -774,8 +769,9 @@ struct Scanner
                 c = reader_.peek(++length);
             }
 
-            enforce(length > 0, new ScannerException("While scanning an anchor or alias",
-                startMark, expected("a printable character besides '[', ']', '{', '}' and ','", c), reader_.mark));
+            enforce(length > 0, new ScannerException(
+                expected("While scanning an anchor or alias, expected a printable character besides '[', ']', '{', '}' and ','", c),
+                reader_.mark, "started here", startMark));
 
             return reader_.get(length);
         }
@@ -888,11 +884,11 @@ struct Scanner
         void scanDirectiveNameToSlice(ref char[] slice, const Mark startMark) @safe
         {
             // Scan directive name.
-            scanAlphaNumericToSlice!"a directive"(slice, startMark);
+            scanAlphaNumericToSlice!"directive"(slice, startMark);
 
             enforce(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
-                new ScannerException("While scanning a directive", startMark,
-                    expected("alphanumeric, '-' or '_'", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive, expected alphanumeric, '-' or '_'", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
         }
 
         /// Scan value of a YAML directive token. Returns major, minor version separated by '.'.
@@ -906,8 +902,8 @@ struct Scanner
             scanYAMLDirectiveNumberToSlice(slice, startMark);
 
             enforce(reader_.peekByte() == '.',
-                new ScannerException("While scanning a directive", startMark,
-                    expected("digit or '.'", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive, expected digit or '.'", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
             // Skip the '.'.
             reader_.forward();
 
@@ -915,8 +911,8 @@ struct Scanner
             scanYAMLDirectiveNumberToSlice(slice, startMark);
 
             enforce(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
-                new ScannerException("While scanning a directive", startMark,
-                    expected("digit or '.'", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive, expected digit or '.'", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
         }
 
         /// Scan a number from a YAML directive.
@@ -926,8 +922,8 @@ struct Scanner
         void scanYAMLDirectiveNumberToSlice(ref char[] slice, const Mark startMark) @safe
         {
             enforce(isDigit(reader_.peek()),
-                new ScannerException("While scanning a directive", startMark,
-                    expected("digit", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive, expected a digit", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
 
             // Already found the first digit in the enforce(), so set length to 1.
             uint length = 1;
@@ -962,8 +958,8 @@ struct Scanner
         {
             scanTagHandleToSlice!"directive"(slice, startMark);
             enforce(reader_.peekByte() == ' ',
-                new ScannerException("While scanning a directive handle", startMark,
-                    expected("' '", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive handle, expected ' '", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
         }
 
         /// Scan prefix of a tag directive.
@@ -974,8 +970,8 @@ struct Scanner
         {
             scanTagURIToSlice!"directive"(slice, startMark);
             enforce(reader_.peek().among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
-                new ScannerException("While scanning a directive prefix", startMark,
-                    expected("' '", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive prefix, expected ' '", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
         }
 
         /// Scan (and ignore) ignored line after a directive.
@@ -984,8 +980,8 @@ struct Scanner
             findNextNonSpace();
             if(reader_.peekByte() == '#') { scanToNextBreak(); }
             enforce(reader_.peek().isBreak,
-                new ScannerException("While scanning a directive", startMark,
-                      expected("comment or a line break", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a directive, expected a comment or a line break", reader_.peek()),
+                    reader_.mark, "directive started here", startMark));
             scanLineBreak();
         }
 
@@ -1038,8 +1034,8 @@ struct Scanner
                 handleEnd = 0;
                 scanTagURIToSlice!"tag"(slice, startMark);
                 enforce(reader_.peekByte() == '>',
-                    new ScannerException("While scanning a tag", startMark,
-                        expected("'>'", reader_.peek()), reader_.mark));
+                    new ScannerException(expected("While scanning a tag, expected a '>'", reader_.peek()),
+                        reader_.mark, "tag started here", startMark));
                 reader_.forward();
             }
             else if(c.isWhiteSpace)
@@ -1080,8 +1076,8 @@ struct Scanner
             }
 
             enforce(reader_.peek().isBreakOrSpace,
-                new ScannerException("While scanning a tag", startMark, expected("' '", reader_.peek()),
-                    reader_.mark));
+                new ScannerException(expected("While scanning a tag, expected a ' '", reader_.peek()),
+                    reader_.mark, "tag started here", startMark));
 
             return tagToken(startMark, reader_.mark, slice, handleEnd);
         }
@@ -1239,8 +1235,8 @@ struct Scanner
             }
 
             enforce(c.among!(' ', '\0', '\n', '\r', '\u0085', '\u2028', '\u2029'),
-                new ScannerException("While scanning a block scalar", startMark,
-                expected("chomping or indentation indicator", c), reader_.mark));
+                new ScannerException(expected("While scanning a block scalar, expected a chomping or indentation indicator", c),
+                    reader_.mark, "scalar started here", startMark));
 
             return tuple(chomping, increment);
         }
@@ -1281,8 +1277,8 @@ struct Scanner
             assert(increment < 10 && increment >= 0, "Digit has invalid value");
 
             enforce(increment > 0,
-                new ScannerException("While scanning a block scalar", startMark,
-                    expected("indentation indicator in range 1-9", "0"), reader_.mark));
+                new ScannerException(expected("While scanning a block scalar, expected an indentation indicator in range 1-9", "0"),
+                    reader_.mark, "scalar started here", startMark));
 
             reader_.forward();
             c = reader_.peek();
@@ -1296,8 +1292,8 @@ struct Scanner
             if(reader_.peekByte()== '#') { scanToNextBreak(); }
 
             enforce(reader_.peek().isBreak,
-                new ScannerException("While scanning a block scalar", startMark,
-                    expected("comment or line break", reader_.peek()), reader_.mark));
+                new ScannerException(expected("While scanning a block scalar, expected a comment or line break", reader_.peek()),
+                    reader_.mark, "scalar started here", startMark));
 
             scanLineBreak();
         }
@@ -1413,16 +1409,12 @@ struct Scanner
 
                         foreach(i; 0 .. hexLength) {
                             enforce(reader_.peek(i).isHexDigit,
-                                new ScannerException("While scanning a double quoted scalar", startMark,
-                                    expected("escape sequence of hexadecimal numbers",
-                                        reader_.peek(i)), reader_.mark));
+                                new ScannerException(expected("While scanning a double quoted scalar, expected an escape sequence of hexadecimal numbers", reader_.peek(i)),
+                                    reader_.mark, "scalar started here", startMark));
                         }
                         char[] hex = reader_.get(hexLength);
 
-                        enforce((hex.length > 0) && (hex.length <= 8),
-                            new ScannerException("While scanning a double quoted scalar", startMark,
-                                  "overflow when parsing an escape sequence of " ~
-                                  "hexadecimal numbers.", reader_.mark));
+                        assert((hex.length > 0) && (hex.length <= 8), "Hex escape overflow");
 
                         char[2] escapeStart = ['\\', cast(char) c];
                         slice ~= escapeStart;
@@ -1436,9 +1428,8 @@ struct Scanner
                     }
                     else
                     {
-                        throw new ScannerException("While scanning a double quoted scalar", startMark,
-                              text("found unsupported escape character ", c),
-                              reader_.mark);
+                        throw new ScannerException(text("While scanning a double quoted scalar, found unsupported escape character ", c),
+                            reader_.mark, "scalar started here", startMark);
                     }
                 }
                 else { return; }
@@ -1459,8 +1450,8 @@ struct Scanner
             // Can check the last byte without striding because '\0' is ASCII
             const c = reader_.peek(length);
             enforce(c != '\0',
-                new ScannerException("While scanning a quoted scalar", startMark,
-                    "found unexpected end of buffer", reader_.mark));
+                new ScannerException("While scanning a quoted scalar, found unexpected end of buffer",
+                    reader_.mark, "scalar started here", startMark));
 
             // Spaces not followed by a line break.
             if(!c.among!('\n', '\r', '\u0085', '\u2028', '\u2029'))
@@ -1498,8 +1489,8 @@ struct Scanner
                 const prefix = reader_.prefix(3);
                 enforce(!(prefix == "---" || prefix == "...") ||
                     !reader_.peek(3).isWhiteSpace,
-                    new ScannerException("While scanning a quoted scalar", startMark,
-                        "found unexpected document separator", reader_.mark));
+                    new ScannerException("While scanning a quoted scalar, found unexpected document separator",
+                        reader_.mark, "scalar started here", startMark));
 
                 // Skip any whitespaces.
                 while(reader_.peekByte().among!(' ', '\t')) { reader_.forward(); }
@@ -1638,9 +1629,10 @@ struct Scanner
         void scanTagHandleToSlice(string name)(ref char[] slice, const Mark startMark)
         {
             dchar c = reader_.peek();
-            enum contextMsg = "While scanning a " ~ name;
+            enum contextMsg = "While scanning a " ~ name ~ ", expected a !";
+            // should this be an assert?
             enforce(c == '!',
-                new ScannerException(contextMsg, startMark, expected("'!'", c), reader_.mark));
+                new ScannerException(expected(contextMsg, c), reader_.mark, "tag started here", startMark));
 
             uint length = 1;
             c = reader_.peek(length);
@@ -1652,7 +1644,7 @@ struct Scanner
                     c = reader_.peek(length);
                 }
                 enforce(c == '!',
-                    new ScannerException(contextMsg, startMark, expected("'!'", c), reader_.mark));
+                    new ScannerException(expected(contextMsg, c), reader_.mark(length), "tag started here", startMark));
                 ++length;
             }
 
@@ -1690,9 +1682,9 @@ struct Scanner
                 }
             }
             // OK if we scanned something, error otherwise.
-            enum contextMsg = "While parsing a " ~ name;
+            enum contextMsg = "While parsing a " ~ name ~ ", expected a URI";
             enforce(slice.length > startLen,
-                new ScannerException(contextMsg, startMark, expected("URI", c), reader_.mark));
+                new ScannerException(expected(contextMsg, c), reader_.mark, "tag started here", startMark));
         }
 
         // Not @nogc yet because std.utf.decode is not @nogc
@@ -1715,9 +1707,8 @@ struct Scanner
                 char[2] nextByte = [reader_.peekByte(), reader_.peekByte(1)];
 
                 enforce(nextByte[0].isHexDigit && nextByte[1].isHexDigit,
-                    new ScannerException(contextMsg, startMark,
-                        expected("URI escape sequence of 2 hexadecimal " ~
-                            "numbers", nextByte), reader_.mark));
+                    new ScannerException(expected(contextMsg ~ ", expected a URI escape sequence of 2 hexadecimal numbers", nextByte),
+                        reader_.mark, "tag started here", startMark));
 
                 buffer ~= nextByte[].to!ubyte(16);
 
@@ -1732,9 +1723,8 @@ struct Scanner
             }
             catch (UnicodeException)
             {
-                throw new ScannerException(contextMsg, startMark,
-                        "Invalid UTF-8 data encoded in URI escape sequence",
-                        reader_.mark);
+                throw new ScannerException(contextMsg ~ ", found invalid UTF-8 data encoded in URI escape sequence",
+                    reader_.mark, "tag started here", startMark);
             }
         }
 
@@ -1791,6 +1781,348 @@ EOS".chomp;
     auto s = Scanner(r);
     auto elems = s.map!"a.value".filter!"a.length > 0".array;
     assert(elems[1] == "foobar");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `test: key: value`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: Mapping values are not allowed here\n" ~
+       "<unknown>:1,10");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `test: ? foo
+      : bar`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: Mapping keys are not allowed here\n" ~
+       "<unknown>:1,7");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `@`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning for the next token, found character '@', index 64 that cannot start any token\n" ~
+       "<unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: bar
+meh`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a simple key, could not find expected ':'\n" ~
+       "<unknown>:2,4\nkey started here: <unknown>:2,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: &A bar
+*A ]`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a simple key, could not find expected ':'\n" ~
+       "<unknown>:2,4\nkey started here: <unknown>:2,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: &[`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning an anchor or alias, expected a printable character besides '[', ']', '{', '}' and ',', but found [\n" ~
+       "<unknown>:1,7\nstarted here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected alphanumeric, '-' or '_', but found ?\n" ~
+       "<unknown>:1,2\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%b?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected alphanumeric, '-' or '_', but found ?\n" ~
+       "<unknown>:1,3\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%YAML 1?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected digit or '.', but found ?\n" ~
+       "<unknown>:1,8\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%YAML 1.1?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected digit or '.', but found ?\n" ~
+       "<unknown>:1,10\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%YAML ?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected a digit, but found ?\n" ~
+       "<unknown>:1,7\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%TAG !a!<`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive handle, expected ' ', but found <\n" ~
+       "<unknown>:1,9\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%TAG !a! !>`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive prefix, expected ' ', but found >\n" ~
+       "<unknown>:1,11\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `%YAML 1.0 ?`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a directive, expected a comment or a line break, but found ?\n" ~
+       "<unknown>:1,11\ndirective started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: !<a#`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a tag, expected a '>', but found #\n" ~
+       "<unknown>:1,9\ntag started here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: !<a>#`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a tag, expected a ' ', but found #\n" ~
+       "<unknown>:1,10\ntag started here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: !<#`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While parsing a tag, expected a URI, but found #\n" ~
+       "<unknown>:1,8\ntag started here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: |b`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a block scalar, expected a chomping or indentation indicator, but found b\n" ~
+       "<unknown>:1,7\nscalar started here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `foo: |0`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a block scalar, expected an indentation indicator in range 1-9, but found 0\n" ~
+       "<unknown>:1,7\nscalar started here: <unknown>:1,6");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `"\x"`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a double quoted scalar, expected an escape sequence of hexadecimal numbers, but found \"\n" ~
+       "<unknown>:1,4\nscalar started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `"\:"`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a double quoted scalar, found unsupported escape character :\n" ~
+       "<unknown>:1,3\nscalar started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `"an unfinished scal`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a quoted scalar, found unexpected end of buffer\n" ~
+       "<unknown>:1,20\nscalar started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `"an unfinished scal
+---`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a quoted scalar, found unexpected document separator\n" ~
+       "<unknown>:2,1\nscalar started here: <unknown>:1,1");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `Error: !a:!`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a tag, expected a !, but found :\n" ~
+       "<unknown>:1,10\ntag started here: <unknown>:1,8");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `Error: !e!tag%:)`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a tag, expected a URI escape sequence of 2 hexadecimal numbers, but found :)\n" ~
+       "<unknown>:1,15\ntag started here: <unknown>:1,8");
+}
+
+@safe unittest
+{
+    import dyaml.loader : Loader;
+
+    const str = `Error: !e!tag%99%99`;
+
+    const exc = collectException!LoaderException(Loader.fromString(str).load());
+    assert(exc);
+    assert(exc.message() ==
+       "Unable to load <unknown>: While scanning a tag, found invalid UTF-8 data encoded in URI escape sequence\n" ~
+       "<unknown>:1,20\ntag started here: <unknown>:1,8");
 }
 
 private void insert(ref char[] slice, const dchar c, const size_t position) @safe pure
