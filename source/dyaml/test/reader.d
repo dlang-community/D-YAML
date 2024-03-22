@@ -11,7 +11,8 @@ module dyaml.test.reader;
     import std.exception :assertThrown;
 
     import dyaml.test.common : readData, run;
-    import dyaml.reader : Reader, ReaderException;
+    import dyaml.exception : ReaderException;
+    import dyaml.reader : Reader;
 
     /**
     Try reading entire file through Reader, expecting an error (the file is invalid).
