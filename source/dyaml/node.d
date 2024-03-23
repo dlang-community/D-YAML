@@ -19,12 +19,9 @@ import std.math;
 import std.meta : AliasSeq;
 import std.range;
 import std.string;
+import std.sumtype;
 import std.traits;
 import std.typecons;
-
-// FIXME: Switch back to upstream's when v2.101 is the oldest
-// supported version (recommended: after v2.111 release).
-import dyaml.stdsumtype;
 
 import dyaml.event;
 import dyaml.exception;
