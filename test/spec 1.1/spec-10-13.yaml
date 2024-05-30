@@ -1,0 +1,50 @@
+%YAML 1.1
+---
+- name: spec-10-13
+  yaml: |
+    ? explicit key # implicit value
+    ? |
+      block key
+    : - one # explicit in-line
+      - two # block value
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :explicit key
+          =VAL :
+          =VAL |block key\n
+          +SEQ
+            =VAL :one
+            =VAL :two
+          -SEQ
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-13-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "explicit key"
+      : !!null "",
+      ? !!str "block key\n"
+      : !!seq [
+        !!str "one",
+        !!str "two",
+      ]
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "explicit key
+          =VAL <tag:yaml.org,2002:null> "
+          =VAL <tag:yaml.org,2002:str> "block key\n
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "one
+            =VAL <tag:yaml.org,2002:str> "two
+          -SEQ
+        -MAP
+      -DOC
+    -STR

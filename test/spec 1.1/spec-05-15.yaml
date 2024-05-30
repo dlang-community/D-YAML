@@ -1,0 +1,12 @@
+%YAML 1.1
+---
+- name: spec-05-15
+  fail: true
+  mark: { line: 2, column: 5 }
+  mark2: { line: 2, column: 3 }
+  error: |
+    While scanning a double quoted scalar, found unsupported escape character c
+  yaml: |
+    Bad escapes:
+      "\c
+      \xq-"

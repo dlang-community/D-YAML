@@ -1,0 +1,52 @@
+%YAML 1.1
+---
+- name: spec-10-03
+  yaml: |
+    block: # Block
+           # sequence
+    - one
+    - two : three
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :block
+          +SEQ
+            =VAL :one
+            +MAP
+              =VAL :two
+              =VAL :three
+            -MAP
+          -SEQ
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-03-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "block"
+      : !!seq [
+        !!str "one",
+        !!map {
+          ? !!str "two"
+          : !!str "three"
+        }
+      ]
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "block
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "one
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "two
+              =VAL <tag:yaml.org,2002:str> "three
+            -MAP
+          -SEQ
+        -MAP
+      -DOC
+    -STR

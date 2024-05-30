@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+- name: spec-09-14
+  mark: { line: 2, column: 6 }
+  mark2: { line: 2, column: 5 }
+  yaml: |
+    ---
+    --- ||| : foo
+    ... >>>: bar
+    ---
+    [
+    ---
+    ,
+    ... ,
+    {
+    --- :
+    ... # Nested
+    }
+    ]
+    ...
+  fail: true
+  error: |
+    While scanning a block scalar, expected a chomping or indentation indicator, but found |

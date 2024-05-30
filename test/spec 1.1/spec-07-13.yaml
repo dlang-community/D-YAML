@@ -1,0 +1,54 @@
+%YAML 1.1
+---
+- name: spec-07-13
+  yaml: |
+    ! "First document"
+    ---
+    !foo "No directives"
+    %TAG ! !foo
+    ---
+    !bar "With directives"
+    %YAML 1.1
+    ---
+    !baz "Reset settings"
+  tree: |
+    +STR
+      +DOC
+        =VAL <!> "First document
+      -DOC
+      +DOC ---
+        =VAL <!foo> "No directives
+      -DOC
+      +DOC ---
+        =VAL <!foobar> "With directives
+      -DOC
+      +DOC ---
+        =VAL <!baz> "Reset settings
+      -DOC
+    -STR
+- name: spec-07-13-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "First document"
+    ---
+    !<!foo> "No directives"
+    ---
+    !<!foobar> "With directives"
+    ---
+    !<!baz> "Reset settings"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "First document
+      -DOC
+      +DOC ---
+        =VAL <!foo> "No directives
+      -DOC
+      +DOC ---
+        =VAL <!foobar> "With directives
+      -DOC
+      +DOC ---
+        =VAL <!baz> "Reset settings
+      -DOC
+    -STR

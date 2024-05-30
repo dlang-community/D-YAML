@@ -1,0 +1,16 @@
+%YAML 1.1
+---
+- name: no-node-1
+  fail: true
+  mark: { line: 1, column: 8 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a block sequence, expected block end, but found: flowSequenceEnd"
+  yaml: |
+    - !foo ]
+- name: no-node-2
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 3 }
+  error: "While parsing a flow sequence, expected ',' or ']', but got: flowMappingEnd"
+  yaml: |
+    - [ !foo } ]

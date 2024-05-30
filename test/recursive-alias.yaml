@@ -1,0 +1,12 @@
+%YAML 1.1
+---
+- name: recursive-alias
+  fail: true
+  mark: { line: 2, column: 8 }
+  mark2: { line: 1, column: 4 }
+  error: |
+    Unable to load test/recursive-alias.yaml#recursive-alias:yaml: Found recursive alias: anchor
+  yaml: |
+    a: &anchor {
+        b: *anchor
+    }

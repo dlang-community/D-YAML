@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+- name: spec-02-13
+  tree: |
+    +STR
+    +DOC ---
+    =VAL |\\//||\\/||\n// ||  ||__\n
+    -DOC
+    -STR
+  yaml: |
+    # ASCII Art
+    --- |
+      \//||\/||
+      // ||  ||__

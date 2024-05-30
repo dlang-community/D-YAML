@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-08-05
+  yaml: |
+    %TAG !o! tag:ben-kiki.org,2000:
+    ---
+    - !local foo
+    - !!str bar
+    - !o!type baz
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ
+          =VAL <!local> :foo
+          =VAL <tag:yaml.org,2002:str> :bar
+          =VAL <tag:ben-kiki.org,2000:type> :baz
+        -SEQ
+      -DOC
+    -STR
+- name: spec-08-05-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !<!local> "foo",
+      !<tag:yaml.org,2002:str> "bar",
+      !<tag:ben-kiki.org,2000:type> "baz",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <!local> "foo
+          =VAL <tag:yaml.org,2002:str> "bar
+          =VAL <tag:ben-kiki.org,2000:type> "baz
+        -SEQ
+      -DOC
+    -STR

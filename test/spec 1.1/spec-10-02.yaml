@@ -1,0 +1,62 @@
+%YAML 1.1
+---
+- name: spec-10-02
+  yaml: |
+    [
+    "double
+     quoted", 'single
+               quoted',
+    plain
+     text, [ nested ],
+    single: pair ,
+    ]
+  tree: |
+    +STR
+      +DOC
+        +SEQ []
+          =VAL "double quoted
+          =VAL 'single quoted
+          =VAL :plain text
+          +SEQ []
+            =VAL :nested
+          -SEQ
+          +MAP {}
+            =VAL :single
+            =VAL :pair
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-10-02-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "double quoted",
+      !!str "single quoted",
+      !!str "plain text",
+      !!seq [
+        !!str "nested",
+      ],
+      !!map {
+        ? !!str "single"
+        : !!str "pair"
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "double quoted
+          =VAL <tag:yaml.org,2002:str> "single quoted
+          =VAL <tag:yaml.org,2002:str> "plain text
+          +SEQ [] <tag:yaml.org,2002:seq>
+            =VAL <tag:yaml.org,2002:str> "nested
+          -SEQ
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "single
+            =VAL <tag:yaml.org,2002:str> "pair
+          -MAP
+        -SEQ
+      -DOC
+    -STR

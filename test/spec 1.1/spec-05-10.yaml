@@ -1,0 +1,10 @@
+%YAML 1.1
+---
+- name: spec-05-10
+  fail: true
+  mark: { line: 1, column: 16 }
+  error: |
+    While scanning for the next token, found character '@', index 64 that cannot start any token
+  yaml: |
+    commercial-at: @text
+    grave-accent: `text

@@ -1,0 +1,11 @@
+%YAML 1.1
+---
+- name: spec-07-05
+  fail: true
+  mark: { line: 2, column: 1}
+  error: |
+    Duplicate tag handle: !
+  yaml: |
+    %TAG ! !foo
+    %TAG ! !foo
+    bar

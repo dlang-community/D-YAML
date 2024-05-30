@@ -1,0 +1,525 @@
+%YAML 1.1
+---
+- name: invalid-anchor
+  fail: true
+  mark: { line: 6, column: 13 }
+  mark2: { line: 2, column: 1 }
+  error: "While parsing a block sequence, expected block end, but found: scalar"
+  yaml: |+
+    ---
+    - [
+        &correct foo,
+        *correct,
+        *correct]   # still correct
+    - *correct: still correct
+    - &correct-or-not[foo, bar]
+
+- name: invalid-anchor-2
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 6 }
+  error: "While scanning an anchor or alias, expected a printable character besides '[', ']', '{', '}' and ',', but found ["
+  yaml: |-
+    foo: &[
+- name: invalid-base64-data
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 2, column: 50 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-base64-data:yaml: Unable to decode base64 value: Invalid length of encoded data
+  yaml: |
+    --- !!binary
+        binary data encoded in base64 should be here.
+- name: invalid-base64-data-2
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 2, column: 29 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-base64-data-2:yaml: Unable to decode base64 value: Invalid length of encoded data
+  yaml: |
+    --- !!binary
+        двоичные данные в base64
+- name: invalid-block-scalar-indicator
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a block scalar, expected a comment or line break, but found w"
+  yaml: |
+    --- > what is this?  # a comment
+    data
+- name: invalid-character-stream
+  yaml: "Control character ('\\x0'): \0"
+  mark: { line: 1, column: 1 }
+  error: "Special unicode characters are not allowed"
+  fail: true
+- name: invalid-character-loader
+  yaml: "Control character ('\\x0'): \0"
+  fail: true
+  mark: { line: 1, column: 1 }
+  error: "Special unicode characters are not allowed"
+- name: invalid-directive-line
+  fail: true
+  mark: { line: 1, column: 13 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a comment or a line break, but found ?"
+  yaml: |
+    %YAML   1.1 ?   # extra symbol
+    ---
+- name: invalid-directive-name-1
+  fail: true
+  mark: { line: 1, column: 2 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected alphanumeric, '-' or '_', but found"
+  yaml: |
+    %   # no name at all
+    ---
+- name: invalid-directive-name-2
+  fail: true
+  mark: { line: 1, column: 20 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected alphanumeric, '-' or '_', but found :"
+  yaml: |
+    %invalid-characters:in-directive name
+    ---
+- name: invalid-escape-character
+  fail: true
+  mark: { line: 1, column: 54 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a double quoted scalar, found unsupported escape character ?"
+  yaml: |
+    "some escape characters are \ncorrect, but this one \?\nis not\n"
+- name: invalid-escape-character-2
+  fail: true
+  mark: { line: 1, column: 3 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a double quoted scalar, found unsupported escape character :"
+  yaml: |-
+    "\:"
+- name: invalid-escape-numbers
+  fail: true
+  mark: { line: 1, column: 11 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a double quoted scalar, expected an escape sequence of hexadecimal numbers, but found ?"
+  yaml: |
+    "hm.... \u123?"
+- name: invalid-incomplete-escape
+  fail: true
+  mark: { line: 1, column: 4 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a double quoted scalar, expected an escape sequence of hexadecimal numbers, but found \""
+  yaml: |
+    "\x"
+- name: invalid-incomplete-scalar
+  fail: true
+  mark: { line: 1, column: 20 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a quoted scalar, found unexpected end of buffer"
+  yaml: |-
+    "an unfinished scal
+- name: invalid-incomplete-scalar-2
+  fail: true
+  mark: { line: 2, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a quoted scalar, found unexpected document separator"
+  yaml: |
+    "an unfinished scal
+    ---
+- name: invalid-indentation-indicator-1
+  fail: true
+  mark: { line: 1, column: 6 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a block scalar, expected an indentation indicator in range 1-9, but found 0"
+  yaml: |
+    --- >0  # not valid
+    data
+- name: invalid-indentation-indicator-2
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a block scalar, expected an indentation indicator in range 1-9, but found 0"
+  yaml: |
+    --- >-0
+    data
+- name: invalid-indentation-indicator-3
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 6 }
+  error: "While scanning a block scalar, expected an indentation indicator in range 1-9, but found 0"
+  yaml: |
+    foo: |0
+- name: invalid-indentation-indicator-4
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 6 }
+  error: "While scanning a block scalar, expected a chomping or indentation indicator, but found b"
+  yaml: |
+    foo: |b
+- name: invalid-item-without-trailing-break
+  fail: true
+  mark: { line: 2, column: 3 }
+  mark2: { line: 2, column: 1 }
+  error: "While scanning a simple key, could not find expected ':'"
+  yaml: |-
+    -
+    -0
+- name: invalid-merge-1
+  fail: true
+  mark: { line: 3, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-merge-1:yaml: While constructing a mapping, expected a mapping or a list of mappings for merging, but found: string
+  yaml: |
+    foo: bar
+    <<: baz
+- name: invalid-merge-2
+  fail: true
+  mark: { line: 3, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-merge-2:yaml: While constructing a mapping, expected a mapping or a list of mappings for merging, but found: string
+  yaml: |
+    foo: bar
+    <<: [x: 1, y: 2, z, t: 4]
+- name: invalid-merge-3
+  fail: true
+  mark: { line: 2, column: 19 }
+  mark2: { line: 2, column: 4 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-merge-3:yaml: While constructing a mapping, expected a mapping or a list of mappings for merging, but found: integer
+  yaml: |
+    a: &anchor 3
+    b: { <<: *anchor }
+- name: invalid-omap-1
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 4, column: 1 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-omap-1:yaml: Error constructing Pair[]: Only sequences can be ordered maps
+  yaml: |
+    --- !!omap
+    foo: bar
+    baz: bat
+- name: invalid-omap-2
+  fail: true
+  mark: { line: 3, column: 3 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-omap-2:yaml: While constructing an ordered map, expected a mapping with single element
+  yaml: |
+    --- !!omap
+    - foo: bar
+    - baz
+- name: invalid-omap-3
+  fail: true
+  mark: { line: 3, column: 3 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-omap-3:yaml: While constructing an ordered map, expected a mapping with single element
+  yaml: |
+    --- !!omap
+    - foo: bar
+    - baz: bar
+      bar: bar
+- name: invalid-pairs-1
+  fail: true
+  mark: { line: 1, column: 5 }
+  mark2: { line: 4, column: 1 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-pairs-1:yaml: Error constructing Pair[]: Only sequences can be pairs
+  yaml: |
+    --- !!pairs
+    foo: bar
+    baz: bat
+- name: invalid-pairs-2
+  fail: true
+  mark: { line: 3, column: 3 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-pairs-2:yaml: While constructing pairs, expected a mapping with single element
+  yaml: |
+    --- !!pairs
+    - foo: bar
+    - baz
+- name: invalid-pairs-3
+  fail: true
+  mark: { line: 3, column: 3 }
+  error: |
+    Unable to load test/invalid.yaml#invalid-pairs-3:yaml: While constructing pairs, expected a mapping with single element
+  yaml: |
+    --- !!pairs
+    - foo: bar
+    - baz: bar
+      bar: bar
+- name: invalid-simple-key
+  fail: true
+  mark: { line: 3, column: 1 }
+  mark2: { line: 2, column: 1 }
+  error: "While scanning a simple key, could not find expected ':'"
+  yaml: |
+    key: value
+    invalid simple key
+    next key: next value
+- name: invalid-simple-key-2
+  fail: true
+  mark: { line: 2, column: 4 }
+  mark2: { line: 2, column: 1 }
+  error: "While scanning a simple key, could not find expected ':'"
+  yaml: |-
+    foo: &A bar
+    *A ]
+- name: invalid-simple-key-3
+  fail: true
+  mark: { line: 2, column: 4 }
+  mark2: { line: 2, column: 1 }
+  error: "While scanning a simple key, could not find expected ':'"
+  yaml: |-
+    foo: bar
+    meh
+- name: invalid-starting-character
+  fail: true
+  mark: { line: 1, column: 1 }
+  error: "While scanning for the next token, found character '@', index 64 that cannot start any token"
+  yaml: |
+    @@@@@@@@@@@@@@@@@@@
+- name: invalid-tag-1
+  fail: true
+  mark: { line: 1, column: 8 }
+  mark2: { line: 1, column: 3 }
+  error: "While scanning a tag, expected a '>', but found #"
+  yaml: |
+    - !<foo#bar> baz
+- name: invalid-tag-2
+  fail: true
+  mark: { line: 1, column: 14 }
+  mark2: { line: 1, column: 3 }
+  error: "While scanning a tag, expected a ' ', but found #"
+  yaml: |
+    - !prefix!foo#bar baz
+- name: invalid-tag-3
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 6 }
+  error: "While scanning a tag, expected a ' ', but found #"
+  yaml: |
+    foo: !<a>#
+- name: invalid-tag-4
+  fail: true
+  mark: { line: 1, column: 9 }
+  mark2: { line: 1, column: 6 }
+  error: "While scanning a tag, expected a '>', but found #"
+  yaml: |
+    foo: !<a#
+- name: invalid-tag-directive-handle
+  fail: true
+  mark: { line: 1, column: 8 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive handle, expected ' ', but found !"
+  yaml: |
+    %TAG !!! !!!
+    ---
+- name: invalid-tag-directive-prefix
+  fail: true
+  mark: { line: 1, column: 27 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive prefix, expected ' ', but found #"
+  yaml: |
+    %TAG    !   tag:zz.com/foo#bar  # '#' is not allowed in URLs
+    ---
+- name: invalid-tag-handle-1
+  fail: true
+  mark: { line: 1, column: 9 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a !, but found f"
+  yaml: |
+    %TAG    foo bar
+    ---
+- name: invalid-tag-handle-2
+  fail: true
+  mark: { line: 1, column: 13 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a !, but found"
+  yaml: |
+    %TAG    !foo    bar
+    ---
+- name: invalid-tag-handle-3
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 8 }
+  error: "While scanning a tag, expected a !, but found :"
+  yaml: |-
+    Error: !a:!
+    ---
+- name: invalid-uri-escapes-1
+  fail: true
+  mark: { line: 1, column: 12 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a tag, expected a URI escape sequence of 2 hexadecimal numbers, but found x?"
+  yaml: |
+    --- !<tag:%x?y> foo
+- name: invalid-uri-escapes-2
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a tag, found invalid UTF-8 data encoded in URI escape sequence"
+  yaml: |
+    --- !<%FF> foo
+- name: invalid-uri-escapes-3
+  fail: true
+  mark: { line: 1, column: 25 }
+  mark2: { line: 1, column: 5 }
+  error: "While scanning a tag, found invalid UTF-8 data encoded in URI escape sequence"
+  yaml: |
+    --- !<foo%d0%af%d0%af%d0bar> baz
+- name: invalid-uri-escapes-4
+  fail: true
+  mark: { line: 1, column: 15 }
+  mark2: { line: 1, column: 8 }
+  error: "While scanning a tag, expected a URI escape sequence of 2 hexadecimal numbers, but found :)"
+  yaml: |-
+    Error: !e!tag%:)
+- name: invalid-uri-utf8
+  fail: true
+  mark: { line: 1, column: 20 }
+  mark2: { line: 1, column: 8 }
+  error: "While scanning a tag, found invalid UTF-8 data encoded in URI escape sequence"
+  yaml: |-
+    Error: !e!tag%99%99
+- name: invalid-uri
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 5 }
+  error: "While parsing a tag, expected a URI, but found"
+  yaml: |
+    --- !foo!   bar
+- name: invalid-uri-2
+  fail: true
+  mark: { line: 1, column: 8 }
+  mark2: { line: 1, column: 6 }
+  error: "While parsing a tag, expected a URI, but found #"
+  yaml: |
+    foo: !<#
+- name: invalid-yaml-directive-version-1
+  fail: true
+  mark: { line: 2, column: 6 }
+  mark2: { line: 2, column: 1 }
+  error: "While scanning a directive, expected a digit, but found"
+  yaml: |
+    # No version at all.
+    %YAML
+    ---
+- name: invalid-yaml-directive-version-2
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected digit or '.', but found e"
+  yaml: |
+    %YAML   1e-5
+    ---
+- name: invalid-yaml-directive-version-3
+  fail: true
+  mark: { line: 1, column: 9 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a digit, but found"
+  yaml: |
+    %YAML 1.
+    ---
+- name: invalid-yaml-directive-version-4
+  fail: true
+  mark: { line: 1, column: 12 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected digit or '.', but found ."
+  yaml: |
+    %YAML 1.132.435
+    ---
+- name: invalid-yaml-directive-version-5
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a digit, but found A"
+  yaml: |
+    %YAML A.0
+    ---
+- name: invalid-yaml-directive-version-6
+  fail: true
+  mark: { line: 1, column: 11 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a digit, but found C"
+  yaml: |
+    %YAML 123.C
+    ---
+- name: invalid-yaml-directive-version-7
+  fail: true
+  mark: { line: 1, column: 11 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a comment or a line break, but found ?"
+  yaml: |
+    %YAML 1.0 ?
+- name: invalid-yaml-directive-version-8
+  fail: true
+  mark: { line: 1, column: 11 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive prefix, expected ' ', but found >"
+  yaml: |
+    %TAG !a! !>
+- name: invalid-yaml-directive-version-9
+  fail: true
+  mark: { line: 1, column: 9 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive handle, expected ' ', but found <"
+  yaml: |
+    %TAG !a!<
+- name: invalid-yaml-directive-version-10
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected a digit, but found ?"
+  yaml: |
+    %YAML ?
+- name: invalid-yaml-directive-version-11
+  fail: true
+  mark: { line: 1, column: 10 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected digit or '.', but found ?"
+  yaml: |
+    %YAML 1.1?
+- name: invalid-yaml-directive-version-12
+  fail: true
+  mark: { line: 1, column: 8 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected digit or '.', but found ?"
+  yaml: |
+    %YAML 1?
+- name: invalid-yaml-directive-version-13
+  fail: true
+  mark: { line: 1, column: 3 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected alphanumeric, '-' or '_', but found ?"
+  yaml: |
+    %b?
+- name: invalid-yaml-directive-version-14
+  fail: true
+  mark: { line: 1, column: 2 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a directive, expected alphanumeric, '-' or '_', but found ?"
+  yaml: |
+    %?
+- name: invalid-yaml-version
+  fail: true
+  mark: { line: 1, column: 1 } #TODO: maybe this should be a later column
+  error: "Incompatible document (version 1.x is required)"
+  yaml: |
+    %YAML   2.0
+    --- foo
+- name: invalid-block-sequence
+  fail: true
+  mark: { line: 2, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a block sequence, expected block end, but found: flowEntry"
+  yaml: |-
+    - a
+    ,
+- name: invalid-block-mapping
+  fail: true
+  mark: { line: 2, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a block mapping, expected block end, but found: flowEntry"
+  yaml: |-
+    a: b
+    ,

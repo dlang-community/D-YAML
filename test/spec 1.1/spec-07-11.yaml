@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+- name: spec-07-11
+  yaml: |
+    # A stream may contain
+    # no documents.
+  tree: |
+    +STR
+    -STR
+- name: spec-07-11-canonical
+  yaml: ""
+  tree: |
+    +STR
+    -STR

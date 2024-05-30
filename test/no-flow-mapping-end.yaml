@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: no-flow-mapping-end
+  fail: true
+  mark: { line: 1, column: 12 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a flow mapping, expected ',' or '}', but got: flowSequenceEnd"
+  yaml: |
+    { foo: bar ]
+- name: no-flow-mapping-end-2
+  fail: true
+  mark: { line: 1, column: 2 }
+  mark2: { line: 1, column: 2 }
+  error: "While parsing a flow node, expected node content, but found: streamEnd"
+  yaml: |-
+    {
+- name: no-flow-mapping-end-3
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a flow mapping, expected ',' or '}', but got: streamEnd"
+  yaml: |-
+    { blah
+- name: no-flow-mapping-end-4
+  fail: true
+  mark: { line: 1, column: 7 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a flow mapping, expected ',' or '}', but got: streamEnd"
+  yaml: |-
+    {a,b,c

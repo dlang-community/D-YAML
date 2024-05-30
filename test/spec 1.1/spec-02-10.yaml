@@ -1,0 +1,29 @@
+%YAML 1.1
+---
+- name: spec-02-10
+  tree: |
+    +STR
+    +DOC ---
+    +MAP
+    =VAL :hr
+    +SEQ
+    =VAL :Mark McGwire
+    =VAL &SS :Sammy Sosa
+    -SEQ
+    =VAL :rbi
+    +SEQ
+    =ALI *SS
+    =VAL :Ken Griffey
+    -SEQ
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    ---
+    hr:
+      - Mark McGwire
+      # Following node labeled SS
+      - &SS Sammy Sosa
+    rbi:
+      - *SS # Subsequent occurrence
+      - Ken Griffey

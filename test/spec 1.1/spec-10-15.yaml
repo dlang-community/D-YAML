@@ -1,0 +1,69 @@
+%YAML 1.1
+---
+- name: spec-10-15
+  yaml: |
+    - sun: yellow
+    - ? earth: blue
+      : moon: white
+  tree: |
+    +STR
+     +DOC
+      +SEQ
+       +MAP
+        =VAL :sun
+        =VAL :yellow
+       -MAP
+       +MAP
+        +MAP
+         =VAL :earth
+         =VAL :blue
+        -MAP
+        +MAP
+         =VAL :moon
+         =VAL :white
+        -MAP
+       -MAP
+      -SEQ
+     -DOC
+    -STR
+- name: spec-10-15-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!map {
+        ? !!str "sun"
+        : !!str "yellow"
+      },
+      !!map {
+        ? !!map {
+          ? !!str "earth"
+          : !!str "blue"
+        }
+        : !!map {
+          ? !!str "moon"
+          : !!str "white"
+        }
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "sun
+            =VAL <tag:yaml.org,2002:str> "yellow
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "earth
+              =VAL <tag:yaml.org,2002:str> "blue
+            -MAP
+            +MAP {} <tag:yaml.org,2002:map>
+              =VAL <tag:yaml.org,2002:str> "moon
+              =VAL <tag:yaml.org,2002:str> "white
+            -MAP
+          -MAP
+        -SEQ
+      -DOC
+    -STR

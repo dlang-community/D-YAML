@@ -1,0 +1,28 @@
+%YAML 1.1
+---
+- name: forbidden-entry
+  fail: true
+  mark: { line: 1, column: 7 }
+  error: "Sequence keys are not allowed here"
+  yaml: |
+    test: - foo
+          - bar
+- name: forbidden-key
+  fail: true
+  mark: { line: 1, column: 7 }
+  error: "Mapping keys are not allowed here"
+  yaml: |
+    test: ? foo
+          : bar
+- name: forbidden-value
+  fail: true
+  mark: { line: 1, column: 10 }
+  error: "Mapping values are not allowed here"
+  yaml: |
+    test: key: value
+- name: forbidden-starting-character
+  fail: true
+  mark: { line: 1, column: 1 }
+  error: "While scanning for the next token, found character '@', index 64 that cannot start any token"
+  yaml: |
+    @

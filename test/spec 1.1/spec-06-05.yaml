@@ -1,0 +1,66 @@
+%YAML 1.1
+---
+- name: spec-06-05
+  yaml: |
+    { first: Sammy, last: Sosa }:
+    # Statistics:
+      hr:  # Home runs
+        65
+      avg: # Average
+        0.278
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    +MAP {}
+    =VAL :first
+    =VAL :Sammy
+    =VAL :last
+    =VAL :Sosa
+    -MAP
+    +MAP
+    =VAL :hr
+    =VAL :65
+    =VAL :avg
+    =VAL :0.278
+    -MAP
+    -MAP
+    -DOC
+    -STR
+- name: spec-06-05-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!map {
+        ? !!str "first"
+        : !!str "Sammy",
+        ? !!str "last"
+        : !!str "Sosa"
+      }
+      : !!map {
+        ? !!str "hr"
+        : !!int "65",
+        ? !!str "avg"
+        : !!float "0.278"
+      }
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "first
+            =VAL <tag:yaml.org,2002:str> "Sammy
+            =VAL <tag:yaml.org,2002:str> "last
+            =VAL <tag:yaml.org,2002:str> "Sosa
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "hr
+            =VAL <tag:yaml.org,2002:int> "65
+            =VAL <tag:yaml.org,2002:str> "avg
+            =VAL <tag:yaml.org,2002:float> "0.278
+          -MAP
+        -MAP
+      -DOC
+    -STR

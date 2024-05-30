@@ -1,0 +1,48 @@
+%YAML 1.1
+---
+- name: spec-07-09
+  yaml: |
+    ---
+    foo
+    ...
+    # Repeated end marker.
+    ...
+    ---
+    bar
+    # No end marker.
+    ---
+    baz
+    ...
+  tree: |
+    +STR
+      +DOC ---
+        =VAL :foo
+      -DOC ...
+      +DOC ---
+        =VAL :bar
+      -DOC
+      +DOC ---
+        =VAL :baz
+      -DOC ...
+    -STR
+- name: spec-07-09-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "foo"
+    ---
+    !!str "bar"
+    ---
+    !!str "baz"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "foo
+      -DOC
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "bar
+      -DOC
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "baz
+      -DOC
+    -STR

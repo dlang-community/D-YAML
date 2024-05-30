@@ -1,0 +1,45 @@
+%YAML 1.1
+---
+- name: spec-09-18
+  yaml: |
+    - | # Just the style
+     literal
+    - >1 # Indentation indicator
+      folded
+    - |+ # Chomping indicator
+     keep
+
+    - >-1 # Both indicators
+      strip
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL |literal\n
+          =VAL > folded\n
+          =VAL |keep\n\n
+          =VAL > strip
+        -SEQ
+      -DOC
+    -STR
+- name: spec-09-18-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!str "literal\n",
+      !!str " folded\n",
+      !!str "keep\n\n",
+      !!str " strip",
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:str> "literal\n
+          =VAL <tag:yaml.org,2002:str> " folded\n
+          =VAL <tag:yaml.org,2002:str> "keep\n\n
+          =VAL <tag:yaml.org,2002:str> " strip
+        -SEQ
+      -DOC
+    -STR

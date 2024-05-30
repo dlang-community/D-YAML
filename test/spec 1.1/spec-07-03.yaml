@@ -1,0 +1,11 @@
+%YAML 1.1
+---
+- name: spec-07-03
+  fail: true
+  mark: { line: 2, column: 1}
+  error: |
+    Duplicate YAML directive
+  yaml: |
+    %YAML 1.1
+    %YAML 1.1
+    foo

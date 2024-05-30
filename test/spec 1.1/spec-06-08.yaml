@@ -1,0 +1,18 @@
+%YAML 1.1
+---
+- name: spec-06-08
+  yaml: ">-\n  specific\L  trimmed\N  \N \N\N  as\N  space\n"
+- name: spec-06-08-canonical
+  yaml: |
+    %YAML 1.1
+    --- !!str
+    "specific\L\
+     trimmed\n\n\n\
+     as space"
+  # FIXME
+  # tree: |
+  #   +STR
+  #     +DOC ---
+  #       =VAL <tag:yaml.org,2002:str> "specific\Ltrimmed\n\n\nas space
+  #     -DOC
+  #   -STR

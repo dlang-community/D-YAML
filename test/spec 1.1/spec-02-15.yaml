@@ -1,0 +1,18 @@
+%YAML 1.1
+---
+- name: spec-02-15
+  tree: |
+    +STR
+    +DOC
+    =VAL >Sammy Sosa completed another fine season with great stats.\n\n  63 Home Runs\n  0.288 Batting Average\n\nWhat a year!\n
+    -DOC
+    -STR
+  yaml: |
+    >
+     Sammy Sosa completed another
+     fine season with great stats.
+
+       63 Home Runs
+       0.288 Batting Average
+
+     What a year!

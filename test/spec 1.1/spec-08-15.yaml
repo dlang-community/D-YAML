@@ -1,0 +1,50 @@
+%YAML 1.1
+---
+- name: spec-08-15
+  yaml: |
+    - # Empty plain scalar
+    - ? foo
+      :
+      ?
+      : bar
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          =VAL :
+          +MAP
+            =VAL :foo
+            =VAL :
+            =VAL :
+            =VAL :bar
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-08-15-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!null "",
+      !!map {
+        ? !!str "foo"
+        : !!null "",
+        ? !!null ""
+        : !!str "bar",
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <tag:yaml.org,2002:null> "
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "foo
+            =VAL <tag:yaml.org,2002:null> "
+            =VAL <tag:yaml.org,2002:null> "
+            =VAL <tag:yaml.org,2002:str> "bar
+          -MAP
+        -SEQ
+      -DOC
+    -STR

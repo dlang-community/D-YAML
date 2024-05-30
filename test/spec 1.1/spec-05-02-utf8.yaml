@@ -1,0 +1,9 @@
+%YAML 1.1
+---
+- name: spec-05-02-utf8
+  #FIXME
+  # error: |
+  #   ERROR:
+  #    A BOM must not appear
+  #    inside a document.
+  yaml: "# Invalid use of BOM\n\uFEFF# inside a\n# document.\n"

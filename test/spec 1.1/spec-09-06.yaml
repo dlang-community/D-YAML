@@ -1,0 +1,22 @@
+%YAML 1.1
+---
+- name: spec-09-06
+  yaml: |2
+     'here''s to "quotes"'
+  tree: |
+    +STR
+      +DOC
+        =VAL 'here's to "quotes"
+      -DOC
+    -STR
+- name: spec-09-06-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "here's to \"quotes\""
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "here's to "quotes"
+      -DOC
+    -STR

@@ -1,0 +1,56 @@
+%YAML 1.1
+---
+- name: spec-07-12a
+  yaml: |
+    # Implicit document. Root
+    # collection (mapping) node.
+    foo : bar
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :foo
+          =VAL :bar
+        -MAP
+      -DOC
+    -STR
+- name: spec-07-12a-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "foo"
+      : !!str "bar"
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "bar
+        -MAP
+      -DOC
+    -STR
+- name: spec-07-12b
+  yaml: |
+    # Explicit document. Root
+    # scalar (literal) node.
+    --- |
+     Text content
+  tree: |
+    +STR
+      +DOC ---
+        =VAL |Text content\n
+      -DOC
+    -STR
+- name: spec-07-12b-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "Text content\n"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "Text content\n
+      -DOC
+    -STR

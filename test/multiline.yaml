@@ -1,0 +1,15 @@
+%YAML 1.1
+---
+- name: end-of-buffer-multiline #Issue 309 - https://github.com/dlang-community/D-YAML/issues/309
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :exp
+    =VAL |foobar
+    -MAP
+    -DOC
+    -STR
+  yaml: |-
+    exp: |
+      foobar

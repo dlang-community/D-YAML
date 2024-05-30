@@ -1,0 +1,13 @@
+%YAML 1.1
+---
+- name: spec-09-16
+  yaml: "# Tabs are confusing:\n# as space/trimmed/specific/none\n as space \N trimmed\
+    \ \N\N specific\L\N none\n"
+- name: spec-09-16-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "as space \
+      trimmed\n\
+      specific\L\n\
+      none"

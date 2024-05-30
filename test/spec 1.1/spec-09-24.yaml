@@ -1,0 +1,49 @@
+%YAML 1.1
+---
+- name: spec-09-24
+  yaml: |+
+    strip: >-
+
+    clip: >
+
+    keep: |+
+
+  # FIXME
+  # tree: |
+  #   +STR
+  #     +DOC
+  #       +MAP
+  #         =VAL :strip
+  #         =VAL >
+  #         =VAL :clip
+  #         =VAL >
+  #         =VAL :keep
+  #         =VAL |
+  #       -MAP
+  #     -DOC
+  #   -STR
+- name: spec-09-24-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "strip"
+      : !!str "",
+      ? !!str "clip"
+      : !!str "",
+      ? !!str "keep"
+      : !!str "\n",
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "strip
+          =VAL <tag:yaml.org,2002:str> "
+          =VAL <tag:yaml.org,2002:str> "clip
+          =VAL <tag:yaml.org,2002:str> "
+          =VAL <tag:yaml.org,2002:str> "keep
+          =VAL <tag:yaml.org,2002:str> "\n
+        -MAP
+      -DOC
+    -STR

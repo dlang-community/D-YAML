@@ -1,0 +1,35 @@
+%YAML 1.1
+---
+- name: spec-07-06
+  yaml: |
+    %TAG !      !foo
+    %TAG !yaml! tag:yaml.org,2002:
+    ---
+    - !bar "baz"
+    - !yaml!str "string"
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ
+          =VAL <!foobar> "baz
+          =VAL <tag:yaml.org,2002:str> "string
+        -SEQ
+      -DOC
+    -STR
+- name: spec-07-06-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !<!foobar> "baz",
+      !<tag:yaml.org,2002:str> "string"
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL <!foobar> "baz
+          =VAL <tag:yaml.org,2002:str> "string
+        -SEQ
+      -DOC
+    -STR

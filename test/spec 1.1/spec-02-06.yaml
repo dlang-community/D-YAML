@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: spec-02-06
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :Mark McGwire
+    +MAP {}
+    =VAL :hr
+    =VAL :65
+    =VAL :avg
+    =VAL :0.278
+    -MAP
+    =VAL :Sammy Sosa
+    +MAP {}
+    =VAL :hr
+    =VAL :63
+    =VAL :avg
+    =VAL :0.288
+    -MAP
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    Mark McGwire: {hr: 65, avg: 0.278}
+    Sammy Sosa: {
+        hr: 63,
+        avg: 0.288
+      }

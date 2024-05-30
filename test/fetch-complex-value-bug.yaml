@@ -1,0 +1,10 @@
+%YAML 1.1
+---
+- name: fetch-complex-value-bug
+  fail: true
+  mark: { line: 2, column: 2 }
+  mark2: { line: 1, column: 1 }
+  error: "While parsing a block mapping, expected block end, but found: blockMappingStart"
+  yaml: |
+    ? "foo"
+     : "bar"

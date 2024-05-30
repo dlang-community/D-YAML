@@ -1,0 +1,10 @@
+%YAML 1.1
+---
+- name: unclosed-quoted-scalar
+  fail: true
+  mark: { line: 3, column: 1 }
+  mark2: { line: 1, column: 1 }
+  error: "While scanning a quoted scalar, found unexpected end of buffer"
+  yaml: |
+    'foo
+     bar

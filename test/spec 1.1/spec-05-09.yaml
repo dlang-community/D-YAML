@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+- name: spec-05-09
+  yaml: |
+    %YAML 1.1
+    --- text
+  tree: |
+    +STR
+      +DOC ---
+        =VAL :text
+      -DOC
+    -STR
+- name: spec-05-09-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "text"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "text
+      -DOC
+    -STR

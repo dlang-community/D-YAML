@@ -1,0 +1,29 @@
+%YAML 1.1
+---
+- name: spec-02-20
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :1.23015e+3
+    =VAL :exponential
+    =VAL :12.3015e+02
+    =VAL :sexagesimal
+    =VAL :20:30.15
+    =VAL :fixed
+    =VAL :1,230.15
+    =VAL :negative infinity
+    =VAL :-.inf
+    =VAL :not a number
+    =VAL :.NaN
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: 1.23015e+3
+    exponential: 12.3015e+02
+    sexagesimal: 20:30.15
+    fixed: 1,230.15
+    negative infinity: -.inf
+    not a number: .NaN

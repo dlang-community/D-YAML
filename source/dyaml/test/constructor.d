@@ -6,10 +6,9 @@
 
 module dyaml.test.constructor;
 
+package version(unittest):
 
-version(unittest)
-{
-
+import std.algorithm;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -919,39 +918,4 @@ struct TestStruct
     {
         return Node(value.to!string, "!tag2");
     }
-}
-
-} // version(unittest)
-
-
-@safe unittest
-{
-    import dyaml.test.common : assertNodesEqual, run;
-    /**
-    Constructor unittest.
-
-    Params:
-        dataFilename = File name to read from.
-        codeDummy = Dummy .code filename, used to determine that
-            .data file with the same name should be used in this test.
-    */
-    static void testConstructor(string dataFilename, string codeDummy) @safe
-    {
-        string base = dataFilename.baseName.stripExtension;
-        assert((base in expected) !is null, "Unimplemented constructor test: " ~ base);
-
-        auto loader = Loader.fromFile(dataFilename);
-
-        Node[] exp = expected[base];
-
-        //Compare with expected results document by document.
-        size_t i;
-        foreach (node; loader)
-        {
-            assertNodesEqual(node, exp[i]);
-            ++i;
-        }
-        assert(i == exp.length);
-    }
-    run(&testConstructor, ["data", "code"]);
 }

@@ -1,0 +1,30 @@
+%YAML 1.1
+---
+- name: spec-09-22
+  yaml: "strip: |-\n  text\Pclip: |\n  text\Nkeep: |+\n  text\L"
+- name: spec-09-22-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "strip"
+      : !!str "text",
+      ? !!str "clip"
+      : !!str "text\n",
+      ? !!str "keep"
+      : !!str "text\L",
+    }
+  # FIXME
+  # tree: |
+  #   +STR
+  #     +DOC ---
+  #       +MAP {} <tag:yaml.org,2002:map>
+  #         =VAL <tag:yaml.org,2002:str> "strip
+  #         =VAL <tag:yaml.org,2002:str> "text
+  #         =VAL <tag:yaml.org,2002:str> "clip
+  #         =VAL <tag:yaml.org,2002:str> "text\n
+  #         =VAL <tag:yaml.org,2002:str> "keep
+  #         =VAL <tag:yaml.org,2002:str> "text\L
+  #       -MAP
+  #     -DOC
+  #   -STR

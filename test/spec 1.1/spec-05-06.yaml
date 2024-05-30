@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+- name: spec-05-06
+  yaml: |
+    anchored: !local &anchor value
+    alias: *anchor
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :anchored
+          =VAL &anchor <!local> :value
+          =VAL :alias
+          =ALI *anchor
+        -MAP
+      -DOC
+    -STR
+- name: spec-05-06-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "anchored"
+      : &A1 !local "value",
+      ? !!str "alias"
+      : *A1,
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "anchored
+          =VAL &A1 <!local> "value
+          =VAL <tag:yaml.org,2002:str> "alias
+          =ALI *A1
+        -MAP
+      -DOC
+    -STR

@@ -1,0 +1,62 @@
+%YAML 1.1
+---
+- name: spec-10-06
+  yaml: |
+    - { inner : entry , also: inner , }
+    - {inner: entry,last : entry}
+  tree: |
+    +STR
+      +DOC
+        +SEQ
+          +MAP {}
+            =VAL :inner
+            =VAL :entry
+            =VAL :also
+            =VAL :inner
+          -MAP
+          +MAP {}
+            =VAL :inner
+            =VAL :entry
+            =VAL :last
+            =VAL :entry
+          -MAP
+        -SEQ
+      -DOC
+    -STR
+- name: spec-10-06-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      !!map {
+        ? !!str "inner"
+        : !!str "entry",
+        ? !!str "also"
+        : !!str "inner"
+      },
+      !!map {
+        ? !!str "inner"
+        : !!str "entry",
+        ? !!str "last"
+        : !!str "entry"
+      }
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "inner
+            =VAL <tag:yaml.org,2002:str> "entry
+            =VAL <tag:yaml.org,2002:str> "also
+            =VAL <tag:yaml.org,2002:str> "inner
+          -MAP
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "inner
+            =VAL <tag:yaml.org,2002:str> "entry
+            =VAL <tag:yaml.org,2002:str> "last
+            =VAL <tag:yaml.org,2002:str> "entry
+          -MAP
+        -SEQ
+      -DOC
+    -STR

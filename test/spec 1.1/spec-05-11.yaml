@@ -1,0 +1,25 @@
+%YAML 1.1
+---
+- name: spec-05-11
+  yaml: "|\n  Generic line break (no glyph)\n  Generic line break (glyphed)\N  Line separator\L  Paragraph separator\P"
+  # FIXME
+  # tree: |
+  #   +STR
+  #     +DOC
+  #       =VAL |Generic line break (no glyph)\nGeneric line break (glyphed)\nLine separator\LParagraph separator\P
+  #     -DOC
+  #   -STR
+- name: spec-05-11-canonical
+  yaml: |
+    %YAML 1.1
+    --- !!str
+    "Generic line break (no glyph)\n\
+     Generic line break (glyphed)\n\
+     Line separator\u2028\
+     Paragraph separator\u2029"
+  # tree: |
+  #   +STR
+  #     +DOC ---
+  #       =VAL <tag:yaml.org,2002:str> "Generic line break (no glyph)\nGeneric line break (glyphed)\nLine separator\LParagraph separator\P
+  #     -DOC
+  #   -STR

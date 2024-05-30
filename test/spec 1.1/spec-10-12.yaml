@@ -1,0 +1,42 @@
+%YAML 1.1
+---
+- name: spec-10-12
+  yaml: |
+    block: # Block
+        # mapping
+     key: value
+  tree: |
+    +STR
+      +DOC
+        +MAP
+          =VAL :block
+          +MAP
+            =VAL :key
+            =VAL :value
+          -MAP
+        -MAP
+      -DOC
+    -STR
+- name: spec-10-12-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!map {
+      ? !!str "block"
+      : !!map {
+        ? !!str "key"
+        : !!str "value"
+      }
+    }
+  tree: |
+    +STR
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "block
+          +MAP {} <tag:yaml.org,2002:map>
+            =VAL <tag:yaml.org,2002:str> "key
+            =VAL <tag:yaml.org,2002:str> "value
+          -MAP
+        -MAP
+      -DOC
+    -STR

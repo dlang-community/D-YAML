@@ -1,0 +1,12 @@
+%YAML 1.1
+---
+- name: spec-06-02
+  yaml: "  # Comment\n   \n\n"
+  tree: |
+    +STR
+    -STR
+- name: spec-06-02-canonical
+  yaml: ""
+  tree: |
+    +STR
+    -STR

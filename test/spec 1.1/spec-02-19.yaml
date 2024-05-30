@@ -1,0 +1,26 @@
+%YAML 1.1
+---
+- name: spec-02-19
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :canonical
+    =VAL :12345
+    =VAL :decimal
+    =VAL :+12,345
+    =VAL :sexagesimal
+    =VAL :3:25:45
+    =VAL :octal
+    =VAL :014
+    =VAL :hexadecimal
+    =VAL :0xC
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    canonical: 12345
+    decimal: +12,345
+    sexagesimal: 3:25:45
+    octal: 014
+    hexadecimal: 0xC

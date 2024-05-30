@@ -1,0 +1,9 @@
+%YAML 1.1
+---
+- name: a-nasty-libyaml-bug
+  fail: true
+  mark: { line: 1, column: 4 }
+  mark2: { line: 1, column: 4 }
+  error: "While parsing a flow node, expected node content, but found: streamEnd"
+  yaml: |-
+    [ [

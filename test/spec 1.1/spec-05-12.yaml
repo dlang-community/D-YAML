@@ -1,0 +1,10 @@
+%YAML 1.1
+---
+- name: spec-05-12
+  fail: true
+  mark: { line: 8, column: 11 }
+  error: |
+    While scanning for the next token, found character '	', index 9 that cannot start any token
+  yaml: "# Tabs do's and don'ts:\n# comment: \t\nquoted: \"Quoted\t\t\"\nblock: |\n\
+    \  void main() {\n  \tprintf(\"Hello, world!\\n\");\n  }\nelsewhere:\t# separation\n\
+    \tindentation, in\tplain scalar\n"

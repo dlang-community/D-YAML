@@ -209,45 +209,6 @@ struct Resolver
                 assert(false, "Cannot resolve an invalid node");
             }
         }
-        @safe unittest
-        {
-            auto resolver = Resolver.withDefaultResolvers;
-
-            bool tagMatch(string tag, string[] values) @safe
-            {
-                const string expected = tag;
-                foreach(value; values)
-                {
-                    const string resolved = resolver.resolve(NodeID.scalar, null, value, true);
-                    if(expected != resolved)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            assert(tagMatch("tag:yaml.org,2002:bool",
-                   ["yes", "NO", "True", "on"]));
-            assert(tagMatch("tag:yaml.org,2002:float",
-                   ["6.8523015e+5", "685.230_15e+03", "685_230.15",
-                    "190:20:30.15", "-.inf", ".NaN"]));
-            assert(tagMatch("tag:yaml.org,2002:int",
-                   ["685230", "+685_230", "02472256", "0x_0A_74_AE",
-                    "0b1010_0111_0100_1010_1110", "190:20:30"]));
-            assert(tagMatch("tag:yaml.org,2002:merge", ["<<"]));
-            assert(tagMatch("tag:yaml.org,2002:null", ["~", "null", ""]));
-            assert(tagMatch("tag:yaml.org,2002:str",
-                            ["abcd", "9a8b", "9.1adsf"]));
-            assert(tagMatch("tag:yaml.org,2002:timestamp",
-                   ["2001-12-15T02:59:43.1Z",
-                   "2001-12-14t21:59:43.10-05:00",
-                   "2001-12-14 21:59:43.10 -5",
-                   "2001-12-15 2:59:43.10",
-                   "2002-12-14"]));
-            assert(tagMatch("tag:yaml.org,2002:value", ["="]));
-            assert(tagMatch("tag:yaml.org,2002:yaml", ["!", "&", "*"]));
-        }
 
         ///Returns: Default scalar tag.
         @property string defaultScalarTag()   const pure @safe nothrow {return defaultScalarTag_;}

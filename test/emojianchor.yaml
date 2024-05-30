@@ -1,0 +1,29 @@
+%YAML 1.1
+---
+- name: emojianchor
+  yaml: |
+    ---
+    - &😁 unicode anchor
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ
+          =VAL &😁 :unicode anchor
+        -SEQ
+      -DOC
+    -STR
+- name: emojianchor-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!seq [
+      &😁 !!str "unicode anchor"
+    ]
+  tree: |
+    +STR
+      +DOC ---
+        +SEQ [] <tag:yaml.org,2002:seq>
+          =VAL &😁 <tag:yaml.org,2002:str> "unicode anchor
+        -SEQ
+      -DOC
+    -STR

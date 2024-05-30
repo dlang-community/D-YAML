@@ -1,0 +1,66 @@
+%YAML 1.1
+---
+- name: spec-07-10
+  yaml: |
+    "Root flow
+     scalar"
+    --- !!str >
+     Root block
+     scalar
+    ---
+    # Root collection:
+    foo : bar
+    ... # Is optional.
+    ---
+    # Explicit document may be empty.
+  tree: |
+    +STR
+      +DOC
+        =VAL "Root flow scalar
+      -DOC
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> >Root block scalar\n
+      -DOC
+      +DOC ---
+        +MAP
+          =VAL :foo
+          =VAL :bar
+        -MAP
+      -DOC ...
+      +DOC ---
+        =VAL :
+      -DOC
+    -STR
+- name: spec-07-10-canonical
+  yaml: |
+    %YAML 1.1
+    ---
+    !!str "Root flow scalar"
+    ---
+    !!str "Root block scalar\n"
+    ---
+    !!map {
+      ? !!str "foo"
+      : !!str "bar"
+    }
+    ---
+    #!!str ""
+    !!null ""
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "Root flow scalar
+      -DOC
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "Root block scalar\n
+      -DOC
+      +DOC ---
+        +MAP {} <tag:yaml.org,2002:map>
+          =VAL <tag:yaml.org,2002:str> "foo
+          =VAL <tag:yaml.org,2002:str> "bar
+        -MAP
+      -DOC
+      +DOC ---
+        =VAL <tag:yaml.org,2002:null> "
+      -DOC
+    -STR

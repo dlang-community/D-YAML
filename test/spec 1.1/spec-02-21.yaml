@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+- name: spec-02-21
+  tree: |
+    +STR
+    +DOC
+    +MAP
+    =VAL :null
+    =VAL :~
+    =VAL :true
+    =VAL :y
+    =VAL :false
+    =VAL :n
+    =VAL :string
+    =VAL '12345
+    -MAP
+    -DOC
+    -STR
+  yaml: |
+    null: ~
+    true: y
+    false: n
+    string: '12345'

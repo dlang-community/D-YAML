@@ -1,0 +1,17 @@
+%YAML 1.1
+---
+- name: spec-02-01
+  tree: |
+    +STR
+    +DOC
+    +SEQ
+    =VAL :Mark McGwire
+    =VAL :Sammy Sosa
+    =VAL :Ken Griffey
+    -SEQ
+    -DOC
+    -STR
+  yaml: |
+    - Mark McGwire
+    - Sammy Sosa
+    - Ken Griffey

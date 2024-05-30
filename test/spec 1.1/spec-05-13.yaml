@@ -1,0 +1,19 @@
+%YAML 1.1
+---
+- name: spec-05-13
+  yaml: "  \"Text containing   \n  both space and\t\n  \ttab\tcharacters\"\n"
+  tree: |
+    +STR
+      +DOC
+        =VAL "Text containing both space and tab\tcharacters
+      -DOC
+    -STR
+- name: spec-05-13-canonical
+  yaml: "%YAML 1.1\n--- !!str\n\"Text containing \\\n both space and \\\n tab\t\
+    characters\"\n"
+  tree: |
+    +STR
+      +DOC ---
+        =VAL <tag:yaml.org,2002:str> "Text containing both space and tab\tcharacters
+      -DOC
+    -STR
