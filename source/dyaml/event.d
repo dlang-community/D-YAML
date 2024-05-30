@@ -68,17 +68,14 @@ struct Event
     EventID id = EventID.invalid;
     ///Style of scalar event, if this is a scalar event.
     ScalarStyle scalarStyle = ScalarStyle.invalid;
-    union
-    {
-        ///Should the tag be implicitly resolved?
-        bool implicit;
-        /**
-         * Is this document event explicit?
-         *
-         * Used if this is a DocumentStart or DocumentEnd.
-         */
-        bool explicitDocument;
-    }
+    ///Should the tag be implicitly resolved?
+    bool implicit;
+    /**
+     * Is this document event explicit?
+     *
+     * Used if this is a DocumentStart or DocumentEnd.
+     */
+    alias explicitDocument = implicit;
     ///Collection style, if this is a SequenceStart or MappingStart.
     CollectionStyle collectionStyle = CollectionStyle.invalid;
 
