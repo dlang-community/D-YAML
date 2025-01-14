@@ -11,7 +11,6 @@ module dyaml.token;
 
 import std.conv;
 
-import dyaml.encoding;
 import dyaml.exception;
 import dyaml.reader;
 import dyaml.style;
@@ -81,9 +80,6 @@ struct Token
     /// Style of scalar token, if this is a scalar token.
     ScalarStyle style;
     // 1B
-    /// Encoding, if this is a stream start token.
-    Encoding encoding;
-    // 1B
     /// Type of directive for directiveToken.
     DirectiveType directive;
     // 4B
@@ -104,8 +100,7 @@ struct Token
 Token directiveToken(const Mark start, const Mark end, char[] value,
                      DirectiveType directive, const uint nameEnd) @safe pure nothrow @nogc
 {
-    return Token(value, start, end, TokenID.directive, ScalarStyle.init, Encoding.init,
-                 directive, nameEnd);
+    return Token(value, start, end, TokenID.directive, ScalarStyle.init, directive, nameEnd);
 }
 
 /// Construct a simple (no value) token with specified type.
@@ -118,17 +113,8 @@ Token simpleToken(TokenID id)(const Mark start, const Mark end)
     return Token(null, start, end, id);
 }
 
-/// Construct a stream start token.
-///
-/// Params:  start    = Start position of the token.
-///          end      = End position of the token.
-///          encoding = Encoding of the stream.
-Token streamStartToken(const Mark start, const Mark end, const Encoding encoding) @safe pure nothrow @nogc
-{
-    return Token(null, start, end, TokenID.streamStart, ScalarStyle.invalid, encoding);
-}
-
 /// Aliases for construction of simple token types.
+alias streamStartToken = simpleToken!(TokenID.streamStart);
 alias streamEndToken = simpleToken!(TokenID.streamEnd);
 alias blockSequenceStartToken = simpleToken!(TokenID.blockSequenceStart);
 alias blockMappingStartToken = simpleToken!(TokenID.blockMappingStart);
@@ -149,8 +135,7 @@ alias flowEntryToken = simpleToken!(TokenID.flowEntry);
 Token simpleValueToken(TokenID id)(const Mark start, const Mark end, char[] value,
                                    const uint valueDivider = uint.max)
 {
-    return Token(value, start, end, id, ScalarStyle.invalid, Encoding.init,
-                 DirectiveType.init, valueDivider);
+    return Token(value, start, end, id, ScalarStyle.invalid, DirectiveType.init, valueDivider);
 }
 
 /// Alias for construction of tag token.

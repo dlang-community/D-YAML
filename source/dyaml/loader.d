@@ -54,7 +54,7 @@ struct Loader
          {
             try
             {
-                auto loader = Loader(std.file.read(filename), filename);
+                auto loader = Loader(cast(char[])std.file.read(filename), filename);
                 return loader;
             }
             catch(FileException e)
@@ -66,7 +66,7 @@ struct Loader
          /// ditto
          static Loader fromFile(File file) @system
          {
-            auto loader = Loader(file.byChunk(4096).join, file.name);
+            auto loader = Loader(cast(char[])file.byChunk(4096).join, file.name);
             return loader;
          }
 
@@ -85,7 +85,7 @@ struct Loader
          */
         static Loader fromString(char[] data, string filename = "<unknown>") @safe
         {
-            return Loader(cast(ubyte[])data, filename);
+            return Loader(data, filename);
         }
         /// Ditto
         static Loader fromString(string data, string filename = "<unknown>") @safe
@@ -102,40 +102,9 @@ struct Loader
         {
             assert(Loader.fromString("42").load().as!int == 42);
         }
-
-        /** Construct a Loader to load YAML from a buffer.
-         *
-         * Params: yamlData = Buffer with YAML data to load. This may be e.g. a file
-         *                    loaded to memory or a string with YAML data. Note that
-         *                    buffer $(B will) be overwritten, as D:YAML minimizes
-         *                    memory allocations by reusing the input _buffer.
-         *                    $(B Must not be deleted or modified by the user  as long
-         *                    as nodes loaded by this Loader are in use!) - Nodes may
-         *                    refer to data in this buffer.
-         *
-         * Note that D:YAML looks for byte-order-marks YAML files encoded in
-         * UTF-16/UTF-32 (and sometimes UTF-8) use to specify the encoding and
-         * endianness, so it should be enough to load an entire file to a buffer and
-         * pass it to D:YAML, regardless of Unicode encoding.
-         *
-         * Throws:  YAMLException if yamlData contains data illegal in YAML.
-         */
-        static Loader fromBuffer(ubyte[] yamlData) @safe
-        {
-            return Loader(yamlData);
-        }
+        deprecated("Use Loader.fromString instead") alias fromBuffer = fromString;
         /// Ditto
-        static Loader fromBuffer(void[] yamlData) @system
-        {
-            return Loader(yamlData);
-        }
-        /// Ditto
-        private this(void[] yamlData, string name = "<unknown>") @system
-        {
-            this(cast(ubyte[])yamlData, name);
-        }
-        /// Ditto
-        private this(ubyte[] yamlData, string name = "<unknown>") @safe
+        private this(char[] yamlData, string name = "<unknown>") @safe
         {
             try
             {
@@ -426,37 +395,4 @@ EOS";
 @safe unittest
 {
     assertThrown(Loader.fromFile("test/data/odd-utf16.stream-error").load());
-}
-
-// UTF-16 and 32 test
-@safe unittest
-{
-    import std.conv : to;
-    import std.range : only;
-    enum string yaml = `ABCDØ`;
-    enum bom = '\uFEFF';
-    foreach (doc; only(
-        cast(ubyte[])(bom~yaml.to!(wchar[])),
-        cast(ubyte[])(bom~yaml.to!(dchar[])),
-    ))
-    {
-        assert(Loader.fromBuffer(doc).load().as!string == yaml);
-    }
-}
-// Invalid unicode test
-@safe unittest
-{
-    import std.conv : to;
-    import std.range : only;
-    enum string yaml = `ABCDØ`;
-    enum badBOM = '\uFFFE';
-    foreach (doc; only(
-        cast(ubyte[])yaml.to!(wchar[]),
-        cast(ubyte[])yaml.to!(dchar[]),
-        cast(ubyte[])(badBOM~yaml.to!(wchar[])),
-        cast(ubyte[])(badBOM~yaml.to!(dchar[])),
-    ))
-    {
-        assertThrown(Loader.fromBuffer(doc).load());
-    }
 }

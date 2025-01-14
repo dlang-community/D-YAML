@@ -14,7 +14,6 @@ import std.algorithm;
 import std.array;
 import std.ascii;
 import std.conv;
-import std.encoding;
 import std.exception;
 import std.format;
 import std.range;
@@ -23,7 +22,6 @@ import std.system;
 import std.typecons;
 import std.utf;
 
-import dyaml.encoding;
 import dyaml.escapes;
 import dyaml.event;
 import dyaml.exception;
@@ -67,7 +65,7 @@ private alias isFlowIndicator = among!(',', '?', '[', ']', '{', '}');
 private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', ' ', '\t');
 
 //Emits YAML events into a file/stream.
-struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
+struct Emitter(Range) if (isOutputRange!(Range, char))
 {
     private:
         ///Default tag handle shortcuts and replacements.
@@ -219,20 +217,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ///Write a string to the file/stream.
         void writeString(const scope char[] str) @safe
         {
-            static if(is(CharType == char))
-            {
-                copy(str, stream_);
-            }
-            static if(is(CharType == wchar))
-            {
-                const buffer = to!wstring(str);
-                copy(buffer, stream_);
-            }
-            static if(is(CharType == dchar))
-            {
-                const buffer = to!dstring(str);
-                copy(buffer, stream_);
-            }
+            copy(str, stream_);
         }
 
         ///In some cases, we wait for a few next events before emitting.
@@ -728,7 +713,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
             //{
             //    writeIndent();
             //}
-            auto writer = ScalarWriter!(Range, CharType)(&this, analysis_.scalar,
+            auto writer = ScalarWriter!Range(&this, analysis_.scalar,
                                        context_ != Context.mappingSimpleKey);
             final switch(style_)
             {
@@ -1169,14 +1154,9 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 
         //Writers.
 
-        ///Start the YAML stream (write the unicode byte order mark).
+        ///Start the YAML stream (do nothing).
         void writeStreamStart() @safe
         {
-            //Write BOM (except for UTF-8)
-            static if(is(CharType == wchar) || is(CharType == dchar))
-            {
-                stream_.put(cast(CharType)'\uFEFF');
-            }
         }
 
         ///End the YAML stream.
@@ -1271,7 +1251,7 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
 private:
 
 ///RAII struct used to write out scalar values.
-struct ScalarWriter(Range, CharType)
+struct ScalarWriter(Range)
 {
     invariant()
     {
@@ -1284,7 +1264,7 @@ struct ScalarWriter(Range, CharType)
         static immutable dcharNone = dchar.max;
 
         ///Emitter used to emit the scalar.
-        Emitter!(Range, CharType)* emitter_;
+        Emitter!Range* emitter_;
 
         ///UTF-8 encoded text of the scalar to write.
         string text_;
@@ -1305,7 +1285,7 @@ struct ScalarWriter(Range, CharType)
 
     public:
         ///Construct a ScalarWriter using emitter to output text.
-        this(Emitter!(Range, CharType)* emitter, string text, const bool split = true) @safe nothrow
+        this(Emitter!Range* emitter, string text, const bool split = true) @safe nothrow
         {
             emitter_ = emitter;
             text_ = text;
@@ -1500,7 +1480,7 @@ struct ScalarWriter(Range, CharType)
         ///Write text as plain scalar.
         void writePlain() @safe
         {
-            if(emitter_.context_ == Emitter!(Range, CharType).Context.root){emitter_.openEnded_ = true;}
+            if(emitter_.context_ == Emitter!Range.Context.root){emitter_.openEnded_ = true;}
             if(text_ == ""){return;}
             if(!emitter_.whitespace_)
             {

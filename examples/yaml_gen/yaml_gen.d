@@ -298,16 +298,10 @@ void main(string[] args)
         Node[] generated = generate(configFile);
 
         auto dumper     = dumper();
-        auto encoding   = config["encoding"];
-
         dumper.indent = config["indent"].as!uint;
         dumper.textWidth = config["text-width"].as!uint;
-        switch(encoding.as!string)
-        {
-            case "utf-16": dumper.dump!wchar(File(args[1], "w").lockingTextWriter, generated); break;
-            case "utf-32": dumper.dump!dchar(File(args[1], "w").lockingTextWriter, generated); break;
-            default: dumper.dump!char(File(args[1], "w").lockingTextWriter, generated); break;
-        }
+
+        dumper.dump(File(args[1], "w").lockingTextWriter, generated);
     }
     catch(YAMLException e)
     {
