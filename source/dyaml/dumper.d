@@ -140,13 +140,12 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(CharacterType = char, Range)(Range range, Node[] documents ...)
-            if (isOutputRange!(Range, CharacterType) &&
-                isOutputRange!(Range, char) || isOutputRange!(Range, wchar) || isOutputRange!(Range, dchar))
+        void dump(Range)(Range range, Node[] documents ...)
+            if (isOutputRange!(Range, char))
         {
             try
             {
-                auto emitter = new Emitter!(Range, CharacterType)(range, canonical, indent_, textWidth, lineBreak);
+                auto emitter = new Emitter!Range(range, canonical, indent_, textWidth, lineBreak);
                 auto serializer = Serializer(resolver, explicitStart ? Yes.explicitStart : No.explicitStart,
                                              explicitEnd ? Yes.explicitEnd : No.explicitEnd, YAMLVersion, tags_);
                 serializer.startStream(emitter);
