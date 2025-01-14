@@ -88,11 +88,6 @@ private:
     }
 
 public:
-
-    @disable void opAssign(ref Queue);
-    @disable bool opEquals(ref Queue);
-    @disable int opCmp(ref Queue);
-
     this(this) @safe nothrow @nogc
     {
         auto node = first_;

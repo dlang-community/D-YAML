@@ -153,9 +153,6 @@ struct Emitter(Range, CharType) if (isOutputRange!(Range, CharType))
         ScalarStyle style_ = ScalarStyle.invalid;
 
     public:
-        @disable int opCmp(ref Emitter);
-        @disable bool opEquals(ref Emitter);
-
         /**
          * Construct an emitter.
          *
@@ -1283,9 +1280,6 @@ struct ScalarWriter(Range, CharType)
     }
 
     private:
-        @disable int opCmp(ref Emitter!(Range, CharType));
-        @disable bool opEquals(ref Emitter!(Range, CharType));
-
         ///Used as "null" UTF-32 character.
         static immutable dcharNone = dchar.max;
 
