@@ -100,9 +100,6 @@ struct Resolver
         }
 
     public:
-        @disable bool opEquals(ref Resolver);
-        @disable int opCmp(ref Resolver);
-
         /**
          * Add an implicit scalar resolver.
          *

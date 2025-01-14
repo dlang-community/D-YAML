@@ -62,8 +62,6 @@ enum DirectiveType : ubyte
 /// 32 bytes on 64-bit.
 struct Token
 {
-    @disable int opCmp(ref Token);
-
     // 16B
     /// Value of the token, if any.
     ///

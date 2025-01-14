@@ -43,9 +43,6 @@ struct Loader
         bool rangeInitialized;
 
     public:
-        @disable int opCmp(ref Loader);
-        @disable bool opEquals(ref Loader);
-
         /** Construct a Loader to load YAML from a file.
          *
          * Params:  filename = Name of the file to load from.
