@@ -20,8 +20,7 @@ To start using it in your project, see the [Getting Started](https://dlang-commu
   - Supports all YAML 1.1 constructs. All examples from the YAML 1.1
     specification are parsed correctly.
   - Reads from and writes from/to YAML files or in-memory buffers.
-  - UTF-8, UTF-16 and UTF-32 encodings are supported, both big and
-    little endian (plain ASCII also works as it is a subset of UTF-8).
+  - UTF-8 is the only supported encoding.
   - Support for both block (Python-like, based on indentation) and flow
     (JSON-like, based on bracing) constructs.
   - Support for YAML anchors and aliases.

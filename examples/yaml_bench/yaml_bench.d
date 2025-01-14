@@ -94,9 +94,9 @@ void main(string[] args) //@safe
     string file = args[1];
 
     auto stopWatch = StopWatch(AutoStart.yes);
-    void[] fileInMemory;
-    if(!reload) { fileInMemory = std.file.read(file); }
-    void[] fileWorkingCopy = fileInMemory.dup;
+    char[] fileInMemory;
+    if(!reload) { fileInMemory = cast(char[])std.file.read(file); }
+    char[] fileWorkingCopy = fileInMemory.dup;
     auto loadTime = stopWatch.peek();
     stopWatch.reset();
     try
@@ -113,13 +113,13 @@ void main(string[] args) //@safe
         {
             // Loading the file rewrites the loaded buffer, so if we don't reload from
             // disk, we need to use a copy of the originally loaded file.
-            if(reload) { fileInMemory = std.file.read(file); }
+            if(reload) { fileInMemory = cast(char[])std.file.read(file); }
             else       { fileWorkingCopy[] = fileInMemory[]; }
-            void[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
+            char[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
 
             if(scanOnly)
             {
-                auto reader = Reader(cast(ubyte[])fileToLoad, "benchmark");
+                auto reader = Reader(fileToLoad, "benchmark");
                 auto scanner = Scanner(reader);
                 while(!scanner.empty)
                 {
@@ -128,7 +128,7 @@ void main(string[] args) //@safe
             }
             else
             {
-                auto loader = Loader.fromBuffer(fileToLoad);
+                auto loader = Loader.fromString(fileToLoad);
                 loader.resolver = resolver;
                 nodes = loader.array;
             }

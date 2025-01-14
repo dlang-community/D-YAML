@@ -14,7 +14,6 @@ dyaml_src = [
     'source/dyaml/constructor.d',
     'source/dyaml/dumper.d',
     'source/dyaml/emitter.d',
-    'source/dyaml/encoding.d',
     'source/dyaml/escapes.d',
     'source/dyaml/event.d',
     'source/dyaml/exception.d',
@@ -39,12 +38,9 @@ dyaml_src = [
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
-tinyendian_dep = dependency('tinyendian', version: '>=0.2.0', fallback: ['tinyendian', 'tinyendian_dep'])
-
 dyaml_lib = library('dyaml',
         [dyaml_src],
         include_directories: [src_dir],
-        dependencies: [tinyendian_dep],
         install: true,
         version: meson.project_version(),
         soversion: project_soversion
@@ -59,6 +55,5 @@ pkgc.generate(name: 'dyaml',
 # Make D-YAML easy to use as subproject
 dyaml_dep = declare_dependency(
     link_with: dyaml_lib,
-    include_directories: [src_dir],
-    dependencies: [tinyendian_dep]
+    include_directories: [src_dir]
 )

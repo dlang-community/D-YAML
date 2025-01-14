@@ -6,7 +6,6 @@
 module dyaml;
 
 public import dyaml.dumper;
-public import dyaml.encoding;
 public import dyaml.exception;
 public import dyaml.linebreak;
 public import dyaml.loader;

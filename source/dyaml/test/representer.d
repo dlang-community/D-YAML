@@ -28,11 +28,10 @@ module dyaml.test.representer;
         assert((baseName in expected) !is null, "Unimplemented representer test: " ~ baseName);
 
         Node[] expectedNodes = expected[baseName];
-        foreach (encoding; AliasSeq!(char, wchar, dchar))
         {
-            auto emitStream = new Appender!(immutable(encoding)[]);
+            auto emitStream = new Appender!string;
             auto dumper = dumper();
-            dumper.dump!encoding(emitStream, expectedNodes);
+            dumper.dump(emitStream, expectedNodes);
 
             immutable output = emitStream.data;
 
