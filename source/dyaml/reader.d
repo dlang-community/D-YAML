@@ -21,9 +21,6 @@ import std.system;
 import std.typecons;
 import std.utf;
 
-import tinyendian;
-
-import dyaml.encoding;
 import dyaml.exception;
 
 alias isBreak = among!('\n', '\u0085', '\u2028', '\u2029');
@@ -53,15 +50,6 @@ struct Reader
         // Current column in file.
         uint column_;
 
-        // Original Unicode encoding of the data.
-        Encoding encoding_;
-
-        version(unittest)
-        {
-            // Endianness of the input before it was converted (for testing)
-            Endian endian_;
-        }
-
         // The number of consecutive ASCII characters starting at bufferOffset_.
         //
         // Used to minimize UTF-8 decoding.
@@ -85,31 +73,12 @@ struct Reader
         ///
         /// Throws:  ReaderException on a UTF decoding error or if there are
         ///          nonprintable Unicode characters illegal in YAML.
-        this(ubyte[] buffer, string name = "<unknown>") @safe pure
+        this(char[] buffer, string name = "<unknown>") @safe pure
         {
             name_ = name;
-            auto endianResult = fixUTFByteOrder(buffer);
-            if(endianResult.bytesStripped > 0)
-            {
-                // TODO: add line and column
-                throw new ReaderException("Size of UTF-16 or UTF-32 input not aligned " ~
-                                          "to 2 or 4 bytes, respectively", Mark(name, 0, 0));
-            }
+            buffer_ = buffer;
 
-            version(unittest) { endian_ = endianResult.endian; }
-            encoding_ = endianResult.encoding;
-
-            auto utf8Result = toUTF8(endianResult.array, endianResult.encoding);
-            const msg = utf8Result.errorMessage;
-            if(msg !is null)
-            {
-                // TODO: add line and column
-                throw new ReaderException("Error when converting to UTF-8: " ~ msg, Mark(name, 0, 0));
-            }
-
-            buffer_ = utf8Result.utf8;
-
-            characterCount_ = utf8Result.characterCount;
+            characterCount_ = buffer.walkLength;
             // Check that all characters in buffer are printable.
             // TODO: add line and column
             enforce(isPrintableValidUTF8(buffer_),
@@ -423,9 +392,6 @@ struct Reader
         /// Get index of the current character in the buffer.
         size_t charIndex() const @safe pure nothrow @nogc { return charIndex_; }
 
-        /// Get encoding of the input buffer.
-        Encoding encoding() const @safe pure nothrow @nogc { return encoding_; }
-
 private:
         // Update upcomingASCII_ (should be called forward()ing over a UTF-8 sequence)
         void checkASCII() @safe pure nothrow @nogc
@@ -456,103 +422,6 @@ private:
 
 private:
 
-// Convert a UTF-8/16/32 buffer to UTF-8, in-place if possible.
-//
-// Params:
-//
-// input    = Buffer with UTF-8/16/32 data to decode. May be overwritten by the
-//            conversion, in which case the result will be a slice of this buffer.
-// encoding = Encoding of input.
-//
-// Returns:
-//
-// A struct with the following members:
-//
-// $(D string errorMessage)   In case of an error, the error message is stored here. If
-//                            there was no error, errorMessage is NULL. Always check
-//                            this first.
-// $(D char[] utf8)           input converted to UTF-8. May be a slice of input.
-// $(D size_t characterCount) Number of characters (code points) in input.
-public auto toUTF8(ubyte[] input, const UTFEncoding encoding) @safe pure nothrow
-{
-    // Documented in function ddoc.
-    struct Result
-    {
-        string errorMessage;
-        char[] utf8;
-        size_t characterCount;
-    }
-
-    Result result;
-
-    // Encode input_ into UTF-8 if it's encoded as UTF-16 or UTF-32.
-    //
-    // Params:
-    //
-    // buffer = The input buffer to encode.
-    // result = A Result struct to put encoded result and any error messages to.
-    //
-    // On error, result.errorMessage will be set.
-    static void encode(C)(C[] input, ref Result result) @safe pure
-    {
-        // We can do UTF-32->UTF-8 in place because all UTF-8 sequences are 4 or
-        // less bytes.
-        static if(is(C == dchar))
-        {
-            char[4] encodeBuf;
-            auto utf8 = cast(char[])input;
-            auto length = 0;
-            foreach(dchar c; input)
-            {
-                ++result.characterCount;
-                // ASCII
-                if(c < 0x80)
-                {
-                    utf8[length++] = cast(char)c;
-                    continue;
-                }
-
-                std.utf.encode(encodeBuf, c);
-                const bytes = codeLength!char(c);
-                utf8[length .. length + bytes] = encodeBuf[0 .. bytes];
-                length += bytes;
-            }
-            result.utf8 = utf8[0 .. length];
-        }
-        // Unfortunately we can't do UTF-16 in place so we just use std.conv.to
-        else
-        {
-            result.characterCount = std.utf.count(input);
-            result.utf8 = input.to!(char[]);
-        }
-    }
-
-    try final switch(encoding)
-    {
-        case UTFEncoding.UTF_8:
-            result.utf8 = cast(char[])input;
-            result.utf8.validate();
-            result.characterCount = std.utf.count(result.utf8);
-            break;
-        case UTFEncoding.UTF_16:
-            assert(input.length % 2 == 0, "UTF-16 buffer size must be even");
-            encode(cast(wchar[])input, result);
-            break;
-        case UTFEncoding.UTF_32:
-            assert(input.length % 4 == 0, "UTF-32 buffer size must be a multiple of 4");
-            encode(cast(dchar[])input, result);
-            break;
-    }
-    catch(ConvException e) { result.errorMessage = e.msg; }
-    catch(UTFException e)  { result.errorMessage = e.msg; }
-    catch(Exception e)
-    {
-        assert(false, "Unexpected exception in encode(): " ~ e.msg);
-    }
-
-    return result;
-}
-
 /// Determine if all characters (code points, not bytes) in a string are printable.
 bool isPrintableValidUTF8(const char[] chars) @safe pure
 {
@@ -576,73 +445,6 @@ size_t countASCII(const(char)[] buffer) @safe pure nothrow @nogc
 }
 // Unittests.
 
-void testEndian(R)()
-{
-    void endian_test(ubyte[] data, Encoding encoding_expected, Endian endian_expected)
-    {
-        auto reader = new R(data);
-        assert(reader.encoding == encoding_expected);
-        assert(reader.endian_ == endian_expected);
-    }
-    ubyte[] little_endian_utf_16 = [0xFF, 0xFE, 0x7A, 0x00];
-    ubyte[] big_endian_utf_16 = [0xFE, 0xFF, 0x00, 0x7A];
-    endian_test(little_endian_utf_16, Encoding.UTF_16, Endian.littleEndian);
-    endian_test(big_endian_utf_16, Encoding.UTF_16, Endian.bigEndian);
-}
-
-void testPeekPrefixForward(R)()
-{
-    import std.encoding;
-    ubyte[] data = bomTable[BOM.utf8].sequence ~ cast(ubyte[])"data";
-    auto reader = new R(data);
-    assert(reader.peek() == 'd');
-    assert(reader.peek(1) == 'a');
-    assert(reader.peek(2) == 't');
-    assert(reader.peek(3) == 'a');
-    assert(reader.peek(4) == '\0');
-    assert(reader.prefix(4) == "data");
-    // assert(reader.prefix(6) == "data\0");
-    reader.forward(2);
-    assert(reader.peek(1) == 'a');
-    // assert(collectException(reader.peek(3)));
-}
-
-void testUTF(R)()
-{
-    import std.encoding;
-    dchar[] data = cast(dchar[])"data";
-    void utf_test(T)(T[] data, BOM bom)
-    {
-        ubyte[] bytes = bomTable[bom].sequence ~
-                        (cast(ubyte[])data)[0 .. data.length * T.sizeof];
-        auto reader = new R(bytes);
-        assert(reader.peek() == 'd');
-        assert(reader.peek(1) == 'a');
-        assert(reader.peek(2) == 't');
-        assert(reader.peek(3) == 'a');
-    }
-    utf_test!char(to!(char[])(data), BOM.utf8);
-    utf_test!wchar(to!(wchar[])(data), endian == Endian.bigEndian ? BOM.utf16be : BOM.utf16le);
-    utf_test(data, endian == Endian.bigEndian ? BOM.utf32be : BOM.utf32le);
-}
-
-void test1Byte(R)()
-{
-    ubyte[] data = [97];
-
-    auto reader = new R(data);
-    assert(reader.peek() == 'a');
-    assert(reader.peek(1) == '\0');
-    // assert(collectException(reader.peek(2)));
-}
-
-@system unittest
-{
-    testEndian!Reader();
-    testPeekPrefixForward!Reader();
-    testUTF!Reader();
-    test1Byte!Reader();
-}
 //Issue 257 - https://github.com/dlang-community/D-YAML/issues/257
 @safe unittest
 {

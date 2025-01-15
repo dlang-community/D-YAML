@@ -32,7 +32,7 @@ enum dchar[] bom32 = ['\uFEFF', '\uFFFE'];
 
 Parser parseData(string data, string name = "TEST") @safe
 {
-    auto reader = Reader(cast(ubyte[])data.dup, name);
+    auto reader = Reader(data.dup, name);
     auto scanner = Scanner(reader);
     return new Parser(scanner);
 }
@@ -46,7 +46,7 @@ Params:
 */
 void testScanner(string name, string data) @safe
 {
-    ubyte[] yamlData = cast(ubyte[])data.dup;
+    char[] yamlData = data.dup;
     string[] tokens;
     foreach (token; Scanner(Reader(yamlData, name)))
     {
@@ -88,7 +88,7 @@ bool testImplicitResolver(string name, string data, string detectData, out strin
 Event[] emitTestCommon(string name, Event[] events, bool canonical) @safe
 {
     auto emitStream = new Appender!string();
-    auto emitter = Emitter!(typeof(emitStream), char)(emitStream, canonical, 2, 80, LineBreak.unix);
+    auto emitter = Emitter!(typeof(emitStream))(emitStream, canonical, 2, 80, LineBreak.unix);
     foreach (event; events)
     {
         emitter.emit(event);
