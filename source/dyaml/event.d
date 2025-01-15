@@ -50,19 +50,12 @@ struct Event
     Mark startMark;
     ///End position of the event in file/stream.
     Mark endMark;
-    union
-    {
-        struct
-        {
-            ///Anchor of the event, if any.
-            string _anchor;
-            ///Tag of the event, if any.
-            string _tag;
-        }
-        ///Tag directives, if this is a DocumentStart.
-        //TagDirectives tagDirectives;
-        TagDirective[] _tagDirectives;
-    }
+    ///Anchor of the event, if any.
+    string _anchor;
+    ///Tag of the event, if any.
+    string _tag;
+    ///Tag directives, if this is a DocumentStart.
+    TagDirective[] _tagDirectives;
     ///Event type.
     EventID id = EventID.invalid;
     ///Style of scalar event, if this is a scalar event.
