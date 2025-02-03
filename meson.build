@@ -34,7 +34,8 @@ dyaml_src = [
     'source/dyaml/test/representer.d',
     'source/dyaml/test/suite.d',
     'source/dyaml/test/suitehelpers.d',
-    'source/dyaml/token.d'
+    'source/dyaml/token.d',
+    'source/dyaml/stdsumtype.d'
 ]
 install_subdir('source/dyaml', install_dir: 'include/d/yaml/')
 
