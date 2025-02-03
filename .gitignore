@@ -65,3 +65,5 @@ example.yaml
 
 # Unittest Coverage output #
 *.lst
+
+.meson-subproject-wrap-hash.txt
