@@ -8,6 +8,12 @@ project_soversion    = '0'
 src_dir = include_directories('source/')
 pkgc = import('pkgconfig')
 
+d_compiler = meson.get_compiler('d')
+global_d_args = []
+if d_compiler.get_id() == 'gcc'
+  global_d_args += ['-fall-instantiations']
+endif
+
 dyaml_src = [
     'source/dyaml/composer.d',
     'source/dyaml/constructor.d',
@@ -47,12 +53,14 @@ dyaml_lib = library('dyaml',
         dependencies: [tinyendian_dep],
         install: true,
         version: meson.project_version(),
+        d_args: global_d_args,
         soversion: project_soversion
 )
 pkgc.generate(name: 'dyaml',
               libraries: dyaml_lib,
               subdirs: 'd/yaml/',
               version: meson.project_version(),
+              extra_cflags: global_d_args,
               description: 'YAML parser and emitter for the D programming language.'
 )
 
@@ -60,5 +68,6 @@ pkgc.generate(name: 'dyaml',
 dyaml_dep = declare_dependency(
     link_with: dyaml_lib,
     include_directories: [src_dir],
-    dependencies: [tinyendian_dep]
+    dependencies: [tinyendian_dep],
+    compile_args: global_d_args,
 )
