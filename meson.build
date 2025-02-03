@@ -1,6 +1,6 @@
 project('D-YAML', 'd',
     meson_version: '>=0.40.0',
-    version: '0.8.4'
+    version: '0.10.0'
 )
 
 project_soversion    = '0'
