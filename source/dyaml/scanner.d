@@ -1190,7 +1190,7 @@ struct Scanner
                 }
             }
 
-            // If chompint is Keep, we keep (commit) the last scanned line breaks
+            // If chomping is Keep, we keep (commit) the last scanned line breaks
             // (which are at the end of the scalar). Otherwise re remove them (end the
             // transaction).
             if(chomping == Chomping.keep)  { slice ~= newBreakSlice; }
