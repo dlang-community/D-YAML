@@ -1047,8 +1047,8 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
 
                 //Prepare for the next character.
                 preceededByWhitespace = c.isSpace != 0;
-                followedByWhitespace = index + 2 >= scalar.length ||
-                                       scalar[index + 2].isSpace;
+                followedByWhitespace = index + codeLength!char(c) + 1 >= scalar.length ||
+                                       scalar[index + codeLength!char(c) + 1].isSpace;
             }
 
             with(ScalarAnalysis.AnalysisFlags)
@@ -1149,6 +1149,18 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
             with(analyzeScalar("\n a").flags)
             {
                 assert(multiline && allowDoubleQuoted && allowBlock);
+            }
+            with(analyzeScalar("x: x").flags)
+            {
+                assert(!allowBlockPlain);
+            }
+            with(analyzeScalar("x̄:").flags)
+            {
+                assert(!allowBlockPlain);
+            }
+            with(analyzeScalar("x̄: x").flags)
+            {
+                assert(!allowBlockPlain);
             }
         }
 
