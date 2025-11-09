@@ -27,43 +27,42 @@ import dyaml.exception;
 /// Type of `regexes`
 private alias RegexType = Tuple!(string, "tag", const Regex!char, "regexp", string, "chars");
 
-private immutable RegexType[] regexes = [
-    RegexType("tag:yaml.org,2002:bool",
-              regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~
-                     "|false|False|FALSE|on|On|ON|off|Off|OFF)$"),
-              "yYnNtTfFoO"),
-    RegexType("tag:yaml.org,2002:float",
-              regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~
-                     "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~
-                     "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~
-                     "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~
-                     "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~
-                     "(?:nan|NaN|NAN))$"),
-              "-+0123456789."),
-    RegexType("tag:yaml.org,2002:int",
-              regex(r"^(?:[-+]?0b[0-1_]+" ~
-                     "|[-+]?0[0-7_]+" ~
-                     "|[-+]?(?:0|[1-9][0-9_]*)" ~
-                     "|[-+]?0x[0-9a-fA-F_]+" ~
-                     "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$"),
-              "-+0123456789"),
-    RegexType("tag:yaml.org,2002:merge", regex(r"^<<$"), "<"),
-    RegexType("tag:yaml.org,2002:null",
-              regex(r"^$|^(?:~|null|Null|NULL)$"), "~nN\0"),
-    RegexType("tag:yaml.org,2002:timestamp",
-              regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~
-                     "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~
-                     "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~
-                     "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~
-                     "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~
-                     "[0-9]?(?::[0-9][0-9])?)?$"),
-              "0123456789"),
-    RegexType("tag:yaml.org,2002:value", regex(r"^=$"), "="),
+// build this at runtime, to prevent build time costs
+private __gshared immutable RegexType[] regexes;
+
+shared static this() {
+    __gshared string forceRT;
+    RegexType[] regexArray;
+    Regex!char toBuild;
+
+    toBuild = regex(r"^(?:yes|Yes|YES|no|No|NO|true|True|TRUE" ~ "|false|False|FALSE|on|On|ON|off|Off|OFF)$" ~ forceRT);
+    regexArray ~= RegexType("tag:yaml.org,2002:bool", toBuild, "yYnNtTfFoO");
+
+    toBuild = regex(r"^(?:[-+]?([0-9][0-9_]*)\\.[0-9_]*" ~ "(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]" ~ "*)?\\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?" ~ "[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]" ~ "*|[-+]?\\.(?:inf|Inf|INF)|\\." ~ "(?:nan|NaN|NAN))$" ~ forceRT);
+    regexArray ~= RegexType("tag:yaml.org,2002:float", toBuild,  "-+0123456789.");
+
+    toBuild = regex(r"^(?:[-+]?0b[0-1_]+" ~ "|[-+]?0[0-7_]+" ~ "|[-+]?(?:0|[1-9][0-9_]*)" ~ "|[-+]?0x[0-9a-fA-F_]+" ~ "|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$" ~ forceRT);
+    regexArray ~= RegexType("tag:yaml.org,2002:int", toBuild, "-+0123456789");
+
+    toBuild = regex(r"^<<$" ~ forceRT);
+    regexArray ~= RegexType("tag:yaml.org,2002:merge", toBuild, "<");
+
+    toBuild = regex(r"^$|^(?:~|null|Null|NULL)$" ~ forceRT);
+    regexArray ~= RegexType("tag:yaml.org,2002:null", toBuild, "~nN\0");
+
+    toBuild = regex(r"^[0-9][0-9][0-9][0-9]-[0-9][0-9]-" ~ "[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9]" ~ "[0-9]?-[0-9][0-9]?[Tt]|[ \t]+[0-9]" ~ "[0-9]?:[0-9][0-9]:[0-9][0-9]" ~ "(?:\\.[0-9]*)?(?:[ \t]*Z|[-+][0-9]" ~ "[0-9]?(?::[0-9][0-9])?)?$");
+    regexArray ~= RegexType("tag:yaml.org,2002:timestamp", toBuild, "0123456789");
+
+    toBuild = regex(r"^=$");
+    regexArray ~= RegexType("tag:yaml.org,2002:value", toBuild, "=");
 
     //The following resolver is only for documentation purposes. It cannot work
     //because plain scalars cannot start with '!', '&', or '*'.
-    RegexType("tag:yaml.org,2002:yaml", regex(r"^(?:!|&|\*)$"), "!&*"),
-];
+    toBuild = regex(r"^(?:!|&|\*)$");
+    regexArray ~= RegexType("tag:yaml.org,2002:yaml", toBuild, "!&*");
+
+    regexes = cast(immutable)regexArray;
+}
 
 /**
  * Resolves YAML tags (data types).
