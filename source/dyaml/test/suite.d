@@ -146,11 +146,11 @@ TestResult runTest(string name, Node doc) @safe
             }
             if ("line" in *node)
             {
-                mark.line = cast(ushort)((*node)["line"].as!ushort - 1);
+                mark.line = cast(MarkPosition)((*node)["line"].as!MarkPosition - 1);
             }
             if ("column" in *node)
             {
-                mark.column = cast(ushort)((*node)["column"].as!ushort - 1);
+                mark.column = cast(MarkPosition)((*node)["column"].as!MarkPosition - 1);
             }
             return Nullable!Mark(mark);
         }
