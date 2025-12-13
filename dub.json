@@ -10,6 +10,10 @@
     "copyright": "Copyright © 2011-2018, Ferdinand Majerech",
     "configurations": [
         { "name": "library"  },
+        {
+            "name": "widemark",
+            "versions": ["widemark"]
+         },
         { "name": "unittest" },
         {
             "name": "unittest-dip1000",

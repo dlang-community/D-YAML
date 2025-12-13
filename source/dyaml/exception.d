@@ -23,35 +23,43 @@ class YAMLException : Exception
     mixin basicExceptionCtors;
 }
 
+version(widemark)
+{
+    package alias MarkPosition = uint;
+}
+else
+{
+    package alias MarkPosition = ushort;
+}
 /// Position in a YAML stream, used for error messages.
 struct Mark
 {
     /// File name.
     string name = "<unknown>";
     /// Line number.
-    ushort line;
+    MarkPosition line;
     /// Column number.
-    ushort column;
+    MarkPosition column;
 
     public:
         /// Construct a Mark with specified line and column in the file.
         this(string name, const uint line, const uint column) @safe pure nothrow @nogc
         {
             this.name = name;
-            this.line = cast(ushort)min(ushort.max, line);
+            this.line = cast(MarkPosition)min(MarkPosition.max, line);
             // This *will* overflow on extremely wide files but saves CPU time
             // (mark ctor takes ~5% of time)
-            this.column = cast(ushort)column;
+            this.column = cast(MarkPosition)column;
         }
 
         /// Get a string representation of the mark.
         void toString(W)(ref W writer) const scope
         {
             // Line/column numbers start at zero internally, make them start at 1.
-            void writeClamped(ushort v)
+            void writeClamped(MarkPosition v)
             {
                 writer.formattedWrite!"%s"(v + 1);
-                if (v == ushort.max)
+                if (v == MarkPosition.max)
                 {
                     put(writer, "or higher");
                 }
