@@ -145,7 +145,7 @@ struct Dumper
         {
             try
             {
-                auto emitter = new Emitter!Range(range, canonical, indent_, textWidth, lineBreak);
+                auto emitter = new Emitter(range, canonical, indent_, textWidth, lineBreak);
                 auto serializer = Serializer(resolver, explicitStart ? Yes.explicitStart : No.explicitStart,
                                              explicitEnd ? Yes.explicitEnd : No.explicitEnd, YAMLVersion, tags_);
                 serializer.startStream(emitter);

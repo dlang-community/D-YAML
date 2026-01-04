@@ -88,7 +88,7 @@ bool testImplicitResolver(string name, string data, string detectData, out strin
 Event[] emitTestCommon(string name, Event[] events, bool canonical) @safe
 {
     auto emitStream = new Appender!string();
-    auto emitter = Emitter!(typeof(emitStream))(emitStream, canonical, 2, 80, LineBreak.unix);
+    auto emitter = Emitter(emitStream, canonical, 2, 80, LineBreak.unix);
     foreach (event; events)
     {
         emitter.emit(event);

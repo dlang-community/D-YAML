@@ -65,7 +65,7 @@ private alias isFlowIndicator = among!(',', '?', '[', ']', '{', '}');
 private alias isSpace = among!('\0', '\n', '\r', '\u0085', '\u2028', '\u2029', ' ', '\t');
 
 //Emits YAML events into a file/stream.
-struct Emitter(Range) if (isOutputRange!(Range, char))
+struct Emitter
 {
     private:
         ///Default tag handle shortcuts and replacements.
@@ -73,7 +73,7 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
             [TagDirective("!", "!"), TagDirective("!!", "tag:yaml.org,2002:")];
 
         ///Stream to write to.
-        Range stream_;
+        void delegate(scope const char[]) @safe writeString;
 
         /// Type used for upcoming emitter steps
         alias EmitterFunction = void function(scope typeof(this)*) @safe;
@@ -159,12 +159,12 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(Range stream, const bool canonical, const int indent, const int width,
+        this(typeof(writeString) stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @safe
         {
             states_.reserve(32);
             indents_.reserve(32);
-            stream_ = stream;
+            writeString = stream;
             canonical_ = canonical;
             nextExpected!"expectStreamStart"();
 
@@ -173,6 +173,16 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
             bestLineBreak_ = lineBreak;
 
             analysis_.flags.isNull = true;
+        }
+        this(Range)(ref Range stream, const bool canonical, const int indent, const int width,
+             const LineBreak lineBreak) @safe
+        {
+            import std.algorithm.mutation : copy;
+            void dg(scope const char[] str)
+            {
+                copy(str, stream);
+            }
+            this(&dg, canonical, indent, width, lineBreak);
         }
 
         ///Emit an event.
@@ -212,12 +222,6 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
             const result = indents_.data[$-1];
             indents_.shrinkTo(indents_.data.length - 1);
             return result;
-        }
-
-        ///Write a string to the file/stream.
-        void writeString(const scope char[] str) @safe
-        {
-            copy(str, stream_);
         }
 
         ///In some cases, we wait for a few next events before emitting.
@@ -713,7 +717,7 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
             //{
             //    writeIndent();
             //}
-            auto writer = ScalarWriter!Range(&this, analysis_.scalar,
+            auto writer = ScalarWriter(&this, analysis_.scalar,
                                        context_ != Context.mappingSimpleKey);
             final switch(style_)
             {
@@ -1251,7 +1255,7 @@ struct Emitter(Range) if (isOutputRange!(Range, char))
 private:
 
 ///RAII struct used to write out scalar values.
-struct ScalarWriter(Range)
+struct ScalarWriter
 {
     invariant()
     {
@@ -1264,7 +1268,7 @@ struct ScalarWriter(Range)
         static immutable dcharNone = dchar.max;
 
         ///Emitter used to emit the scalar.
-        Emitter!Range* emitter_;
+        Emitter* emitter_;
 
         ///UTF-8 encoded text of the scalar to write.
         string text_;
@@ -1285,7 +1289,7 @@ struct ScalarWriter(Range)
 
     public:
         ///Construct a ScalarWriter using emitter to output text.
-        this(Emitter!Range* emitter, string text, const bool split = true) @safe nothrow
+        this(Emitter* emitter, string text, const bool split = true) @safe nothrow
         {
             emitter_ = emitter;
             text_ = text;
@@ -1480,7 +1484,7 @@ struct ScalarWriter(Range)
         ///Write text as plain scalar.
         void writePlain() @safe
         {
-            if(emitter_.context_ == Emitter!Range.Context.root){emitter_.openEnded_ = true;}
+            if(emitter_.context_ == Emitter.Context.root){emitter_.openEnded_ = true;}
             if(text_ == ""){return;}
             if(!emitter_.whitespace_)
             {
