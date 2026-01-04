@@ -174,7 +174,7 @@ struct Emitter
 
             analysis_.flags.isNull = true;
         }
-        this(Range)(ref Range stream, const bool canonical, const int indent, const int width,
+        this(Range)(Range stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @safe
         {
             import std.algorithm.mutation : copy;
@@ -1287,9 +1287,9 @@ struct ScalarWriter
         ///Start and end character of the text range we're currently working with.
         long startChar_, endChar_;
 
-    public:
+    public scope:
         ///Construct a ScalarWriter using emitter to output text.
-        this(Emitter* emitter, string text, const bool split = true) @safe nothrow
+        this(return Emitter* emitter, string text, const bool split = true) @safe nothrow
         {
             emitter_ = emitter;
             text_ = text;
@@ -1559,7 +1559,7 @@ struct ScalarWriter
         }
 
         ///Determine hints (indicators) for block scalar.
-        size_t determineBlockHints(char[] hints, uint bestIndent) const pure @safe
+        size_t determineBlockHints(scope char[] hints, uint bestIndent) const pure @safe
         {
             size_t hintsIdx;
             if(text_.length == 0)
