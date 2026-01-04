@@ -159,7 +159,7 @@ struct Emitter
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(scope typeof(writeString) stream, const bool canonical, const int indent, const int width,
+        this(typeof(writeString) stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @safe
         {
             states_.reserve(32);
@@ -173,16 +173,6 @@ struct Emitter
             bestLineBreak_ = lineBreak;
 
             analysis_.flags.isNull = true;
-        }
-        this(Range)(Range stream, const bool canonical, const int indent, const int width,
-             const LineBreak lineBreak) @safe
-        {
-            import std.algorithm.mutation : copy;
-            void dg(scope const char[] str)
-            {
-                copy(str, stream);
-            }
-            this(&dg, canonical, indent, width, lineBreak);
         }
 
         ///Emit an event.

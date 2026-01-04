@@ -140,8 +140,7 @@ struct Dumper
          * Throws:  YAMLException on error (e.g. invalid nodes,
          *          unable to write to file/stream).
          */
-        void dump(Range)(Range range, Node[] documents ...)
-            if (isOutputRange!(Range, char))
+        void dump(scope void delegate(scope const char[]) @safe range, Node[] documents ...) @safe
         {
             try
             {
@@ -161,6 +160,14 @@ struct Dumper
                 throw new YAMLException("Unable to dump YAML to stream "
                                         ~ name ~ " : " ~ e.msg, e.file, e.line);
             }
+        }
+        void dump(Range)(auto ref Range range, Node[] documents ...)
+        {
+            import std.algorithm.mutation : copy;
+            void dg(scope const char[] str) {
+                copy(str, range);
+            }
+            dump(&dg, documents);
         }
 }
 ///Write to a file
