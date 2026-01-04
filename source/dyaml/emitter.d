@@ -159,7 +159,7 @@ struct Emitter
          *          indent    = Indentation width.
          *          lineBreak = Line break character/s.
          */
-        this(typeof(writeString) stream, const bool canonical, const int indent, const int width,
+        this(scope typeof(writeString) stream, const bool canonical, const int indent, const int width,
              const LineBreak lineBreak) @safe
         {
             states_.reserve(32);
