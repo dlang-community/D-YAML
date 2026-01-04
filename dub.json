@@ -8,14 +8,6 @@
     "license": "BSL-1.0",
     "homepage": "https://github.com/dlang-community/D-YAML",
     "copyright": "Copyright © 2011-2018, Ferdinand Majerech",
-    "configurations": [
-        { "name": "library"  },
-        { "name": "unittest" },
-        {
-            "name": "unittest-dip1000",
-            "dflags": [ "-preview=dip1000" ]
-        }
-    ],
     "subPackages": [
         "examples/constructor",
         "examples/getting_started",
