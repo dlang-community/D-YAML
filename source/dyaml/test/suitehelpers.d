@@ -87,8 +87,8 @@ bool testImplicitResolver(string name, string data, string detectData, out strin
 // Try to emit an event range.
 Event[] emitTestCommon(string name, Event[] events, bool canonical) @safe
 {
-    auto emitStream = new Appender!string();
-    auto emitter = Emitter!(typeof(emitStream))(emitStream, canonical, 2, 80, LineBreak.unix);
+    Appender!string emitStream;
+    auto emitter = Emitter(&emitStream.put!(const char[]), canonical, 2, 80, LineBreak.unix);
     foreach (event; events)
     {
         emitter.emit(event);
