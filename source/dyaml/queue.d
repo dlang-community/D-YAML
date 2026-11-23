@@ -90,6 +90,9 @@ private:
 public:
     this(this) @safe nothrow @nogc
     {
+        // The free-list belongs to the original: sharing it would let both
+        // queues hand out, and later free, the same nodes
+        stock = null;
         auto node = first_;
         first_ = null;
         last_ = null;
@@ -264,4 +267,17 @@ public:
     }
 
     assert(array == array2);
+}
+
+// A copy doesn't share the original's free-list
+@safe nothrow unittest
+{
+    auto queue = Queue!int();
+    queue.push(1);
+    queue.push(2);
+    queue.pop();
+    auto copy = queue;
+    queue.push(3);
+    assert(copy.pop() == 2);
+    assert(copy.empty);
 }
