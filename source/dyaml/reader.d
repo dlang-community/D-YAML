@@ -445,6 +445,14 @@ size_t countASCII(const(char)[] buffer) @safe pure nothrow @nogc
 }
 // Unittests.
 
+// Peeking past the end of a 1-byte buffer yields '\0'
+@safe unittest
+{
+    auto reader = Reader("a".dup);
+    assert(reader.peek() == 'a');
+    assert(reader.peek(1) == '\0');
+}
+
 //Issue 257 - https://github.com/dlang-community/D-YAML/issues/257
 @safe unittest
 {
