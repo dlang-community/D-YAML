@@ -76,6 +76,9 @@ struct Reader
         this(char[] buffer, string name = "<unknown>") @safe pure
         {
             name_ = name;
+            // The byte order mark is not part of the content
+            if (buffer.byCodeUnit.startsWith("\uFEFF".byCodeUnit))
+                buffer = buffer["\uFEFF".length .. $];
             buffer_ = buffer;
 
             characterCount_ = buffer.walkLength;
@@ -444,6 +447,20 @@ size_t countASCII(const(char)[] buffer) @safe pure nothrow @nogc
     return buffer.byCodeUnit.until!(x => x > 0x7F).walkLength;
 }
 // Unittests.
+
+// A leading UTF-8 BOM is skipped, and peek/prefix/forward see the content
+@safe unittest
+{
+    auto reader = Reader("\xEF\xBB\xBFdata".dup);
+    assert(reader.peek() == 'd');
+    assert(reader.peek(1) == 'a');
+    assert(reader.peek(2) == 't');
+    assert(reader.peek(3) == 'a');
+    assert(reader.peek(4) == '\0');
+    assert(reader.prefix(4) == "data");
+    reader.forward(2);
+    assert(reader.peek(1) == 'a');
+}
 
 // Peeking past the end of a 1-byte buffer yields '\0'
 @safe unittest
