@@ -58,10 +58,11 @@ struct Mark
             // Line/column numbers start at zero internally, make them start at 1.
             void writeClamped(MarkPosition v)
             {
-                writer.formattedWrite!"%s"(v + 1);
+                // Widen first: with `version(widemark)`, `v + 1` wraps to 0
+                writer.formattedWrite!"%s"(ulong(v) + 1);
                 if (v == MarkPosition.max)
                 {
-                    put(writer, "or higher");
+                    put(writer, " or higher");
                 }
             }
             put(writer, name);
@@ -70,6 +71,14 @@ struct Mark
             put(writer, ",");
             writeClamped(column);
         }
+}
+
+// A clamped line is printed as the first value it can't represent
+@safe unittest
+{
+    import std.conv : text;
+    const mark = Mark("f", MarkPosition.max, 0);
+    assert(mark.text == text("f:", ulong(MarkPosition.max) + 1, " or higher,1"));
 }
 
 /// Base class of YAML exceptions with marked positions of the problem.
