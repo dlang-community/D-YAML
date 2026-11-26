@@ -587,7 +587,8 @@ final class Parser
                 assert(false, "Scanner must handle unsupported escapes");
             }
 
-            return notInPlace is null ? appender.data : notInPlace;
+            // never return null, even though null == "" someone higher level might be checking for `is null` to mean something else
+            return notInPlace is null ? (appender.data.length ? appender.data : "") : notInPlace;
         }
 
         /**
